@@ -22,6 +22,10 @@ jobs:
       - run: forge fmt --check
       - run: forge build --sizes
       - run: forge test -vv
+      # live checks against Elysium mainnet (public RPC, read-only fork)
+      - run: forge test --match-contract "Fork" -vv
+        env:
+          ELYSIUM_RPC_URL: https://rpc.elysium.kinetiq.xyz
 
   web:
     runs-on: ubuntu-latest

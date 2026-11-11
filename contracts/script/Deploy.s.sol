@@ -8,24 +8,23 @@ import {StoaPool} from "../src/StoaPool.sol";
 import {StoaRouter, ISignatureTransfer} from "../src/StoaRouter.sol";
 import {UniswapV2Adapter, IUniswapV2Factory} from "../src/adapters/UniswapV2Adapter.sol";
 import {UniswapV3Adapter, IUniswapV3Factory} from "../src/adapters/UniswapV3Adapter.sol";
+import {CLTickSpacingAdapter, ICLTickSpacingFactory} from "../src/adapters/CLTickSpacingAdapter.sol";
+import {LiquidityBookAdapter, ILBFactory} from "../src/adapters/LiquidityBookAdapter.sol";
+import {UniswapV4Adapter, IPoolManager} from "../src/adapters/UniswapV4Adapter.sol";
+import {VenuesElysium} from "./VenuesElysium.sol";
 import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
 
 /// @notice Deploys Stoa v1 on Elysium mainnet (chain 99901): registry, fee distributor, router, the WHYPE/USDC
-///         maker pool and the Uniswap V2 + V3 fallback adapters. Writes the addresses to deployments/99901.json.
+///         maker pool and the fallback venue adapters (Uniswap V2, V3 and V4, Aero Slipstream, Ramses CL and
+///         Liquidity Book). Writes the addresses to deployments/99901.json.
 /// Env (required): OWNER (multisig or hardware wallet), TREASURY
 /// Env (optional): CURATOR (pool owner, default OWNER), MAKER (approved maker, default none),
 ///                 GUARDIAN (can pause the router, default OWNER), MIN_BOND (wei of HYPE, default 10 HYPE),
 ///                 MAX_SWAP_USDC (raw, default 500e6), UNBOND_DELAY (s, default 1 day),
 ///                 ROUTER_DELAY (s, timelock for new venues, default 1 day)
 /// After deploy, OWNER must call acceptOwnership() on MakerRegistry, FeeDistributor and StoaRouter.
-contract Deploy is Script {
-    address constant WHYPE = 0xbA876237B0F021A6c6D852d6c26E107997cC5E81;
-    address constant USDC = 0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65;
-    address constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-    // Uniswap on Elysium (factories checked on-chain; see Uniswap/sdks#782)
-    address constant UNI_V2_FACTORY = 0xBbBcC62853a5fA27b93d6Bab3E6F7ce841E25Df2;
-    address constant UNI_V3_FACTORY = 0x1707327F626496A7b5b3872e7E4d2879Df7d7a9f;
-
+/// The Uniswap V4 adapter is owned by OWNER from the start (its owner can only remove pool keys).
+contract Deploy is Script, VenuesElysium {
     struct Cfg {
         address owner;
         address treasury;
@@ -45,12 +44,21 @@ contract Deploy is Script {
         StoaRouter router;
         UniswapV2Adapter v2;
         UniswapV3Adapter v3;
+        UniswapV4Adapter v4;
+        CLTickSpacingAdapter aero;
+        CLTickSpacingAdapter ramses;
+        LiquidityBookAdapter lb;
     }
 
     function run() external {
         require(block.chainid == 99901, "not Elysium mainnet");
         require(UNI_V2_FACTORY.code.length > 0 && UNI_V3_FACTORY.code.length > 0, "uniswap factories missing");
         require(PERMIT2.code.length > 0, "permit2 missing");
+        require(
+            V4_POOL_MANAGER.code.length > 0 && AERO_CL_FACTORY.code.length > 0 && RAMSES_CL_FACTORY.code.length > 0
+                && LB_FACTORY.code.length > 0,
+            "venue missing"
+        );
         Cfg memory c = _cfg();
         vm.startBroadcast();
         Out memory o = _deploy(c, msg.sender);
@@ -81,6 +89,11 @@ contract Deploy is Script {
             new StoaRouter(me, IFeeDistributor(address(o.fees)), WHYPE, ISignatureTransfer(PERMIT2), c.routerDelay);
         o.v2 = new UniswapV2Adapter(IUniswapV2Factory(UNI_V2_FACTORY), WHYPE, address(o.router));
         o.v3 = new UniswapV3Adapter(IUniswapV3Factory(UNI_V3_FACTORY), WHYPE, address(o.router));
+        o.v4 = new UniswapV4Adapter(IPoolManager(V4_POOL_MANAGER), WHYPE, address(o.router), c.owner, v4Hooks());
+        o.aero = new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), address(o.router), aeroSpacings());
+        o.ramses =
+            new CLTickSpacingAdapter(ICLTickSpacingFactory(RAMSES_CL_FACTORY), address(o.router), ramsesSpacings());
+        o.lb = new LiquidityBookAdapter(ILBFactory(LB_FACTORY), address(o.router));
 
         o.reg.listPool(address(o.pool), c.minBond);
         if (c.maker != address(0)) o.reg.setMakerApproval(address(o.pool), c.maker, true);
@@ -88,6 +101,10 @@ contract Deploy is Script {
         o.router.addPool(address(o.pool));
         o.router.addAdapter(address(o.v2));
         o.router.addAdapter(address(o.v3));
+        o.router.addAdapter(address(o.v4));
+        o.router.addAdapter(address(o.aero));
+        o.router.addAdapter(address(o.ramses));
+        o.router.addAdapter(address(o.lb));
         o.router.setGuardian(c.guardian);
         o.router.lockSetup(); // from here on, new venues wait `routerDelay`
 
@@ -109,6 +126,10 @@ contract Deploy is Script {
         vm.serializeAddress(k, "poolWhypeUsdc", address(o.pool));
         vm.serializeAddress(k, "uniswapV2Adapter", address(o.v2));
         vm.serializeAddress(k, "uniswapV3Adapter", address(o.v3));
+        vm.serializeAddress(k, "uniswapV4Adapter", address(o.v4));
+        vm.serializeAddress(k, "aeroAdapter", address(o.aero));
+        vm.serializeAddress(k, "ramsesAdapter", address(o.ramses));
+        vm.serializeAddress(k, "liquidityBookAdapter", address(o.lb));
         vm.serializeAddress(k, "permit2", PERMIT2);
         string memory json = vm.serializeAddress(k, "router", address(o.router));
         vm.writeJson(json, "./deployments/99901.json");
@@ -119,5 +140,9 @@ contract Deploy is Script {
         console2.log("MakerRegistry   ", address(o.reg));
         console2.log("UniswapV2Adapter", address(o.v2));
         console2.log("UniswapV3Adapter", address(o.v3));
+        console2.log("UniswapV4Adapter", address(o.v4));
+        console2.log("AeroAdapter     ", address(o.aero));
+        console2.log("RamsesAdapter   ", address(o.ramses));
+        console2.log("LBAdapter       ", address(o.lb));
     }
 }
