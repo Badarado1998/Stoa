@@ -6,9 +6,9 @@ import {MakerRegistry} from "../src/MakerRegistry.sol";
 import {FeeDistributor} from "../src/FeeDistributor.sol";
 import {StoaPool} from "../src/StoaPool.sol";
 import {StoaRouter} from "../src/StoaRouter.sol";
-import {UniswapV2Adapter, IUniswapV2Router02} from "../src/adapters/UniswapV2Adapter.sol";
+import {UniswapV2Adapter, IUniswapV2Factory} from "../src/adapters/UniswapV2Adapter.sol";
 import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
-import {MockToken, MockWHYPE, MockV2Router} from "../test/mocks/Mocks.sol";
+import {MockToken, MockWHYPE, MockV2Factory} from "../test/mocks/Mocks.sol";
 
 /// @notice Local stack for testing the web app: router-first (Uniswap V2 mock) plus an unquoted Stoa pool.
 contract LocalApp is Script {
@@ -30,7 +30,7 @@ contract LocalApp is Script {
         fees.setNotifier(address(router), true);
         router.addPool(address(pool));
 
-        MockV2Router v2 = new MockV2Router();
+        MockV2Factory v2 = new MockV2Factory();
         whype.deposit{value: 1_100 ether}();
         usdc.mint(me, 40_000e6);
         meme.mint(me, 1_000_000 ether);
@@ -40,7 +40,7 @@ contract LocalApp is Script {
         v2.addLiquidity(address(whype), address(usdc), 1_000 ether, 40_000e6);
         v2.addLiquidity(address(meme), address(whype), 1_000_000 ether, 100 ether);
         router.addAdapter(
-            address(new UniswapV2Adapter(IUniswapV2Router02(address(v2)), address(whype), address(router)))
+            address(new UniswapV2Adapter(IUniswapV2Factory(address(v2)), address(whype), address(router)))
         );
 
         usdc.mint(trader, 2_000e6);

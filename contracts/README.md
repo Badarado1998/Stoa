@@ -7,7 +7,8 @@ Maker-quoted pools (PropAMM) for Elysium, chain 99901.
 | `MakerRegistry` | Lists pools, approves makers, holds maker bonds in native HYPE (unbond delay, slashing to treasury). Its owner is also the guardian. |
 | `StoaPool` | One per pair. An approved, bonded maker posts bid/ask, sizes and an expiry (max 2 blocks). Fills use up the quoted size. Per-swap cap in USDC (500 at launch). Charges the 2 bps protocol fee. |
 | `StoaRouter` | Compares every Stoa pool for the pair with fallback venues (adapters for Uniswap, Nest, ...) and executes the best fill. Takes the same 2 bps on the fallback path. |
-| `UniswapV2Adapter` | Fills swaps on Uniswap V2 (direct pair or two hops through WHYPE, since launchpad tokens trade against HYPE). Only the router can call it. |
+| `UniswapV2Adapter` | Fills swaps directly on Uniswap V2 pairs (direct or two hops through WHYPE). Only the router can call it. |
+| `UniswapV3Adapter` | Fills swaps directly on Uniswap V3 pools, every fee tier, direct or through WHYPE. Quotes by simulating the pool swap. Only the router can call it. |
 | `FeeDistributor` | Receives protocol fees, credits 10% to the swap's referrer, the rest accrues to the protocol. Rejects fee notices not backed by tokens. |
 
 ## Launch mode: router first
@@ -23,12 +24,16 @@ forge build
 forge test
 ```
 
-34 tests, including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`.
+34 unit tests plus 4 fork tests against Elysium mainnet (`ELYSIUM_RPC_URL=... forge test --match-contract ForkElysium`), including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`.
 
 ## Deploy (Elysium mainnet)
 
+Preferred: GitHub → Actions → **Deploy contracts** (dry run first, then tick *broadcast*). Needs repo secrets `DEPLOYER_PRIVATE_KEY`, `ELYSIUM_RPC_URL` and variables `OWNER`, `TREASURY` (optional `CURATOR`, `MAKER`, `MIN_BOND`, `MAX_SWAP_USDC`). After a broadcast the workflow commits `deployments/99901.json` and `web/lib/deployments.json`, and Vercel redeploys the site with the addresses.
+
+Manual:
+
 ```
-OWNER=0x... TREASURY=0x... CURATOR=0x... MAKER=0x... MIN_BOND=10000000000000000000 UNIV2_ROUTER=0x... \
+OWNER=0x... TREASURY=0x... \
 forge script script/Deploy.s.sol --rpc-url $ELYSIUM_RPC --broadcast --account deployer
 ```
 
@@ -37,7 +42,8 @@ Ownership moves to `OWNER` in two steps: run `acceptOwnership()` from the multis
 ## Not in v1 yet
 
 - Public LP vaults (ERC-4626). v1 inventory comes from the pool owner.
-- Uniswap V4 and Nest adapters (V2 is done; add the V2 router address at deploy with `UNIV2_ROUTER`).
+- Uniswap V4 and Nest adapters.
+- Fee-on-transfer (taxed) tokens through the Uniswap adapters.
 - `liquidationSwap` and Permit2.
 - GraduationRegistry.
 - An external audit. Do not raise caps before one.

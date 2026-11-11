@@ -6,8 +6,8 @@ import {MakerRegistry} from "../src/MakerRegistry.sol";
 import {FeeDistributor} from "../src/FeeDistributor.sol";
 import {StoaPool} from "../src/StoaPool.sol";
 import {StoaRouter} from "../src/StoaRouter.sol";
-import {MockToken, MockAdapter, MockWHYPE, MockV2Router} from "./mocks/Mocks.sol";
-import {UniswapV2Adapter, IUniswapV2Router02} from "../src/adapters/UniswapV2Adapter.sol";
+import {MockToken, MockAdapter, MockWHYPE, MockV2Factory} from "./mocks/Mocks.sol";
+import {UniswapV2Adapter, IUniswapV2Factory} from "../src/adapters/UniswapV2Adapter.sol";
 import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
 
 contract StoaTest is Test {
@@ -371,8 +371,8 @@ contract StoaTest is Test {
 
     // ------------------------------------------------------------ Uniswap V2 adapter + native HYPE
 
-    function _v2Setup() internal returns (MockV2Router v2, MockToken meme) {
-        v2 = new MockV2Router();
+    function _v2Setup() internal returns (MockV2Factory v2, MockToken meme) {
+        v2 = new MockV2Factory();
         vm.deal(address(whype), 10_000 ether); // back minted WHYPE with native HYPE
         meme = new MockToken("MEME", 18);
         whype.mint(address(this), 1_100 ether);
@@ -383,7 +383,7 @@ contract StoaTest is Test {
         meme.approve(address(v2), type(uint256).max);
         v2.addLiquidity(address(whype), address(usdc), 1_000 ether, 40_000e6); // HYPE = $40
         v2.addLiquidity(address(meme), address(whype), 1_000_000 ether, 100 ether); // launchpad-style HYPE pair
-        UniswapV2Adapter ad = new UniswapV2Adapter(IUniswapV2Router02(address(v2)), address(whype), address(router));
+        UniswapV2Adapter ad = new UniswapV2Adapter(IUniswapV2Factory(address(v2)), address(whype), address(router));
         vm.startPrank(gov);
         router.removeAdapter(address(uni));
         router.addAdapter(address(ad));
@@ -394,10 +394,8 @@ contract StoaTest is Test {
     }
 
     function test_v2_routesMemeToUsdcThroughHype() public {
-        (MockV2Router v2, MockToken meme) = _v2Setup();
-        address[] memory path = new address[](3);
-        (path[0], path[1], path[2]) = (address(meme), address(whype), address(usdc));
-        uint256 gross = v2.getAmountsOut(1_000 ether, path)[2];
+        (MockV2Factory v2, MockToken meme) = _v2Setup();
+        uint256 gross = v2.quote(address(whype), address(usdc), v2.quote(address(meme), address(whype), 1_000 ether));
         uint256 before = usdc.balanceOf(alice);
         vm.prank(alice);
         uint256 out = router.swapExactIn(address(meme), address(usdc), 1_000 ether, 0, alice, block.timestamp, ref);

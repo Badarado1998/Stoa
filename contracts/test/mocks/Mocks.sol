@@ -79,42 +79,60 @@ contract MockWHYPE is ERC20 {
     }
 }
 
-/// @dev Minimal Uniswap V2 router: constant-product pairs with a 0.3% fee, reserves kept in this contract.
-contract MockV2Router {
-    mapping(address => mapping(address => uint256)) public reserve; // reserve[tokenA][tokenB] = amount of tokenA
+/// @dev Minimal Uniswap V2 pair: constant product with the 0.3% fee check, like the real one.
+contract MockV2Pair {
+    address public immutable token0;
+    address public immutable token1;
+    uint112 private r0;
+    uint112 private r1;
 
-    function addLiquidity(address a, address b, uint256 ra, uint256 rb) external {
-        IERC20(a).transferFrom(msg.sender, address(this), ra);
-        IERC20(b).transferFrom(msg.sender, address(this), rb);
-        reserve[a][b] += ra;
-        reserve[b][a] += rb;
+    constructor(address a, address b) {
+        (token0, token1) = a < b ? (a, b) : (b, a);
     }
 
-    function _out(uint256 amountIn, uint256 rIn, uint256 rOut) internal pure returns (uint256) {
-        require(rIn > 0 && rOut > 0, "no pair");
-        uint256 inFee = amountIn * 997;
-        return inFee * rOut / (rIn * 1000 + inFee);
+    function getReserves() external view returns (uint112, uint112, uint32) {
+        return (r0, r1, 0);
     }
 
-    function getAmountsOut(uint256 amountIn, address[] calldata path) public view returns (uint256[] memory a) {
-        a = new uint256[](path.length);
-        a[0] = amountIn;
-        for (uint256 i; i < path.length - 1; ++i) {
-            a[i + 1] = _out(a[i], reserve[path[i]][path[i + 1]], reserve[path[i + 1]][path[i]]);
+    function sync() public {
+        r0 = uint112(IERC20(token0).balanceOf(address(this)));
+        r1 = uint112(IERC20(token1).balanceOf(address(this)));
+    }
+
+    function swap(uint256 a0, uint256 a1, address to, bytes calldata) external {
+        require(a0 > 0 || a1 > 0, "V2: OUT");
+        if (a0 > 0) IERC20(token0).transfer(to, a0);
+        if (a1 > 0) IERC20(token1).transfer(to, a1);
+        uint256 b0 = IERC20(token0).balanceOf(address(this));
+        uint256 b1 = IERC20(token1).balanceOf(address(this));
+        uint256 in0 = b0 > r0 - a0 ? b0 - (r0 - a0) : 0;
+        uint256 in1 = b1 > r1 - a1 ? b1 - (r1 - a1) : 0;
+        require(in0 > 0 || in1 > 0, "V2: IN");
+        require((b0 * 1000 - in0 * 3) * (b1 * 1000 - in1 * 3) >= uint256(r0) * r1 * 1_000_000, "V2: K");
+        sync();
+    }
+}
+
+/// @dev Minimal Uniswap V2 factory with a liquidity helper.
+contract MockV2Factory {
+    mapping(address => mapping(address => address)) public getPair;
+
+    function addLiquidity(address a, address b, uint256 ra, uint256 rb) external returns (address pair) {
+        pair = getPair[a][b];
+        if (pair == address(0)) {
+            pair = address(new MockV2Pair(a, b));
+            getPair[a][b] = pair;
+            getPair[b][a] = pair;
         }
+        IERC20(a).transferFrom(msg.sender, pair, ra);
+        IERC20(b).transferFrom(msg.sender, pair, rb);
+        MockV2Pair(pair).sync();
     }
 
-    function swapExactTokensForTokens(uint256 amountIn, uint256 minOut, address[] calldata path, address to, uint256)
-        external
-        returns (uint256[] memory a)
-    {
-        a = getAmountsOut(amountIn, path);
-        require(a[a.length - 1] >= minOut, "V2: INSUFFICIENT_OUTPUT_AMOUNT");
-        IERC20(path[0]).transferFrom(msg.sender, address(this), amountIn);
-        for (uint256 i; i < path.length - 1; ++i) {
-            reserve[path[i]][path[i + 1]] += a[i];
-            reserve[path[i + 1]][path[i]] -= a[i + 1];
-        }
-        IERC20(path[path.length - 1]).transfer(to, a[a.length - 1]);
+    function quote(address a, address b, uint256 amountIn) external view returns (uint256) {
+        (uint112 x, uint112 y,) = MockV2Pair(getPair[a][b]).getReserves();
+        (uint256 rin, uint256 rout) = a < b ? (uint256(x), uint256(y)) : (uint256(y), uint256(x));
+        uint256 f = amountIn * 997;
+        return f * rout / (rin * 1000 + f);
     }
 }

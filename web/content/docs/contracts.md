@@ -9,6 +9,7 @@ Network tokens on Elysium and Stoa contracts.
 | Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
 | StoaRouter | Deploying soon |
 | UniswapV2Adapter | Deploying soon |
+| UniswapV3Adapter | Deploying soon |
 | StoaPool (WHYPE/USDC) | Deploying soon |
 | MakerRegistry | Deploying soon |
 | FeeDistributor | Deploying soon |

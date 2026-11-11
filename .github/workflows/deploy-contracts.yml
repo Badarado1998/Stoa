@@ -1,0 +1,74 @@
+name: Deploy contracts
+
+# Manual only. Unticked "broadcast" = dry run: simulates the full deployment against Elysium mainnet, sends nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-contracts
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL }}
+      OWNER: ${{ vars.OWNER }}
+      TREASURY: ${{ vars.TREASURY }}
+      CURATOR: ${{ vars.CURATOR }}
+      MAKER: ${{ vars.MAKER }}
+      MIN_BOND: ${{ vars.MIN_BOND }}
+      MAX_SWAP_USDC: ${{ vars.MAX_SWAP_USDC }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check settings
+        run: |
+          test -n "$ELYSIUM_RPC_URL" || { echo "::error::secret ELYSIUM_RPC_URL is missing"; exit 1; }
+          test -n "${{ secrets.DEPLOYER_PRIVATE_KEY }}" || { echo "::error::secret DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test -n "$OWNER" || { echo "::error::variable OWNER is missing"; exit 1; }
+          test -n "$TREASURY" || { echo "::error::variable TREASURY is missing"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ELYSIUM_RPC_URL")" = "99901" ] || { echo "::error::RPC is not Elysium mainnet"; exit 1; }
+          echo "Deployer: $(cast wallet address --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }})"
+          echo "Balance:  $(cast balance $(cast wallet address --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }}) --ether --rpc-url "$ELYSIUM_RPC_URL") HYPE"
+
+      - name: Unit tests
+        run: forge test --no-match-contract ForkElysium
+
+      - name: Fork tests against Elysium mainnet
+        run: forge test --match-contract ForkElysium -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          for v in CURATOR MAKER MIN_BOND MAX_SWAP_USDC; do [ -z "${!v}" ] && unset $v; done
+          forge script script/Deploy.s.sol \
+            --rpc-url "$ELYSIUM_RPC_URL" \
+            --private-key "${{ secrets.DEPLOYER_PRIVATE_KEY }}" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/99901.json
+
+      - name: Publish addresses to the web app
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          cp contracts/deployments/99901.json web/lib/deployments.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add contracts/deployments/99901.json web/lib/deployments.json
+          git commit -m "deploy: Stoa contracts on Elysium mainnet"
+          git push

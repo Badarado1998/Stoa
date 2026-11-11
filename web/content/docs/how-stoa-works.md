@@ -14,7 +14,7 @@ Each `StoaPool` holds the tokens that fill swaps and only accepts quotes that ar
 
 ## 3. The router picks the best fill
 
-`StoaRouter` asks every Stoa pool for a price, compares it with Uniswap on Elysium (directly, or through HYPE for tokens that only trade against HYPE), and routes your swap to the best result in one transaction. If no maker quote is valid, it fills on Uniswap. More venues such as Nest can be added as adapters.
+`StoaRouter` asks every Stoa pool for a price, compares it with Uniswap V2 and V3 on Elysium (every fee tier, directly or through HYPE for tokens that only trade against HYPE), and routes your swap to the best result in one transaction. If no maker quote is valid, it fills on Uniswap. More venues such as Nest can be added as adapters.
 
 ## 4. You sign once
 
