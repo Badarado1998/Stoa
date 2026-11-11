@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
-import { TOKENS, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
+import { TOKENS, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
@@ -47,7 +47,7 @@ export default function Trade() {
   const { open: openWallet } = useWalletModal();
   const referrer = useReferrer(address);
 
-  const [tokens, setTokens] = useState<Token[]>(TOKENS);
+  const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...POPULAR]);
   const [sell, setSell] = useState<Token>(TOKENS[2]);
   const [buy, setBuy] = useState<Token>(TOKENS[0]);
   const [amount, setAmount] = useState("");

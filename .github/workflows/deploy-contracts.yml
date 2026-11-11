@@ -66,6 +66,10 @@ jobs:
             --slow ${{ inputs.broadcast && '--broadcast' || '' }}
           cat deployments/99901.json
 
+      - name: Register the most traded Uniswap V4 launchpad pools
+        if: ${{ inputs.broadcast }}
+        run: RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" ADAPTER="$(jq -r .uniswapV4Adapter deployments/99901.json)" ./script/seed-v4.sh
+
       - name: Publish addresses to the web app
         if: ${{ inputs.broadcast }}
         working-directory: .

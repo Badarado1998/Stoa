@@ -13,7 +13,8 @@ sleep 4
 cd "$A"; cp lib/deployments.json /tmp/stoa-deployments.bak; cd $C
 # Elysium is Arbitrum Orbit: give the fork an ArbSys precompile (Aero's swap hook reads it)
 cast rpc anvil_setCode 0x0000000000000000000000000000000000000064 "$(forge inspect ArbSysMock deployedBytecode)" --rpc-url $RPC >/dev/null
-OWNER=$ME TREASURY=$ME forge script script/Deploy.s.sol --rpc-url $RPC --broadcast --private-key $DK --slow >/dev/null
+# owner = the test wallet, so the app can accept ownership and pause from /admin
+OWNER=0x90F79bf6EB2c4f870365E785982E1f101E93b906 TREASURY=$ME forge script script/Deploy.s.sol --rpc-url $RPC --broadcast --private-key $DK --slow >/dev/null
 J=$C/deployments/99901.json; cp $J /tmp/stoa-fork.json; rm -f $J
 cd $A
 cp /tmp/stoa-fork.json lib/deployments.json  # same file the deploy workflow commits

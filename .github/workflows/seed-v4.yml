@@ -1,0 +1,27 @@
+name: Seed Uniswap V4 pools
+
+# Manual: registers the pools in contracts/script/data/v4-seed-pools.json on the live V4 adapter
+# (from web/lib/deployments.json). Anyone may register; known or full pairs are skipped.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Register pools
+        run: |
+          ADAPTER="$(jq -r '.uniswapV4Adapter // empty' ../web/lib/deployments.json)"
+          test -n "$ADAPTER" || { echo "::error::no uniswapV4Adapter in web/lib/deployments.json (deploy first)"; exit 1; }
+          test -n "${{ secrets.DEPLOYER_PRIVATE_KEY }}" || { echo "::error::secret DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" ADAPTER="$ADAPTER" ./script/seed-v4.sh

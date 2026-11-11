@@ -21,7 +21,7 @@ const addr = (v?: string) => (v && /^0x[0-9a-fA-F]{40}$/.test(v) ? (v as Address
 // Written by the "Deploy contracts" workflow; env vars override it (local testing).
 type DeployKey =
   | "router" | "poolWhypeUsdc" | "feeDistributor" | "uniswapV2Adapter" | "uniswapV3Adapter" | "uniswapV4Adapter"
-  | "aeroAdapter" | "ramsesAdapter" | "liquidityBookAdapter";
+  | "aeroAdapter" | "ramsesAdapter" | "liquidityBookAdapter" | "makerRegistry";
 const D = deployment as Partial<Record<DeployKey, string>> & { block?: number };
 
 export const CONTRACTS = {
@@ -29,6 +29,7 @@ export const CONTRACTS = {
   pool: addr(process.env.NEXT_PUBLIC_POOL_WHYPE_USDC) ?? addr(D.poolWhypeUsdc),
   fees: addr(process.env.NEXT_PUBLIC_FEE_DISTRIBUTOR) ?? addr(D.feeDistributor),
   v4: addr(process.env.NEXT_PUBLIC_UNIV4_ADAPTER) ?? addr(D.uniswapV4Adapter),
+  registry: addr(process.env.NEXT_PUBLIC_MAKER_REGISTRY) ?? addr(D.makerRegistry),
 };
 
 /** Kinetiq's public RPC answers eth_getLogs over the whole chain when filtered by topic, so swap history and

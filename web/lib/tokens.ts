@@ -1,4 +1,5 @@
 import type { Address } from "viem";
+import popular from "./popular-tokens.json";
 
 export const NATIVE = "0x0000000000000000000000000000000000000000" as Address;
 
@@ -22,3 +23,12 @@ export const TOKENS: Token[] = [
 ];
 
 export const isNative = (t: Token) => t.address === NATIVE;
+
+/** Tokens with the most traded Uniswap V4 pools on Elysium (the pools Stoa registers at launch). Not reviewed:
+ *  copycats exist (same symbol, different address), so they stay "unverified" and show their address. */
+export const POPULAR: Token[] = (process.env.NEXT_PUBLIC_CHAIN_ID ?? "99901") === "99901"
+  ? (popular as { symbol: string; address: string; decimals: number }[]).map((t) => ({
+      symbol: t.symbol, name: `Unverified · ${t.address.slice(0, 6)}…${t.address.slice(-4)}`, address: t.address as Address,
+      decimals: t.decimals, glyph: t.symbol[0] ?? "?", tone: "other" as const,
+    }))
+  : [];

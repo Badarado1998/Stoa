@@ -4,7 +4,7 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 ## 1. Wallets
 
-- [ ] **Owner = Safe multisig** on Elysium (2-of-3 or more, signers on hardware wallets). It owns the router, registry, fee distributor and the V4 adapter, and can pause, remove venues and withdraw protocol fees. Address goes in `OWNER`.
+- [ ] **Owner**: a hardware wallet (Ledger/Trezor) for launch. It owns the router, registry, fee distributor, the maker pool and the V4 adapter, and can pause, remove venues and withdraw protocol fees. Address goes in `OWNER`. Safe v1.3.0 contracts exist on Elysium, but check that the Safe app supports Elysium before using one; ownership can move to a Safe later with `transferOwnership` + `acceptOwnership`.
 - [ ] **Treasury** address (can be the same Safe). Receives slashed bonds. Goes in `TREASURY`.
 - [ ] **Deployer** = a fresh wallet used only to deploy, with ~0.05 HYPE for gas (the dry run prints the exact gas). Never the owner.
 - [ ] Optional **guardian**: a separate hot wallet that can only pause swaps, for fast reaction. Goes in `GUARDIAN` (defaults to `OWNER`).
@@ -19,7 +19,8 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 - [ ] Actions → **Deploy contracts** → Run workflow, *broadcast unticked* (dry run). Check the printed addresses, gas and warnings.
 - [ ] Run again with **broadcast ticked**. The workflow commits `web/lib/deployments.json`; Vercel redeploys the site with the live addresses.
-- [ ] From the Safe, call `acceptOwnership()` on MakerRegistry, FeeDistributor and StoaRouter.
+- [ ] Open `stoa.trade/admin` with the owner wallet and press **Accept** on StoaRouter, MakerRegistry and FeeDistributor. The same page pauses swaps, withdraws protocol fees, approves makers and proposes venues.
+- The deploy also registers the 60 most traded Uniswap V4 launchpad pools (`contracts/script/data/v4-seed-pools.json`), so they route on day one. Rerun later with Actions → **Seed Uniswap V4 pools**.
 - [ ] Optional: verify the contracts on the Kinetiq explorer.
 
 ## 4. Web (Vercel → Project → Settings)
@@ -31,7 +32,7 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 ## 5. After launch
 
-- [ ] Add the Uniswap V4 pools of the main launchpad tokens (anyone can, from the Trade page or `register` on the V4 adapter), so they route on day one.
+- [ ] New launchpad tokens: anyone can add their V4 pool from the Trade page; refresh the seed list now and then with `contracts/script/data/v4_top_pools.py`.
 - [ ] Maker bot: when there is capital for the WHYPE/USDC pool, fund the pool, approve and bond the maker (`setMakerApproval`, `bond`), and run `maker/` on a server.
 - [ ] Bug bounty and an external audit before raising the $500 per-swap cap.
 - [ ] When swap volume grows, move swap history and stats from direct log reads to an indexer.

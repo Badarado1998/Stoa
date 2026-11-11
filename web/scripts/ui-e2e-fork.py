@@ -95,6 +95,20 @@ async def main():
         await pg.wait_for_function("() => /SWAPS · ALL TIME\\s*\\d/.test(document.body.innerText)", timeout=30000)
         print('pools stats:', (await pg.inner_text('.grid3')).replace('\n', ' | '))
         await pg.screenshot(path=os.path.join(HERE, 'ui-fork-pools.png'))
+        # 4) admin: accept ownership of the router, pause and unpause it
+        await pg.goto(f'{APP}/admin'); await pg.wait_for_timeout(1500)
+        await pg.click('header .cta'); await pg.click('.wl button:has-text("Test Wallet")')
+        await pg.wait_for_selector('text=Your wallet'); await pg.click('button[aria-label="Close"]')
+        await wait(pg, 'button:has-text("Accept StoaRouter")')
+        await pg.click('button:has-text("Accept StoaRouter")')
+        await wait(pg, '.ok:has-text("Accept StoaRouter: confirmed")')
+        assert cast('call', ADDR['router'], 'owner()(address)').lower() == TRADER.lower()
+        await pg.click('button:has-text("Pause router")'); await wait(pg, '.ok:has-text("Pause router: confirmed")')
+        assert cast('call', ADDR['router'], 'paused()(bool)') == 'true'
+        await pg.click('button:has-text("Unpause router")'); await wait(pg, '.ok:has-text("Unpause router: confirmed")')
+        assert cast('call', ADDR['router'], 'paused()(bool)') == 'false'
+        print('admin: ownership accepted, pause/unpause ok')
+        await pg.screenshot(path=os.path.join(HERE, 'ui-fork-admin.png'), full_page=True)
         print('page errors:', errs)
         await b.close()
 
