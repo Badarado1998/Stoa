@@ -3,9 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
-import { TOKENS, NATIVE, WHYPE, isNative, type Token } from "@/lib/tokens";
+import { TOKENS, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
-import { ERROR_TEXT, erc20Abi, routerAbi, whypeAbi } from "@/lib/abi";
+import { ERROR_TEXT, erc20Abi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
+import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
@@ -61,6 +62,8 @@ export default function Trade() {
   const [unlimited, setUnlimited] = useState(false); // approve only the swap amount unless the user opts in
   const [ackToken, setAckToken] = useState(false);
   const [ackImpact, setAckImpact] = useState(false);
+
+  const [v4Key, setV4Key] = useState<PoolKey | null>(null); // a V4 pool the router could use once registered
 
   const kind = swapKind(sell, buy);
   const amt = parseAmount(amount, sell.decimals);
@@ -119,6 +122,30 @@ export default function Trade() {
     timer = window.setTimeout(run, 350);
     return () => clearTimeout(timer);
   }, [getQuote, amt, kind]);
+
+  // No route for an imported token: look for its Uniswap V4 pool, which anyone can add to the router once.
+  const longTail = [sell, buy].find((t) => t.tone === "other");
+  useEffect(() => {
+    setV4Key(null);
+    if (!noRoute || !longTail || !CONTRACTS.v4 || !pub) return;
+    let stop = false;
+    (async () => {
+      try {
+        const keys = await findV4Pools(longTail.address);
+        const known = [
+          ...((await pub.readContract({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "keysFor", args: [WHYPE, longTail.address] })) as PoolKey[]),
+          ...((await pub.readContract({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "keysFor", args: [USDC, longTail.address] })) as PoolKey[]),
+        ];
+        for (const k of keys) {
+          if (stop) return;
+          if (known.some((x) => sameKey(x, k))) continue;
+          const ok = await pub.readContract({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "hookAllowed", args: [k.hooks] });
+          if (ok) { if (!stop) setV4Key(k); return; }
+        }
+      } catch { /* lookup is best effort */ }
+    })();
+    return () => { stop = true; };
+  }, [noRoute, longTail, pub]);
 
   const pick = (side: "sell" | "buy", t: Token) => {
     if (side === "sell") { if (t.address === buy.address) setBuy(sell); setSell(t); }
@@ -265,6 +292,15 @@ export default function Trade() {
             {quote.impact >= IMPACT_BLOCK && <label className="chk"><input type="checkbox" checked={ackImpact} onChange={(e) => setAckImpact(e.target.checked)} /> I understand and want to swap anyway</label>}
           </div>
         )}
+        {v4Key && longTail && (
+          <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
+            {longTail.symbol} trades on a Uniswap V4 pool that Stoa&apos;s router does not use yet. Add it once (a small transaction anyone can send), then swap.
+            <button className="ghost" type="button" style={{ marginTop: 10 }} disabled={!!busy || !isConnected || wrongChain}
+              onClick={() => run("Add pool", () => writeContractAsync({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "register", args: [{ ...v4Key, fee: v4Key.fee, tickSpacing: v4Key.tickSpacing }], chainId: elysium.id })).then((ok) => ok && setV4Key(null))}>
+              Add Uniswap V4 pool
+            </button>
+          </div>
+        )}
         {risky && (
           <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
             This token was imported by address and is not verified by Stoa. Anyone can create a token with any name. Check the address before you trade.
@@ -280,8 +316,13 @@ export default function Trade() {
         <PoolDepth />
         <div className="panel pad">
           <div className="lbl">EVERY SWAP CHECKS</div>
-          <div className="src"><div>Uniswap on Elysium <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div><div>Stoa maker pools <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div><div>Nest <em>PLANNED</em></div></div>
-          <p className="note">At launch, swaps fill on Uniswap while maker pools come online. When a maker quotes a better price, the router uses it automatically.</p>
+          <div className="src">
+            <div>Stoa maker pools <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>
+            <div>Uniswap V2 · V3 · V4 <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
+            <div>Aero · Ramses <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
+            <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
+          </div>
+          <p className="note">Every swap compares these venues, directly and through WHYPE, and takes the best price. When a maker quotes better, the router uses it automatically.</p>
         </div>
       </div>
     </div>

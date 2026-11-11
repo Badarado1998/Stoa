@@ -1,4 +1,5 @@
-const LOCAL = process.env.NEXT_PUBLIC_CHAIN_ID === "31337"; // anvil end-to-end tests over http
+// anvil end-to-end tests over http (plain local chain, or a local fork of Elysium)
+const LOCAL = process.env.NEXT_PUBLIC_CHAIN_ID === "31337" || /^http:\/\/(127\.0\.0\.1|localhost)/.test(process.env.NEXT_PUBLIC_RPC_URL || "");
 
 // Content Security Policy: no third-party scripts; network only to RPCs/wallet relays over https/wss.
 const CSP = [

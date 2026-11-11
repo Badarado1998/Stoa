@@ -28,7 +28,7 @@ export default function PoolDepth() {
     <div className="panel pad">
       <div className="rowx"><Pair /><span className="chip live">{pool ? (live ? "Quoting" : never ? "Waiting for makers" : "Paused") : "Opening soon"}</span></div>
       {pool && cur && never ? (
-        <p className="note" style={{ marginTop: 14 }}>No maker has quoted this pool yet. Swaps fill on Uniswap until one does.</p>
+        <p className="note" style={{ marginTop: 14 }}>No maker has quoted this pool yet. Swaps fill on the best outside venue until one does.</p>
       ) : pool && cur ? (
         <div className="det" style={{ marginTop: 14 }}>
           <span>Maker bid</span><span>{fmt(cur[0], 6, 4)} USDC · {fmt(cur[2], 18, 2)} WHYPE</span>

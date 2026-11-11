@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CONTRACTS } from "@/lib/chain";
 import { PageHead, Pair } from "@/components/ui";
 import PoolDepth from "@/components/PoolDepth";
+import RouterStats from "@/components/RouterStats";
 
 export const metadata: Metadata = { title: "Pools" };
 
@@ -11,8 +12,9 @@ export default function PoolsPage() {
   return (
     <section className="page">
       <PageHead eyebrow="POOLS" title="Every pool is a column" action={<Link className="cta" href="/curators">Run a pool</Link>}>
-        Each pool is priced by its own makers. When no maker quotes, swaps still fill on Uniswap through the router.
+        Each pool is priced by its own makers. When no maker quotes, swaps still fill on Uniswap, Aero, Ramses or Liquidity Book through the router.
       </PageHead>
+      <RouterStats />
       <div className="panel" style={{ overflow: "hidden", marginBottom: 20 }}>
         <table className="tbl">
           <thead><tr><th>POOL</th><th className="hm">PRICING</th><th>FEE</th><th className="hm">PER-SWAP CAP</th><th>STATUS</th><th /></tr></thead>

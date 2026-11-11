@@ -24,10 +24,10 @@ export const hasRoute = (r: Route) => r.leg1.venue.toLowerCase() !== ZERO && r.a
 /** Human name of a venue: Stoa pools by flag, known adapters by address, anything else generic. */
 export function venueName(l: Leg, known: Record<string, string> = {}): string {
   if (l.isPool) return "Stoa maker pool";
-  return known[l.venue.toLowerCase()] ?? "Uniswap on Elysium";
+  return known[l.venue.toLowerCase()] ?? "Outside venue";
 }
 
-/** "Stoa maker pool" or "Uniswap on Elysium → Stoa maker pool (via WHYPE)". */
+/** "Stoa maker pool" or "Aero → Stoa maker pool (via WHYPE)". */
 export function describeRoute(r: Route, known: Record<string, string> = {}): string {
   if (!isHop(r)) return venueName(r.leg1, known);
   const a = venueName(r.leg1, known), b = venueName(r.leg2, known);

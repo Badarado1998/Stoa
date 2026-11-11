@@ -42,7 +42,27 @@ export const ERROR_TEXT: Record<string, string> = {
   CapExceeded: "Amount is above the per-swap limit of the maker pool.",
   UnsupportedToken: "This token is not supported.",
   Partial: "Not enough liquidity for the full amount.",
+  HookNotAllowed: "This pool uses a hook Stoa does not route through.",
+  NotInitialized: "That pool does not exist yet.",
+  Known: "This pool is already added.",
+  Full: "This pair already has its deepest pools added.",
 };
+
+export const routedEvent = parseAbi([
+  "event Routed(address indexed sender, address indexed to, address indexed referrer, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, address mid, address venue1, address venue2)",
+])[0];
+
+export const v4AdapterAbi = parseAbi([
+  "struct PoolKey { address currency0; address currency1; uint24 fee; int24 tickSpacing; address hooks; }",
+  "function keysFor(address a, address b) view returns (PoolKey[])",
+  "function hookAllowed(address hooks) view returns (bool)",
+  "function register(PoolKey key)",
+  "error HookNotAllowed()",
+  "error NotInitialized()",
+  "error Known()",
+  "error Full()",
+  "error BadKey()",
+]);
 
 export const erc20Abi = parseAbi([
   "function balanceOf(address) view returns (uint256)",

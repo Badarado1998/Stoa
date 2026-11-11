@@ -20,7 +20,7 @@ IStoaRouter.SwapParams memory p = IStoaRouter.SwapParams({
   referrer: address(0)
 });
 IStoaRouter(router).swap(p);`;
-const TS = `// best route across Stoa pools and Uniswap, direct or via WHYPE
+const TS = `// best route across Stoa pools, Uniswap, Aero, Ramses and Liquidity Book, direct or via WHYPE
 const { result: route } = await client.simulateContract({
   address: ROUTER, abi: routerAbi,
   functionName: 'quote',

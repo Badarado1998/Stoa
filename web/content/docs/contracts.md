@@ -13,6 +13,12 @@ Network tokens on Elysium and Stoa contracts.
 | FeeDistributor | Deploying soon |
 | UniswapV2Adapter | Deploying soon |
 | UniswapV3Adapter | Deploying soon |
+| UniswapV4Adapter | Deploying soon |
+| AeroAdapter | Deploying soon |
+| RamsesAdapter | Deploying soon |
+| LiquidityBookAdapter | Deploying soon |
+
+Outside venues the router uses: Uniswap V4 PoolManager `0xe2E105D3f7209A9da11F83ccf3E7398a753823F1`, Aero Slipstream factory `0xEfd7A089D3057F05189B05f74Ffcf30610c42891`, Ramses CL factory `0x29cd8852FF040CfE74fb20277A121eD1293AFb41`, Liquidity Book factory `0xF31632C73B8775e45Ce6d2539dEb008cB766D51b`, Uniswap V3 factory `0x1707327F626496A7b5b3872e7E4d2879Df7d7a9f` and Uniswap V2 factory `0xBbBcC62853a5fA27b93d6Bab3E6F7ce841E25Df2`.
 
 Token addresses come from the [Elysium contract list](https://elysium.kinetiq.xyz/docs/contract-addresses). Always check an address here before approving it.
 

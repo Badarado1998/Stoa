@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Curators" };
 
 const STEPS = [
   ["I", "Post a bond", "Curators lock a HYPE bond. It keeps quotes honest and can be slashed for bad pricing."],
-  ["II", "Quote every block", "Your maker posts bid and ask on-chain. The router sends flow to you when your price beats Uniswap."],
+  ["II", "Quote every block", "Your maker posts bid and ask on-chain. The router sends flow to you when your price beats every other venue."],
   ["III", "Earn the spread", "Makers keep the spread they quote. Pools reviewed by the team get a Verified badge."],
 ];
 

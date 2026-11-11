@@ -42,8 +42,8 @@ test("routes are described by their venues", () => {
   const hop: Route = { amountOut: 5n, mid: WHYPE, leg1: { venue: UNI, isPool: false }, leg2: { venue: POOL, isPool: true } };
   const hopSame: Route = { ...hop, leg2: { venue: UNI, isPool: false } };
   assert.equal(describeRoute(direct), "Stoa maker pool");
-  assert.equal(describeRoute(hop), "Uniswap on Elysium → Stoa maker pool (via WHYPE)");
-  assert.equal(describeRoute(hopSame), "Uniswap on Elysium (via WHYPE)");
+  assert.equal(describeRoute(hop), "Outside venue → Stoa maker pool (via WHYPE)");
+  assert.equal(describeRoute(hopSame), "Outside venue (via WHYPE)");
   assert.equal(describeRoute(hop, { [UNI.toLowerCase()]: "Uniswap V3" }), "Uniswap V3 → Stoa maker pool (via WHYPE)");
   assert.equal(hasRoute({ ...direct, leg1: { venue: Z, isPool: false } }), false);
   assert.equal(hasRoute(direct), true);

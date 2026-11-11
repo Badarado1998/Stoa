@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "Stoa — The market, quoted live", template: "%s · Stoa" },
-  description: "The PropAMM hub on Elysium. Maker-quoted pools, checked against Uniswap on every swap.",
+  description: "The PropAMM hub on Elysium. Maker-quoted pools, checked against every major Elysium venue on every swap.",
   openGraph: { title: "Stoa — The market, quoted live", description: "The PropAMM hub on Elysium.", url: SITE, siteName: "Stoa", images: ["/og.png"] },
   twitter: { card: "summary_large_image", site: "@StoaDEX", images: ["/og.png"] },
 };

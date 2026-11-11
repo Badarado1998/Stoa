@@ -8,6 +8,7 @@ import { feesAbi } from "@/lib/abi";
 import { fmt } from "@/lib/swap";
 import { useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
+import SwapHistory from "./SwapHistory";
 
 export default function Portfolio() {
   const { address, isConnected } = useAccount();
@@ -38,6 +39,7 @@ export default function Portfolio() {
           <Link className="go" href="/referrals">Referrals</Link></div>
         <div className="panel pad"><div className="lbl">VAULT SHARES</div><p className="note">Vaults open after the audit.</p></div>
       </div>
+      <div className="panel pad" style={{ gridColumn: "1 / -1", overflowX: "auto" }}><div className="lbl" style={{ marginBottom: 12 }}>YOUR SWAPS</div><SwapHistory /></div>
     </div>
   );
 }
