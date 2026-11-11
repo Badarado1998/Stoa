@@ -6,7 +6,7 @@ Maker-quoted pools (PropAMM) for Elysium, chain 99901.
 |---|---|
 | `MakerRegistry` | Lists pools, approves makers, holds maker bonds in native HYPE (unbond delay, slashing to treasury). Its owner is also the guardian. |
 | `StoaPool` | One per pair. An approved, bonded maker posts bid/ask, sizes and an expiry (max 2 blocks). Fills use up the quoted size. Per-swap cap in USDC (500 at launch). Charges the 2 bps protocol fee. |
-| `StoaRouter` | Compares every Stoa pool for the pair with fallback venues (adapters for Uniswap, Nest, ...) and executes the best fill. Takes the same 2 bps on the fallback path. |
+| `StoaRouter` | Compares every Stoa pool for the pair with fallback venues (Uniswap adapters) and executes the best fill. Measures what the user actually receives (never trusts a venue), can be paused by the owner or a guardian, and new venues are timelocked after setup. Takes the same 2 bps on the fallback path. |
 | `UniswapV2Adapter` | Fills swaps directly on Uniswap V2 pairs (direct or two hops through WHYPE). Only the router can call it. |
 | `UniswapV3Adapter` | Fills swaps directly on Uniswap V3 pools, every fee tier, direct or through WHYPE. Quotes by simulating the pool swap. Only the router can call it. |
 | `FeeDistributor` | Receives protocol fees, credits 10% to the swap's referrer, the rest accrues to the protocol. Rejects fee notices not backed by tokens. |
@@ -17,6 +17,8 @@ Stoa can launch with no pool capital. With no maker quotes live, every swap is f
 
 The router also takes native HYPE in (`swapExactHYPEIn`) and pays it out (`swapExactInForHYPE`).
 
+Security model, trusted roles and the Slither triage: [SECURITY.md](SECURITY.md).
+
 ## Run
 
 ```
@@ -24,11 +26,11 @@ forge build
 forge test
 ```
 
-34 unit tests plus 4 fork tests against Elysium mainnet (`ELYSIUM_RPC_URL=... forge test --match-contract ForkElysium`), including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`.
+45 unit and attack tests plus 4 fork tests against Elysium mainnet (`ELYSIUM_RPC_URL=... forge test --match-contract ForkElysium`), including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`.
 
 ## Deploy (Elysium mainnet)
 
-Preferred: GitHub → Actions → **Deploy contracts** (dry run first, then tick *broadcast*). Needs repo secrets `DEPLOYER_PRIVATE_KEY`, `ELYSIUM_RPC_URL` and variables `OWNER`, `TREASURY` (optional `CURATOR`, `MAKER`, `MIN_BOND`, `MAX_SWAP_USDC`). After a broadcast the workflow commits `deployments/99901.json` and `web/lib/deployments.json`, and Vercel redeploys the site with the addresses.
+Preferred: GitHub → Actions → **Deploy contracts** (dry run first, then tick *broadcast*). Needs repo secrets `DEPLOYER_PRIVATE_KEY`, `ELYSIUM_RPC_URL` and variables `OWNER`, `TREASURY` (optional `CURATOR`, `MAKER`, `GUARDIAN`, `MIN_BOND`, `MAX_SWAP_USDC`, `ROUTER_DELAY`). After a broadcast the workflow commits `deployments/99901.json` and `web/lib/deployments.json`, and Vercel redeploys the site with the addresses.
 
 Manual:
 

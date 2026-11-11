@@ -254,3 +254,6 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .acct{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .rowx{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .notice{padding:10px 14px;border-radius:12px;background:#FFF7E8;border:1px solid #F4E1B8;color:#6B4E12;font-size:13.5px;margin-bottom:16px}
+
+.chk{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:13px;color:var(--ink);cursor:pointer}
+.chk input{margin-top:2px;accent-color:var(--accent)}

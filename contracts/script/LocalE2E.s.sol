@@ -26,7 +26,7 @@ contract LocalE2E is Script {
         StoaPool pool = new StoaPool(
             address(whype), address(usdc), IMakerRegistry(address(reg)), IFeeDistributor(address(fees)), me, 500e6
         );
-        StoaRouter router = new StoaRouter(me, IFeeDistributor(address(fees)), address(whype));
+        StoaRouter router = new StoaRouter(me, IFeeDistributor(address(fees)), address(whype), 1 hours);
         reg.listPool(address(pool), 10 ether);
         reg.setMakerApproval(address(pool), maker, true);
         fees.setNotifier(address(router), true);

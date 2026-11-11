@@ -38,7 +38,7 @@ contract StoaTest is Test {
         pool = new StoaPool(
             address(whype), address(usdc), IMakerRegistry(address(reg)), IFeeDistributor(address(fees)), curator, CAP
         );
-        router = new StoaRouter(gov, IFeeDistributor(address(fees)), address(whype));
+        router = new StoaRouter(gov, IFeeDistributor(address(fees)), address(whype), 1 days);
         uni = new MockAdapter(39e6, 1e18); // 39.00 USDC per WHYPE, worse than makers
 
         vm.startPrank(gov);

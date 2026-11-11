@@ -11,6 +11,12 @@ Swap tokens at maker prices.
 
 Choose 0.1%, 0.5% or 1%. If the fill would be worse than your limit, the swap reverts.
 
+## Approvals and safety checks
+
+- Selling an ERC-20 for the first time asks for an approval of **only that amount**. You can opt in to an unlimited approval in settings.
+- **Price impact** is shown for every swap. Above 3% it is highlighted; above 15% you must confirm.
+- Tokens you import by address are **unverified**. Check the address before you trade.
+
 {% hint style="warning" %}
 
 Maker pools cap each fill at **$500** while they ramp up. Larger swaps fill on Uniswap, where price impact depends on the pool's depth.

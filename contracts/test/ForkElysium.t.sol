@@ -32,7 +32,7 @@ contract ForkElysiumTest is Test {
         on = true;
         MakerRegistry reg = new MakerRegistry(address(this), address(this), 1 days);
         fees = new FeeDistributor(address(this), IMakerRegistry(address(reg)));
-        router = new StoaRouter(address(this), IFeeDistributor(address(fees)), WHYPE);
+        router = new StoaRouter(address(this), IFeeDistributor(address(fees)), WHYPE, 1 days);
         v2 = new UniswapV2Adapter(IUniswapV2Factory(V2F), WHYPE, address(router));
         v3 = new UniswapV3Adapter(IUniswapV3Factory(V3F), WHYPE, address(router));
         router.addAdapter(address(v2));

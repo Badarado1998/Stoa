@@ -136,3 +136,71 @@ contract MockV2Factory {
         return f * rout / (rin * 1000 + f);
     }
 }
+
+/// @dev Attack: claims a great price and a big output, takes the input, pays nothing.
+contract LyingPool {
+    address public base;
+    address public quote;
+    bool public payHalf;
+
+    constructor(address b, address q) {
+        (base, quote) = (b, q);
+    }
+
+    function setPayHalf(bool v) external {
+        payHalf = v;
+    }
+
+    function quoteOut(address, uint256 amountIn) external pure returns (uint256) {
+        return amountIn * 1_000_000; // irresistible
+    }
+
+    function swap(address tokenIn, uint256 amountIn, uint256, address to, address) external returns (uint256) {
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        if (payHalf) {
+            address out = tokenIn == base ? quote : base;
+            IERC20(out).transfer(to, 1);
+        }
+        return amountIn * 1_000_000;
+    }
+}
+
+/// @dev Attack: takes only part of the input and leaves the rest stuck in the router.
+contract SkimmingPool {
+    address public base;
+    address public quote;
+
+    constructor(address b, address q) {
+        (base, quote) = (b, q);
+    }
+
+    function quoteOut(address, uint256 amountIn) external pure returns (uint256) {
+        return amountIn * 1_000_000;
+    }
+
+    function swap(address tokenIn, uint256 amountIn, uint256, address to, address) external returns (uint256) {
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn / 2);
+        address out = tokenIn == base ? quote : base;
+        uint256 pay = IERC20(out).balanceOf(address(this));
+        IERC20(out).transfer(to, pay);
+        return pay;
+    }
+}
+
+/// @dev Token that burns 1% on every transfer.
+contract TaxToken is ERC20 {
+    constructor() ERC20("TAX", "TAX") {}
+
+    function mint(address to, uint256 a) external {
+        _mint(to, a);
+    }
+
+    function _update(address from, address to, uint256 v) internal override {
+        if (from != address(0) && to != address(0)) {
+            uint256 tax = v / 100;
+            super._update(from, address(0), tax);
+            v -= tax;
+        }
+        super._update(from, to, v);
+    }
+}

@@ -51,6 +51,7 @@ contract UniswapV3Adapter is IVenueAdapter {
     error Partial();
 
     constructor(IUniswapV3Factory factory_, address hub_, address stoaRouter_) {
+        if (address(factory_) == address(0) || hub_ == address(0) || stoaRouter_ == address(0)) revert NoPath();
         factory = factory_;
         hub = hub_;
         stoaRouter = stoaRouter_;

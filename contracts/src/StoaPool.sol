@@ -81,6 +81,7 @@ contract StoaPool is IStoaPool, Ownable2Step, ReentrancyGuard {
         if (base_ == quote_ || base_ == address(0) || quote_ == address(0)) {
             revert BadToken();
         }
+        if (address(registry_) == address(0) || address(feeDistributor_) == address(0)) revert BadToken();
         base = base_;
         quote = quote_;
         registry = registry_;

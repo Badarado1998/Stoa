@@ -1,18 +1,32 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
+import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, deployed, elysium, txUrl } from "@/lib/chain";
 import { TOKENS, NATIVE, WHYPE, isNative, type Token } from "@/lib/tokens";
 import { cleanRef, fmt, minOut, parseAmount, rate, routeTokens, swapKind } from "@/lib/swap";
-import { erc20Abi, routerAbi, whypeAbi } from "@/lib/abi";
+import { ERROR_TEXT, erc20Abi, routerAbi, whypeAbi } from "@/lib/abi";
 import { useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
 
-type Quote = { out: bigint; venue: Address; isPool: boolean; at: number } | null;
+type Quote = { out: bigint; venue: Address; isPool: boolean; at: number; impact: number } | null;
+const IMPACT_WARN = 3; // %
+const IMPACT_BLOCK = 15; // % — needs an explicit confirmation
 const SLIPS = [0.1, 0.5, 1];
 const DEADLINE_S = 120;
+
+/** Readable message for wallet and contract errors. */
+function explain(e: unknown): string {
+  if (e instanceof BaseError) {
+    const rev = e.walk((x) => x instanceof ContractFunctionRevertedError);
+    if (rev instanceof ContractFunctionRevertedError && rev.data?.errorName && ERROR_TEXT[rev.data.errorName]) return ERROR_TEXT[rev.data.errorName];
+    if (/User rejected|denied/i.test(e.shortMessage)) return "You rejected the request in your wallet.";
+    if (/insufficient funds/i.test(e.shortMessage)) return "Not enough HYPE to pay for gas.";
+    return e.shortMessage;
+  }
+  return (e as Error)?.message ?? "Something went wrong.";
+}
 
 function useReferrer(self?: string) {
   const [ref, setRef] = useState<Address | undefined>();
@@ -44,6 +58,9 @@ export default function Trade() {
   const [noRoute, setNoRoute] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
+  const [unlimited, setUnlimited] = useState(false); // approve only the swap amount unless the user opts in
+  const [ackToken, setAckToken] = useState(false);
+  const [ackImpact, setAckImpact] = useState(false);
 
   const kind = swapKind(sell, buy);
   const amt = parseAmount(amount, sell.decimals);
@@ -60,15 +77,24 @@ export default function Trade() {
   const needsAllowance = deployed && !isNative(sell) && kind !== "unwrap";
   const allowance = useReadContract({ address: sell.address, abi: erc20Abi, functionName: "allowance", args: [address ?? zeroAddress, CONTRACTS.router ?? zeroAddress], chainId: elysium.id, query: { enabled: !!address && needsAllowance } });
   const needApprove = needsAllowance && amt !== undefined && (allowance.data as bigint | undefined ?? 0n) < amt;
+  const routerPaused = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "paused", chainId: elysium.id, query: { enabled: deployed, refetchInterval: 15_000 } });
+  const isPaused = routerPaused.data === true;
+  const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
 
   const getQuote = useCallback(async (): Promise<Quote> => {
     if (!amt) return null;
-    if (kind === "wrap" || kind === "unwrap") return { out: amt, venue: WHYPE, isPool: false, at: Date.now() };
+    if (kind === "wrap" || kind === "unwrap") return { out: amt, venue: WHYPE, isPool: false, at: Date.now(), impact: 0 };
     if (!deployed || !pub) return null;
     const { tokenIn, tokenOut } = routeTokens(sell, buy);
-    const { result } = await pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quoteBest", args: [tokenIn, tokenOut, amt] });
+    // price impact: compare against a quote for 1/1000 of the amount
+    const small = amt / 1000n > 0n ? amt / 1000n : 1n;
+    const q = (a: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quoteBest", args: [tokenIn, tokenOut, a] });
+    const [{ result }, ref] = await Promise.all([q(amt), q(small).catch(() => null)]);
     if (result.venue === zeroAddress || result.amountOut === 0n) return null;
-    return { out: result.amountOut, venue: result.venue, isPool: result.isPool, at: Date.now() };
+    let impact = 0;
+    const r0 = ref?.result.amountOut ?? 0n;
+    if (r0 > 0n) impact = Math.max(0, (1 - (Number(result.amountOut) / Number(amt)) / (Number(r0) / Number(small))) * 100);
+    return { out: result.amountOut, venue: result.venue, isPool: result.isPool, at: Date.now(), impact };
   }, [amt, kind, pub, sell, buy]);
 
   // debounce + refresh every 4s (maker quotes expire after 2 blocks)
@@ -97,7 +123,7 @@ export default function Trade() {
   const pick = (side: "sell" | "buy", t: Token) => {
     if (side === "sell") { if (t.address === buy.address) setBuy(sell); setSell(t); }
     else { if (t.address === sell.address) setSell(buy); setBuy(t); }
-    setMenu(null); setQuote(null); setMsg(null);
+    setMenu(null); setQuote(null); setMsg(null); setAckToken(false); setAckImpact(false);
   };
   const flip = () => { setSell(buy); setBuy(sell); setQuote(null); };
 
@@ -110,7 +136,8 @@ export default function Trade() {
         pub.readContract({ address: addr, abi: erc20Abi, functionName: "symbol" }),
         pub.readContract({ address: addr, abi: erc20Abi, functionName: "decimals" }),
       ]);
-      const t: Token = { symbol: String(symbol).slice(0, 12), name: "Imported", address: addr, decimals: Number(decimals), glyph: String(symbol)[0] ?? "?", tone: "other" };
+      const sym = String(symbol).replace(/[^\w.$-]/g, "").slice(0, 12) || "TOKEN";
+      const t: Token = { symbol: sym, name: "Unverified", address: addr, decimals: Number(decimals), glyph: sym[0] ?? "?", tone: "other" };
       setTokens((ts) => [...ts, t]);
       pick(side, t);
     } catch {
@@ -129,8 +156,7 @@ export default function Trade() {
       void native.refetch(); void sellBal.refetch(); void buyBal.refetch(); void allowance.refetch();
       return true;
     } catch (e) {
-      const m = (e as { shortMessage?: string; message?: string }).shortMessage ?? (e as Error).message;
-      setMsg({ ok: false, text: /User rejected|denied/i.test(m) ? "You rejected the request in your wallet." : m });
+      setMsg({ ok: false, text: explain(e) });
       return false;
     } finally {
       setBusy(null);
@@ -142,7 +168,7 @@ export default function Trade() {
     if (wrongChain) return switchChain({ chainId: elysium.id });
     if (!amt) return;
     if (needApprove) {
-      return run(`Approve ${sell.symbol}`, () => writeContractAsync({ address: sell.address, abi: erc20Abi, functionName: "approve", args: [CONTRACTS.router!, maxUint256], chainId: elysium.id }));
+      return run(`Approve ${sell.symbol}`, () => writeContractAsync({ address: sell.address, abi: erc20Abi, functionName: "approve", args: [CONTRACTS.router!, unlimited ? maxUint256 : amt], chainId: elysium.id }));
     }
     if (kind === "wrap") return run("Wrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "deposit", value: amt, chainId: elysium.id }));
     if (kind === "unwrap") return run("Unwrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "withdraw", args: [amt], chainId: elysium.id }));
@@ -150,6 +176,7 @@ export default function Trade() {
     const ok = await run("Swap", async () => {
       const fresh = await getQuote(); // re-quote right before signing
       if (!fresh) throw new Error("No route for this swap right now.");
+      if (fresh.impact >= IMPACT_BLOCK && !ackImpact) throw new Error(`Price impact is now ${fresh.impact.toFixed(1)}%. Confirm the high price impact to continue.`);
       setQuote(fresh);
       const min = minOut(fresh.out, slip);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
@@ -159,7 +186,7 @@ export default function Trade() {
       if (kind === "hypeOut") return writeContractAsync({ address: router, abi: routerAbi, functionName: "swapExactInForHYPE", args: [sell.address, amt, min, address!, deadline, ref], chainId: elysium.id });
       return writeContractAsync({ address: router, abi: routerAbi, functionName: "swapExactIn", args: [sell.address, buy.address, amt, min, address!, deadline, ref], chainId: elysium.id });
     });
-    if (ok) setAmount("");
+    if (ok) { setAmount(""); setAckImpact(false); }
   }
 
   // button
@@ -168,10 +195,13 @@ export default function Trade() {
   else if (!isConnected) label = "Connect wallet";
   else if (wrongChain) label = `Switch to ${elysium.name}`;
   else if (!deployed && kind !== "wrap" && kind !== "unwrap") { label = "Opens at launch"; disabled = true; }
+  else if (isPaused && kind !== "wrap" && kind !== "unwrap") { label = "Swaps paused"; disabled = true; }
   else if (sBal !== undefined && amt > sBal) { label = `Not enough ${sell.symbol}`; disabled = true; }
   else if (quoting && !quote) { label = "Finding the best price…"; disabled = true; }
   else if (noRoute || !quote) { label = "No route for this pair"; disabled = true; }
-  else if (needApprove) label = `Approve ${sell.symbol}`;
+  else if (risky && !ackToken) { label = "Confirm the token warning"; disabled = true; }
+  else if (quote.impact >= IMPACT_BLOCK && !ackImpact) { label = "Confirm high price impact"; disabled = true; }
+  else if (needApprove) label = unlimited ? `Approve ${sell.symbol}` : `Approve ${fmt(amt, sell.decimals, 4)} ${sell.symbol}`;
   else if (kind === "wrap") label = "Wrap HYPE";
   else if (kind === "unwrap") label = "Unwrap WHYPE";
   if (busy) { label = `${busy}…`; disabled = true; }
@@ -183,6 +213,7 @@ export default function Trade() {
     <div className="grid2">
       <div className="panel pad" style={{ position: "relative" }}>
         {!deployed && <div className="notice">Stoa contracts are not deployed yet. Wrapping HYPE works; swaps open at launch.</div>}
+        {deployed && isPaused && <div className="notice">Swaps are paused for safety. Your funds are not affected; wrapping HYPE still works.</div>}
         <div className="rowx" style={{ marginBottom: 12 }}>
           <div className="seg" role="tablist"><button className="on" type="button">Swap</button></div>
           <button className="ghost" type="button" style={{ borderColor: "var(--line)", background: "#fff" }} aria-label="Swap settings" aria-expanded={showSet} onClick={() => setShowSet((s) => !s)}>
@@ -192,6 +223,9 @@ export default function Trade() {
             <div className="lbl">MAX SLIPPAGE</div>
             <div className="seg" style={{ marginTop: 10 }}>{SLIPS.map((s) => <button key={s} type="button" className={s === slip ? "on" : undefined} onClick={() => setSlip(s)}>{s}%</button>)}</div>
             <p className="note">If the price moves past your slippage before your swap lands, it reverts and you keep your funds.</p>
+            <div className="lbl" style={{ marginTop: 14 }}>TOKEN APPROVAL</div>
+            <label className="chk"><input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} /> Approve unlimited (fewer transactions, more exposure)</label>
+            <p className="note">By default Stoa asks to approve only the amount of each swap.</p>
           </div>
         </div>
 
@@ -223,8 +257,21 @@ export default function Trade() {
             <span>Rate</span><span>1 {sell.symbol} = {px.toPrecision(6)} {buy.symbol}</span>
             <span>Filled by</span><span>{venueName}</span>
             {kind !== "wrap" && kind !== "unwrap" && <><span>Protocol fee</span><span>2 bps</span>
+              <span>Price impact</span><span style={{ color: quote.impact >= IMPACT_WARN ? "#B4532A" : undefined }}>{quote.impact < 0.01 ? "< 0.01" : quote.impact.toFixed(2)}%</span>
               <span>Minimum received</span><span>{fmt(minOut(quote.out, slip), buy.decimals, 6)} {buy.symbol}</span></>}
             {referrer && <><span>Referred by</span><span>{referrer.slice(0, 6)}…{referrer.slice(-4)}</span></>}
+          </div>
+        )}
+        {amt && quote && quote.impact >= IMPACT_WARN && (
+          <div className={quote.impact >= IMPACT_BLOCK ? "err" : "notice"} style={{ marginTop: 12, marginBottom: 0 }}>
+            Price impact is {quote.impact.toFixed(1)}%: this trade moves the price a lot because the pool is thin.
+            {quote.impact >= IMPACT_BLOCK && <label className="chk"><input type="checkbox" checked={ackImpact} onChange={(e) => setAckImpact(e.target.checked)} /> I understand and want to swap anyway</label>}
+          </div>
+        )}
+        {risky && (
+          <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
+            This token was imported by address and is not verified by Stoa. Anyone can create a token with any name. Check the address before you trade.
+            <label className="chk"><input type="checkbox" checked={ackToken} onChange={(e) => setAckToken(e.target.checked)} /> I checked the token address</label>
           </div>
         )}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>

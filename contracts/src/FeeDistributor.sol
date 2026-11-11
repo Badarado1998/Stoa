@@ -39,6 +39,7 @@ contract FeeDistributor is IFeeDistributor, Ownable2Step, ReentrancyGuard {
     error ZeroAddress();
 
     constructor(address owner_, IMakerRegistry registry_) Ownable(owner_) {
+        if (address(registry_) == address(0)) revert ZeroAddress();
         registry = registry_;
     }
 

@@ -30,6 +30,8 @@ jobs:
       MAKER: ${{ vars.MAKER }}
       MIN_BOND: ${{ vars.MIN_BOND }}
       MAX_SWAP_USDC: ${{ vars.MAX_SWAP_USDC }}
+      GUARDIAN: ${{ vars.GUARDIAN }}
+      ROUTER_DELAY: ${{ vars.ROUTER_DELAY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,7 +57,7 @@ jobs:
 
       - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
         run: |
-          for v in CURATOR MAKER MIN_BOND MAX_SWAP_USDC; do [ -z "${!v}" ] && unset $v; done
+          for v in CURATOR MAKER MIN_BOND MAX_SWAP_USDC GUARDIAN ROUTER_DELAY; do [ -z "${!v}" ] && unset $v; done
           forge script script/Deploy.s.sol \
             --rpc-url "$ELYSIUM_RPC_URL" \
             --private-key "${{ secrets.DEPLOYER_PRIVATE_KEY }}" \
