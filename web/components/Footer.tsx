@@ -1,0 +1,19 @@
+import Link from "next/link";
+import { CA } from "@/lib/chain";
+
+export default function Footer() {
+  return (
+    <footer className="foot">
+      <div>
+        <Link className="brand" href="/"><img src="/logo.png" alt="" /><span>STOA</span></Link>
+        <p className="note" style={{ maxWidth: 260 }}>The PropAMM hub on Elysium. Maker-quoted pools, checked on every swap.</p>
+        {CA && <p className="note">CA <span className="addrchip">{CA}</span></p>}
+      </div>
+      <div className="cols">
+        <div><h4>PRODUCT</h4><Link href="/trade">Trade</Link><Link href="/pools">Pools</Link><Link href="/earn">Earn</Link><Link href="/portfolio">Portfolio</Link></div>
+        <div><h4>BUILDERS</h4><Link href="/curators">Curators</Link><Link href="/build">Build</Link><Link href="/referrals">Referrals</Link><Link href="/docs">Docs</Link></div>
+        <div><h4>COMMUNITY</h4><a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a><Link href="/">Walk the Stoa</Link></div>
+      </div>
+    </footer>
+  );
+}

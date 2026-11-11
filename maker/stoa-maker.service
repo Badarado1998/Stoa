@@ -1,0 +1,17 @@
+# systemd unit for a VPS: copy to /etc/systemd/system/, then `systemctl enable --now stoa-maker`
+[Unit]
+Description=Stoa maker bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/opt/stoa-maker
+ExecStart=/usr/bin/node --env-file=/opt/stoa-maker/.env dist/src/index.js
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=20
+User=stoa
+
+[Install]
+WantedBy=multi-user.target

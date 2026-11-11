@@ -1,0 +1,22 @@
+{
+  "name": "stoa-maker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Maker bot for Stoa pools on Elysium",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node --env-file=.env dist/src/index.js",
+    "dev": "tsx --env-file=.env src/index.ts",
+    "test": "tsc -p . && node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "viem": "2.21.54"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}
