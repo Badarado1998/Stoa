@@ -23,7 +23,8 @@ jobs:
       run:
         working-directory: contracts
     env:
-      ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL }}
+      # a private RPC secret is optional; Kinetiq's public RPC works for deploying
+      ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
       OWNER: ${{ vars.OWNER }}
       TREASURY: ${{ vars.TREASURY }}
       CURATOR: ${{ vars.CURATOR }}
@@ -41,19 +42,20 @@ jobs:
 
       - name: Check settings
         run: |
-          test -n "$ELYSIUM_RPC_URL" || { echo "::error::secret ELYSIUM_RPC_URL is missing"; exit 1; }
           test -n "${{ secrets.DEPLOYER_PRIVATE_KEY }}" || { echo "::error::secret DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
           test -n "$OWNER" || { echo "::error::variable OWNER is missing"; exit 1; }
           test -n "$TREASURY" || { echo "::error::variable TREASURY is missing"; exit 1; }
           [ "$(cast chain-id --rpc-url "$ELYSIUM_RPC_URL")" = "99901" ] || { echo "::error::RPC is not Elysium mainnet"; exit 1; }
+          [ "$(cast codesize "$OWNER" --rpc-url "$ELYSIUM_RPC_URL")" != "0" ] || echo "::warning::OWNER has no code: a multisig (Safe) is recommended over a single wallet"
+          [ "$(cast wallet address --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }})" != "$OWNER" ] || echo "::warning::the deployer key is also OWNER: use a separate deployer wallet"
           echo "Deployer: $(cast wallet address --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }})"
           echo "Balance:  $(cast balance $(cast wallet address --private-key ${{ secrets.DEPLOYER_PRIVATE_KEY }}) --ether --rpc-url "$ELYSIUM_RPC_URL") HYPE"
 
       - name: Unit tests
-        run: forge test --no-match-contract ForkElysium
+        run: forge test --no-match-contract Fork
 
-      - name: Fork tests against Elysium mainnet
-        run: forge test --match-contract ForkElysium -vv
+      - name: Fork tests against Elysium mainnet (every venue, live)
+        run: forge test --match-contract Fork -vv
 
       - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
         run: |

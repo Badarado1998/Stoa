@@ -28,4 +28,4 @@ Elysium mainnet, chain ID 99901. WHYPE `0xbA876237B0F021A6c6D852d6c26E107997cC5E
 
 ## Status
 
-Pre-launch. Contracts are not audited yet; per-swap caps stay low until they are.
+Pre-launch. Contracts are not audited yet; per-swap caps stay low until they are. The router covers every Elysium venue with real liquidity (Uniswap V2/V3/V4, Aero, Ramses, Liquidity Book). What is left before launch: [LAUNCH.md](LAUNCH.md).
