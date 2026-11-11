@@ -5,7 +5,7 @@ import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IStoaPool, IMakerRegistry, IFeeDistributor} from "./interfaces/IStoa.sol";
+import {IStoaPool, IMakerRegistry, IFeeDistributor, IQuoteGuard} from "./interfaces/IStoa.sol";
 
 /// @title StoaPool
 /// @notice A maker-quoted pool for one base/quote pair (e.g. WHYPE/USDC).
@@ -39,6 +39,8 @@ contract StoaPool is IStoaPool, Ownable2Step, ReentrancyGuard {
     uint8 public maxValidBlocks = 2;
     uint256 public maxSwapQuote; // per-swap cap, in quote-token raw units (0 = no cap)
     bool public paused;
+    /// @notice optional quote check (zero = none), set by the guardian
+    IQuoteGuard public quoteGuard;
 
     event QuoteSet(address indexed maker, uint128 bidPx, uint128 askPx, uint96 bidSize, uint96 askSize, uint64 expiry);
     event QuoteCancelled(address indexed by);
@@ -56,6 +58,7 @@ contract StoaPool is IStoaPool, Ownable2Step, ReentrancyGuard {
     event FeeBpsSet(uint16 bps);
     event MaxValidBlocksSet(uint8 blocks);
     event Paused(bool paused);
+    event QuoteGuardSet(address guard);
 
     error NotMaker();
     error NotGuardian();
@@ -69,6 +72,7 @@ contract StoaPool is IStoaPool, Ownable2Step, ReentrancyGuard {
     error ZeroAmount();
     error UnsupportedToken();
     error TooHigh();
+    error QuoteRejected();
 
     constructor(
         address base_,
@@ -101,6 +105,8 @@ contract StoaPool is IStoaPool, Ownable2Step, ReentrancyGuard {
     function setQuote(uint128 bidPx, uint128 askPx, uint96 bidSize, uint96 askSize, uint8 validBlocks) external {
         if (!registry.isActiveMaker(address(this), msg.sender)) revert NotMaker();
         if (bidPx == 0 || askPx <= bidPx || validBlocks == 0 || validBlocks > maxValidBlocks) revert BadQuote();
+        IQuoteGuard g = quoteGuard;
+        if (address(g) != address(0) && !g.check(base, quote, bidPx, askPx)) revert QuoteRejected();
         uint64 expiry = uint64(block.number) + validBlocks;
         current = Quote(bidPx, askPx, bidSize, askSize, expiry);
         quoter = msg.sender;
@@ -187,6 +193,12 @@ contract StoaPool is IStoaPool, Ownable2Step, ReentrancyGuard {
         if (blocks == 0 || blocks > 20) revert TooHigh();
         maxValidBlocks = blocks;
         emit MaxValidBlocksSet(blocks);
+    }
+
+    /// @notice Turn on (or replace / turn off with zero) the quote check for this pool.
+    function setQuoteGuard(IQuoteGuard g) external onlyGuardian {
+        quoteGuard = g;
+        emit QuoteGuardSet(address(g));
     }
 
     function setFeeBps(uint16 bps) external onlyGuardian {

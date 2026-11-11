@@ -5,8 +5,8 @@ Maker-quoted pools (PropAMM) for Elysium, chain 99901.
 | Contract | Job |
 |---|---|
 | `MakerRegistry` | Lists pools, approves makers, holds maker bonds in native HYPE (unbond delay, slashing to treasury). Its owner is also the guardian. |
-| `StoaPool` | One per pair. An approved, bonded maker posts bid/ask, sizes and an expiry (max 2 blocks). Fills use up the quoted size. Per-swap cap in USDC (500 at launch). Charges the 2 bps protocol fee. |
-| `StoaRouter` | Compares every Stoa pool for the pair with fallback venues (Uniswap adapters) and executes the best fill. Measures what the user actually receives (never trusts a venue), can be paused by the owner or a guardian, and new venues are timelocked after setup. Takes the same 2 bps on the fallback path. |
+| `StoaPool` | One per pair. An approved, bonded maker posts bid/ask, sizes and an expiry (max 2 blocks). Fills use up the quoted size. Per-swap cap in USDC (500 at launch). Charges the 2 bps protocol fee. Optional `IQuoteGuard` (set by the guardian) rejects quotes far from an independent price. |
+| `StoaRouter` | `quote` (eth_call) finds the best route: every Stoa pool and fallback venue (Uniswap adapters), direct or in two legs through WHYPE with the best venue per leg. `swap` executes a given route through allowlisted venues only, measures what the user actually receives (never trusts a venue), and charges the 2 bps fee once per swap (by the pool if the route uses one, otherwise by the router). Native HYPE in and out, Permit2 signature transfers, owner `sweep` for stray tokens. Pausable by the owner or a guardian; new venues are timelocked after setup. |
 | `UniswapV2Adapter` | Fills swaps directly on Uniswap V2 pairs (direct or two hops through WHYPE). Only the router can call it. |
 | `UniswapV3Adapter` | Fills swaps directly on Uniswap V3 pools, every fee tier, direct or through WHYPE. Quotes by simulating the pool swap. Only the router can call it. |
 | `FeeDistributor` | Receives protocol fees, credits 10% to the swap's referrer, the rest accrues to the protocol. Rejects fee notices not backed by tokens. |
@@ -15,7 +15,7 @@ Maker-quoted pools (PropAMM) for Elysium, chain 99901.
 
 Stoa can launch with no pool capital. With no maker quotes live, every swap is filled on Uniswap V2 through the adapter and Stoa takes its 2 bps. Maker pools join the same router later and win whenever they quote a better price.
 
-The router also takes native HYPE in (`swapExactHYPEIn`) and pays it out (`swapExactInForHYPE`).
+Native HYPE is passed as `address(0)` on either side of `swap`; the router wraps and unwraps it.
 
 Security model, trusted roles and the Slither triage: [SECURITY.md](SECURITY.md).
 
@@ -26,7 +26,7 @@ forge build
 forge test
 ```
 
-45 unit and attack tests plus 4 fork tests against Elysium mainnet (`ELYSIUM_RPC_URL=... forge test --match-contract ForkElysium`), including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`.
+57 unit and attack tests plus 5 fork tests against Elysium mainnet (`ELYSIUM_RPC_URL=... forge test --match-contract ForkElysium`), including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`, and a Permit2 swap signed against the real Permit2 deployment.
 
 ## Deploy (Elysium mainnet)
 
@@ -46,8 +46,7 @@ Ownership moves to `OWNER` in two steps: run `acceptOwnership()` from the multis
 - Public LP vaults (ERC-4626). v1 inventory comes from the pool owner.
 - Uniswap V4 and Nest adapters.
 - Fee-on-transfer (taxed) tokens through the Uniswap adapters.
-- `liquidationSwap` and Permit2.
-- GraduationRegistry.
+- `liquidationSwap`.
 - An external audit. Do not raise caps before one.
 
 ## Known trade-offs

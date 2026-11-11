@@ -13,11 +13,34 @@ export function swapKind(sell: Token, buy: Token): SwapKind {
   return "erc20";
 }
 
-/** Router-side token addresses: native HYPE is quoted as WHYPE. */
-export function routeTokens(sell: Token, buy: Token): { tokenIn: Address; tokenOut: Address } {
+export type Leg = { venue: Address; isPool: boolean };
+/** A route as returned by StoaRouter.quote (eth_call). mid is the zero address for a direct swap. */
+export type Route = { amountOut: bigint; mid: Address; leg1: Leg; leg2: Leg };
+
+const ZERO = "0x0000000000000000000000000000000000000000";
+export const isHop = (r: Route) => r.mid.toLowerCase() !== ZERO;
+export const hasRoute = (r: Route) => r.leg1.venue.toLowerCase() !== ZERO && r.amountOut > 0n;
+
+/** Human name of a venue: Stoa pools by flag, known adapters by address, anything else generic. */
+export function venueName(l: Leg, known: Record<string, string> = {}): string {
+  if (l.isPool) return "Stoa maker pool";
+  return known[l.venue.toLowerCase()] ?? "Uniswap on Elysium";
+}
+
+/** "Stoa maker pool" or "Uniswap on Elysium → Stoa maker pool (via WHYPE)". */
+export function describeRoute(r: Route, known: Record<string, string> = {}): string {
+  if (!isHop(r)) return venueName(r.leg1, known);
+  const a = venueName(r.leg1, known), b = venueName(r.leg2, known);
+  return a === b ? `${a} (via WHYPE)` : `${a} → ${b} (via WHYPE)`;
+}
+
+/** The router takes native HYPE as the zero address on either side, so token addresses pass through. */
+export function swapParams(
+  sell: Token, buy: Token, r: Route, amountIn: bigint, min: bigint, to: Address, deadline: bigint, referrer: Address,
+) {
   return {
-    tokenIn: sell.address === NATIVE ? WHYPE : sell.address,
-    tokenOut: buy.address === NATIVE ? WHYPE : buy.address,
+    tokenIn: sell.address, tokenOut: buy.address, mid: r.mid, leg1: r.leg1, leg2: r.leg2,
+    amountIn, minOut: min, to, deadline, referrer,
   };
 }
 

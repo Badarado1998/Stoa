@@ -1,13 +1,13 @@
 # Become a curator
 
-Curators open and run their own pools on Stoa.
+Curators run their own maker pools on Stoa.
 
-A curator picks a pair, names a price source, posts a bond and runs a maker that quotes every block. In return the curator keeps the spread it quotes.
+A curator picks a pair and a price source, supplies the pool's inventory, and runs a maker that quotes every block. In return the curator keeps the spread it quotes. During launch, pools are listed by the Stoa team: reach out on X to apply.
 
 ## The bond
 
-Bonds are posted in **HYPE**. The bond size sets how large a curator's quotes can be, and a bond can be slashed for clearly bad pricing.
+Makers post a bond in **HYPE** for each pool they quote. Each pool sets a minimum bond, and a maker below it cannot quote. A bond can be slashed for clearly bad pricing, and withdrawing it takes a waiting period so it cannot be pulled right after a bad quote.
 
-## Public and verified pools
+## Verified pools
 
-Pools can be public or private. Pools reviewed by the team get a Verified badge in [Pools](https://stoa.trade/pools).
+Pools reviewed by the team get a Verified badge in [Pools](https://stoa.trade/pools). Pools can also turn on an independent quote check that rejects prices too far from a reference.

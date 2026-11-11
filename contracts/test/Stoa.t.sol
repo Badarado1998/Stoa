@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Test} from "forge-std/Test.sol";
+import {RouterHelper} from "./utils/RouterHelper.sol";
 import {MakerRegistry} from "../src/MakerRegistry.sol";
 import {FeeDistributor} from "../src/FeeDistributor.sol";
 import {StoaPool} from "../src/StoaPool.sol";
 import {StoaRouter} from "../src/StoaRouter.sol";
-import {MockToken, MockAdapter, MockWHYPE, MockV2Factory} from "./mocks/Mocks.sol";
+import {MockToken, MockAdapter, MockWHYPE, MockV2Factory, MockPermit2, MockQuoteGuard} from "./mocks/Mocks.sol";
+import {IQuoteGuard} from "../src/interfaces/IStoa.sol";
+import {ISignatureTransfer} from "../src/StoaRouter.sol";
 import {UniswapV2Adapter, IUniswapV2Factory} from "../src/adapters/UniswapV2Adapter.sol";
 import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
 
-contract StoaTest is Test {
+contract StoaTest is RouterHelper {
     MakerRegistry reg;
     FeeDistributor fees;
     StoaPool pool;
@@ -18,6 +20,7 @@ contract StoaTest is Test {
     MockWHYPE whype; // 18 decimals
     MockToken usdc; // 6 decimals
     MockAdapter uni;
+    MockPermit2 permit2;
 
     address gov = makeAddr("gov");
     address treasury = makeAddr("treasury");
@@ -38,7 +41,10 @@ contract StoaTest is Test {
         pool = new StoaPool(
             address(whype), address(usdc), IMakerRegistry(address(reg)), IFeeDistributor(address(fees)), curator, CAP
         );
-        router = new StoaRouter(gov, IFeeDistributor(address(fees)), address(whype), 1 days);
+        permit2 = new MockPermit2();
+        router = new StoaRouter(
+            gov, IFeeDistributor(address(fees)), address(whype), ISignatureTransfer(address(permit2)), 1 days
+        );
         uni = new MockAdapter(39e6, 1e18); // 39.00 USDC per WHYPE, worse than makers
 
         vm.startPrank(gov);
@@ -231,6 +237,25 @@ contract StoaTest is Test {
         assertEq(usdc.balanceOf(curator), 100e6);
     }
 
+    function test_quoteGuardRejectsOffMarketQuotes() public {
+        MockQuoteGuard g = new MockQuoteGuard(40e6, 100); // mid $40, +-1%
+        vm.prank(curator);
+        vm.expectRevert(StoaPool.NotGuardian.selector);
+        pool.setQuoteGuard(IQuoteGuard(address(g)));
+        vm.prank(gov);
+        pool.setQuoteGuard(IQuoteGuard(address(g)));
+
+        _quote(); // 39.90 / 40.10 is inside +-1%
+        vm.prank(maker);
+        vm.expectRevert(StoaPool.QuoteRejected.selector);
+        pool.setQuote(30e6, 40_100_000, 10 ether, 10 ether, 2); // bid far below the reference
+
+        vm.prank(gov);
+        pool.setQuoteGuard(IQuoteGuard(address(0)));
+        vm.prank(maker);
+        pool.setQuote(30e6, 40_100_000, 10 ether, 10 ether, 2); // guard off: maker's own risk
+    }
+
     function test_feeIsGuardianOnlyAndCapped() public {
         vm.prank(curator);
         vm.expectRevert(StoaPool.NotGuardian.selector);
@@ -244,8 +269,7 @@ contract StoaTest is Test {
 
     function test_routerPrefersMakerQuote() public {
         _quote();
-        vm.prank(alice);
-        uint256 out = router.swapExactIn(address(whype), address(usdc), 1 ether, 0, alice, block.timestamp, ref);
+        uint256 out = _swapAs(router, alice, address(whype), address(usdc), 1 ether, 0, alice, ref);
         uint256 gross = uint256(BID);
         assertEq(out, gross - gross * 2 / 10_000);
     }
@@ -254,8 +278,7 @@ contract StoaTest is Test {
         _quote();
         vm.roll(block.number + 5);
         uint256 before = usdc.balanceOf(alice);
-        vm.prank(alice);
-        uint256 out = router.swapExactIn(address(whype), address(usdc), 1 ether, 0, alice, block.timestamp, ref);
+        uint256 out = _swapAs(router, alice, address(whype), address(usdc), 1 ether, 0, alice, ref);
         uint256 gross = 39e6;
         assertEq(out, gross - gross * 2 / 10_000);
         assertEq(usdc.balanceOf(alice) - before, out);
@@ -265,45 +288,48 @@ contract StoaTest is Test {
     function test_routerPicksFallbackWhenBetter() public {
         _quote();
         uni.setRate(41e6, 1e18); // fallback now beats the maker bid
-        vm.prank(alice);
-        uint256 out = router.swapExactIn(address(whype), address(usdc), 1 ether, 0, alice, block.timestamp, address(0));
+        uint256 out = _swapAs(router, alice, address(whype), address(usdc), 1 ether, 0, alice, address(0));
         assertEq(out, 41e6 - 41e6 * 2 / 10_000);
     }
 
     function test_routerSkipsBrokenAdapter() public {
         _quote();
         uni.setBroken(true);
-        vm.prank(alice);
-        router.swapExactIn(address(whype), address(usdc), 1 ether, 0, alice, block.timestamp, address(0));
+        _swapAs(router, alice, address(whype), address(usdc), 1 ether, 0, alice, address(0));
     }
 
     function test_routerNoRoute() public {
         vm.prank(gov);
         router.removeAdapter(address(uni));
+        StoaRouter.SwapParams memory p = _params(router, address(whype), address(usdc), 1 ether, 0, alice, address(0));
+        assertEq(p.leg1.venue, address(0), "no route quoted");
         vm.prank(alice);
-        vm.expectRevert(StoaRouter.NoRoute.selector);
-        router.swapExactIn(address(whype), address(usdc), 1 ether, 0, alice, block.timestamp, address(0));
+        vm.expectRevert(StoaRouter.UnknownVenue.selector);
+        router.swap(p);
     }
 
     function test_routerDeadline() public {
         _quote();
+        StoaRouter.SwapParams memory p = _params(router, address(whype), address(usdc), 1 ether, 0, alice, address(0));
+        p.deadline = block.timestamp - 1;
         vm.prank(alice);
         vm.expectRevert(StoaRouter.Expired.selector);
-        router.swapExactIn(address(whype), address(usdc), 1 ether, 0, alice, block.timestamp - 1, address(0));
+        router.swap(p);
     }
 
     function test_routerSlippageOnFallback() public {
+        StoaRouter.SwapParams memory p =
+            _params(router, address(whype), address(usdc), 1 ether, 39e6, alice, address(0));
         vm.prank(alice);
         vm.expectRevert(StoaRouter.Slippage.selector);
-        router.swapExactIn(address(whype), address(usdc), 1 ether, 39e6, alice, block.timestamp, address(0));
+        router.swap(p);
     }
 
     // ------------------------------------------------------------ fees & referrals
 
     function test_referralGetsTenPercent() public {
         _quote();
-        vm.prank(alice);
-        router.swapExactIn(address(usdc), address(whype), 400e6, 0, alice, block.timestamp, ref);
+        _swapAs(router, alice, address(usdc), address(whype), 400e6, 0, alice, ref);
         uint256 gross = 400e6 * 1e18 / ASK;
         uint256 fee = gross * 2 / 10_000;
         assertEq(fees.referralOwed(ref, address(whype)), fee / 10);
@@ -397,8 +423,7 @@ contract StoaTest is Test {
         (MockV2Factory v2, MockToken meme) = _v2Setup();
         uint256 gross = v2.quote(address(whype), address(usdc), v2.quote(address(meme), address(whype), 1_000 ether));
         uint256 before = usdc.balanceOf(alice);
-        vm.prank(alice);
-        uint256 out = router.swapExactIn(address(meme), address(usdc), 1_000 ether, 0, alice, block.timestamp, ref);
+        uint256 out = _swapAs(router, alice, address(meme), address(usdc), 1_000 ether, 0, alice, ref);
         assertEq(out, gross - gross * 2 / 10_000);
         assertEq(usdc.balanceOf(alice) - before, out);
         assertEq(fees.referralOwed(ref, address(usdc)), (gross * 2 / 10_000) / 10);
@@ -407,8 +432,7 @@ contract StoaTest is Test {
     function test_v2_nativeHypeIn() public {
         (, MockToken meme) = _v2Setup();
         vm.deal(alice, 5 ether);
-        vm.prank(alice);
-        uint256 out = router.swapExactHYPEIn{value: 1 ether}(address(meme), 1, alice, block.timestamp, address(0));
+        uint256 out = _swapAs(router, alice, address(0), address(meme), 1 ether, 1, alice, address(0));
         assertEq(meme.balanceOf(alice), 10_000 ether + out);
         assertGt(out, 9_000 ether); // ~9,870 MEME for 1 HYPE
     }
@@ -416,8 +440,7 @@ contract StoaTest is Test {
     function test_v2_nativeHypeOut() public {
         _v2Setup();
         address payable bob = payable(makeAddr("bob"));
-        vm.prank(alice);
-        uint256 out = router.swapExactInForHYPE(address(usdc), 400e6, 0, bob, block.timestamp, address(0));
+        uint256 out = _swapAs(router, alice, address(usdc), address(0), 400e6, 0, bob, address(0));
         assertEq(bob.balance, out);
         assertGt(out, 9.8 ether);
         assertEq(address(router).balance, 0);
@@ -428,10 +451,47 @@ contract StoaTest is Test {
         _v2Setup();
         vm.prank(maker);
         pool.setQuote(BID, ASK, 10 ether, 10 ether, 2); // ask 40.10 vs V2 ~40.12+ incl. fee and impact
-        vm.prank(alice);
-        router.swapExactIn(address(usdc), address(whype), 400e6, 0, alice, block.timestamp, address(0));
+        _swapAs(router, alice, address(usdc), address(whype), 400e6, 0, alice, address(0));
         (,,, uint96 askSize,) = pool.current();
         assertLt(askSize, 10 ether); // filled by the Stoa pool
+    }
+
+    function test_hop_crossVenueUsesStoaPoolForSecondLeg() public {
+        (MockV2Factory v2, MockToken meme) = _v2Setup();
+        vm.prank(maker);
+        pool.setQuote(41_000_000, 41_100_000, 10 ether, 10 ether, 2); // bid 41.00 beats V2 (~40)
+        uint256 m = v2.quote(address(meme), address(whype), 1_000 ether);
+        uint256 expected = pool.quoteOut(address(whype), m);
+
+        StoaRouter.Quote memory q = router.quote(address(meme), address(usdc), 1_000 ether);
+        assertEq(q.mid, address(whype));
+        assertFalse(q.leg1.isPool);
+        assertEq(q.leg2.venue, address(pool));
+        assertTrue(q.leg2.isPool);
+        assertEq(q.amountOut, expected);
+
+        uint256 out = _swapAs(router, alice, address(meme), address(usdc), 1_000 ether, expected, alice, ref);
+        assertEq(out, expected);
+        // the fee is taken once, by the Stoa pool; the router adds nothing on top
+        assertEq(fees.protocolAccrued(address(whype)), 0);
+        assertEq(fees.referralOwed(ref, address(whype)), 0);
+        assertGt(fees.referralOwed(ref, address(usdc)), 0);
+        assertEq(whype.balanceOf(address(router)), 0);
+        assertEq(meme.balanceOf(address(router)), 0);
+    }
+
+    function test_hop_twoAdapterLegsChargeOnce() public {
+        (MockV2Factory v2, MockToken meme) = _v2Setup();
+        StoaRouter.SwapParams memory p =
+            _params(router, address(meme), address(usdc), 1_000 ether, 0, alice, address(0));
+        // force the explicit two-leg route through WHYPE on the V2 adapter
+        p.mid = address(whype);
+        p.leg2 = p.leg1;
+        uint256 gross = v2.quote(address(whype), address(usdc), v2.quote(address(meme), address(whype), 1_000 ether));
+        vm.prank(alice);
+        uint256 out = router.swap(p);
+        assertEq(out, gross - gross * 2 / 10_000);
+        assertEq(fees.protocolAccrued(address(whype)), 0, "no fee on the middle leg");
     }
 
     function test_v2_adapterOnlyRouter() public {

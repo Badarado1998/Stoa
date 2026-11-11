@@ -5,7 +5,7 @@ import {Script, console2} from "forge-std/Script.sol";
 import {MakerRegistry} from "../src/MakerRegistry.sol";
 import {FeeDistributor} from "../src/FeeDistributor.sol";
 import {StoaPool} from "../src/StoaPool.sol";
-import {StoaRouter} from "../src/StoaRouter.sol";
+import {StoaRouter, ISignatureTransfer} from "../src/StoaRouter.sol";
 import {UniswapV2Adapter, IUniswapV2Factory} from "../src/adapters/UniswapV2Adapter.sol";
 import {UniswapV3Adapter, IUniswapV3Factory} from "../src/adapters/UniswapV3Adapter.sol";
 import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
@@ -21,6 +21,7 @@ import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
 contract Deploy is Script {
     address constant WHYPE = 0xbA876237B0F021A6c6D852d6c26E107997cC5E81;
     address constant USDC = 0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65;
+    address constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     // Uniswap on Elysium (factories checked on-chain; see Uniswap/sdks#782)
     address constant UNI_V2_FACTORY = 0xBbBcC62853a5fA27b93d6Bab3E6F7ce841E25Df2;
     address constant UNI_V3_FACTORY = 0x1707327F626496A7b5b3872e7E4d2879Df7d7a9f;
@@ -49,6 +50,7 @@ contract Deploy is Script {
     function run() external {
         require(block.chainid == 99901, "not Elysium mainnet");
         require(UNI_V2_FACTORY.code.length > 0 && UNI_V3_FACTORY.code.length > 0, "uniswap factories missing");
+        require(PERMIT2.code.length > 0, "permit2 missing");
         Cfg memory c = _cfg();
         vm.startBroadcast();
         Out memory o = _deploy(c, msg.sender);
@@ -75,7 +77,8 @@ contract Deploy is Script {
         o.pool = new StoaPool(
             WHYPE, USDC, IMakerRegistry(address(o.reg)), IFeeDistributor(address(o.fees)), c.curator, c.maxSwap
         );
-        o.router = new StoaRouter(me, IFeeDistributor(address(o.fees)), WHYPE, c.routerDelay);
+        o.router =
+            new StoaRouter(me, IFeeDistributor(address(o.fees)), WHYPE, ISignatureTransfer(PERMIT2), c.routerDelay);
         o.v2 = new UniswapV2Adapter(IUniswapV2Factory(UNI_V2_FACTORY), WHYPE, address(o.router));
         o.v3 = new UniswapV3Adapter(IUniswapV3Factory(UNI_V3_FACTORY), WHYPE, address(o.router));
 
@@ -106,6 +109,7 @@ contract Deploy is Script {
         vm.serializeAddress(k, "poolWhypeUsdc", address(o.pool));
         vm.serializeAddress(k, "uniswapV2Adapter", address(o.v2));
         vm.serializeAddress(k, "uniswapV3Adapter", address(o.v3));
+        vm.serializeAddress(k, "permit2", PERMIT2);
         string memory json = vm.serializeAddress(k, "router", address(o.router));
         vm.writeJson(json, "./deployments/99901.json");
 

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Curators" };
 const STEPS = [
   ["I", "Post a bond", "Curators lock a HYPE bond. It keeps quotes honest and can be slashed for bad pricing."],
   ["II", "Quote every block", "Your maker posts bid and ask on-chain. The router sends flow to you when your price beats Uniswap."],
-  ["III", "Earn the spread", "Makers keep the spread they quote. Pools that grow can graduate to a featured column."],
+  ["III", "Earn the spread", "Makers keep the spread they quote. Pools reviewed by the team get a Verified badge."],
 ];
 
 export default function CuratorsPage() {

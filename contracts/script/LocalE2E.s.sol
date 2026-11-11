@@ -5,7 +5,7 @@ import {Script, console2} from "forge-std/Script.sol";
 import {MakerRegistry} from "../src/MakerRegistry.sol";
 import {FeeDistributor} from "../src/FeeDistributor.sol";
 import {StoaPool} from "../src/StoaPool.sol";
-import {StoaRouter} from "../src/StoaRouter.sol";
+import {StoaRouter, ISignatureTransfer} from "../src/StoaRouter.sol";
 import {IMakerRegistry, IFeeDistributor} from "../src/interfaces/IStoa.sol";
 import {MockToken} from "../test/mocks/Mocks.sol";
 
@@ -26,7 +26,8 @@ contract LocalE2E is Script {
         StoaPool pool = new StoaPool(
             address(whype), address(usdc), IMakerRegistry(address(reg)), IFeeDistributor(address(fees)), me, 500e6
         );
-        StoaRouter router = new StoaRouter(me, IFeeDistributor(address(fees)), address(whype), 1 hours);
+        StoaRouter router =
+            new StoaRouter(me, IFeeDistributor(address(fees)), address(whype), ISignatureTransfer(address(0)), 1 hours);
         reg.listPool(address(pool), 10 ether);
         reg.setMakerApproval(address(pool), maker, true);
         fees.setNotifier(address(router), true);

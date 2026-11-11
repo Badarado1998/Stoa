@@ -33,3 +33,10 @@ interface IVenueAdapter {
         external
         returns (uint256 amountOut);
 }
+
+/// @notice Optional sanity check on maker quotes, set per pool by the guardian. Lets a pool start checking quotes
+///         against an independent price (an oracle, or HyperCore's orderbook once Elysium can read it) without
+///         redeploying the pool. Prices use the pool's units: quote-token raw units per 1e18 raw base units.
+interface IQuoteGuard {
+    function check(address base, address quote, uint128 bidPx, uint128 askPx) external view returns (bool ok);
+}

@@ -2,15 +2,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
-import { CONTRACTS, deployed, elysium, txUrl } from "@/lib/chain";
+import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
 import { TOKENS, NATIVE, WHYPE, isNative, type Token } from "@/lib/tokens";
-import { cleanRef, fmt, minOut, parseAmount, rate, routeTokens, swapKind } from "@/lib/swap";
+import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, routerAbi, whypeAbi } from "@/lib/abi";
 import { useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
 
-type Quote = { out: bigint; venue: Address; isPool: boolean; at: number; impact: number } | null;
+type Quote = { out: bigint; route: Route | null; at: number; impact: number } | null;
 const IMPACT_WARN = 3; // %
 const IMPACT_BLOCK = 15; // % — needs an explicit confirmation
 const SLIPS = [0.1, 0.5, 1];
@@ -83,18 +83,18 @@ export default function Trade() {
 
   const getQuote = useCallback(async (): Promise<Quote> => {
     if (!amt) return null;
-    if (kind === "wrap" || kind === "unwrap") return { out: amt, venue: WHYPE, isPool: false, at: Date.now(), impact: 0 };
+    if (kind === "wrap" || kind === "unwrap") return { out: amt, route: null, at: Date.now(), impact: 0 };
     if (!deployed || !pub) return null;
-    const { tokenIn, tokenOut } = routeTokens(sell, buy);
-    // price impact: compare against a quote for 1/1000 of the amount
-    const small = amt / 1000n > 0n ? amt / 1000n : 1n;
-    const q = (a: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quoteBest", args: [tokenIn, tokenOut, a] });
+    // the router finds the best route (direct or through WHYPE, best venue per leg); the swap then follows it
+    const small = amt / 1000n > 0n ? amt / 1000n : 1n; // price impact: compare against 1/1000 of the amount
+    const q = (a: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quote", args: [sell.address, buy.address, a] });
     const [{ result }, ref] = await Promise.all([q(amt), q(small).catch(() => null)]);
-    if (result.venue === zeroAddress || result.amountOut === 0n) return null;
+    const route = result as Route;
+    if (!hasRoute(route)) return null;
     let impact = 0;
     const r0 = ref?.result.amountOut ?? 0n;
-    if (r0 > 0n) impact = Math.max(0, (1 - (Number(result.amountOut) / Number(amt)) / (Number(r0) / Number(small))) * 100);
-    return { out: result.amountOut, venue: result.venue, isPool: result.isPool, at: Date.now(), impact };
+    if (r0 > 0n) impact = Math.max(0, (1 - (Number(route.amountOut) / Number(amt)) / (Number(r0) / Number(small))) * 100);
+    return { out: route.amountOut, route, at: Date.now(), impact };
   }, [amt, kind, pub, sell, buy]);
 
   // debounce + refresh every 4s (maker quotes expire after 2 blocks)
@@ -175,16 +175,13 @@ export default function Trade() {
 
     const ok = await run("Swap", async () => {
       const fresh = await getQuote(); // re-quote right before signing
-      if (!fresh) throw new Error("No route for this swap right now.");
+      if (!fresh?.route) throw new Error("No route for this swap right now.");
       if (fresh.impact >= IMPACT_BLOCK && !ackImpact) throw new Error(`Price impact is now ${fresh.impact.toFixed(1)}%. Confirm the high price impact to continue.`);
       setQuote(fresh);
       const min = minOut(fresh.out, slip);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
-      const ref = referrer ?? zeroAddress;
-      const router = CONTRACTS.router!;
-      if (kind === "hypeIn") return writeContractAsync({ address: router, abi: routerAbi, functionName: "swapExactHYPEIn", args: [buy.address, min, address!, deadline, ref], value: amt, chainId: elysium.id });
-      if (kind === "hypeOut") return writeContractAsync({ address: router, abi: routerAbi, functionName: "swapExactInForHYPE", args: [sell.address, amt, min, address!, deadline, ref], chainId: elysium.id });
-      return writeContractAsync({ address: router, abi: routerAbi, functionName: "swapExactIn", args: [sell.address, buy.address, amt, min, address!, deadline, ref], chainId: elysium.id });
+      const p = swapParams(sell, buy, fresh.route, amt, min, address!, deadline, referrer ?? zeroAddress);
+      return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value: kind === "hypeIn" ? amt : undefined, chainId: elysium.id });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
@@ -206,7 +203,7 @@ export default function Trade() {
   else if (kind === "unwrap") label = "Unwrap WHYPE";
   if (busy) { label = `${busy}…`; disabled = true; }
 
-  const venueName = !quote ? "—" : kind === "wrap" || kind === "unwrap" ? "WHYPE contract" : quote.isPool ? "Stoa maker pool" : "Uniswap on Elysium";
+  const venueName = !quote ? "—" : !quote.route ? "WHYPE contract" : describeRoute(quote.route, VENUE_NAMES);
   const px = quote && amt ? rate(amt, sell.decimals, quote.out, buy.decimals) : 0;
 
   return (

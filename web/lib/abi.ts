@@ -1,15 +1,16 @@
 import { parseAbi } from "viem";
 
 export const routerAbi = parseAbi([
-  "struct Best { address venue; bool isPool; uint256 amountOut; }",
-  "function quoteBest(address tokenIn, address tokenOut, uint256 amountIn) returns (Best best)",
-  "function swapExactIn(address tokenIn, address tokenOut, uint256 amountIn, uint256 minOut, address to, uint256 deadline, address referrer) returns (uint256)",
-  "function swapExactHYPEIn(address tokenOut, uint256 minOut, address to, uint256 deadline, address referrer) payable returns (uint256)",
-  "function swapExactInForHYPE(address tokenIn, uint256 amountIn, uint256 minOut, address to, uint256 deadline, address referrer) returns (uint256)",
+  "struct Leg { address venue; bool isPool; }",
+  "struct Quote { uint256 amountOut; address mid; Leg leg1; Leg leg2; }",
+  "struct SwapParams { address tokenIn; address tokenOut; address mid; Leg leg1; Leg leg2; uint256 amountIn; uint256 minOut; address to; uint256 deadline; address referrer; }",
+  "function quote(address tokenIn, address tokenOut, uint256 amountIn) returns (Quote q)",
+  "function swap(SwapParams p) payable returns (uint256 amountOut)",
   "function paused() view returns (bool)",
   // errors, so wallets and the app can show a readable reason
   "error Expired()",
-  "error NoRoute()",
+  "error UnknownVenue()",
+  "error BadValue()",
   "error Slippage()",
   "error ZeroAmount()",
   "error IsPaused()",
@@ -27,7 +28,8 @@ export const routerAbi = parseAbi([
 /** Human text for contract errors (router, pools, adapters). */
 export const ERROR_TEXT: Record<string, string> = {
   Expired: "The swap took too long to confirm. Try again.",
-  NoRoute: "No route for this pair right now.",
+  UnknownVenue: "That route is no longer available. Refresh the quote and try again.",
+  BadValue: "The HYPE amount sent does not match the swap.",
   Slippage: "The price moved past your slippage limit, so the swap was cancelled. Your funds are safe.",
   ZeroAmount: "Enter an amount.",
   IsPaused: "Swaps are paused for safety. Please try again later.",

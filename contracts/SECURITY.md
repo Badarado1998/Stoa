@@ -7,9 +7,11 @@ Status: **not audited**. Per-swap caps stay at $500 on maker pools until an exte
 | Guarantee | How |
 |---|---|
 | The router never trusts a venue | It measures what the recipient actually received and reverts below `minOut`; it reverts if a venue did not take exactly `amountIn` (`InputNotSpent`). Tested with lying and skimming pools. |
+| Routes use allowlisted venues only | `swap` takes a route from the caller but rejects any venue that is not a registered adapter, or a registered pool for exactly that pair (`UnknownVenue`); the hop token cannot be either end. |
+| One fee per swap | A two-leg route pays the protocol fee once: inside the Stoa pool if one is used, otherwise on the router's final leg. |
 | No surprise venues | After `lockSetup()`, new pools/adapters must be `propose`d and wait `delay` (default 1 day, allowed 1 h–14 d) before `execute`. Removals are instant. |
 | Emergency stop | Owner or guardian can `pause()` the router; only the owner can `unpause()`. Pools have their own pause. |
-| Users only risk the swap they sign | The router pulls exactly `amountIn` from `msg.sender` inside a swap and makes no arbitrary calls; every path has a deadline and `minOut`. The web app approves only the swap amount by default. |
+| Users only risk the swap they sign | The router pulls exactly `amountIn` from `msg.sender` (by approval or a Permit2 signature from `msg.sender` itself) inside a swap and makes no arbitrary calls; every path has a deadline and `minOut`. The web app approves only the swap amount by default. |
 | Stale or reused maker quotes cannot fill | Quotes expire after at most 2 blocks; every fill consumes quoted size. |
 | No unbacked fee credit | `FeeDistributor` checks its balance covers everything it has accounted for. |
 | Fake Uniswap callbacks rejected | The V3 callback caller must be the factory's pool for its own tokens and fee. |
@@ -20,8 +22,8 @@ Status: **not audited**. Per-swap caps stay at $500 on maker pools until an exte
 
 | Role | Can | Mitigation |
 |---|---|---|
-| Owner (router, registry, distributor) | propose/add venues (timelocked after setup), remove venues, pause, set fees up to 30 bps, slash bonds, withdraw the protocol's fee share | Multisig or hardware wallet; two-step ownership transfer; timelock on additions |
-| Guardian | pause the router | Pause only; cannot move funds |
+| Owner (router, registry, distributor) | propose/add venues (timelocked after setup), remove venues, pause, `sweep` tokens sent to the router by mistake (it holds no user funds between swaps), set fees up to 30 bps, slash bonds, withdraw the protocol's fee share | Multisig or hardware wallet; two-step ownership transfer; timelock on additions |
+| Guardian | pause the router; set pool fees (≤30 bps), quote expiry and the pool quote guard | Cannot move funds; a bad guard can only block quotes, and swaps then fall back to Uniswap |
 | Pool owner (curator) | withdraw its own pool inventory, set its per-swap cap | Its own capital |
 | Maker | post quotes | Bonded and slashable; short-lived, size-limited quotes; traders protected by `minOut` |
 
@@ -38,11 +40,11 @@ Run: `slither . --filter-paths "lib/|test/|script/" --exclude-informational --ex
 | Finding | Verdict |
 |---|---|
 | arbitrary-send-eth (bond withdrawal, HYPE payout) | Intended: sends only to the bond owner, the treasury or the swap's recipient |
-| reentrancy-balance in `_route` | Intended: every swap entry point is `nonReentrant`; balances are re-measured on purpose |
+| reentrancy-balance in `_leg` and `swapWithPermit2` | Intended: every swap entry point is `nonReentrant`; balances are re-measured on purpose |
 | unused-return on venue `swap` | Intended: output is measured, not trusted |
 | divide-before-multiply in `StoaPool.swap` | Rounding moves at most 1 wei of fee |
 | incorrect-equality (`gross == 0`, `amountOut == 0`) | Intended zero guards |
-| calls-loop in `quoteBest` | Bounded by `MAX_VENUES = 16`; venues are owner-curated and timelocked |
+| calls-loop in `quote` and the V3 adapter | Bounded by `MAX_VENUES = 16` and four fee tiers; venues are owner-curated and timelocked; `quote` is meant for eth_call |
 | timestamp (unbonding, deadlines) | Second-level precision is fine |
 | missing-zero-check | Fixed in constructors and `setGuardian`. Two remaining hits are false positives: OpenZeppelin `Ownable` already rejects a zero owner, and `to` is checked in `_check` |
 

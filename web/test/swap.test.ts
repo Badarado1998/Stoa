@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { minOut, parseAmount, fmt, swapKind, routeTokens, cleanRef } from "../lib/swap";
+import { minOut, parseAmount, fmt, swapKind, cleanRef, describeRoute, swapParams, hasRoute, type Route } from "../lib/swap";
 import { TOKENS, WHYPE, NATIVE } from "../lib/tokens";
+import type { Address } from "viem";
 
 const [HYPE, W, USDC] = TOKENS;
 
@@ -30,8 +31,31 @@ test("swap kind and router tokens", () => {
   assert.equal(swapKind(HYPE, USDC), "hypeIn");
   assert.equal(swapKind(USDC, HYPE), "hypeOut");
   assert.equal(swapKind(USDC, W), "erc20");
-  assert.deepEqual(routeTokens(HYPE, USDC), { tokenIn: WHYPE, tokenOut: USDC.address });
-  assert.notEqual(routeTokens(USDC, HYPE).tokenOut, NATIVE);
+});
+
+const Z = NATIVE;
+const POOL = "0x1111111111111111111111111111111111111111" as Address;
+const UNI = "0x2222222222222222222222222222222222222222" as Address;
+
+test("routes are described by their venues", () => {
+  const direct: Route = { amountOut: 5n, mid: Z, leg1: { venue: POOL, isPool: true }, leg2: { venue: Z, isPool: false } };
+  const hop: Route = { amountOut: 5n, mid: WHYPE, leg1: { venue: UNI, isPool: false }, leg2: { venue: POOL, isPool: true } };
+  const hopSame: Route = { ...hop, leg2: { venue: UNI, isPool: false } };
+  assert.equal(describeRoute(direct), "Stoa maker pool");
+  assert.equal(describeRoute(hop), "Uniswap on Elysium → Stoa maker pool (via WHYPE)");
+  assert.equal(describeRoute(hopSame), "Uniswap on Elysium (via WHYPE)");
+  assert.equal(describeRoute(hop, { [UNI.toLowerCase()]: "Uniswap V3" }), "Uniswap V3 → Stoa maker pool (via WHYPE)");
+  assert.equal(hasRoute({ ...direct, leg1: { venue: Z, isPool: false } }), false);
+  assert.equal(hasRoute(direct), true);
+});
+
+test("swap params pass native HYPE as the zero address", () => {
+  const r: Route = { amountOut: 9n, mid: Z, leg1: { venue: UNI, isPool: false }, leg2: { venue: Z, isPool: false } };
+  const p = swapParams(HYPE, USDC, r, 10n, 8n, POOL, 99n, Z);
+  assert.equal(p.tokenIn, NATIVE);
+  assert.equal(p.tokenOut, USDC.address);
+  assert.equal(p.minOut, 8n);
+  assert.equal(p.leg1.venue, UNI);
 });
 
 test("referral cannot be yourself or garbage", () => {

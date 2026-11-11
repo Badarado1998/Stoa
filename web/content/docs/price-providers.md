@@ -7,4 +7,4 @@ Each pool names the source its maker uses to price quotes.
 - **Oracle feeds** — for assets with a trusted on-chain feed.
 - **A maker's own model** — for curators running custom strategies.
 
-Pools read prices through one replaceable interface, so moving from the API to the HyperCore precompile is a single update.
+Makers choose their own source. Each pool can also turn on a [quote guard](price-provider-guide.md) that checks every quote against an independent price, and the guard can be swapped (for example to the HyperCore precompile) without redeploying the pool.

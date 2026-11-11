@@ -204,3 +204,56 @@ contract TaxToken is ERC20 {
         super._update(from, to, v);
     }
 }
+
+/// @dev Minimal stand-in for Permit2 signature transfers: accepts any non-empty signature.
+///      The real Permit2 signature check is covered by the Elysium fork test.
+contract MockPermit2 {
+    struct TokenPermissions {
+        address token;
+        uint256 amount;
+    }
+
+    struct PermitTransferFrom {
+        TokenPermissions permitted;
+        uint256 nonce;
+        uint256 deadline;
+    }
+
+    struct SignatureTransferDetails {
+        address to;
+        uint256 requestedAmount;
+    }
+
+    mapping(address => mapping(uint256 => bool)) public used;
+
+    function permitTransferFrom(
+        PermitTransferFrom calldata permit,
+        SignatureTransferDetails calldata d,
+        address owner,
+        bytes calldata signature
+    ) external {
+        require(signature.length > 0, "sig");
+        require(block.timestamp <= permit.deadline, "expired");
+        require(d.requestedAmount <= permit.permitted.amount, "amount");
+        require(!used[owner][permit.nonce], "nonce");
+        used[owner][permit.nonce] = true;
+        require(IERC20(permit.permitted.token).transferFrom(owner, d.to, d.requestedAmount), "transfer");
+    }
+}
+
+/// @dev Accepts quotes whose bid and ask are within `maxDevBps` of a set mid price.
+contract MockQuoteGuard {
+    uint256 public mid;
+    uint256 public maxDevBps;
+
+    constructor(uint256 mid_, uint256 maxDevBps_) {
+        mid = mid_;
+        maxDevBps = maxDevBps_;
+    }
+
+    function check(address, address, uint128 bidPx, uint128 askPx) external view returns (bool) {
+        uint256 lo = mid * (10_000 - maxDevBps) / 10_000;
+        uint256 hi = mid * (10_000 + maxDevBps) / 10_000;
+        return bidPx >= lo && askPx <= hi;
+    }
+}

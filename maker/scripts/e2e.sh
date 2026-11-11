@@ -31,7 +31,12 @@ cast send $WHYPE "approve(address,uint256)" $ROUTER 1000000000000000000000 --pri
 cast block-number --rpc-url $RPC; cast call $POOL "current()(uint128,uint128,uint96,uint96,uint64)" --rpc-url $RPC; cast call $POOL "quoteOut(address,uint256)(uint256)" $WHYPE 1000000000000000000 --rpc-url $RPC; curl -s 127.0.0.1:8799/health; echo
 B0=$(cast call $USDC "balanceOf(address)(uint256)" $TRADER --rpc-url $RPC | awk '{print $1}')
 DL=$(( $(date +%s) + 600 ))
-cast send $ROUTER "swapExactIn(address,address,uint256,uint256,address,uint256,address)" $WHYPE $USDC 1000000000000000000 39000000 $TRADER $DL 0x0000000000000000000000000000000000000000 --private-key $TK --rpc-url $RPC >/dev/null
+Z=0x0000000000000000000000000000000000000000
+# route from the router's own quote (eth_call), then swap along it
+ROUTE=$(cast call $ROUTER "quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))" $WHYPE $USDC 1000000000000000000 --rpc-url $RPC)
+echo "route: $ROUTE"
+cast send $ROUTER "swap((address,address,address,(address,bool),(address,bool),uint256,uint256,address,uint256,address))" \
+  "($WHYPE,$USDC,$Z,($POOL,true),($Z,false),1000000000000000000,39000000,$TRADER,$DL,$Z)" --private-key $TK --rpc-url $RPC >/dev/null
 B1=$(cast call $USDC "balanceOf(address)(uint256)" $TRADER --rpc-url $RPC | awk '{print $1}')
 echo "trader received $(( B1 - B0 )) USDC raw for 1 WHYPE"
 echo "fees accrued $(cast call $FEES 'protocolAccrued(address)(uint256)' $USDC --rpc-url $RPC)"

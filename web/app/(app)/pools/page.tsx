@@ -22,7 +22,7 @@ export default function PoolsPage() {
               <td><span className="chip live">{live ? "Live" : "Opening soon"}</span></td>
               <td style={{ textAlign: "right" }}><Link href="/trade" className="go" style={{ margin: 0 }}>Trade</Link></td>
             </tr>
-            <tr><td colSpan={6} style={{ color: "var(--muted)", fontSize: 13.5 }}>Want your token here? Curators can open a new pool. <Link href="/curators">How it works</Link></td></tr>
+            <tr><td colSpan={6} style={{ color: "var(--muted)", fontSize: 13.5 }}>Want your token here? Curators can apply to run a pool. <Link href="/curators">How it works</Link></td></tr>
           </tbody>
         </table>
       </div>

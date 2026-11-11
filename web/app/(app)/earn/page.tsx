@@ -21,7 +21,7 @@ export default function EarnPage() {
         </div>
         <div className="panel pad">
           <div className="lbl">HOW EARNING WILL WORK</div>
-          <ul className="list"><li>Shares are standard ERC-4626 tokens <b>Composable</b></li><li>Trading fees flow back into the vault <b>Auto-compounding</b></li><li>Makers price the pool, you supply the depth <b>No active work</b></li></ul>
+          <ul className="list"><li>Shares are standard ERC-4626 tokens <b>Composable</b></li><li>The maker&apos;s spread flows back into the vault <b>Auto-compounding</b></li><li>Makers price the pool, you supply the depth <b>No active work</b></li></ul>
           <Link className="go" href="/docs/provide-liquidity">Read about the risks</Link>
         </div>
       </div>

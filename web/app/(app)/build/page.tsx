@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CONTRACTS, elysium } from "@/lib/chain";
+import { CONTRACTS, addressUrl, elysium } from "@/lib/chain";
 import { USDC, WHYPE } from "@/lib/tokens";
 import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
@@ -8,25 +8,26 @@ import CopyButton from "@/components/CopyButton";
 export const metadata: Metadata = { title: "Build" };
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-const SOL = `// swap through the Stoa router
-IStoaRouter(router).swapExactIn(
-  USDC,        // token in
-  WHYPE,       // token out
-  250e6,       // amount in
-  minOut,      // from quoteBest and your slippage
-  msg.sender,  // recipient
-  deadline,
-  address(0)   // referrer
-);`;
-const TS = `import { createPublicClient, http } from 'viem'
-
-// best of Stoa maker pools and Uniswap, as one call
-const { result } = await client.simulateContract({
+const SOL = `// 1. off-chain: route = router.quote(USDC, WHYPE, 250e6)  (eth_call)
+// 2. on-chain: follow the route with your limits
+IStoaRouter.SwapParams memory p = IStoaRouter.SwapParams({
+  tokenIn: USDC, tokenOut: WHYPE,       // address(0) = native HYPE
+  mid: route.mid,                       // zero for a direct swap
+  leg1: route.leg1, leg2: route.leg2,   // allowlisted venues only
+  amountIn: 250e6,
+  minOut: route.amountOut * 995 / 1000, // 0.5% slippage
+  to: msg.sender, deadline: block.timestamp + 60,
+  referrer: address(0)
+});
+IStoaRouter(router).swap(p);`;
+const TS = `// best route across Stoa pools and Uniswap, direct or via WHYPE
+const { result: route } = await client.simulateContract({
   address: ROUTER, abi: routerAbi,
-  functionName: 'quoteBest',
+  functionName: 'quote',
   args: [USDC, WHYPE, 250_000_000n],
 })
-// result.amountOut, result.venue, result.isPool`;
+// route.amountOut, route.mid, route.leg1, route.leg2
+// then: writeContract({ functionName: 'swap', args: [{ ...route, ... }] })`;
 
 export default function BuildPage() {
   const rows: [string, string | undefined][] = [["WHYPE", WHYPE], ["USDC", USDC], ["Permit2", "0x000000000022D473030F116dDEE9F6B43aC78BA3"]];
@@ -50,7 +51,7 @@ export default function BuildPage() {
           </ul>
           <div className="lbl" style={{ marginTop: 20 }}>STOA CONTRACTS</div>
           <ul className="list">
-            {stoa.map(([n, a]) => <li key={n}>{n} {a ? <span className="addr"><code>{short(a)}</code><CopyButton text={a} /></span> : <b>Deploying soon</b>}</li>)}
+            {stoa.map(([n, a]) => <li key={n}>{n} {a ? <span className="addr">{addressUrl(a) ? <a href={addressUrl(a)} target="_blank" rel="noopener noreferrer"><code>{short(a)}</code></a> : <code>{short(a)}</code>}<CopyButton text={a} /></span> : <b>Deploying soon</b>}</li>)}
           </ul>
         </div>
       </div>

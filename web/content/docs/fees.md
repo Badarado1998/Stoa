@@ -10,4 +10,6 @@ What a swap costs on Stoa.
 | Referral share | 10% of the protocol fee | The wallet that referred you |
 | Network gas | Elysium gas | The network |
 
+The protocol fee is charged once per swap, even when a route has two legs: by the Stoa pool if the route uses one, otherwise by the router.
+
 Example: a $1,000 swap pays $0.20 in protocol fee, of which $0.02 goes to the referrer if there is one.
