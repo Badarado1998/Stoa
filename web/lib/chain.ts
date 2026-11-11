@@ -1,14 +1,15 @@
 import { defineChain, type Address } from "viem";
 
 const id = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 99901);
-const rpc = process.env.NEXT_PUBLIC_RPC_URL || "";
+/** One or more RPC URLs, comma-separated; the first is primary, the rest are fallbacks. */
+export const RPCS = (process.env.NEXT_PUBLIC_RPC_URL || "").split(",").map((s) => s.trim()).filter(Boolean);
 const explorer = process.env.NEXT_PUBLIC_EXPLORER_URL || "";
 
 export const elysium = defineChain({
   id,
   name: id === 99901 ? "Elysium" : `Local ${id}`,
   nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
-  rpcUrls: { default: { http: rpc ? [rpc] : [] } },
+  rpcUrls: { default: { http: RPCS } },
   blockExplorers: explorer ? { default: { name: "Explorer", url: explorer } } : undefined,
 });
 
