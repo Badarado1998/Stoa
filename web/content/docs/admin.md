@@ -22,7 +22,11 @@ Every Stoa contract is owned by a Safe multisig (v1.3.0): `0xBF715C84b1C0759C87D
 
 Ownership of the router, the maker pool, the maker registry, the fee distributor and the Uniswap V4 adapter moved to the Safe on 12 November 2026 ([transaction](https://elysium.kinetiq.xyz/tx/0xe4985bc225ae5d038b6e26fb61426065ca49f0fe2cdc8cce0efb94a5a98f0902)). You can check the owner of each contract on-chain at any time. The router's guardian stays a single wallet on purpose, so an emergency pause is never slowed down by collecting signatures. A guardian can pause swaps but cannot unpause them, move funds or change settings. Ownership uses a two-step transfer: a new owner has to accept, so it cannot be sent to a wrong address by mistake. Any change of owner is an on-chain event anyone can watch.
 
-The wallet that deployed the contracts is separate from the owner and has no admin rights.
+**Who holds the signers.** All three signer wallets are held by the Stoa team. The Safe protects against one key being leaked or lost; it is not a separation of power between independent parties. Adding an independent signer is planned.
+
+**No delay on Safe actions.** Apart from the 24-hour wait for new venues, an action runs as soon as two signers approve it, including withdrawing maker pool inventory or slashing a bond. Today the maker pool holds no outside funds and no maker has bonded, so nothing a trader owns is exposed. A timelock on these actions comes before vaults open or outside makers bond.
+
+The deployer wallet has no admin rights of its own; it is one of the three Safe signers and can act only together with a second signer.
 
 ## What the owner can do
 
