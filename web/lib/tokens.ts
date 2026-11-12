@@ -26,11 +26,12 @@ export const TOKENS: Token[] = [
 
 export const isNative = (t: Token) => t.address === NATIVE;
 
-/** Tokens with the most traded Uniswap V4 pools on Elysium (the pools Stoa registers at launch). Not reviewed:
- *  copycats exist (same symbol, different address), so they stay "unverified" and show their address. */
+/** Tokens with the most traded Uniswap V4 pools on Elysium (the pools Stoa registers at launch). Not reviewed by
+ *  Stoa: they always show their address. "Montra launch" only says the token was launched on Montra, not that it is
+ *  safe. Tokens copying the symbol of a Montra launch from another address are left out of this list. */
 export const POPULAR: Token[] = (process.env.NEXT_PUBLIC_CHAIN_ID ?? "99901") === "99901"
-  ? (popular as { symbol: string; address: string; decimals: number; logo?: string }[]).map((t) => ({
-      symbol: t.symbol, name: `Unverified · ${t.address.slice(0, 6)}…${t.address.slice(-4)}`, address: t.address as Address,
+  ? (popular as { symbol: string; address: string; decimals: number; logo?: string; montra?: boolean }[]).map((t) => ({
+      symbol: t.symbol, name: `${t.montra ? "Montra launch" : "Unverified"} · ${t.address.slice(0, 6)}…${t.address.slice(-4)}`, address: t.address as Address,
       decimals: t.decimals, glyph: t.symbol[0] ?? "?", tone: "other" as const, logo: t.logo,
     }))
   : [];
