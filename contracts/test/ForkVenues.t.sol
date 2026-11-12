@@ -16,7 +16,8 @@ import {VenuesElysium} from "../script/VenuesElysium.sol";
 /// @notice The Elysium venues with real liquidity (Uniswap V4, Aero Slipstream, Ramses CL, Liquidity Book), live.
 /// Skipped unless ELYSIUM_RPC_URL is set:  ELYSIUM_RPC_URL=... forge test --match-contract ForkVenues -vv
 contract ForkVenuesTest is RouterHelper, VenuesElysium {
-    address constant ELYPORT = 0x8fC1fdfec00F0477656A3A60d52ec777A6FF1127;
+    /// a Montra launchpad token whose only pool is a Uniswap V4 native-HYPE pool
+    address constant LAUNCH = 0x7e7384E8c7E622e0BBF5813c399fFA4AdB22DC44;
 
     StoaRouter router;
     FeeDistributor fees;
@@ -50,10 +51,10 @@ contract ForkVenuesTest is RouterHelper, VenuesElysium {
         vm.deal(alice, 1_000 ether);
     }
 
-    function _elyportKey() internal pure returns (PoolKey memory) {
+    function _launchKey() internal pure returns (PoolKey memory) {
         return PoolKey({
             currency0: address(0),
-            currency1: ELYPORT,
+            currency1: LAUNCH,
             fee: 0x800000,
             tickSpacing: 200,
             hooks: 0x6b1216A40B65c83e9c9e18a562C446697B8cf8EC
@@ -110,24 +111,24 @@ contract ForkVenuesTest is RouterHelper, VenuesElysium {
 
     function test_fork_v4LaunchpadTokenNativePool() public {
         if (!on) return vm.skip(true);
-        v4.register(_elyportKey());
-        assertEq(v4.keysFor(WHYPE, ELYPORT).length, 1);
+        v4.register(_launchKey());
+        assertEq(v4.keysFor(WHYPE, LAUNCH).length, 1);
 
-        StoaRouter.Quote memory q = router.quote(address(0), ELYPORT, 0.05 ether);
+        StoaRouter.Quote memory q = router.quote(address(0), LAUNCH, 0.05 ether);
         assertEq(q.leg1.venue, address(v4), "filled on Uniswap V4");
-        uint256 got = _swapAs(router, alice, address(0), ELYPORT, 0.05 ether, q.amountOut * 99 / 100, alice, address(0));
-        console2.log("0.05 HYPE ->", got, "ELYPORT wei");
+        uint256 got = _swapAs(router, alice, address(0), LAUNCH, 0.05 ether, q.amountOut * 99 / 100, alice, address(0));
+        console2.log("0.05 HYPE ->", got, "LAUNCH wei");
         assertGt(got, 0);
-        assertEq(IERC20(ELYPORT).balanceOf(alice), got);
+        assertEq(IERC20(LAUNCH).balanceOf(alice), got);
 
-        // sell back to USDC: ELYPORT -> HYPE on V4, then HYPE -> USDC on the best HYPE/USDC venue
-        StoaRouter.Quote memory h = router.quote(ELYPORT, USDC, got / 2);
-        console2.log("ELYPORT -> USDC route mid:", h.mid, " leg2:", h.leg2.venue);
+        // sell back to USDC: LAUNCH -> HYPE on V4, then HYPE -> USDC on the best HYPE/USDC venue
+        StoaRouter.Quote memory h = router.quote(LAUNCH, USDC, got / 2);
+        console2.log("LAUNCH -> USDC route mid:", h.mid, " leg2:", h.leg2.venue);
         assertEq(h.mid, WHYPE, "two legs through WHYPE");
         assertEq(h.leg1.venue, address(v4));
         vm.prank(alice);
-        IERC20(ELYPORT).approve(address(router), got / 2);
-        uint256 usd = _swapAs(router, alice, ELYPORT, USDC, got / 2, h.amountOut * 99 / 100, alice, address(0));
+        IERC20(LAUNCH).approve(address(router), got / 2);
+        uint256 usd = _swapAs(router, alice, LAUNCH, USDC, got / 2, h.amountOut * 99 / 100, alice, address(0));
         console2.log("half of it ->", usd, "USDC raw");
         assertGt(usd, 0);
         _assertAdaptersEmpty();
@@ -135,17 +136,17 @@ contract ForkVenuesTest is RouterHelper, VenuesElysium {
 
     function test_fork_v4RegistryRules() public {
         if (!on) return vm.skip(true);
-        PoolKey memory k = _elyportKey();
+        PoolKey memory k = _launchKey();
         v4.register(k);
         vm.expectRevert(UniswapV4Adapter.Known.selector);
         v4.register(k);
 
-        PoolKey memory bad = _elyportKey();
+        PoolKey memory bad = _launchKey();
         bad.hooks = address(0xBEEF);
         vm.expectRevert(UniswapV4Adapter.HookNotAllowed.selector);
         v4.register(bad);
 
-        PoolKey memory ghost = _elyportKey();
+        PoolKey memory ghost = _launchKey();
         ghost.tickSpacing = 60; // no such pool
         vm.expectRevert(UniswapV4Adapter.NotInitialized.selector);
         v4.register(ghost);
@@ -154,7 +155,7 @@ contract ForkVenuesTest is RouterHelper, VenuesElysium {
         vm.expectRevert();
         v4.unregister(k);
         v4.unregister(k);
-        assertEq(v4.keysFor(WHYPE, ELYPORT).length, 0);
+        assertEq(v4.keysFor(WHYPE, LAUNCH).length, 0);
     }
 
     function test_fork_adaptersRejectStrangersAndFakeCallbacks() public {

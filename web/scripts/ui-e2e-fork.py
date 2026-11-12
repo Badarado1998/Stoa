@@ -5,7 +5,7 @@ from playwright.async_api import async_playwright
 HERE = os.path.dirname(os.path.abspath(__file__))
 ADDR = json.load(open('/tmp/stoa-fork.json'))
 TRADER = '0x90F79bf6EB2c4f870365E785982E1f101E93b906'
-ELYPORT = '0x8fC1fdfec00F0477656A3A60d52ec777A6FF1127'
+LAUNCH = '0x7e7384E8c7E622e0BBF5813c399fFA4AdB22DC44'  # KORILA, a Montra launch on Uniswap V4
 REF = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65'
 RPC = 'http://127.0.0.1:8545'
 APP = 'http://127.0.0.1:3100'
@@ -65,10 +65,10 @@ async def main():
         await pg.wait_for_selector('.ok:has-text("Swap confirmed"), .err', timeout=30000)
         if await pg.query_selector('.err'): print('ERROR:', await pg.inner_text('.err')); raise SystemExit(1)
 
-        # 2) HYPE -> ELYPORT: the only pool is on Uniswap V4; add it from the app, then swap
+        # 2) HYPE -> LAUNCH: the only pool is on Uniswap V4; add it from the app, then swap
         await pg.click('#sellv'); await pg.fill('#sellv', '')
         await pg.click('.box >> nth=1 >> button.tok')
-        await pg.fill('.tokm input', ELYPORT)
+        await pg.fill('.tokm input', LAUNCH)
         await pg.click('.tokm button:has-text("Import")')
         await pg.fill('#sellv', '0.05')
         await wait(pg, 'button:has-text("Add Uniswap V4 pool")')
@@ -78,18 +78,18 @@ async def main():
         if await pg.query_selector('.err'): print('ERROR:', await pg.inner_text('.err')); raise SystemExit(1)
         await pg.click('label.chk:has-text("I checked the token address") input')
         await wait(pg, 'button.big:has-text("Swap")')
-        print('HYPE->ELYPORT quote:', (await pg.inner_text('.det')).replace('\n', ' | '))
+        print('HYPE->LAUNCH quote:', (await pg.inner_text('.det')).replace('\n', ' | '))
         await pg.click('button.big:has-text("Swap")')
         await pg.wait_for_selector('.ok:has-text("Swap confirmed"), .err', timeout=30000)
         if await pg.query_selector('.err'): print('ERROR:', await pg.inner_text('.err')); raise SystemExit(1)
-        bal = cast('call', ELYPORT, 'balanceOf(address)(uint256)', TRADER)
-        print('trader ELYPORT balance (wei):', bal)
+        bal = cast('call', LAUNCH, 'balanceOf(address)(uint256)', TRADER)
+        print('trader LAUNCH balance (wei):', bal)
         assert int(bal) > 0
         await pg.screenshot(path=os.path.join(HERE, 'ui-fork-swap.png'))
 
         # 3) history and stats from on-chain events
         await pg.click('footer a[href="/portfolio"]'); await pg.wait_for_timeout(1500)  # client-side: keep the wallet connected
-        await wait(pg, 'table.tbl >> text=ELYPORT')
+        await wait(pg, 'table.tbl >> text=KORILA')
         print('portfolio history:', (await pg.inner_text('.panel:has-text("YOUR SWAPS")')).replace('\n', ' | ')[:300])
         await pg.click('footer a[href="/pools"]')
         await pg.wait_for_function("() => /SWAPS · ALL TIME\\s*\\d/.test(document.body.innerText)", timeout=30000)
