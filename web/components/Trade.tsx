@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
@@ -54,6 +55,7 @@ export default function Trade() {
   const [slip, setSlip] = useState(0.5);
   const [showSet, setShowSet] = useState(false);
   const [menu, setMenu] = useState<"sell" | "buy" | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
   const [quote, setQuote] = useState<Quote>(null);
   const [quoting, setQuoting] = useState(false);
   const [noRoute, setNoRoute] = useState(false);
@@ -261,7 +263,7 @@ export default function Trade() {
           <div className="row" style={{ position: "relative" }}>
             <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} onChange={(e) => { setMsg(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
             <TokenBtn t={sell} onClick={() => setMenu(menu === "sell" ? null : "sell")} />
-            {menu === "sell" && <TokenMenu tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} />}
+            {menu === "sell" && <TokenMenu tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
         </div>
         <div className="flip"><button type="button" aria-label="Switch tokens" onClick={flip}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" /></svg></button></div>
@@ -272,7 +274,7 @@ export default function Trade() {
               {quote ? fmt(quote.out, buy.decimals, 6) : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => setMenu(menu === "buy" ? null : "buy")} />
-            {menu === "buy" && <TokenMenu tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} />}
+            {menu === "buy" && <TokenMenu tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
         </div>
 
@@ -333,15 +335,31 @@ function TokenBtn({ t, onClick }: { t: Token; onClick: () => void }) {
   return <button className="tok" type="button" aria-haspopup="listbox" onClick={onClick}><TokenIcon t={t} />{t.symbol}</button>;
 }
 
-function TokenMenu({ tokens, onPick, onImport }: { tokens: Token[]; onPick: (t: Token) => void; onImport: (a: string) => void }) {
+function TokenMenu({ tokens, onPick, onImport, onClose }: { tokens: Token[]; onPick: (t: Token) => void; onImport: (a: string) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
+  const [sheet, setSheet] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const list = useMemo(() => tokens.filter((t) => (t.symbol + t.name + t.address).toLowerCase().includes(q.toLowerCase())), [tokens, q]);
-  return (
-    <div className="panel tokm open" role="listbox">
-      <input placeholder="Search or paste address" value={q} onChange={(e) => setQ(e.target.value.trim())} aria-label="Search token" autoFocus />
-      {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} />{t.symbol}<small>{t.address === NATIVE ? "Native" : t.name}</small></button>)}
-      {list.length === 0 && isAddress(q) && <button type="button" onClick={() => onImport(q)}>Import {q.slice(0, 6)}…{q.slice(-4)}</button>}
-      {list.length === 0 && !isAddress(q) && <p className="note" style={{ padding: "0 8px" }}>Paste a token address to import it.</p>}
+  useEffect(() => {
+    setSheet(matchMedia("(max-width:560px)").matches);
+    const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const down = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      if (ref.current && !ref.current.contains(el) && !el.closest(".tok")) onClose();
+    };
+    addEventListener("keydown", key); addEventListener("mousedown", down);
+    return () => { removeEventListener("keydown", key); removeEventListener("mousedown", down); };
+  }, [onClose]);
+  const body = (
+    <div ref={ref} className={`panel tokm open${sheet ? " sheet" : ""}`} role="listbox" aria-label="Select a token">
+      {sheet && <div className="rowx tokh"><b>Select a token</b><button className="x" type="button" onClick={onClose} aria-label="Close">×</button></div>}
+      <input placeholder="Search or paste address" value={q} onChange={(e) => setQ(e.target.value.trim())} aria-label="Search token" autoFocus={!sheet} />
+      <div className="tokl">
+        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small>{t.address === NATIVE ? "Native" : t.name}</small></span></button>)}
+        {list.length === 0 && isAddress(q) && <button type="button" onClick={() => onImport(q)}>Import {q.slice(0, 6)}…{q.slice(-4)}</button>}
+        {list.length === 0 && !isAddress(q) && <p className="note" style={{ padding: "0 8px" }}>Paste a token address to import it.</p>}
+      </div>
     </div>
   );
+  return sheet ? createPortal(<div className="tokbg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>{body}</div>, document.body) : body;
 }

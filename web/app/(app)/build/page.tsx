@@ -35,7 +35,7 @@ export default function BuildPage() {
   return (
     <section className="page">
       <PageHead eyebrow="IV · BUILD" title="Every pool is a building block">Quote, route and swap from your own app or contract.</PageHead>
-      <div className="grid2" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
+      <div className="grid2 eq">
         <div className="panel pad">
           <div className="lbl">TYPESCRIPT (VIEM)</div>
           <pre className="code" style={{ marginTop: 12 }}>{TS}</pre>

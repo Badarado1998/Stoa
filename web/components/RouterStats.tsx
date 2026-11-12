@@ -47,7 +47,7 @@ export default function RouterStats() {
   );
   const live = !!CONTRACTS.router;
   return (
-    <div className="grid3" style={{ marginBottom: 20 }}>
+    <div className="grid3 stats" style={{ marginBottom: 20 }}>
       {cell("VOLUME · 24H", !live ? "At launch" : s ? usd(s.vol24) : "—")}
       {cell("SWAPS · 24H", !live ? "At launch" : s ? s.swaps24.toLocaleString("en-US") : "—")}
       {cell("SWAPS · ALL TIME", !live ? "At launch" : s ? s.swapsAll.toLocaleString("en-US") : "—")}
