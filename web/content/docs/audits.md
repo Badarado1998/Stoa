@@ -2,7 +2,7 @@
 
 Audit status for Stoa contracts.
 
-Stoa contracts have **not been audited yet**. An external audit is planned before swap and pool caps are raised or vaults open. Reports will be linked on this page.
+Stoa contracts have **not been externally audited yet**. The team has published a full [internal security review](security-review.md): no critical or high findings. An external audit is planned before swap and pool caps are raised or vaults open. Reports will be linked on this page.
 
 ## What has been done
 

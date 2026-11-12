@@ -10,7 +10,7 @@ What can go wrong, and what limits it.
 | Something goes wrong | The router can be paused at once by the owner or the guardian |
 | The admin key is misused or lost | Admin cannot upgrade code, move funds from your wallet or add a venue without a 24-hour public wait. The owner is a single wallet today and moves to a multisig once Safe is on Elysium. See [Admin and permissions](admin.md) |
 | A maker posts abusive quotes | Makers must be approved and bond at least 10 HYPE, which can be slashed. Bonds take 24 hours to withdraw, so a maker cannot pull out before a slash |
-| Contracts are not audited yet | Per-swap cap of $500 on maker pools; vaults stay closed until the external audit |
+| Contracts are not externally audited yet | A full [internal review](security-review.md) found no critical or high issues; per-swap cap of $500 on maker pools; vaults stay closed until the external audit |
 | Unlimited token approvals | The app approves only the amount of each swap unless you opt in |
 | Fake or copycat tokens | Tokens imported by address are marked unverified and need an explicit confirmation |
 | Thin pools | Price impact is shown; above 15% you must confirm before swapping |
