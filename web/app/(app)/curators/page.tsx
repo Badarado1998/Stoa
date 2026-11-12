@@ -20,7 +20,7 @@ export default function CuratorsPage() {
         {STEPS.map(([n, h, p]) => <div key={n} className="panel pad step"><span className="num">{n}</span><h3>{h}</h3><p>{p}</p></div>)}
       </div>
       <div className="grid2" style={{ marginTop: 20 }}>
-        <div className="panel pad"><div className="lbl">LAUNCH PARAMETERS</div><ul className="list"><li>Quote validity <b>2 blocks</b></li><li>Max swap size <b>$500 at launch</b></li><li>Protocol fee <b>2 bps</b></li><li>Bond asset <b>HYPE</b></li></ul></div>
+        <div className="panel pad"><div className="lbl">CURRENT PARAMETERS</div><ul className="list"><li>Quote validity <b>2 blocks</b></li><li>Max swap size <b>$500 at launch</b></li><li>Protocol fee <b>2 bps</b></li><li>Bond asset <b>HYPE</b></li></ul></div>
         <div className="panel pad"><div className="lbl">WHAT YOU NEED</div><ul className="list"><li>A price source or strategy <b>Required</b></li><li>A bot that can post every block <b>Required</b></li><li>Stoa maker kit <b>Open source at launch</b></li></ul><Link className="go" href="/docs/getting-started">Read the curator guide</Link></div>
       </div>
     </section>

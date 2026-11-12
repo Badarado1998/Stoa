@@ -10,8 +10,8 @@ Most AMMs price a trade with a fixed formula. On Stoa, every pool is priced by *
 
 | You are | What you do on Stoa |
 | --- | --- |
-| Trader | Swap at the best price across Stoa maker pools and Uniswap on Elysium. |
-| Liquidity provider | Deposit into a pool vault and hold ERC-4626 shares that grow with fees. |
+| Trader | Swap at the best price across Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book. |
+| Liquidity provider | Pool vaults (ERC-4626 shares that grow with fees) open after the external audit. |
 | Curator / maker | Run a pool: bring a price source, post a HYPE bond, quote every block. |
 | Builder | Use the router, SDK and LP tokens inside your own app or contract. |
 
@@ -27,10 +27,10 @@ Most AMMs price a trade with a fixed formula. On Stoa, every pool is priced by *
 
 ## How Stoa launches
 
-Stoa launches **router first**. On day one every swap is checked against Uniswap on Elysium and filled there, so trading works before any maker pool holds inventory. Maker pools join the same router as curators come online, and win whenever they quote a better price. Nothing changes for you as a trader.
+Stoa launches **router first**. Every swap is checked across Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book and filled at the best price, so trading works before any maker pool holds inventory. Maker pools join the same router as curators come online, and win whenever they quote a better price. Nothing changes for you as a trader.
 
 {% hint style="info" %}
 
-Stoa is not live yet. Pages marked **at launch** describe how things will work when the contracts are deployed.
+Stoa is live on Elysium mainnet. The router and the WHYPE/USDC maker pool are deployed; the pool starts quoting when its first maker comes online. Until then every swap fills on the best outside venue. Vaults open after the external audit.
 
 {% endhint %}

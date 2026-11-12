@@ -6,6 +6,8 @@ Stoa contracts have **not been audited yet**. An external audit is planned befor
 
 ## What has been done
 
-- 45 unit and attack tests, plus fork tests that run the router against live Elysium mainnet pools
-- Static analysis with Slither; every finding is triaged in [SECURITY.md](https://github.com/StoaDex/Stoa/blob/main/contracts/SECURITY.md)
+- 57 unit and attack tests, plus 11 fork tests that run the router against live Elysium mainnet pools on every change
+- Static analysis with Slither, with every finding triaged
+- Every deployed contract is source-verified on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA)
+- Admin powers and their limits are listed in [Admin and permissions](admin.md)
 - Contracts are not upgradeable: the code you see is the code that runs

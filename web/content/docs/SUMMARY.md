@@ -40,6 +40,7 @@
 ## Security
 
 * [Audits](audits.md)
+* [Admin and permissions](admin.md)
 * [Risks and safeguards](risks.md)
 * [Bug bounty](bug-bounty.md)
 

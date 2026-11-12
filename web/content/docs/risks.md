@@ -4,10 +4,13 @@ What can go wrong, and what limits it.
 
 | Risk | Safeguard |
 | --- | --- |
-| A contract bug affects pool funds | Per-pool and per-swap caps at launch; audit before caps rise |
+| A contract bug affects pool funds | Maker pool inventory is supplied by Stoa, not by outside depositors; per-swap caps stay until the audit |
 | A venue misbehaves or lies about its output | The router measures what you actually received and reverts below your minimum; it also reverts if a venue does not take exactly your input |
 | A malicious venue is added | New venues wait 24 hours in public before they can go live; removals are instant. Uniswap V4 pools can only be added if their hooks are on an allowlist fixed at deployment |
 | Something goes wrong | The router can be paused at once by the owner or the guardian |
+| The admin key is misused or lost | Admin cannot upgrade code, move funds from your wallet or add a venue without a 24-hour public wait. The owner is a single wallet today and moves to a multisig once Safe is on Elysium. See [Admin and permissions](admin.md) |
+| A maker posts abusive quotes | Makers must be approved and bond at least 10 HYPE, which can be slashed. Bonds take 24 hours to withdraw, so a maker cannot pull out before a slash |
+| Contracts are not audited yet | Per-swap cap of $500 on maker pools; vaults stay closed until the external audit |
 | Unlimited token approvals | The app approves only the amount of each swap unless you opt in |
 | Fake or copycat tokens | Tokens imported by address are marked unverified and need an explicit confirmation |
 | Thin pools | Price impact is shown; above 15% you must confirm before swapping |

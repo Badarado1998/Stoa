@@ -304,3 +304,9 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .tokm .tokh{flex-wrap:nowrap}
 .tokm{background:rgba(255,255,255,.97);box-shadow:0 18px 48px rgba(30,52,90,.18)}
 .tokn small.vf{color:#1E7A4C}.tokn small.vf:before{content:"✓ "}
+@media (max-width:640px){
+  .dmain table{font-size:13px}
+  .dmain th,.dmain td{padding:8px 8px}
+  .dmain td code{word-break:break-all}
+  .dmain{min-width:0;overflow-wrap:anywhere}
+}

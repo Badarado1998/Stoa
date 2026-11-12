@@ -1,6 +1,6 @@
 # Maker kit
 
-An open-source maker bot template, released at launch.
+A maker bot template for curators. It is shared with approved curators now and will be open-sourced after the audit.
 
 - Quoting loop that updates when price moves past a threshold
 - Max size per swap and inventory skew limits

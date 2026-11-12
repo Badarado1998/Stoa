@@ -39,6 +39,6 @@ await wallet.writeContract({
 
 {% hint style="info" %}
 
-A typed SDK package will follow. Until then, the ABI is in the [repository](https://github.com/StoaDex/Stoa/tree/main/web/lib/abi.ts).
+A typed SDK package will follow. Until then, the full ABI comes with the verified source on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA).
 
 {% endhint %}
