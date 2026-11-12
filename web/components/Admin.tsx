@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
-import { BaseError, isAddress, zeroAddress, type Address, type Hash } from "viem";
+import { BaseError, encodeFunctionData, isAddress, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import { CONTRACTS, VENUE_NAMES, addressUrl, elysium, txUrl } from "@/lib/chain";
 import { adminAbi } from "@/lib/abi";
 import { USDC, WHYPE } from "@/lib/tokens";
 import { fmt } from "@/lib/swap";
 import { useWalletModal } from "./Providers";
+import { approvedSignatures, batch, safeAbi } from "@/lib/safe";
 
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 const same = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
@@ -24,7 +25,7 @@ export default function Admin() {
   const [maker, setMaker] = useState("");
   const [to, setTo] = useState("");
 
-  const R = CONTRACTS.router, F = CONTRACTS.fees, G = CONTRACTS.registry, P = CONTRACTS.pool, V = CONTRACTS.v4;
+  const R = CONTRACTS.router, F = CONTRACTS.fees, G = CONTRACTS.registry, P = CONTRACTS.pool, V = CONTRACTS.v4, S = CONTRACTS.safe;
   const owned = [
     ["StoaRouter", R], ["MakerRegistry", G], ["FeeDistributor", F], ["StoaPool (WHYPE/USDC)", P], ["UniswapV4Adapter", V],
   ].filter(([, a]) => a) as [string, Address][];
@@ -42,6 +43,10 @@ export default function Admin() {
       { address: F!, abi: adminAbi, functionName: "protocolAccrued" as const, args: [WHYPE], chainId: elysium.id },
       { address: F!, abi: adminAbi, functionName: "protocolAccrued" as const, args: [USDC], chainId: elysium.id },
       { address: P!, abi: adminAbi, functionName: "paused" as const, chainId: elysium.id },
+      ...(S ? [
+        { address: S, abi: safeAbi, functionName: "getOwners" as const, chainId: elysium.id },
+        { address: S, abi: safeAbi, functionName: "getThreshold" as const, chainId: elysium.id },
+      ] : []),
     ],
     query: { enabled: !!R && !!F && !!P, refetchInterval: 15_000 },
   });
@@ -52,7 +57,12 @@ export default function Admin() {
   const accW = (r(n + 4) as bigint | undefined) ?? 0n, accU = (r(n + 5) as bigint | undefined) ?? 0n;
   const poolPaused = r(n + 6) as boolean | undefined;
   const routerOwner = r(0) as Address | undefined;
-  const isOwner = same(address, routerOwner), isGuardian = same(address, guardian);
+  const safeOwners = (S ? (r(n + 7) as Address[] | undefined) : undefined) ?? [];
+  const threshold = S ? (r(n + 8) as bigint | undefined) : undefined;
+  const isSigner = safeOwners.some((o) => same(o, address));
+  const ownerOf = (a: Address) => { const i = owned.findIndex(([, x]) => same(x, a)); return i < 0 ? undefined : (r(2 * i) as Address | undefined); };
+  const pendingOf = (i: number) => r(2 * i + 1) as Address | undefined;
+  const isOwner = same(address, routerOwner) || (same(routerOwner, S) && isSigner), isGuardian = same(address, guardian);
 
   async function send(label: string, fn: () => Promise<Hash>) {
     if (!pub) return;
@@ -69,8 +79,36 @@ export default function Admin() {
       setBusy(null);
     }
   }
-  const call = (label: string, address: Address, functionName: string, args: readonly unknown[] = []) =>
-    send(label, () => writeContractAsync({ address, abi: adminAbi, functionName: functionName as never, args: args as never, chainId: elysium.id }));
+  /** Owner-only calls go through the Safe once it owns the target. The guardian can still pause directly. */
+  const call = (label: string, target: Address, functionName: string, args: readonly unknown[] = [], guardianOk = false) => {
+    if (S && same(ownerOf(target), S) && !(guardianOk && isGuardian)) {
+      return safeExec(label, [{ to: target, data: encodeFunctionData({ abi: adminAbi, functionName: functionName as never, args: args as never }) }]);
+    }
+    return send(label, () => writeContractAsync({ address: target, abi: adminAbi, functionName: functionName as never, args: args as never, chainId: elysium.id }));
+  };
+
+  /** Approve on-chain with approveHash; the signer who completes the threshold executes. */
+  async function safeExec(label: string, calls: { to: Address; data: Hex }[]) {
+    if (!S || !pub || !address) return;
+    if (!isSigner) { setMsg({ ok: false, text: "Connect a wallet that signs for the Safe." }); return; }
+    const tx = batch(calls);
+    const nonce = await pub.readContract({ address: S, abi: safeAbi, functionName: "nonce" });
+    const Z = zeroAddress;
+    const hash = await pub.readContract({ address: S, abi: safeAbi, functionName: "getTransactionHash", args: [tx.to, 0n, tx.data, tx.operation, 0n, 0n, 0n, Z, Z, nonce] });
+    const others: Address[] = [];
+    for (const o of safeOwners) {
+      if (same(o, address)) continue;
+      if ((await pub.readContract({ address: S, abi: safeAbi, functionName: "approvedHashes", args: [o, hash] })) > 0n) others.push(o);
+    }
+    const need = Number(threshold ?? 2n);
+    if (others.length + 1 >= need) {
+      const sigs = approvedSignatures([...others.slice(0, need - 1), address]);
+      await send(`${label} (Safe)`, () => writeContractAsync({ address: S, abi: safeAbi, functionName: "execTransaction", args: [tx.to, 0n, tx.data, tx.operation, 0n, 0n, 0n, Z, Z, sigs], chainId: elysium.id }));
+    } else {
+      await send(`${label}: approved ${others.length + 1} of ${need}`, () => writeContractAsync({ address: S, abi: safeAbi, functionName: "approveHash", args: [hash], chainId: elysium.id }));
+      setMsg((m) => (m?.ok ? { ...m, text: `${label}: approved ${others.length + 1} of ${need}. Another signer now opens /admin and presses the same button with the same inputs.` } : m));
+    }
+  }
 
   if (!R) return <div className="panel pad"><p className="note">Contracts are not deployed yet. This page manages them after the deploy.</p></div>;
   if (!isConnected) return <div className="panel pad"><p className="note">Connect the owner or guardian wallet.</p><button className="cta" type="button" onClick={open}>Connect wallet</button></div>;
@@ -86,8 +124,25 @@ export default function Admin() {
 
       <div className="panel pad">
         <div className="lbl">YOU ARE</div>
-        <p style={{ marginTop: 8 }}><code>{address}</code> · {isOwner ? "router owner" : isGuardian ? "guardian" : "not owner or guardian (calls will revert)"}</p>
+        <p style={{ marginTop: 8 }}><code>{address}</code> · {same(address, routerOwner) ? "owner" : isSigner ? "Safe signer" : isGuardian ? "guardian" : "not owner, Safe signer or guardian (calls will revert)"}{isGuardian && (same(address, routerOwner) || isSigner) ? " · guardian" : ""}</p>
       </div>
+
+      {S && (() => {
+        const toMove = owned.filter(([, a], i) => same(ownerOf(a), address) && !same(pendingOf(i), S));
+        const toAccept = owned.filter(([, ], i) => same(pendingOf(i), S));
+        return (
+          <div className="panel pad">
+            <div className="lbl">ADMIN SAFE · {threshold ? `${threshold} OF ${safeOwners.length}` : "—"}</div>
+            <p style={{ marginTop: 8 }}><a href={addressUrl(S)} target="_blank" rel="noopener noreferrer"><code>{S}</code></a></p>
+            <ul className="list">{safeOwners.map((o) => <li key={o}>Signer <code>{short(o)}{same(o, address) ? " (you)" : ""}</code></li>)}</ul>
+            {toMove.length > 0 && b(`Step 1: transfer ${toMove.length} contracts to the Safe`, async () => {
+              for (const [name, a] of toMove) await send(`Transfer ${name}`, () => writeContractAsync({ address: a, abi: adminAbi, functionName: "transferOwnership", args: [S], chainId: elysium.id }));
+            })}
+            {toAccept.length > 0 && b(`Step 2: Safe accepts ${toAccept.length} contracts`, () => safeExec("Accept ownership", toAccept.map(([, a]) => ({ to: a, data: encodeFunctionData({ abi: adminAbi, functionName: "acceptOwnership" }) }))), !isSigner)}
+            <p className="note">Step 1 is sent by the current owner wallet, one transaction per contract. Step 2 needs two signers: the first press approves, the second press (from another signer) executes. The router guardian stays as it is, so pausing stays instant.</p>
+          </div>
+        );
+      })()}
 
       <div className="panel" style={{ overflowX: "auto" }}>
         <table className="tbl">
@@ -112,7 +167,7 @@ export default function Admin() {
         <div className="panel pad">
           <div className="lbl">EMERGENCY</div>
           <p className="note">Router swaps: <b>{paused === undefined ? "—" : paused ? "PAUSED" : "running"}</b> · Maker pool: <b>{poolPaused === undefined ? "—" : poolPaused ? "PAUSED" : "running"}</b> · Guardian <code>{short(guardian)}</code></p>
-          {b("Pause router", () => call("Pause router", R, "pause"), paused === true)}
+          {b("Pause router", () => call("Pause router", R, "pause", [], true), paused === true)}
           {b("Unpause router", () => call("Unpause router", R, "unpause"), paused === false)}
           {P && b(poolPaused ? "Unpause pool" : "Pause pool", () => call(poolPaused ? "Unpause pool" : "Pause pool", P, "setPaused", [!poolPaused]))}
           {P && b("Pull maker quote", () => call("Pull maker quote", P, "cancelQuote"))}

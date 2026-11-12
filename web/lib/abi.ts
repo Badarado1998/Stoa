@@ -91,6 +91,7 @@ export const adminAbi = parseAbi([
   "function owner() view returns (address)",
   "function pendingOwner() view returns (address)",
   "function acceptOwnership()",
+  "function transferOwnership(address newOwner)",
   "function guardian() view returns (address)",
   "function paused() view returns (bool)",
   "function setupLocked() view returns (bool)",
