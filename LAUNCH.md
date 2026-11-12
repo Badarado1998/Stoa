@@ -25,6 +25,8 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 ## 4. Web (Vercel → Project → Settings)
 
+Hosted on the Vercel project `stoa` (account nexforgecom, root `web`, Node 22). Production `*.vercel.app` is public; previews need a Vercel login.
+
 - [ ] Domains: buy `stoa.trade` and add it to the Vercel project; set `NEXT_PUBLIC_SITE_URL=https://stoa.trade`.
 - [ ] `NEXT_PUBLIC_WC_PROJECT_ID`: create a free project at cloud.reown.com (WalletConnect), allow the domain `stoa.trade`. Without it, only browser-extension wallets can connect.
 - [ ] `NEXT_PUBLIC_RPC_URL`: in the Alchemy and dRPC dashboards, restrict both keys to the `stoa.trade` domain, because these keys are visible in the browser.
