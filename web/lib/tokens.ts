@@ -1,5 +1,6 @@
 import type { Address } from "viem";
 import popular from "./popular-tokens.json";
+import bridged from "./bridged-tokens.json";
 
 export const NATIVE = "0x0000000000000000000000000000000000000000" as Address;
 
@@ -28,7 +29,7 @@ export const isNative = (t: Token) => t.address === NATIVE;
 
 /** Major tokens bridged from HyperEVM through Elysium's canonical token bridge. Each address was checked on-chain:
  *  `l1Address()` is the HyperEVM token and the standard gateway (0x5DC8…aF1f) maps it back to this address. Only tokens the router can quote are listed. */
-const BRIDGED: [string, string, string, number, string][] = [
+const CHECKED: [string, string, string, number, string][] = [
   ["KNTQ", "Kinetiq Governance Token", "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0", 18, "kntq.png"],
   ["kHYPE", "Kinetiq Staked HYPE", "0x248888D396A546A69A188f3Deb476964e581E9d0", 18, "khype.png"],
   ["USD₮0", "USD₮0", "0x3BdE42a1dA8F1D95564f2c4a51a0cF73a725674C", 6, "usdt0.svg"],
@@ -38,21 +39,32 @@ const BRIDGED: [string, string, string, number, string][] = [
 ];
 const MAINNET = (process.env.NEXT_PUBLIC_CHAIN_ID ?? "99901") === "99901";
 export const VERIFIED: Token[] = MAINNET
-  ? BRIDGED.map(([symbol, name, address, decimals, logo]) => ({
+  ? CHECKED.map(([symbol, name, address, decimals, logo]) => ({
       symbol, name: `${name} · bridged`, address: address as Address, decimals, glyph: symbol[0], tone: "bridged" as const, logo: `/tokens/${logo}`,
     }))
   : [];
-const taken = new Set([...TOKENS, ...VERIFIED].map((t) => t.address.toLowerCase()));
-const takenSym = new Set([...TOKENS, ...VERIFIED].map((t) => t.symbol.toLowerCase()));
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+const used = (list: Token[]) => ({ addr: new Set(list.map((t) => t.address.toLowerCase())), sym: new Set(list.map((t) => t.symbol.toLowerCase())) });
+
+/** Other tokens from the canonical bridge that the router can trade both ways, refreshed daily by
+ *  contracts/script/data/bridged_tokens.py. Anyone can bridge any HyperEVM token, so these keep the unverified-token
+ *  warning; only VERIFIED above gets the check mark. Symbols already used by a core or verified token are left out. */
+const core = used([...TOKENS, ...VERIFIED]);
+export const BRIDGED: Token[] = MAINNET
+  ? (bridged as { symbol: string; address: string; decimals: number }[])
+      .filter((t) => !core.addr.has(t.address.toLowerCase()) && !core.sym.has(t.symbol.toLowerCase()))
+      .map((t) => ({ symbol: t.symbol, name: `Bridged from HyperEVM · ${short(t.address)}`, address: t.address as Address, decimals: t.decimals, glyph: t.symbol[0] ?? "?", tone: "other" as const }))
+  : [];
+const taken = used([...TOKENS, ...VERIFIED, ...BRIDGED]);
 
 /** Tokens with the most traded Uniswap V4 pools on Elysium (the pools Stoa registers at launch). Not reviewed by
  *  Stoa: they always show their address. "Montra launch" only says the token was launched on Montra, not that it is
  *  safe. Tokens copying the symbol of a Montra launch or of a verified token from another address are left out. */
 export const POPULAR: Token[] = MAINNET
   ? (popular as { symbol: string; address: string; decimals: number; logo?: string; montra?: boolean }[])
-      .filter((t) => !taken.has(t.address.toLowerCase()) && !takenSym.has(t.symbol.toLowerCase()))
+      .filter((t) => !taken.addr.has(t.address.toLowerCase()) && !taken.sym.has(t.symbol.toLowerCase()))
       .map((t) => ({
-        symbol: t.symbol, name: `${t.montra ? "Montra launch" : "Unverified"} · ${t.address.slice(0, 6)}…${t.address.slice(-4)}`, address: t.address as Address,
+        symbol: t.symbol, name: `${t.montra ? "Montra launch" : "Unverified"} · ${short(t.address)}`, address: t.address as Address,
         decimals: t.decimals, glyph: t.symbol[0] ?? "?", tone: "other" as const, logo: t.logo,
       }))
   : [];

@@ -4,13 +4,13 @@ import { createPublicClient, http, erc20Abi, type Address, type Hash } from "vie
 import { useAccount, usePublicClient } from "wagmi";
 import { CONTRACTS, DEPLOY_BLOCK, LOGS_RPC, elysium, txUrl } from "@/lib/chain";
 import { routedEvent } from "@/lib/abi";
-import { TOKENS, VERIFIED, NATIVE } from "@/lib/tokens";
+import { TOKENS, VERIFIED, BRIDGED, NATIVE } from "@/lib/tokens";
 import { fmt } from "@/lib/swap";
 
 type Row = { hash: Hash; time: number; tokenIn: Address; tokenOut: Address; amountIn: bigint; amountOut: bigint };
 type Meta = Record<string, { symbol: string; decimals: number }>;
 
-const KNOWN: Meta = Object.fromEntries([...TOKENS, ...VERIFIED].map((t) => [t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals }]));
+const KNOWN: Meta = Object.fromEntries([...TOKENS, ...VERIFIED, ...BRIDGED].map((t) => [t.address.toLowerCase(), { symbol: t.symbol, decimals: t.decimals }]));
 
 /** The connected wallet's swaps through the Stoa router, read straight from on-chain events. */
 export default function SwapHistory() {

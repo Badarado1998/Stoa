@@ -17,6 +17,7 @@ Choose 0.1%, 0.5% or 1%. If the fill would be worse than your limit, the swap re
 - **Price impact** is shown for every swap. Above 3% it is highlighted; above 15% you must confirm.
 - Token labels in the picker:
   - **✓ bridged from HyperEVM**: major tokens (KNTQ, kHYPE, USD₮0, UBTC, UETH, PURR) that came through Elysium's canonical bridge. Stoa checked on-chain that each address is the bridge's own copy of the HyperEVM token.
+  - **Bridged from HyperEVM**: other tokens from the same bridge that Stoa can trade both ways, refreshed daily. Anyone can bridge any HyperEVM token, so these still show the token warning.
   - **Montra launch**: launched on Montra. This says where the token came from, not that it is safe.
   - **Unverified**: anything else, including tokens you import by address. Check the address before you trade.
 

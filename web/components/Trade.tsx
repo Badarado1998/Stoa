@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
-import { TOKENS, VERIFIED, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
+import { TOKENS, VERIFIED, BRIDGED, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
@@ -48,7 +48,7 @@ export default function Trade() {
   const { open: openWallet } = useWalletModal();
   const referrer = useReferrer(address);
 
-  const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...VERIFIED, ...POPULAR]);
+  const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...VERIFIED, ...BRIDGED, ...POPULAR]);
   const [sell, setSell] = useState<Token>(TOKENS[2]);
   const [buy, setBuy] = useState<Token>(TOKENS[0]);
   const [amount, setAmount] = useState("");

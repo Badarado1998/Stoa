@@ -1,0 +1,65 @@
+[
+ {
+  "symbol": "KNTQ",
+  "name": "Kinetiq Governance Token",
+  "address": "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0",
+  "decimals": 18,
+  "hyperevm": "0x000000000000780555bD0BCA3791f89f9542c2d6"
+ },
+ {
+  "symbol": "wNVDAx",
+  "name": "Wrapped NVIDIA xStock",
+  "address": "0x11265018bF2d5a99fb71EFaE73aD670203C1dF44",
+  "decimals": 18,
+  "hyperevm": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5"
+ },
+ {
+  "symbol": "UETH",
+  "name": "Unit Ethereum",
+  "address": "0x7A66A75fe41Bc26867C17fe1bc7D1C076EBd4eCd",
+  "decimals": 18,
+  "hyperevm": "0xBe6727B535545C67d5cAa73dEa54865B92CF7907"
+ },
+ {
+  "symbol": "kHYPE",
+  "name": "Kinetiq Staked HYPE",
+  "address": "0x248888D396A546A69A188f3Deb476964e581E9d0",
+  "decimals": 18,
+  "hyperevm": "0xfD739d4e423301CE9385c1fb8850539D657C296D"
+ },
+ {
+  "symbol": "RAM",
+  "name": "Ramses",
+  "address": "0x2ea9E66Adb86b0Ed71f79ab2e81a31147eDc3215",
+  "decimals": 18,
+  "hyperevm": "0x555570a286F15EbDFE42B66eDE2f724Aa1AB5555"
+ },
+ {
+  "symbol": "USD₮0",
+  "name": "USD₮0",
+  "address": "0x3BdE42a1dA8F1D95564f2c4a51a0cF73a725674C",
+  "decimals": 6,
+  "hyperevm": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
+ },
+ {
+  "symbol": "UBTC",
+  "name": "Unit Bitcoin",
+  "address": "0xE9C29585EAe4B9a55b02a9605AEa892B40d972E8",
+  "decimals": 8,
+  "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
+ },
+ {
+  "symbol": "PURR",
+  "name": "Purr",
+  "address": "0x46b131573Ca7c2674b652BbeB7FC16D530396aEC",
+  "decimals": 18,
+  "hyperevm": "0x9b498C3c8A0b8CD8BA1D9851d40D186F1872b44E"
+ },
+ {
+  "symbol": "EQSPCX",
+  "name": "EQX Tokenized SPCX",
+  "address": "0x8264c91CedFE6CC078116083d5a3e198c16B1898",
+  "decimals": 8,
+  "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD"
+ }
+]

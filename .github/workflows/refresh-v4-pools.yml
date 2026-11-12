@@ -2,6 +2,7 @@ name: Refresh Uniswap V4 pools
 
 # Daily: rank the most traded Uniswap V4 launchpad pools on Elysium and register the new ones on Stoa's V4 adapter,
 # so fresh tokens route without anyone pressing "Add pool". Known pools and full pairs are skipped at no gas cost.
+# Then lists the tokens from the canonical HyperEVM bridge that the router can trade both ways (web token picker).
 on:
   schedule:
     - cron: "17 1 * * *" # 08:17 WIB
@@ -32,12 +33,15 @@ jobs:
           test -n "$ADAPTER" || { echo "no V4 adapter deployed"; exit 0; }
           test -n "${{ secrets.DEPLOYER_PRIVATE_KEY }}" || { echo "::warning::DEPLOYER_PRIVATE_KEY missing; skipping registration"; exit 0; }
           RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" ADAPTER="$ADAPTER" ./script/seed-v4.sh
-      - name: Save the list
+      - name: List routable bridged tokens
+        working-directory: contracts/script/data
+        run: python3 -I bridged_tokens.py || echo "::warning::bridged token scan failed; keeping yesterday's list"
+      - name: Save the lists
         run: |
-          git diff --quiet contracts/script/data/v4-seed-pools.json && exit 0
+          git diff --quiet contracts/script/data/v4-seed-pools.json web/lib/bridged-tokens.json && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
-          git add contracts/script/data/v4-seed-pools.json
-          git commit -m "data: refresh most traded Uniswap V4 pools"
+          git add contracts/script/data/v4-seed-pools.json web/lib/bridged-tokens.json
+          git commit -m "data: refresh V4 pools and bridged tokens"
           git push
