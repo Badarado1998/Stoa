@@ -14,6 +14,10 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
   const { data: bal } = useBalance({ address, chainId: elysium.id, query: { enabled: !!address } });
   const [copied, setCopied] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [mobile, setMobile] = useState(false);
+  const [hasEth, setHasEth] = useState(false);
+  const [here, setHere] = useState("https://stoadex.com/trade");
+  const [pending, setPending] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -25,9 +29,22 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
 
   useEffect(() => { if (isConnected && open && chainId === elysium.id && !error) { /* stay open to show account */ } }, [isConnected, open, chainId, error]);
 
+  useEffect(() => {
+    if (!open) return;
+    setMobile(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+    setHasEth(typeof window !== "undefined" && !!(window as unknown as { ethereum?: unknown }).ethereum);
+    setHere(location.href.split("#")[0]);
+  }, [open]);
+  useEffect(() => { if (!isPending) setPending(null); }, [isPending]);
+
   if (!open) return null;
-  // EIP-6963 wallets announce themselves; hide the generic "Injected" entry when a named one exists
-  const list = connectors.filter((c, i, a) => !(c.id === "injected" && a.some((x) => x.type === "injected" && x.id !== "injected")));
+  // EIP-6963 wallets announce themselves with their own name and logo; the generic
+  // "injected" entry is shown only when a provider exists but announced nothing
+  const named = connectors.filter((c) => c.type === "injected" && c.id !== "injected");
+  const generic = connectors.find((c) => c.id === "injected");
+  const installed = named.length ? named : hasEth && generic ? [generic] : [];
+  const wcConn = connectors.find((c) => c.type === "walletConnect");
+  const go = (c: (typeof connectors)[number]) => { setPending(c.uid); if (c.type === "walletConnect") onClose(); connect({ connector: c, chainId: elysium.id }); };
   const wrongChain = isConnected && chainId !== elysium.id;
 
   return (
@@ -53,22 +70,66 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
           </div>
         ) : (
           <>
-            <div className="wl">
-              {list.map((c) => (
-                <button key={c.uid} type="button" disabled={isPending} onClick={() => connect({ connector: c, chainId: elysium.id })}>
-                  {c.icon ? <img src={c.icon} alt="" /> : <i>{c.name[0]}</i>}
-                  {c.id === "injected" ? "Browser wallet" : c.name}
-                  {c.type === "walletConnect" && <small>QR / mobile</small>}
-                </button>
-              ))}
-            </div>
-            {list.length === 0 && <p className="note">No wallet found. Install MetaMask, Rabby or OKX Wallet.</p>}
-            {error && <div className="err">{error.message.split("\n")[0]}</div>}
-            <p className="note">Stoa runs on {elysium.name} (chain {elysium.id}).</p>
+            <p className="wsub">Pick a wallet to start trading on {elysium.name}.</p>
+            {installed.length > 0 && (
+              <>
+                <div className="wh">INSTALLED</div>
+                <div className="wl">
+                  {installed.map((c) => (
+                    <Row key={c.uid} icon={c.icon || "/wallets/browser.svg"} name={c.id === "injected" ? "Browser wallet" : c.name}
+                      sub={pending === c.uid ? "Confirm in your wallet…" : "Detected on this device"} tag="Ready"
+                      busy={pending === c.uid} disabled={isPending} onClick={() => go(c)} />
+                  ))}
+                </div>
+              </>
+            )}
+            {mobile && installed.length === 0 && (
+              <>
+                <div className="wh">OPEN STOA IN YOUR WALLET APP</div>
+                <div className="wl">
+                  <Row href={`https://metamask.app.link/dapp/${here.replace(/^https?:\/\//, "")}`} icon="/wallets/metamask.svg" name="MetaMask" sub="Opens Stoa inside the app" />
+                  <Row href={`https://web3.okx.com/download?deeplink=${encodeURIComponent(`okx://wallet/dapp/url?dappUrl=${encodeURIComponent(here)}`)}`} icon="/wallets/okx.svg" name="OKX Wallet" sub="Opens Stoa inside the app" />
+                </div>
+              </>
+            )}
+            {wcConn && (
+              <>
+                <div className="wh">{installed.length || mobile ? "OTHER WALLETS" : "USE YOUR PHONE"}</div>
+                <div className="wl">
+                  <Row icon="/wallets/wallet-connect.svg" name="WalletConnect" sub={pending === wcConn.uid ? "Waiting for approval…" : mobile ? "Rabby, Trust and 300+ more" : "Scan a QR with your phone wallet"}
+                    busy={pending === wcConn.uid} disabled={isPending} onClick={() => go(wcConn)} />
+                </div>
+              </>
+            )}
+            {!mobile && installed.length === 0 && (
+              <>
+                <div className="wh">NO WALLET YET?</div>
+                <div className="wl">
+                  <Row href="https://rabby.io" icon="/wallets/rabby.svg" name="Rabby" sub="Install the browser extension" />
+                  <Row href="https://metamask.io/download/" icon="/wallets/metamask.svg" name="MetaMask" sub="Install the browser extension" />
+                </div>
+              </>
+            )}
+            {error && <div className="err">{/rejected|denied/i.test(error.message) ? "Request cancelled in the wallet." : error.message.split("\n")[0]}</div>}
+            <p className="note wfoot">Your wallet adds the {elysium.name} network (chain {elysium.id}) on first connect. Stoa never holds your funds.</p>
           </>
         )}
       </div>
     </div>
   );
+}
+function Row({ icon, name, sub, tag, href, busy, disabled, onClick }: {
+  icon: string; name: string; sub: string; tag?: string; href?: string; busy?: boolean; disabled?: boolean; onClick?: () => void;
+}) {
+  const inner = (
+    <>
+      <img src={icon} alt="" width={36} height={36} />
+      <span className="wn"><b>{name}</b><small>{sub}</small></span>
+      {busy ? <span className="wspin" aria-label="Connecting" /> : tag ? <span className="wtag">{tag}</span> : <span className="wgo" aria-hidden>›</span>}
+    </>
+  );
+  return href
+    ? <a className="wrow" href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
+    : <button className="wrow" type="button" disabled={disabled} onClick={onClick}>{inner}</button>;
 }
 export { txUrl };
