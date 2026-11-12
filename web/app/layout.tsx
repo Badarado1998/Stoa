@@ -7,8 +7,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "Stoa — The market, quoted live", template: "%s · Stoa" },
   description: "The PropAMM hub on Elysium. Maker-quoted pools, checked against every major Elysium venue on every swap.",
-  openGraph: { title: "Stoa — The market, quoted live", description: "The PropAMM hub on Elysium.", url: SITE, siteName: "Stoa", images: ["/og.png"] },
-  twitter: { card: "summary_large_image", site: "@StoaDEX", images: ["/og.png"] },
+  // no fixed title or url here, so each page's own title is used when a link is shared
+  openGraph: { description: "Swap at the best price across every Elysium DEX. Maker-quoted pools, checked on every swap.", siteName: "Stoa", type: "website", images: [{ url: "/og-v2.png", width: 1200, height: 630, alt: "Stoa: swap at the best price across every Elysium DEX" }] },
+  twitter: { card: "summary_large_image", site: "@StoaDEX", description: "Swap at the best price across every Elysium DEX. Maker-quoted pools, checked on every swap.", images: ["/og-v2.png"] },
 };
 export const viewport: Viewport = { themeColor: "#EEF2F6", width: "device-width", initialScale: 1 };
 

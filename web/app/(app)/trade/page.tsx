@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Trade from "@/components/Trade";
 import { PageHead } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Trade" };
+export const metadata: Metadata = { title: "Swap at the best price on Elysium" };
 
 export default function TradePage() {
   return (
