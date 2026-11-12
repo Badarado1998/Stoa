@@ -20,14 +20,31 @@ IStoaRouter.SwapParams memory p = IStoaRouter.SwapParams({
   referrer: address(0)
 });
 IStoaRouter(router).swap(p);`;
-const TS = `// best route across Stoa pools, Uniswap, Aero, Ramses and Liquidity Book, direct or via WHYPE
-const { result: route } = await client.simulateContract({
-  address: ROUTER, abi: routerAbi,
-  functionName: 'quote',
-  args: [USDC, WHYPE, 250_000_000n],
+const TS = `import { createPublicClient, createWalletClient, custom, http, parseUnits } from 'viem'
+import { elysium } from './chain'                    // chain id 99901, rpc.elysium.kinetiq.xyz
+import routerAbi from './StoaRouter.json'           // stoadex.com/abi/StoaRouter.json
+
+const ROUTER = '0x104752D50ef893da579Ad813918269e09Ea17dbA'
+const USDC = '0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65'
+const NATIVE = '0x0000000000000000000000000000000000000000' // HYPE
+const pub = createPublicClient({ chain: elysium, transport: http() })
+const wallet = createWalletClient({ chain: elysium, transport: custom(window.ethereum) })
+const [me] = await wallet.getAddresses()
+
+// 1. best route across every venue, direct or via WHYPE (eth_call, free)
+const amountIn = parseUnits('1', 18) // 1 HYPE
+const { result: q } = await pub.simulateContract({
+  address: ROUTER, abi: routerAbi, functionName: 'quote', args: [NATIVE, USDC, amountIn],
 })
-// route.amountOut, route.mid, route.leg1, route.leg2
-// then: writeContract({ functionName: 'swap', args: [{ ...route, ... }] })`;
+
+// 2. swap along that route with a 0.5% limit
+await wallet.writeContract({
+  account: me, address: ROUTER, abi: routerAbi, functionName: 'swap', value: amountIn,
+  args: [{ tokenIn: NATIVE, tokenOut: USDC, mid: q.mid, leg1: q.leg1, leg2: q.leg2,
+    amountIn, minOut: q.amountOut * 995n / 1000n, to: me,
+    deadline: BigInt(Math.floor(Date.now() / 1000) + 120), referrer: NATIVE }], // referrer: your address to earn 10%
+})
+// ERC-20 input: approve the router for amountIn first (or use swapWithPermit2), and send no value`;
 
 export default function BuildPage() {
   const rows: [string, string | undefined][] = [["WHYPE", WHYPE], ["USDC", USDC], ["Permit2", "0x000000000022D473030F116dDEE9F6B43aC78BA3"]];
@@ -37,10 +54,11 @@ export default function BuildPage() {
       <PageHead eyebrow="IV · BUILD" title="Every pool is a building block">Quote, route and swap from your own app or contract.</PageHead>
       <div className="grid2 eq">
         <div className="panel pad">
-          <div className="lbl">TYPESCRIPT (VIEM)</div>
+          <div className="lbl">TYPESCRIPT (VIEM) · COMPLETE EXAMPLE</div>
           <pre className="code" style={{ marginTop: 12 }}>{TS}</pre>
           <div className="lbl" style={{ marginTop: 18 }}>SOLIDITY</div>
           <pre className="code" style={{ marginTop: 12 }}>{SOL}</pre>
+          <p className="note" style={{ marginTop: 14 }}>No npm package yet: use viem or ethers with the router ABI. <a href="/abi/StoaRouter.json" download>Download StoaRouter.json</a></p>
           <Link className="go" href="/docs/router-sdk">Router and SDK docs</Link>
         </div>
         <div className="panel pad">

@@ -35,10 +35,10 @@ await wallet.writeContract({
 
 ## Permit2
 
-`swapWithPermit2(params, permit, signature)` pulls the input with a [Permit2](https://github.com/Uniswap/permit2) signature instead of an approval to the router. The permit must be signed by the caller, for the same token, with the router as spender.
+`swapWithPermit2(params, permit, signature)` pulls the input with a [Permit2](https://docs.uniswap.org/contracts/permit2/overview) signature instead of an approval to the router. The permit must be signed by the caller, for the same token, with the router as spender.
 
 {% hint style="info" %}
 
-A typed SDK package will follow. Until then, the full ABI comes with the verified source on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA).
+A typed SDK package will follow. Until then, use viem or ethers with the router ABI: download it from [stoadex.com/abi/StoaRouter.json](https://stoadex.com/abi/StoaRouter.json), or take it from the verified source on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA).
 
 {% endhint %}
