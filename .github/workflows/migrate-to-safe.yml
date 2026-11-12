@@ -1,0 +1,68 @@
+name: Move ownership to the admin Safe
+
+# One-time: the owner wallet hands the five owned Stoa contracts to the 2-of-3 admin Safe, then the Safe accepts
+# them in one batched transaction (deployer approves, owner executes). Needs OWNER_PRIVATE_KEY only for this run:
+# delete that secret afterwards, so two Safe signers never sit in the same place.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      RPC: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
+      OWNER_PK: ${{ secrets.OWNER_PRIVATE_KEY }}
+      DEP_PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+      MULTISEND: "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Transfer and accept
+        run: |
+          set -euo pipefail
+          test -n "$OWNER_PK" || { echo "OWNER_PRIVATE_KEY secret is missing"; exit 1; }
+          D=web/lib/deployments.json
+          SAFE=$(jq -r .safe $D)
+          OWNER=$(cast wallet address --private-key "$OWNER_PK")
+          DEP=$(cast wallet address --private-key "$DEP_PK")
+          echo "Safe $SAFE · owner $OWNER · deployer $DEP"
+          owners=$(cast call $SAFE 'getOwners()(address[])' --rpc-url $RPC | tr 'A-F' 'a-f')
+          for a in $OWNER $DEP; do echo "$owners" | grep -qi "${a:2}" || { echo "$a is not a Safe signer"; exit 1; }; done
+          TARGETS="$(jq -r '.router, .poolWhypeUsdc, .makerRegistry, .feeDistributor, .uniswapV4Adapter' $D)"
+          ACCEPT=()
+          for t in $TARGETS; do
+            o=$(cast call $t 'owner()(address)' --rpc-url $RPC); p=$(cast call $t 'pendingOwner()(address)' --rpc-url $RPC)
+            if [ "${o,,}" = "${SAFE,,}" ]; then echo "$t already owned by the Safe"; continue; fi
+            [ "${o,,}" = "${OWNER,,}" ] || { echo "$t is owned by $o, not the owner wallet"; exit 1; }
+            if [ "${p,,}" != "${SAFE,,}" ]; then
+              cast send $t 'transferOwnership(address)' $SAFE --private-key "$OWNER_PK" --rpc-url $RPC | grep -E "^status"
+            fi
+            ACCEPT+=("$t")
+          done
+          [ ${#ACCEPT[@]} -gt 0 ] || { echo "nothing to accept"; exit 0; }
+          ACC=$(cast calldata 'acceptOwnership()')
+          # MultiSendCallOnly payload: per call uint8 op | address to | uint256 value | uint256 len | bytes data
+          PACKED=$(python3 -c "
+          import sys
+          d=bytes.fromhex(sys.argv[1][2:]); out=b''
+          for t in sys.argv[2:]:
+              out+=b'\x00'+bytes.fromhex(t[2:])+(0).to_bytes(32,'big')+len(d).to_bytes(32,'big')+d
+          print('0x'+out.hex())" $ACC "${ACCEPT[@]}")
+          DATA=$(cast calldata 'multiSend(bytes)' $PACKED)
+          Z=0x0000000000000000000000000000000000000000
+          NONCE=$(cast call $SAFE 'nonce()(uint256)' --rpc-url $RPC | cut -d' ' -f1)
+          H=$(cast call $SAFE 'getTransactionHash(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,uint256)(bytes32)' $MULTISEND 0 $DATA 1 0 0 0 $Z $Z $NONCE --rpc-url $RPC)
+          echo "Safe tx $H (nonce $NONCE)"
+          cast send $SAFE 'approveHash(bytes32)' $H --private-key "$DEP_PK" --rpc-url $RPC | grep -E "^status"
+          # pre-approved signatures (v=1), sorted by signer address
+          SIGS=$(python3 -c "
+          import sys
+          s=sorted(sys.argv[1:], key=lambda a:int(a,16))
+          print('0x'+''.join(a[2:].lower().rjust(64,'0')+'0'*64+'01' for a in s))" $DEP $OWNER)
+          cast send $SAFE 'execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)' $MULTISEND 0 $DATA 1 0 0 0 $Z $Z $SIGS --private-key "$OWNER_PK" --rpc-url $RPC | grep -E "^(status|transactionHash) "
+          for t in $TARGETS; do echo "$t owner: $(cast call $t 'owner()(address)' --rpc-url $RPC)"; done
+          echo "router guardian (pause only): $(cast call $(jq -r .router $D) 'guardian()(address)' --rpc-url $RPC)"
+          echo "Done. Delete the OWNER_PRIVATE_KEY secret now."
