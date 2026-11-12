@@ -108,7 +108,7 @@ export default function Admin() {
         </table>
       </div>
 
-      <div className="grid2" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
+      <div className="grid2 eq">
         <div className="panel pad">
           <div className="lbl">EMERGENCY</div>
           <p className="note">Router swaps: <b>{paused === undefined ? "—" : paused ? "PAUSED" : "running"}</b> · Maker pool: <b>{poolPaused === undefined ? "—" : poolPaused ? "PAUSED" : "running"}</b> · Guardian <code>{short(guardian)}</code></p>

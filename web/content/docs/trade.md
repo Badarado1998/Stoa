@@ -15,7 +15,10 @@ Choose 0.1%, 0.5% or 1%. If the fill would be worse than your limit, the swap re
 
 - Selling an ERC-20 for the first time asks for an approval of **only that amount**. You can opt in to an unlimited approval in settings.
 - **Price impact** is shown for every swap. Above 3% it is highlighted; above 15% you must confirm.
-- Tokens you import by address are **unverified**. Check the address before you trade.
+- Token labels in the picker:
+  - **✓ bridged from HyperEVM**: major tokens (KNTQ, kHYPE, USD₮0, UBTC, UETH, PURR) that came through Elysium's canonical bridge. Stoa checked on-chain that each address is the bridge's own copy of the HyperEVM token.
+  - **Montra launch**: launched on Montra. This says where the token came from, not that it is safe.
+  - **Unverified**: anything else, including tokens you import by address. Check the address before you trade.
 
 {% hint style="warning" %}
 

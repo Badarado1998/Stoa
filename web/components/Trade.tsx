@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
-import { TOKENS, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
+import { TOKENS, VERIFIED, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
@@ -48,7 +48,7 @@ export default function Trade() {
   const { open: openWallet } = useWalletModal();
   const referrer = useReferrer(address);
 
-  const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...POPULAR]);
+  const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...VERIFIED, ...POPULAR]);
   const [sell, setSell] = useState<Token>(TOKENS[2]);
   const [buy, setBuy] = useState<Token>(TOKENS[0]);
   const [amount, setAmount] = useState("");
@@ -355,7 +355,7 @@ function TokenMenu({ tokens, onPick, onImport, onClose }: { tokens: Token[]; onP
       {sheet && <div className="rowx tokh"><b>Select a token</b><button className="x" type="button" onClick={onClose} aria-label="Close">×</button></div>}
       <input placeholder="Search or paste address" value={q} onChange={(e) => setQ(e.target.value.trim())} aria-label="Search token" autoFocus={!sheet} />
       <div className="tokl">
-        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small>{t.address === NATIVE ? "Native" : t.name}</small></span></button>)}
+        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small className={t.tone === "bridged" ? "vf" : undefined}>{t.address === NATIVE ? "Native" : t.name}</small></span></button>)}
         {list.length === 0 && isAddress(q) && <button type="button" onClick={() => onImport(q)}>Import {q.slice(0, 6)}…{q.slice(-4)}</button>}
         {list.length === 0 && !isAddress(q) && <p className="note" style={{ padding: "0 8px" }}>Paste a token address to import it.</p>}
       </div>
