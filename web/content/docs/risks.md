@@ -6,10 +6,10 @@ What can go wrong, and what limits it.
 | --- | --- |
 | A contract bug affects pool funds | Maker pool inventory is supplied by Stoa, not by outside depositors; per-swap caps stay until the audit |
 | A venue misbehaves or lies about its output | The router measures what you actually received and reverts below your minimum; it also reverts if a venue does not take exactly your input |
-| A malicious venue is added | New venues wait 24 hours in public before they can go live; removals are instant. Uniswap V4 pools can only be added if their hooks are on an allowlist fixed at deployment |
+| A malicious venue is added | New venues wait 72 hours in public before they can go live (48-hour timelock, then the router's 24-hour wait); the guardian can pause the router at once. Uniswap V4 pools can only be added if their hooks are on an allowlist fixed at deployment |
 | Something goes wrong | The router can be paused at once by the owner or the guardian |
-| The admin key is misused or lost | Admin cannot upgrade code, move funds from your wallet or add a venue without a 24-hour public wait. Every contract is owned by a 2-of-3 Safe multisig (`0xBF71…055F`); one leaked key is not enough. All signers are held by the team, and Safe actions have no delay yet. See [Admin and permissions](admin.md) |
-| A maker posts abusive quotes | Makers must be approved and bond at least 10 HYPE, which can be slashed. Bonds take 24 hours to withdraw, so a maker cannot pull out before a slash |
+| The admin key is misused or lost | Admin cannot upgrade code, move funds from your wallet or add a venue without a 24-hour public wait. Every contract is owned by a 48-hour timelock controlled by a 2-of-3 Safe multisig: one leaked key is not enough, and every admin action is public for 48 hours before it runs. All Safe signers are held by the team. See [Admin and permissions](admin.md) |
+| A maker posts abusive quotes | Makers must be approved and bond at least 10 HYPE, which can be slashed. Bonds take 3 days to withdraw, longer than the 48-hour timelock, so a maker cannot pull out before a slash |
 | Contracts are not externally audited yet | A full [internal review](security-review.md) found no critical or high issues; per-swap cap of $500 on maker pools; vaults stay closed until the external audit |
 | Unlimited token approvals | The app approves only the amount of each swap unless you opt in |
 | Fake or copycat tokens | Tokens imported by address are marked unverified and need an explicit confirmation |

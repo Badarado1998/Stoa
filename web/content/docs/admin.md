@@ -6,13 +6,14 @@ Who controls what in Stoa, and what nobody can do.
 
 | Role | Address | Type |
 | --- | --- | --- |
-| Owner of every Stoa contract | `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F` | Safe multisig, **2 of 3** |
+| Owner of every Stoa contract | `0xeBa02cCc1f724Cd098fc20492EF9313e1ED2417B` | Timelock, **48 hours**, controlled by the admin Safe |
+| Admin Safe (proposes and executes through the timelock) | `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F` | Safe multisig, **2 of 3** |
 | Router guardian (emergency pause only) | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` | Wallet, also one of the Safe signers |
 | Treasury (receives slashed bonds) | `0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c` | Wallet |
 
 ## The admin Safe
 
-Every Stoa contract is owned by a Safe multisig (v1.3.0): `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F`. Any admin action needs **2 of its 3 signers**:
+Every Stoa contract is owned by a 48-hour timelock (`0xeBa02cCc1f724Cd098fc20492EF9313e1ED2417B`, OpenZeppelin TimelockController), and only the admin Safe (v1.3.0, `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F`) can schedule or run actions through it. Any admin action needs **2 of the Safe's 3 signers**, then waits **48 hours in public** before it can run:
 
 | Signer | Address |
 | --- | --- |
@@ -24,7 +25,7 @@ Ownership of the router, the maker pool, the maker registry, the fee distributor
 
 **Who holds the signers.** All three signer wallets are held by the Stoa team. The Safe protects against one key being leaked or lost; it is not a separation of power between independent parties. Adding an independent signer is planned.
 
-**No delay on Safe actions.** Apart from the 24-hour wait for new venues, an action runs as soon as two signers approve it, including withdrawing maker pool inventory or slashing a bond. Today the maker pool holds no outside funds and no maker has bonded, so nothing a trader owns is exposed. A timelock on these actions comes before vaults open or outside makers bond.
+**48-hour timelock.** Since 12 November 2026 every owner action, including withdrawing maker pool inventory, slashing a bond, approving a maker or adding a venue, must be scheduled on-chain and wait 48 hours before it can run. Anyone can see a scheduled action during that window. The timelock has no admin: only the Safe can schedule, run or cancel, and the delay itself can only change through the same 48-hour wait. Maker bonds take 3 days to withdraw, longer than the timelock, so a maker cannot leave before a slash lands.
 
 The deployer wallet has no admin rights of its own; it is one of the three Safe signers and can act only together with a second signer.
 
@@ -32,11 +33,11 @@ The deployer wallet has no admin rights of its own; it is one of the three Safe 
 
 | Power | Limit |
 | --- | --- |
-| Add a new venue (pool or adapter) to the router | Must be proposed first and **wait 24 hours** in public before it can go live. The setup phase is locked, so there is no shortcut. |
-| Remove a venue | Instant. Removing a venue can only take a route away, never add one. |
+| Add a new venue (pool or adapter) to the router | 48 hours through the timelock, then the router's own 24-hour wait: 72 hours in public before it can go live. The setup phase is locked, so there is no shortcut. |
+| Remove a venue | 48 hours through the timelock. To stop a venue at once, the guardian pauses the router. |
 | Pause swaps | Instant, by the owner or the guardian. Only the owner can unpause. |
 | Approve or remove makers on a pool | Makers also need a bond of at least **10 HYPE** to quote. |
-| Slash a maker's bond | Sends the slashed HYPE to the treasury. Used when a maker posts abusive quotes. |
+| Slash a maker's bond | Sends the slashed HYPE to the treasury, after the 48-hour wait. Used when a maker posts abusive quotes. |
 | Set the per-swap cap on a maker pool | Currently **$500** per swap on WHYPE/USDC. |
 | Withdraw pool inventory | Maker pool inventory is supplied by Stoa today, not by outside depositors. |
 | Set the referral share | Currently **10%** of the protocol fee. |
@@ -56,9 +57,10 @@ The guardian can also tighten a pool: shorten how long quotes stay valid, set th
 
 | Setting | Value |
 | --- | --- |
-| New-venue waiting period | 24 hours |
+| New-venue waiting period | 72 hours (48 h timelock + 24 h router wait) |
 | Maker minimum bond | 10 HYPE |
-| Maker bond withdrawal delay | 24 hours |
+| Maker bond withdrawal delay | 3 days |
+| Delay on every admin action | 48 hours (timelock) |
 | Per-swap cap on maker pools | $500 |
 | Protocol fee | 2 bps |
 | Referral share | 10% of the protocol fee |

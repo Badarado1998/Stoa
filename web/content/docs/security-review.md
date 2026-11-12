@@ -24,7 +24,7 @@ A review of the deployed contracts by the Stoa team, published in full. **This i
 | --- | --- |
 | Critical | 0 |
 | High | 0 |
-| Medium | 2 (1 resolved) |
+| Medium | 2 (1 resolved, 1 mitigated) |
 | Low | 3 |
 | Informational | 4 |
 
@@ -38,7 +38,7 @@ No issue allows anyone to take user funds. The two medium findings are about adm
 
 ### M-2 Owner can withdraw maker pool inventory
 
-**Status: by design for now.** Maker pool inventory is supplied by Stoa itself, so this is how it is managed. Before any outside deposits are accepted, pool inventory moves into vaults the owner cannot withdraw from. Vaults stay closed until the external audit.
+**Status: mitigated on 12 November 2026.** Any withdrawal now waits 48 hours in public behind the timelock. Original finding: Maker pool inventory is supplied by Stoa itself, so this is how it is managed. Before any outside deposits are accepted, pool inventory moves into vaults the owner cannot withdraw from. Vaults stay closed until the external audit.
 
 ### L-1 A quote outlives a maker's removal for up to 2 blocks
 
@@ -80,5 +80,6 @@ The V4 adapter's pool list is a mapping filled by `register`. Slither's warning 
 ## Next steps
 
 1. ~~Move ownership to a multisig~~ Done: 2-of-3 admin Safe.
+1. ~~Add a delay to admin actions~~ Done: 48-hour timelock in front of every contract; maker bonds take 3 days to withdraw.
 2. External audit before raising the $500 per-swap cap or opening vaults.
 3. Paid bug bounty alongside the audit. Until then, report issues by DM to [@StoaDEX](https://x.com/StoaDEX).
