@@ -7,7 +7,7 @@ import { adminAbi } from "@/lib/abi";
 import { USDC, WHYPE } from "@/lib/tokens";
 import { fmt } from "@/lib/swap";
 import { useWalletModal } from "./Providers";
-import { approvedSignatures, batch, safeAbi } from "@/lib/safe";
+import { approvedSignatures, batch, safeAbi, timelockAbi } from "@/lib/safe";
 
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 const same = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
@@ -25,7 +25,7 @@ export default function Admin() {
   const [maker, setMaker] = useState("");
   const [to, setTo] = useState("");
 
-  const R = CONTRACTS.router, F = CONTRACTS.fees, G = CONTRACTS.registry, P = CONTRACTS.pool, V = CONTRACTS.v4, S = CONTRACTS.safe;
+  const R = CONTRACTS.router, F = CONTRACTS.fees, G = CONTRACTS.registry, P = CONTRACTS.pool, V = CONTRACTS.v4, S = CONTRACTS.safe, T = CONTRACTS.timelock;
   const owned = [
     ["StoaRouter", R], ["MakerRegistry", G], ["FeeDistributor", F], ["StoaPool (WHYPE/USDC)", P], ["UniswapV4Adapter", V],
   ].filter(([, a]) => a) as [string, Address][];
@@ -81,11 +81,31 @@ export default function Admin() {
   }
   /** Owner-only calls go through the Safe once it owns the target. The guardian can still pause directly. */
   const call = (label: string, target: Address, functionName: string, args: readonly unknown[] = [], guardianOk = false) => {
+    if (T && same(ownerOf(target), T) && !(guardianOk && isGuardian)) {
+      return viaTimelock(label, target, encodeFunctionData({ abi: adminAbi, functionName: functionName as never, args: args as never }));
+    }
     if (S && same(ownerOf(target), S) && !(guardianOk && isGuardian)) {
       return safeExec(label, [{ to: target, data: encodeFunctionData({ abi: adminAbi, functionName: functionName as never, args: args as never }) }]);
     }
     return send(label, () => writeContractAsync({ address: target, abi: adminAbi, functionName: functionName as never, args: args as never, chainId: elysium.id }));
   };
+
+  /** Owner actions behind the timelock: the Safe schedules, waits the delay, then executes. The same button does
+   *  each step; the same inputs give the same operation. */
+  async function viaTimelock(label: string, target: Address, data: Hex) {
+    if (!T || !pub) return;
+    const ZB = "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex;
+    const id = await pub.readContract({ address: T, abi: timelockAbi, functionName: "hashOperation", args: [target, 0n, data, ZB, ZB] });
+    const ts = await pub.readContract({ address: T, abi: timelockAbi, functionName: "getTimestamp", args: [id] });
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    if (ts === 1n) { setMsg({ ok: false, text: `${label}: this exact action was already executed. Change an input (for example the amount) to run it again.` }); return; }
+    if (ts === 0n) {
+      const delay = await pub.readContract({ address: T, abi: timelockAbi, functionName: "getMinDelay" });
+      return safeExec(`${label}: schedule (${Number(delay) / 3600} h)`, [{ to: T, data: encodeFunctionData({ abi: timelockAbi, functionName: "schedule", args: [target, 0n, data, ZB, ZB, delay] }) }]);
+    }
+    if (ts > now) { setMsg({ ok: false, text: `${label}: scheduled, can run after ${new Date(Number(ts) * 1000).toLocaleString()}.` }); return; }
+    return safeExec(`${label}: execute`, [{ to: T, data: encodeFunctionData({ abi: timelockAbi, functionName: "execute", args: [target, 0n, data, ZB, ZB] }) }]);
+  }
 
   /** Approve on-chain with approveHash; the signer who completes the threshold executes. */
   async function safeExec(label: string, calls: { to: Address; data: Hex }[]) {
@@ -132,13 +152,14 @@ export default function Admin() {
         const toAccept = owned.filter(([, ], i) => same(pendingOf(i), S));
         return (
           <div className="panel pad">
-            <div className="lbl">ADMIN SAFE · {threshold ? `${threshold} OF ${safeOwners.length}` : "—"}</div>
+            <div className="lbl">ADMIN SAFE · {threshold ? `${threshold} OF ${safeOwners.length}` : "—"}{T ? " · 48H TIMELOCK" : ""}</div>
             <p style={{ marginTop: 8 }}><a href={addressUrl(S)} target="_blank" rel="noopener noreferrer"><code>{S}</code></a></p>
             <ul className="list">{safeOwners.map((o) => <li key={o}>Signer <code>{short(o)}{same(o, address) ? " (you)" : ""}</code></li>)}</ul>
             {toMove.length > 0 && b(`Step 1: transfer ${toMove.length} contracts to the Safe`, async () => {
               for (const [name, a] of toMove) await send(`Transfer ${name}`, () => writeContractAsync({ address: a, abi: adminAbi, functionName: "transferOwnership", args: [S], chainId: elysium.id }));
             })}
             {toAccept.length > 0 && b(`Step 2: Safe accepts ${toAccept.length} contracts`, () => safeExec("Accept ownership", toAccept.map(([, a]) => ({ to: a, data: encodeFunctionData({ abi: adminAbi, functionName: "acceptOwnership" }) }))), !isSigner)}
+            {T && <p className="note">The contracts are owned by the timelock <a href={addressUrl(T)} target="_blank" rel="noopener noreferrer"><code>{short(T)}</code></a>. Every owner action below runs in two rounds with the same inputs: schedule it (one signer approves, a second presses again to send), wait 48 hours, then execute it the same way. The router guardian can still pause at once.</p>}
             <p className="note">Step 1 is sent by the current owner wallet, one transaction per contract. Step 2 needs two signers: the first press approves, the second press (from another signer) executes. The router guardian stays as it is, so pausing stays instant.</p>
           </div>
         );

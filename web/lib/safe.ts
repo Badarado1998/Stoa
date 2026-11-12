@@ -12,6 +12,15 @@ export const safeAbi = parseAbi([
   "function execTransaction(address to, uint256 value, bytes data, uint8 operation, uint256 safeTxGas, uint256 baseGas, uint256 gasPrice, address gasToken, address refundReceiver, bytes signatures) payable returns (bool)",
 ]);
 
+/** OpenZeppelin TimelockController (proposer and executor: the admin Safe). */
+export const timelockAbi = parseAbi([
+  "function getMinDelay() view returns (uint256)",
+  "function getTimestamp(bytes32 id) view returns (uint256)",
+  "function hashOperation(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt) pure returns (bytes32)",
+  "function schedule(address target, uint256 value, bytes data, bytes32 predecessor, bytes32 salt, uint256 delay)",
+  "function execute(address target, uint256 value, bytes payload, bytes32 predecessor, bytes32 salt) payable",
+]);
+
 /** Safe's MultiSendCallOnly v1.3.0 on Elysium, used to batch several calls into one Safe transaction. */
 export const MULTISEND = "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D" as Address;
 const multiSendAbi = parseAbi(["function multiSend(bytes transactions)"]);

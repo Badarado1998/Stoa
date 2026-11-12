@@ -21,7 +21,7 @@ const addr = (v?: string) => (v && /^0x[0-9a-fA-F]{40}$/.test(v) ? (v as Address
 // Written by the "Deploy contracts" workflow; env vars override it (local testing).
 type DeployKey =
   | "router" | "poolWhypeUsdc" | "feeDistributor" | "uniswapV2Adapter" | "uniswapV3Adapter" | "uniswapV4Adapter"
-  | "aeroAdapter" | "ramsesAdapter" | "liquidityBookAdapter" | "makerRegistry" | "safe";
+  | "aeroAdapter" | "ramsesAdapter" | "liquidityBookAdapter" | "makerRegistry" | "safe" | "timelock";
 const D = deployment as Partial<Record<DeployKey, string>> & { block?: number };
 
 export const CONTRACTS = {
@@ -32,6 +32,8 @@ export const CONTRACTS = {
   registry: addr(process.env.NEXT_PUBLIC_MAKER_REGISTRY) ?? addr(D.makerRegistry),
   /** admin Safe (2 of 3) that owns the contracts once ownership is moved */
   safe: addr(D.safe),
+  /** 48h timelock between the Safe and the contracts */
+  timelock: addr(D.timelock),
 };
 
 /** Kinetiq's public RPC answers eth_getLogs over the whole chain when filtered by topic, so swap history and
