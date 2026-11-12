@@ -22,4 +22,4 @@ Outside venues the router uses: Uniswap V4 PoolManager `0xe2E105D3f7209A9da11F83
 
 Token addresses come from the [Elysium contract list](https://elysium.kinetiq.xyz/docs/contract-addresses). Always check an address here before approving it.
 
-Every Stoa contract above is source-verified on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA), so anyone can check that the deployed bytecode matches the code. The contracts are not upgradeable. New venues can be added to the router only after a public 24-hour wait. Who holds admin rights and what they can do is listed in [Admin and permissions](admin.md).
+Every Stoa contract above is source-verified on the [Elysium explorer](https://elysium.kinetiq.xyz/address/0x104752D50ef893da579Ad813918269e09Ea17dbA) and on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA), so anyone can read the code and check that the deployed bytecode matches it. The contracts are not upgradeable. New venues can be added to the router only after a public 24-hour wait. Who holds admin rights and what they can do is listed in [Admin and permissions](admin.md).
