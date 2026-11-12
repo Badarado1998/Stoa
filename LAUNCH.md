@@ -17,8 +17,8 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 ## 3. Deploy
 
-- [ ] Actions → **Deploy contracts** → Run workflow, *broadcast unticked* (dry run). Check the printed addresses, gas and warnings.
-- [ ] Run again with **broadcast ticked**. The workflow commits `web/lib/deployments.json`; Vercel redeploys the site with the live addresses.
+- [x] Actions → **Deploy contracts** → Run workflow, *broadcast unticked* (dry run). Check the printed addresses, gas and warnings.
+- [x] Run again with **broadcast ticked** (done 12 Nov 2026, block 5,216,650; addresses in `web/lib/deployments.json`). The workflow commits `web/lib/deployments.json`; Vercel redeploys the site with the live addresses.
 - [ ] Open `stoa.trade/admin` with the owner wallet and press **Accept** on StoaRouter, MakerRegistry and FeeDistributor. The same page pauses swaps, withdraws protocol fees, approves makers and proposes venues.
 - The deploy also registers the 60 most traded Uniswap V4 launchpad pools (`contracts/script/data/v4-seed-pools.json`), so they route on day one. Rerun later with Actions → **Seed Uniswap V4 pools**.
 - [ ] Optional: verify the contracts on the Kinetiq explorer.
