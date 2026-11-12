@@ -8,6 +8,7 @@ import collections
 import concurrent.futures as cf
 import json
 import os
+import time
 import urllib.request
 
 RPC = os.environ.get("ELYSIUM_RPC_URL") or "https://rpc.elysium.kinetiq.xyz"
@@ -31,15 +32,18 @@ BASE = {"0x0000000000000000000000000000000000000000", "0xba876237b0f021a6c6d852d
 
 def rpc(method, params):
     req = urllib.request.Request(RPC, data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode(),
-                                 headers={"content-type": "application/json", "user-agent": "stoa-seed/1"})
-    for _ in range(4):
+                                 headers={"content-type": "application/json", "user-agent": "curl/8.5.0"})
+    err = None
+    for i in range(6):
         try:
             out = json.load(urllib.request.urlopen(req, timeout=120))
             if "result" in out:
                 return out["result"]
-        except Exception:
-            pass
-    raise RuntimeError(f"{method} failed")
+            err = out.get("error")
+        except Exception as e:  # rate limits and timeouts: back off and retry
+            err = e
+        time.sleep(1.5 * (i + 1))
+    raise RuntimeError(f"{method} failed: {err}")
 
 
 def main():
@@ -48,7 +52,7 @@ def main():
     def swaps(b):
         return rpc("eth_getLogs", [{"fromBlock": hex(b), "toBlock": hex(min(b + 4999, head)), "address": PM, "topics": [SWAP]}])
     count, traders = collections.Counter(), collections.defaultdict(set)
-    with cf.ThreadPoolExecutor(8) as ex:
+    with cf.ThreadPoolExecutor(4) as ex:
         for logs in ex.map(swaps, range(head - SPAN, head, 5000)):
             for l in logs:
                 count[l["topics"][1]] += 1
