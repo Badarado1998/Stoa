@@ -24,7 +24,7 @@ A review of the deployed contracts by the Stoa team, published in full. **This i
 | --- | --- |
 | Critical | 0 |
 | High | 0 |
-| Medium | 2 |
+| Medium | 2 (1 resolved) |
 | Low | 3 |
 | Informational | 4 |
 
@@ -34,7 +34,7 @@ No issue allows anyone to take user funds. The two medium findings are about adm
 
 ### M-1 Admin is a single wallet
 
-**Status: acknowledged.** The owner and guardian of every contract is one wallet. If its key leaks, an attacker could pause swaps, withdraw maker pool inventory, slash maker bonds or propose a new venue. They could **not** upgrade code, move funds from user wallets, or add a venue without the 24-hour public wait, which gives time to react. **Update:** a 2-of-3 admin Safe is deployed (`0xBF715C84b1C0759C87Da368c1476b80ac0C5055F`) and ownership is moving to it; the router guardian stays a single wallet that can only pause. See [Admin and permissions](admin.md).
+**Status: resolved on 12 November 2026.** Ownership moved to a 2-of-3 Safe (see the update at the end of this finding). Original finding: The owner and guardian of every contract is one wallet. If its key leaks, an attacker could pause swaps, withdraw maker pool inventory, slash maker bonds or propose a new venue. They could **not** upgrade code, move funds from user wallets, or add a venue without the 24-hour public wait, which gives time to react. **Update:** every contract is now owned by the 2-of-3 admin Safe `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F`. One leaked key can no longer act alone; the router guardian stays a single wallet that can only pause. See [Admin and permissions](admin.md).
 
 ### M-2 Owner can withdraw maker pool inventory
 
@@ -79,6 +79,6 @@ The V4 adapter's pool list is a mapping filled by `register`. Slither's warning 
 
 ## Next steps
 
-1. Finish moving ownership to the 2-of-3 admin Safe.
+1. ~~Move ownership to a multisig~~ Done: 2-of-3 admin Safe.
 2. External audit before raising the $500 per-swap cap or opening vaults.
 3. Paid bug bounty alongside the audit. Until then, report issues by DM to [@StoaDEX](https://x.com/StoaDEX).
