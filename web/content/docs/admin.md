@@ -43,7 +43,7 @@ The deployer wallet has no admin rights of its own; it is one of the three Safe 
 | Set the referral share | Currently **10%** of the protocol fee. |
 | Withdraw protocol fees | Only the protocol's share; referral earnings are claimable only by the referrer. |
 
-The guardian can also tighten a pool: shorten how long quotes stay valid, set the pool fee within the hard maximum of 0.30%, add a quote check, and pull a live quote.
+Pool settings (how long quotes stay valid, the pool fee within its hard maximum of 0.30%, the quote check) belong to the *pool guardian*, which is the maker registry's owner: the timelock. Changing them waits 48 hours in public like every other owner action. The router guardian wallet has exactly one power: pausing the router.
 
 ## What nobody can do
 
