@@ -11,10 +11,16 @@ export default function Header({ extra }: { extra?: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    const f = () => setSolid(scrollY > 8);
+    f(); addEventListener("scroll", f, { passive: true });
+    return () => removeEventListener("scroll", f);
+  }, [path]);
   const on = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
   return (
     <>
-      <header className="hdr">
+      <header className={`hdr${solid && path !== "/" ? " solid" : ""}`}>
         <Link className="brand" href="/"><img src="/logo.png" alt="" /><span>STOA</span></Link>
         <nav className="tabs" aria-label="Main">
           {TABS.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : undefined}>{l}</Link>)}

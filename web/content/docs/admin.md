@@ -10,7 +10,7 @@ Who controls what in Stoa, and what nobody can do.
 | Guardian (emergency role) | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` | Same wallet |
 | Treasury (receives slashed bonds) | `0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c` | Wallet |
 
-The owner and guardian are a **single wallet today**, not a multisig. Safe, the standard multisig, is not deployed on Elysium yet. Ownership moves to a multisig once one is available. Ownership uses a two-step transfer: the new owner has to accept, so it cannot be sent to a wrong address by mistake. Any change of owner is an on-chain event anyone can watch.
+The owner and guardian are a **single wallet today**, not a multisig. The Safe multisig contracts (v1.3.0) are deployed on Elysium, and moving ownership to a Safe is the next step. This page will list the Safe address and its threshold once the move is done. Ownership uses a two-step transfer: the new owner has to accept, so it cannot be sent to a wrong address by mistake. Any change of owner is an on-chain event anyone can watch.
 
 The wallet that deployed the contracts is separate from the owner and has no admin rights.
 
