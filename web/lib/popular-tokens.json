@@ -7,7 +7,8 @@
  {
   "symbol": "KORILA",
   "address": "0x7e7384E8c7E622e0BBF5813c399fFA4AdB22DC44",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x7e7384e8c7e622e0bbf5813c399ffa4adb22dc44.webp"
  },
  {
   "symbol": "Tesera",
@@ -82,7 +83,8 @@
  {
   "symbol": "TESTICLES",
   "address": "0x236FeEcD909FF562E775318c77781f4946c33b3b",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x236feecd909ff562e775318c77781f4946c33b3b.webp"
  },
  {
   "symbol": "MASCOT",
@@ -92,7 +94,8 @@
  {
   "symbol": "M",
   "address": "0x9Cc39bfee8d110e723619d330814e9aAEB1f6c3E",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x9cc39bfee8d110e723619d330814e9aaeb1f6c3e.webp"
  },
  {
   "symbol": "HYPEJAK",
@@ -107,7 +110,8 @@
  {
   "symbol": "BTRFLY",
   "address": "0xeC60E2EB9c8f2dDDabD55B9799e691bEeA6DA768",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xec60e2eb9c8f2dddabd55b9799e691beea6da768.webp"
  },
  {
   "symbol": "EACCAT",
@@ -137,7 +141,8 @@
  {
   "symbol": "ESTOCKS",
   "address": "0x390179a7fBE9D59A54aD272D2F384F070F8a85e8",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x390179a7fbe9d59a54ad272d2f384f070f8a85e8.webp"
  },
  {
   "symbol": "POCKET",
@@ -147,7 +152,8 @@
  {
   "symbol": "MONTRA",
   "address": "0x063F7Cc5339f92a5FD7BaF3D22233044FdA1F327",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x063f7cc5339f92a5fd7baf3d22233044fda1f327.webp"
  },
  {
   "symbol": "LANE",
@@ -162,7 +168,8 @@
  {
   "symbol": "HYPURR",
   "address": "0x43B95975F5b12e9e37DFeFA5c162EDC14a34dCBD",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x43b95975f5b12e9e37dfefa5c162edc14a34dcbd.webp"
  },
  {
   "symbol": "MASCOT",
@@ -182,7 +189,8 @@
  {
   "symbol": "CHAMELEON",
   "address": "0xd662D66eC991A3eae4EcBdA34327264c53d4cF38",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xd662d66ec991a3eae4ecbda34327264c53d4cf38.webp"
  },
  {
   "symbol": "NMEOWS",
@@ -197,7 +205,8 @@
  {
   "symbol": "FROG",
   "address": "0x6e285BB000a3c0aE6aa7b50B1F38A086219C81eD",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x6e285bb000a3c0ae6aa7b50b1f38a086219c81ed.webp"
  },
  {
   "symbol": "NMEOWS",
@@ -212,7 +221,8 @@
  {
   "symbol": "CACHE",
   "address": "0xD172611bfD1c1A8AC3E51bA93E25F7126b21E7ee",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xd172611bfd1c1a8ac3e51ba93e25f7126b21e7ee.webp"
  },
  {
   "symbol": "FROTH",
@@ -232,7 +242,8 @@
  {
   "symbol": "AZK",
   "address": "0x1e6992BBD08BE4b8fce8a8B548FF6298CabD50c3",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x1e6992bbd08be4b8fce8a8b548ff6298cabd50c3.webp"
  },
  {
   "symbol": "HELIOS",
@@ -242,12 +253,14 @@
  {
   "symbol": "HI",
   "address": "0xe19AB007f4252dEEe3CdA8FDbf2d7654C4c5c237",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xe19ab007f4252deee3cda8fdbf2d7654c4c5c237.webp"
  },
  {
   "symbol": "NEBULA",
   "address": "0x8007567d13f61c81cAf5Ea6AF38C187d02699122",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x8007567d13f61c81caf5ea6af38c187d02699122.webp"
  },
  {
   "symbol": "KORILA",
@@ -262,7 +275,8 @@
  {
   "symbol": "LiquidV",
   "address": "0xd12609Ddb1CD18280C7C14fB2CB5091CFEa37f2D",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xd12609ddb1cd18280c7c14fb2cb5091cfea37f2d.webp"
  },
  {
   "symbol": "SHADE",
@@ -272,7 +286,8 @@
  {
   "symbol": "BUTTPLUG",
   "address": "0x8818ea3FaBD6F4C61b2cd0E69355d3b58781560B",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x8818ea3fabd6f4c61b2cd0e69355d3b58781560b.webp"
  },
  {
   "symbol": "LETHE",

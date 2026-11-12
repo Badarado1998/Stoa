@@ -258,3 +258,5 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .chk{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:13px;color:var(--ink);cursor:pointer}
 .chk input{margin-top:2px;accent-color:var(--accent)}
 .inp{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:13px;margin:10px 0 2px;outline:none;background:#fff}
+
+.ti.img{object-fit:cover;background:#fff}

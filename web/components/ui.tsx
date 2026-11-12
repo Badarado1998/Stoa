@@ -10,13 +10,16 @@ export function PageHead({ eyebrow, title, children, action }: { eyebrow: string
   );
 }
 
-export function TokenIcon({ t }: { t: Pick<Token, "glyph" | "tone"> }) {
+export function TokenIcon({ t }: { t: Pick<Token, "glyph" | "tone" | "logo"> }) {
   const cls = t.tone === "native" ? "n" : t.tone === "hype" ? "h" : t.tone === "usd" ? "u" : "";
+  // eslint-disable-next-line @next/next/no-img-element
+  if (t.logo) return <img className="ti img" src={t.logo} alt="" width={26} height={26} loading="lazy" />;
   return <span className={`ti ${cls}`} style={t.tone === "other" ? { background: "linear-gradient(135deg,#6B7482,#A9B2C0)" } : undefined}>{t.glyph}</span>;
 }
 
 export function Pair() {
-  return <div className="pair"><span className="ti h">H</span><span className="ti u">$</span>WHYPE / USDC</div>;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <div className="pair"><img className="ti img" src="/tokens/hype.svg" alt="" width={26} height={26} /><img className="ti img" src="/tokens/usdc.svg" alt="" width={26} height={26} />WHYPE / USDC</div>;
 }
 
 export const Sk = ({ w = 80 }: { w?: number }) => <i className="sk" style={{ width: w }} />;
