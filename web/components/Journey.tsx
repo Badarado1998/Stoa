@@ -10,7 +10,7 @@ type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): vo
 const CARDS: { a: number; b: number; body: React.ReactNode }[] = [
   { a: 0.15, b: 0.215, body: <><div className="k">THE STOA <b>ELYSIUM · L2</b></div><h2>A market built like a stoa</h2><p>Every pool is a column. Professional makers quote it on-chain, every block, and the price you see is the price you get.</p></> },
   { a: 0.245, b: 0.315, body: <><div className="k">I · TRADE <b>POOL</b></div><h2>WHYPE / USDC</h2><p>The light inside the column is live depth. Bids on one side, asks on the other.</p>
-      <div className="rows"><span>Pricing</span><span>Maker-quoted</span><span>Quote refresh</span><span>Every block</span><span>Fee</span><span>2 bps</span><span>Status</span><span className="live">Opening soon</span></div>
+      <div className="rows"><span>Pricing</span><span>Maker-quoted</span><span>Quote refresh</span><span>Every block</span><span>Fee</span><span>2 bps</span><span>Status</span><span className="live">Live · awaiting makers</span></div>
       <Link className="go" href="/trade">Trade</Link></> },
   { a: 0.365, b: 0.435, body: <><div className="k">II · EARN <b>LP VAULTS</b></div><h2>Own a piece of the pool</h2><p>Vault shares that grow with every fee. Each ring that lights up is fees flowing to every share.</p><Link className="go" href="/earn">Earn</Link></> },
   { a: 0.485, b: 0.555, body: <><div className="k">III · RUN A POOL <b>CURATORS</b></div><h2>Makers hold the center</h2><p>Bring a price feed or a strategy, post a bond, and quote. Each orbiting light is a maker refreshing its price.</p><Link className="go" href="/curators">Become a curator</Link></> },

@@ -26,8 +26,10 @@ export default function PoolDepth() {
 
   return (
     <div className="panel pad">
-      <div className="rowx"><Pair /><span className="chip live">{pool ? (live ? "Quoting" : never ? "Waiting for makers" : "Paused") : "Opening soon"}</span></div>
-      {pool && cur && never ? (
+      <div className="rowx"><Pair /><span className="chip live">{!pool ? "Opening soon" : !cur ? "Checking quote…" : live ? "Quoting" : never ? "Waiting for makers" : "No live quote"}</span></div>
+      {pool && !cur ? (
+        <p className="note" style={{ marginTop: 14 }}>Live on Elysium. Reading the maker quote from the chain… Swaps fill on the best outside venue whenever no maker quotes.</p>
+      ) : pool && cur && never ? (
         <p className="note" style={{ marginTop: 14 }}>No maker has quoted this pool yet. Swaps fill on the best outside venue until one does.</p>
       ) : pool && cur ? (
         <div className="det" style={{ marginTop: 14 }}>
