@@ -10,7 +10,7 @@ export const wagmiConfig = createConfig({
   connectors: [
     injected({ shimDisconnect: true }),
     ...(wc
-      ? [walletConnect({ projectId: wc, showQrModal: true, metadata: { name: "Stoa", description: "The PropAMM hub on Elysium", url: "https://stoa.trade", icons: ["https://stoa.trade/logo.png"] } })]
+      ? [walletConnect({ projectId: wc, showQrModal: true, metadata: { name: "Stoa", description: "The PropAMM hub on Elysium", url: "https://stoadex.com", icons: ["https://stoadex.com/logo.png"] } })]
       : []),
   ],
   transports: { [elysium.id]: RPCS.length ? fallback(RPCS.map((u) => http(u, { batch: true })), { rank: false, retryCount: 1 }) : http() },

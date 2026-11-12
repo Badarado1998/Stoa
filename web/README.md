@@ -27,7 +27,7 @@ WalletConnect appears when `NEXT_PUBLIC_WC_PROJECT_ID` is set (free project id f
 ## Docs = GitBook
 
 `content/docs` is a GitBook-ready folder (`SUMMARY.md`, `README.md`, one `.md` per page, GitBook `{% hint %}` blocks).
-Connect it to GitBook with Git Sync (project directory `content/docs`) to publish docs.stoa.trade. The site renders the same files.
+Connect it to GitBook with Git Sync (project directory `content/docs`) to publish stoadex.com/docs. The site renders the same files.
 
 ## Tests
 
@@ -40,4 +40,4 @@ npm test                 # swap helpers (amount parsing, slippage, routing kind,
 
 ## Deploy (Vercel)
 
-Import the repo in Vercel, set the env vars from `.env.example`, deploy. Point stoa.trade at the project.
+Import the repo in Vercel, set the env vars from `.env.example`, deploy. Point stoadex.com at the project.

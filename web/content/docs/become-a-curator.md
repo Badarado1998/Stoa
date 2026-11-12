@@ -10,4 +10,4 @@ Makers post a bond in **HYPE** for each pool they quote. Each pool sets a minimu
 
 ## Verified pools
 
-Pools reviewed by the team get a Verified badge in [Pools](https://stoa.trade/pools). Pools can also turn on an independent quote check that rejects prices too far from a reference.
+Pools reviewed by the team get a Verified badge in [Pools](https://stoadex.com/pools). Pools can also turn on an independent quote check that rejects prices too far from a reference.

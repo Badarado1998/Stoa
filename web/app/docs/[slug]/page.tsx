@@ -40,7 +40,7 @@ export default async function DocPageView({ params }: { params: Promise<{ slug: 
             {prev && <Link href={`/docs/${prev.slug}`}><small>Previous</small>{prev.title}</Link>}
             {next && <Link className="nx" href={`/docs/${next.slug}`}><small>Next</small>{next.title}</Link>}
           </div>
-          <div className="dmeta">Source: content/docs/{slug}.md · also published at docs.stoa.trade</div>
+          <div className="dmeta">Source: content/docs/{slug}.md · also published at stoadex.com/docs</div>
         </article>
         <aside className="dtoc">
           {d.toc.length > 0 && <><h5>ON THIS PAGE</h5>{d.toc.map((t) => <a key={t.id} href={`#${t.id}`}>{t.text}</a>)}</>}

@@ -53,7 +53,7 @@ export const VENUE_NAMES: Record<string, string> = Object.fromEntries(
     .map(([a, n]) => [a!.toLowerCase(), n]),
 );
 export const CA = addr(process.env.NEXT_PUBLIC_CA);
-export const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://stoa.trade";
+export const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://stoadex.com";
 
 export const txUrl = (hash: string) => (explorer ? `${explorer.replace(/\/$/, "")}/tx/${hash}` : undefined);
 export const addressUrl = (a: string) => (explorer ? `${explorer.replace(/\/$/, "")}/address/${a}` : undefined);

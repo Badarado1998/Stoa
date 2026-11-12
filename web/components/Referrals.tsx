@@ -54,7 +54,7 @@ export default function Referrals() {
           </>
         )}
       </div>
-      <div className="panel pad"><div className="lbl">HOW IT WORKS</div><ul className="list"><li>Share your stoa.trade link <b>Any channel</b></li><li>Friends trade through it <b>Remembered on their device</b></li><li>You earn from their swaps <b>10% of protocol fee</b></li></ul></div>
+      <div className="panel pad"><div className="lbl">HOW IT WORKS</div><ul className="list"><li>Share your stoadex.com link <b>Any channel</b></li><li>Friends trade through it <b>Remembered on their device</b></li><li>You earn from their swaps <b>10% of protocol fee</b></li></ul></div>
     </div>
   );
 }

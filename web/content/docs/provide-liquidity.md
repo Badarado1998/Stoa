@@ -8,7 +8,7 @@ Public vaults are not open yet. They launch after the pool contracts are audited
 
 {% endhint %}
 
-1. Open [Earn](https://stoa.trade/earn) and pick a vault.
+1. Open [Earn](https://stoadex.com/earn) and pick a vault.
 2. Enter an amount and confirm the deposit.
 3. You receive vault shares. Fees are added to the vault, so each share is worth more over time.
 4. Withdraw any time by redeeming your shares.

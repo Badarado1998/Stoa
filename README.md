@@ -4,10 +4,10 @@
 
 | Folder | What | Stack |
 |---|---|---|
-| [`web/`](web) | stoa.trade: 3D home, trade, pools, earn, curators, build, referrals, portfolio, docs | Next.js 15, wagmi/viem, three.js |
+| [`web/`](web) | stoadex.com: 3D home, trade, pools, earn, curators, build, referrals, portfolio, docs | Next.js 15, wagmi/viem, three.js |
 | [`contracts/`](contracts) | `StoaRouter`, `StoaPool`, `MakerRegistry`, `FeeDistributor`, `UniswapV2Adapter` | Solidity 0.8.28, Foundry |
 | [`maker/`](maker) | Maker bot: quotes a pool every block from the Hyperliquid book, with risk limits | TypeScript, viem |
-| [`web/content/docs/`](web/content/docs) | Docs in GitBook format (Git Sync → docs.stoa.trade) | Markdown |
+| [`web/content/docs/`](web/content/docs) | Docs in GitBook format (Git Sync → stoadex.com/docs) | Markdown |
 
 ## Quick start
 

@@ -4,7 +4,7 @@ import path from "node:path";
 import { Marked } from "marked";
 
 /** Docs live in content/docs as GitBook-compatible markdown (SUMMARY.md + one file per page),
- *  so the same folder can be synced to docs.stoa.trade with GitBook Git Sync. */
+ *  so the same folder can be synced to stoadex.com/docs with GitBook Git Sync. */
 const DIR = path.join(process.cwd(), "content", "docs");
 
 export interface DocLink { slug: string; title: string; group: string }

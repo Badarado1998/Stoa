@@ -19,7 +19,7 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 - [x] Actions → **Deploy contracts** → Run workflow, *broadcast unticked* (dry run). Check the printed addresses, gas and warnings.
 - [x] Run again with **broadcast ticked** (done 12 Nov 2026, block 5,216,650; addresses in `web/lib/deployments.json`). The workflow commits `web/lib/deployments.json`; Vercel redeploys the site with the live addresses.
-- [ ] Open `stoa.trade/admin` with the owner wallet and press **Accept** on StoaRouter, MakerRegistry and FeeDistributor. The same page pauses swaps, withdraws protocol fees, approves makers and proposes venues.
+- [x] Open `stoadex.com/admin` with the owner wallet and press **Accept** on StoaRouter, MakerRegistry and FeeDistributor. The same page pauses swaps, withdraws protocol fees, approves makers and proposes venues.
 - The deploy also registers the 60 most traded Uniswap V4 launchpad pools (`contracts/script/data/v4-seed-pools.json`), so they route on day one. Rerun later with Actions → **Seed Uniswap V4 pools**.
 - [ ] Optional: verify the contracts on the Kinetiq explorer.
 
@@ -27,10 +27,10 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 
 Hosted on the Vercel project `stoa` (account nexforgecom, root `web`, Node 22). Production `*.vercel.app` is public; previews need a Vercel login.
 
-- [ ] Domains: buy `stoa.trade` and add it to the Vercel project; set `NEXT_PUBLIC_SITE_URL=https://stoa.trade`.
-- [ ] `NEXT_PUBLIC_WC_PROJECT_ID`: create a free project at cloud.reown.com (WalletConnect), allow the domain `stoa.trade`. Without it, only browser-extension wallets can connect.
-- [ ] `NEXT_PUBLIC_RPC_URL`: in the Alchemy and dRPC dashboards, restrict both keys to the `stoa.trade` domain, because these keys are visible in the browser.
-- Note: Vercel Authentication only guards the `*.vercel.app` URLs; `stoa.trade` is public once the domain is added.
+- [x] Domain `stoadex.com` (bought at Jagoan Hosting, DNS there: `A @ 216.198.79.1` and `A @ 64.29.17.1`, `CNAME www → 973d87c026b03c39.vercel-dns-017.com`), added to the Vercel project; `www` redirects to the apex.
+- [ ] `NEXT_PUBLIC_WC_PROJECT_ID`: create a free project at cloud.reown.com (WalletConnect), allow the domain `stoadex.com`. Without it, only browser-extension wallets can connect.
+- [ ] `NEXT_PUBLIC_RPC_URL`: in the Alchemy and dRPC dashboards, restrict both keys to the `stoadex.com` domain, because these keys are visible in the browser.
+- Note: Vercel Authentication only guards the `*.vercel.app` URLs; `stoadex.com` is public once the domain is added.
 
 ## 5. After launch
 

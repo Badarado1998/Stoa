@@ -2,7 +2,7 @@
 
 Swap tokens at maker prices.
 
-1. Open [Trade](https://stoa.trade/trade) and connect a wallet on Elysium (chain 99901).
+1. Open [Trade](https://stoadex.com/trade) and connect a wallet on Elysium (chain 99901).
 2. Pick the token to sell and the token to buy. Native HYPE works directly; the router wraps and unwraps it for you.
 3. Enter an amount. The router compares Stoa maker pools and Uniswap, directly and through WHYPE, and shows the route it found.
 4. Check the rate, route and slippage, then confirm in your wallet.
