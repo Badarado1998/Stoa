@@ -21,7 +21,7 @@ Everything in code is done and tested (unit, attack, live fork tests on Elysium,
 - [x] Run again with **broadcast ticked** (done 12 Nov 2026, block 5,216,650; addresses in `web/lib/deployments.json`). The workflow commits `web/lib/deployments.json`; Vercel redeploys the site with the live addresses.
 - [x] Open `stoadex.com/admin` with the owner wallet and press **Accept** on StoaRouter, MakerRegistry and FeeDistributor. The same page pauses swaps, withdraws protocol fees, approves makers and proposes venues.
 - The deploy also registers the 60 most traded Uniswap V4 launchpad pools (`contracts/script/data/v4-seed-pools.json`), so they route on day one. Rerun later with Actions → **Seed Uniswap V4 pools**.
-- [ ] Optional: verify the contracts on the Kinetiq explorer.
+- [x] All 10 contracts source-verified on Sourcify (chain 99901): `forge verify-contract <addr> <path:Name> --chain 99901 --verifier sourcify`.
 
 ## 4. Web (Vercel → Project → Settings)
 
