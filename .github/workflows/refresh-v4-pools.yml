@@ -1,0 +1,43 @@
+name: Refresh Uniswap V4 pools
+
+# Daily: rank the most traded Uniswap V4 launchpad pools on Elysium and register the new ones on Stoa's V4 adapter,
+# so fresh tokens route without anyone pressing "Add pool". Known pools and full pairs are skipped at no gas cost.
+on:
+  schedule:
+    - cron: "17 1 * * *" # 08:17 WIB
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-v4-pools
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Rank active pools
+        working-directory: contracts/script/data
+        run: python3 -I v4_top_pools.py
+      - name: Register new pools
+        working-directory: contracts
+        run: |
+          ADAPTER="$(jq -r '.uniswapV4Adapter // empty' ../web/lib/deployments.json)"
+          test -n "$ADAPTER" || { echo "no V4 adapter deployed"; exit 0; }
+          test -n "${{ secrets.DEPLOYER_PRIVATE_KEY }}" || { echo "::warning::DEPLOYER_PRIVATE_KEY missing; skipping registration"; exit 0; }
+          RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" ADAPTER="$ADAPTER" ./script/seed-v4.sh
+      - name: Save the list
+        run: |
+          git diff --quiet contracts/script/data/v4-seed-pools.json && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add contracts/script/data/v4-seed-pools.json
+          git commit -m "data: refresh most traded Uniswap V4 pools"
+          git push
