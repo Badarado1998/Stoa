@@ -9,8 +9,19 @@ Who controls what in Stoa, and what nobody can do.
 | Owner of every Stoa contract | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` | Single wallet |
 | Guardian (emergency role) | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` | Same wallet |
 | Treasury (receives slashed bonds) | `0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c` | Wallet |
+| Admin Safe (new owner) | `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F` | Safe v1.3.0 multisig, **2 of 3** |
 
-The owner and guardian are a **single wallet today**, not a multisig. The Safe multisig contracts (v1.3.0) are deployed on Elysium, and moving ownership to a Safe is the next step. This page will list the Safe address and its threshold once the move is done. Ownership uses a two-step transfer: the new owner has to accept, so it cannot be sent to a wrong address by mistake. Any change of owner is an on-chain event anyone can watch.
+## Moving to a multisig
+
+Stoa's admin Safe is deployed: `0xBF715C84b1C0759C87Da368c1476b80ac0C5055F`. Any admin action needs **2 of its 3 signers**:
+
+| Signer | Address |
+| --- | --- |
+| Owner wallet | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` |
+| Deployer wallet | `0x056896d7d62fB4faE30f53d76CB55264f4c5c500` |
+| Treasury wallet | `0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c` |
+
+Ownership of the router, the maker pool, the maker registry, the fee distributor and the Uniswap V4 adapter is being moved to the Safe. Until that finishes, the owner wallet above still holds it; you can check the current owner of each contract on-chain at any time. The router's guardian stays a single wallet on purpose, so an emergency pause is never slowed down by collecting signatures. A guardian can pause swaps but cannot unpause them, move funds or change settings. Ownership uses a two-step transfer: the new owner has to accept, so it cannot be sent to a wrong address by mistake. Any change of owner is an on-chain event anyone can watch.
 
 The wallet that deployed the contracts is separate from the owner and has no admin rights.
 

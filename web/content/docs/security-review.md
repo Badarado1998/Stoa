@@ -34,7 +34,7 @@ No issue allows anyone to take user funds. The two medium findings are about adm
 
 ### M-1 Admin is a single wallet
 
-**Status: acknowledged.** The owner and guardian of every contract is one wallet. If its key leaks, an attacker could pause swaps, withdraw maker pool inventory, slash maker bonds or propose a new venue. They could **not** upgrade code, move funds from user wallets, or add a venue without the 24-hour public wait, which gives time to react. Safe multisig contracts (v1.3.0) are deployed on Elysium; moving ownership to a Safe is the next step. See [Admin and permissions](admin.md).
+**Status: acknowledged.** The owner and guardian of every contract is one wallet. If its key leaks, an attacker could pause swaps, withdraw maker pool inventory, slash maker bonds or propose a new venue. They could **not** upgrade code, move funds from user wallets, or add a venue without the 24-hour public wait, which gives time to react. **Update:** a 2-of-3 admin Safe is deployed (`0xBF715C84b1C0759C87Da368c1476b80ac0C5055F`) and ownership is moving to it; the router guardian stays a single wallet that can only pause. See [Admin and permissions](admin.md).
 
 ### M-2 Owner can withdraw maker pool inventory
 
@@ -79,6 +79,6 @@ The V4 adapter's pool list is a mapping filled by `register`. Slither's warning 
 
 ## Next steps
 
-1. Move ownership to a Safe multisig on Elysium.
+1. Finish moving ownership to the 2-of-3 admin Safe.
 2. External audit before raising the $500 per-swap cap or opening vaults.
 3. Paid bug bounty alongside the audit. Until then, report issues by DM to [@StoaDEX](https://x.com/StoaDEX).
