@@ -1,8 +1,9 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { fmtUsd, usePrices } from "@/lib/prices";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
+import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
 import { TOKENS, VERIFIED, BRIDGED, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
@@ -69,6 +70,8 @@ export default function Trade() {
 
   const kind = swapKind(sell, buy);
   const amt = parseAmount(amount, sell.decimals);
+  const usdOf = usePrices([sell, buy]);
+  const sellUsd = (usdOf(sell)?.usd ?? 0) * (Number(amount) || 0);
   const wrongChain = isConnected && chainId !== elysium.id;
 
   // balances
@@ -265,6 +268,7 @@ export default function Trade() {
             <TokenBtn t={sell} onClick={() => setMenu(menu === "sell" ? null : "sell")} />
             {menu === "sell" && <TokenMenu tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
+          {sellUsd > 0 && <div className="usd">≈ {fmtUsd(sellUsd)}</div>}
         </div>
         <div className="flip"><button type="button" aria-label="Switch tokens" onClick={flip}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" /></svg></button></div>
         <div className="box">
@@ -276,6 +280,7 @@ export default function Trade() {
             <TokenBtn t={buy} onClick={() => setMenu(menu === "buy" ? null : "buy")} />
             {menu === "buy" && <TokenMenu tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
+          {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
         </div>
 
         {amt && quote && (
@@ -340,6 +345,7 @@ function TokenMenu({ tokens, onPick, onImport, onClose }: { tokens: Token[]; onP
   const [sheet, setSheet] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const list = useMemo(() => tokens.filter((t) => (t.symbol + t.name + t.address).toLowerCase().includes(q.toLowerCase())), [tokens, q]);
+  const priceOf = usePrices(tokens);
   useEffect(() => {
     setSheet(matchMedia("(max-width:560px)").matches);
     const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -355,7 +361,7 @@ function TokenMenu({ tokens, onPick, onImport, onClose }: { tokens: Token[]; onP
       {sheet && <div className="rowx tokh"><b>Select a token</b><button className="x" type="button" onClick={onClose} aria-label="Close">×</button></div>}
       <input placeholder="Search or paste address" value={q} onChange={(e) => setQ(e.target.value.trim())} aria-label="Search token" autoFocus={!sheet} />
       <div className="tokl">
-        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small className={t.tone === "bridged" ? "vf" : undefined}>{t.address === NATIVE ? "Native" : t.name}</small></span></button>)}
+        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small className={t.tone === "bridged" ? "vf" : undefined}>{t.address === NATIVE ? "Native" : t.name}</small></span>{(() => { const p = priceOf(t); return p ? <span className="tokp"><b>{fmtUsd(p.usd)}</b>{p.ch24 !== undefined && <small className={p.ch24 >= 0 ? "up" : "dn"}>{p.ch24 >= 0 ? "+" : ""}{p.ch24.toFixed(1)}%</small>}</span> : null; })()}</button>)}
         {list.length === 0 && isAddress(q) && <button type="button" onClick={() => onImport(q)}>Import {q.slice(0, 6)}…{q.slice(-4)}</button>}
         {list.length === 0 && !isAddress(q) && <p className="note" style={{ padding: "0 8px" }}>Paste a token address to import it.</p>}
       </div>
