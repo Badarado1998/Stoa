@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CA } from "@/lib/chain";
+import StoaCA from "./StoaCA";
 
 export default function Footer() {
   return (
@@ -7,7 +7,7 @@ export default function Footer() {
       <div>
         <Link className="brand" href="/"><img src="/logo.png" alt="" /><span>STOA</span></Link>
         <p className="note" style={{ maxWidth: 260 }}>The PropAMM hub on Elysium. Maker-quoted pools, checked on every swap.</p>
-        {CA && <p className="note">CA <span className="addrchip">{CA}</span></p>}
+        <StoaCA />
       </div>
       <div className="cols">
         <div><h4>PRODUCT</h4><Link href="/trade">Trade</Link><Link href="/pools">Pools</Link><Link href="/earn">Earn</Link><Link href="/portfolio">Portfolio</Link></div>

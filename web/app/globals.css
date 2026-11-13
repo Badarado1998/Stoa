@@ -319,3 +319,6 @@ html,body{overflow-x:clip}
 .tokp b{font-weight:500;font-size:13px;color:var(--ink)}
 .tokp small{font-size:11px}.tokp .up{color:#1E7A4C}.tokp .dn{color:#B54848}
 .box .usd{margin-top:4px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.stoaca{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.stoaca .addrchip{word-break:break-all}
+.stoaca .cp{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}

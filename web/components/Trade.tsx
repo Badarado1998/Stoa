@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
+import { useStoaToken } from "@/lib/stoaToken";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
@@ -50,6 +51,11 @@ export default function Trade() {
   const referrer = useReferrer(address);
 
   const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...VERIFIED, ...BRIDGED, ...POPULAR]);
+  const stoa = useStoaToken();
+  useEffect(() => {
+    // $STOA goes right after HYPE/WHYPE/USDC; a token with the same ticker from any other address is dropped
+    if (stoa) setTokens((ts) => [...ts.slice(0, TOKENS.length), stoa, ...ts.slice(TOKENS.length).filter((t) => t.address.toLowerCase() !== stoa.address.toLowerCase() && t.symbol.toUpperCase() !== stoa.symbol.toUpperCase())]);
+  }, [stoa]);
   const [sell, setSell] = useState<Token>(TOKENS[2]);
   const [buy, setBuy] = useState<Token>(TOKENS[0]);
   const [amount, setAmount] = useState("");
