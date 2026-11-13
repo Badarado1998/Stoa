@@ -35,11 +35,11 @@
   "hyperevm": "0x555570a286F15EbDFE42B66eDE2f724Aa1AB5555"
  },
  {
-  "symbol": "USD₮0",
-  "name": "USD₮0",
-  "address": "0x3BdE42a1dA8F1D95564f2c4a51a0cF73a725674C",
-  "decimals": 6,
-  "hyperevm": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
+  "symbol": "wSPYx",
+  "name": "Wrapped SP500 xStock",
+  "address": "0x437c847644ff22Cbcf0eA56896aA25504Aad93b4",
+  "decimals": 18,
+  "hyperevm": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540"
  },
  {
   "symbol": "UBTC",
@@ -49,11 +49,11 @@
   "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
  },
  {
-  "symbol": "PURR",
-  "name": "Purr",
-  "address": "0x46b131573Ca7c2674b652BbeB7FC16D530396aEC",
-  "decimals": 18,
-  "hyperevm": "0x9b498C3c8A0b8CD8BA1D9851d40D186F1872b44E"
+  "symbol": "USD₮0",
+  "name": "USD₮0",
+  "address": "0x3BdE42a1dA8F1D95564f2c4a51a0cF73a725674C",
+  "decimals": 6,
+  "hyperevm": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
  },
  {
   "symbol": "EQSPCX",
@@ -61,5 +61,12 @@
   "address": "0x8264c91CedFE6CC078116083d5a3e198c16B1898",
   "decimals": 8,
   "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD"
+ },
+ {
+  "symbol": "PURR",
+  "name": "Purr",
+  "address": "0x46b131573Ca7c2674b652BbeB7FC16D530396aEC",
+  "decimals": 18,
+  "hyperevm": "0x9b498C3c8A0b8CD8BA1D9851d40D186F1872b44E"
  }
 ]
