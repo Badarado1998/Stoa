@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import Header from "./Header";
-import { CA } from "@/lib/chain";
+import StoaCA from "./StoaCA";
 
 type Stop = { n: string; l: string; p: number; a: number };
 type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): void; dispose(): void };
@@ -17,7 +17,7 @@ const CARDS: { a: number; b: number; body: React.ReactNode }[] = [
   { a: 0.605, b: 0.675, body: <><div className="k">IV · BUILD <b>SDK</b></div><h2>Every pool is a building block</h2><p>Router, SDK and hooks. Stack Stoa pools into vaults, aggregators and apps across Elysium.</p><Link className="go" href="/docs/router-sdk">Read the docs</Link></> },
   { a: 0.74, b: 0.82, body: <><div className="k">THE ROUTER <b>BEST FILL</b></div><h2>Every column, checked</h2><p>Before you sign, the router compares every maker quote with Uniswap, Aero, Ramses and Liquidity Book on Elysium, then takes the best fill.</p></> },
   { a: 0.94, b: 1.01, body: <><div className="k">V · THE AGORA <b>STOA</b></div><h2>Enter the market</h2><p>Trade, earn, run a pool or build on it. The doors are open.</p>
-      {CA && <div className="ca"><code>{CA}</code></div>}
+      <StoaCA />
       <div className="btns"><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div></> },
 ];
 
@@ -74,12 +74,14 @@ export default function Journey() {
       {failed ? (
         <section className="hero" style={{ position: "relative" }}>
           <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">The PropAMM hub on Elysium.</span>
+          <div className="heroca"><StoaCA short /></div>
           <div className="btns" style={{ pointerEvents: "auto", marginTop: 20 }}><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div>
         </section>
       ) : (
         <>
           <section className="hero" style={{ opacity: hero, transform: `translateY(${(1 - hero) * -30}px)` }}>
             <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">The PropAMM hub on Elysium.</span>
+            <div className="heroca"><StoaCA short /></div>
           </section>
           <div className="hint" style={{ opacity: Math.max(0, 1 - p / 0.02) }}><span>SCROLL TO DESCEND</span><i /></div>
           {CARDS.map((c, i) => <article key={i} className={`card${p >= c.a && p <= c.b ? " show" : ""}`}>{c.body}</article>)}

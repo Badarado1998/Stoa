@@ -322,3 +322,8 @@ html,body{overflow-x:clip}
 .stoaca{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .stoaca .addrchip{word-break:break-all}
 .stoaca .cp{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}
+.heroca{pointer-events:auto;margin-top:14px;display:flex;justify-content:center}
+.heroca .stoaca{justify-content:center;font-size:12.5px;background:rgba(255,255,255,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(30,38,51,.08);border-radius:12px;padding:6px 10px;max-width:92vw}
+.heroca .addrchip{font-size:11.5px}
+.heroca,.heroca *{letter-spacing:normal;text-transform:none}
+.heroca .stoaca{flex-wrap:nowrap;gap:8px;font-family:var(--mono)}
