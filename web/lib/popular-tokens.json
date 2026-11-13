@@ -34,13 +34,15 @@
   "symbol": "MASCOT",
   "address": "0xea96aacCac7598fa4314573454C24309B9b414a5",
   "decimals": 18,
-  "montra": false
+  "montra": false,
+  "launchpad": "PerpMe"
  },
  {
   "symbol": "ZERO",
   "address": "0x9b7E4902F5713B04E872B819FfE45889dF541E86",
   "decimals": 18,
-  "montra": false
+  "montra": false,
+  "launchpad": "PerpMe"
  },
  {
   "symbol": "A/ACC",
@@ -121,7 +123,8 @@
   "symbol": "EACCAT",
   "address": "0xFB5C9c6B9F0142Ee1f5E92976b1CF17DBC051E68",
   "decimals": 18,
-  "montra": false
+  "montra": false,
+  "launchpad": "PerpMe"
  },
  {
   "symbol": "VOLTA",
@@ -171,7 +174,8 @@
   "symbol": "mihao",
   "address": "0x91bec5435e0654BCB620904a753501503720c196",
   "decimals": 18,
-  "montra": false
+  "montra": false,
+  "launchpad": "PerpMe"
  },
  {
   "symbol": "HYPURR",
@@ -196,7 +200,8 @@
   "symbol": "BOZO",
   "address": "0xd06e9Da4D639d098C3644AE6cFaf636a4457AeDc",
   "decimals": 18,
-  "montra": false
+  "montra": false,
+  "launchpad": "PerpMe"
  },
  {
   "symbol": "CHAMELEON",
@@ -247,7 +252,8 @@
   "symbol": "FROTH",
   "address": "0xAC4B6018cEea8647fe7F384556279815Ef783164",
   "decimals": 18,
-  "montra": false
+  "montra": false,
+  "launchpad": "PerpMe"
  },
  {
   "symbol": "ELYR",

@@ -58,13 +58,15 @@ export const BRIDGED: Token[] = MAINNET
 const taken = used([...TOKENS, ...VERIFIED, ...BRIDGED]);
 
 /** Tokens with the most traded Uniswap V4 pools on Elysium (the pools Stoa registers at launch). Not reviewed by
- *  Stoa: they always show their address. "Montra launch" only says the token was launched on Montra, not that it is
- *  safe. Tokens copying the symbol of a Montra launch or of a verified token from another address are left out. */
+ *  Stoa: they always show their address. "Montra launch" / "PerpMe launch" only say which launchpad created the token
+ *  (from its public token list or its verified factory contract), not that it is safe. Tokens copying the symbol of a Montra launch or of a verified token from another address are left out. */
 export const POPULAR: Token[] = MAINNET
-  ? (popular as { symbol: string; address: string; decimals: number; logo?: string; montra?: boolean }[])
+  ? (popular as { symbol: string; address: string; decimals: number; logo?: string; montra?: boolean; launchpad?: string }[])
       .filter((t) => !taken.addr.has(t.address.toLowerCase()) && !taken.sym.has(t.symbol.toLowerCase()))
+      // the list is sorted by trading activity: keep the most traded token per symbol, drop look-alikes
+      .filter((t, i, a) => a.findIndex((x) => x.symbol.toLowerCase() === t.symbol.toLowerCase()) === i)
       .map((t) => ({
-        symbol: t.symbol, name: `${t.montra ? "Montra launch" : "Unverified"} · ${short(t.address)}`, address: t.address as Address,
+        symbol: t.symbol, name: `${t.montra ? "Montra launch" : t.launchpad ? `${t.launchpad} launch` : "Unverified"} · ${short(t.address)}`, address: t.address as Address,
         decimals: t.decimals, glyph: t.symbol[0] ?? "?", tone: "other" as const, logo: t.logo,
       }))
   : [];
