@@ -21,18 +21,18 @@
   "hyperevm": "0xBe6727B535545C67d5cAa73dEa54865B92CF7907"
  },
  {
-  "symbol": "kHYPE",
-  "name": "Kinetiq Staked HYPE",
-  "address": "0x248888D396A546A69A188f3Deb476964e581E9d0",
-  "decimals": 18,
-  "hyperevm": "0xfD739d4e423301CE9385c1fb8850539D657C296D"
- },
- {
   "symbol": "RAM",
   "name": "Ramses",
   "address": "0x2ea9E66Adb86b0Ed71f79ab2e81a31147eDc3215",
   "decimals": 18,
   "hyperevm": "0x555570a286F15EbDFE42B66eDE2f724Aa1AB5555"
+ },
+ {
+  "symbol": "kHYPE",
+  "name": "Kinetiq Staked HYPE",
+  "address": "0x248888D396A546A69A188f3Deb476964e581E9d0",
+  "decimals": 18,
+  "hyperevm": "0xfD739d4e423301CE9385c1fb8850539D657C296D"
  },
  {
   "symbol": "wSPYx",
@@ -47,6 +47,13 @@
   "address": "0xE9C29585EAe4B9a55b02a9605AEa892B40d972E8",
   "decimals": 8,
   "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
+ },
+ {
+  "symbol": "wQQQx",
+  "name": "Wrapped Nasdaq xStock",
+  "address": "0x9039Ebd84eE2a0e198EB265E692390762995872C",
+  "decimals": 18,
+  "hyperevm": "0x4C1AE29c159838fC1b224636E28E086EB69101f7"
  },
  {
   "symbol": "USD₮0",
