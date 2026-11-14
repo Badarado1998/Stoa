@@ -1,0 +1,23 @@
+name: $STOA graduation watcher
+
+# Every 10 minutes: when $STOA graduates from its Pons bonding curve to a Uniswap V4 pool on Robinhood Chain,
+# register that pool on Stoa's V4 adapter so $STOA routes on stoadex.com right away. Does nothing until then, and
+# nothing once the pool is registered.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Register $STOA's V4 pool once it exists
+        working-directory: contracts
+        env:
+          RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+          PRIVATE_KEY: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+        run: ./script/stoa-graduation.sh
