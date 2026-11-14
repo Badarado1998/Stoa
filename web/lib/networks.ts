@@ -10,6 +10,8 @@ export interface Net {
   key: "elysium" | "robinhood";
   name: string;
   short: string;
+  /** official network logo, served from /public/networks */
+  logo: string;
   chain: Chain;
   /** gas token symbol, shown in messages */
   gas: string;
@@ -45,6 +47,7 @@ export const ELYSIUM: Net = {
   key: "elysium",
   name: "Elysium",
   short: "Elysium",
+  logo: "/networks/elysium.svg",
   chain: elysium,
   gas: "HYPE",
   native: TOKENS[0],
@@ -101,6 +104,7 @@ export const ROBINHOOD: Net = {
   key: "robinhood",
   name: "Robinhood Chain",
   short: "Robinhood",
+  logo: "/networks/robinhood.png",
   chain: robinhood,
   gas: "ETH",
   native: RH_CORE[0],

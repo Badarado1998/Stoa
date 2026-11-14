@@ -71,7 +71,7 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
             </div>
             <div className="box">
               <div className="row"><span className="lbl">NETWORK</span></div>
-              <div className="seg netseg">{NETS.map((n) => <button key={n.key} type="button" className={n.key === net.key && !wrongChain ? "on" : undefined} onClick={() => (n.key === net.key ? switchChain({ chainId: n.chain.id }) : setNet(n))}>{n.short}</button>)}</div>
+              <div className="seg netseg">{NETS.map((n) => <button key={n.key} type="button" className={n.key === net.key && !wrongChain ? "on" : undefined} onClick={() => (n.key === net.key ? switchChain({ chainId: n.chain.id }) : setNet(n))}><img className="netlogo" src={n.logo} alt="" width={18} height={18} />{n.short}</button>)}</div>
             </div>
             {wrongChain && <button className="big pri" type="button" onClick={() => switchChain({ chainId: elysium.id })}>Switch to {elysium.name}</button>}
             <button className="ghost" style={{ borderColor: "var(--line)", background: "#fff", justifyContent: "center" }} type="button" onClick={() => { disconnect(); onClose(); }}>Disconnect</button>
