@@ -215,21 +215,22 @@ export default function Admin() {
         const now = BigInt(Math.floor(Date.now() / 1000));
         const when = (t: bigint) => new Date(Number(t) * 1000).toLocaleString();
         const allLive = live.length > 0 && live.every((x) => x === true);
-        const loading = roll.isLoading || tsA === undefined || tsB === undefined || minDelay === undefined || rDelay === undefined;
+        const loading = roll.isLoading || tsA === undefined || tsB === undefined || minDelay === undefined || rDelay === undefined || eta === undefined;
+        // step 3 needs both the timelock (tsB) and the router's own delay (eta, set by step 2)
         const ready3 = tsB !== undefined && eta !== undefined ? (tsB > eta ? tsB : eta) : 0n;
         let step: { label: string; on?: () => void; wait?: string } | null = null;
         if (!loading && !allLive) {
           if (tsA === 0n) step = { label: `Add ${names}: step 1 of 3, schedule`, on: () => safeExec(`Add ${names}: step 1 of 3, schedule`, scheduleCalls(T, ops.a, ops.b, minDelay!, rDelay!)) };
           else if (tsA! > 1n && tsA! > now) step = { label: "Step 2 of 3", wait: `Step 2 (propose on the router) opens ${when(tsA!)}.` };
           else if (tsA! > 1n) step = { label: `Add ${names}: step 2 of 3, propose`, on: () => safeExec(`Add ${names}: step 2 of 3, propose`, [executeCall(T, ops.a)]) };
-          else if (tsB! > 1n && ready3 > now) step = { label: "Step 3 of 3", wait: `Step 3 (add to the router) opens ${when(ready3)}.` };
+          else if (tsB! > 1n && (eta === 0n || ready3 > now)) step = { label: "Step 3 of 3", wait: `Step 3 (add to the router) opens ${when(ready3)}.` };
           else if (tsB! > 1n) step = { label: `Add ${names}: step 3 of 3, add to router`, on: () => safeExec(`Add ${names}: step 3 of 3, add to router`, [executeCall(T, ops.b)]) };
         }
         return (
           <div className="panel pad">
             <div className="lbl">NEW VENUES · {net.short.toUpperCase()}</div>
             <ul className="list">{nv.map((v, i) => (
-              <li key={v.address}>{v.name} adapter <a href={addressUrl(v.address)} target="_blank" rel="noopener noreferrer"><code>{short(v.address)}</code></a> · <b>{live[i] === undefined ? "—" : live[i] ? "in the router" : "not in the router yet"}</b></li>
+              <li key={v.address}><span>{v.name} adapter <a href={addressUrl(v.address)} target="_blank" rel="noopener noreferrer"><code>{short(v.address)}</code></a></span><b>{live[i] === undefined ? "—" : live[i] ? "in the router" : "not in the router yet"}</b></li>
             ))}</ul>
             {allLive ? (
               <p className="note">Done: every swap on {net.name} now also checks {names}.</p>

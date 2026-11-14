@@ -43,9 +43,13 @@ Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same rout
 | UniswapV2Adapter | [`0x5C8537e7d755884326dE0969Ce7BDb14195f56Be`](https://robinhoodchain.blockscout.com/address/0x5C8537e7d755884326dE0969Ce7BDb14195f56Be) |
 | UniswapV3Adapter | [`0x28802Ad6F9859d14dfC6226eA9A8b60686D3A2E6`](https://robinhoodchain.blockscout.com/address/0x28802Ad6F9859d14dfC6226eA9A8b60686D3A2E6) |
 | UniswapV4Adapter | [`0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8`](https://robinhoodchain.blockscout.com/address/0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8) |
+| AeroAdapter (being added) | [`0xF0904B95D66f565De215cC7dc58B6054F72A9352`](https://robinhoodchain.blockscout.com/address/0xF0904B95D66f565De215cC7dc58B6054F72A9352) |
+| RamsesAdapter (being added) | [`0x87b3B896beAbdC421F9d9B0A3FD3dBbAE1ddd568`](https://robinhoodchain.blockscout.com/address/0x87b3B896beAbdC421F9d9B0A3FD3dBbAE1ddd568) |
 | Admin Safe (2 of 3) | [`0xa1a495484536c52046d07209C60059cf9613D386`](https://robinhoodchain.blockscout.com/address/0xa1a495484536c52046d07209C60059cf9613D386) |
 | Timelock (48h) | [`0xAC75133729d6B5d615aA696d0828dC31fcB83ed8`](https://robinhoodchain.blockscout.com/address/0xAC75133729d6B5d615aA696d0828dC31fcB83ed8) |
 
 Outside venues the router uses there: Uniswap V2 factory `0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f`, Uniswap V3 factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` and Uniswap V4 PoolManager `0x8366a39CC670B4001A1121B8F6A443A643e40951`. The V4 adapter accepts pools with no hook, Pons V2 pools and the pools of four other hooks that passed a live buy-and-sell test before deployment.
+
+The Aero and Ramses adapters were deployed on 15 November 2026 for Aero Slipstream (factory `0xc63d7338c178e805c544B8f897066bD3BBcBE136`) and Ramses V3 (factory `0xE0c4ceb92d08CA985bB70fe0a22fEb121A9854A8`). They have no owner. The router does not use them until the admin Safe adds them through the 48-hour timelock and the router's 24-hour wait; the venue list on the Trade page says LIVE once it has.
 
 Every Stoa contract on Robinhood Chain is source-verified on [Sourcify](https://repo.sourcify.dev/4663/0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5) (exact match).

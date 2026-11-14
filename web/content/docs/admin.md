@@ -39,7 +39,9 @@ Stoa on Robinhood Chain has the same setup, with its own contracts. They were de
 | Admin Safe | `0xa1a495484536c52046d07209C60059cf9613D386` | Safe multisig, **2 of 3**, the same three signers as on Elysium |
 | Router guardian (emergency pause only) | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` | Wallet, also one of the Safe signers |
 
-The deployer briefly held timelock roles at a zero delay so the timelock could accept the contracts and raise its own delay to 48 hours; it then revoked every role it had, including admin. The Safe is the only proposer, executor and canceller. Maker bonds on Robinhood Chain also take 3 days to withdraw. The Uniswap V4 adapter's allowed hooks are fixed in its code and cannot be changed by anyone.
+The deployer briefly held timelock roles at a zero delay so the timelock could accept the contracts and raise its own delay to 48 hours; it then revoked every role it had, including admin. The Safe is the only proposer, executor and canceller. Maker bonds on Robinhood Chain also take 3 days to withdraw.
+
+Adding Aero and Ramses on Robinhood Chain takes three Safe transactions, all from the **New venues** panel of the admin page: schedule (the router's propose and execute are queued in the timelock together), propose after 48 hours, then add them after the router's 24-hour wait. Each step needs two of the three signers, and anyone can follow it on-chain in the timelock. The Uniswap V4 adapter's allowed hooks are fixed in its code and cannot be changed by anyone.
 
 ## What the owner can do
 
