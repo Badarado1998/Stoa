@@ -71,7 +71,9 @@ contract TokenUtilityTest is RouterHelper {
         stoa = new MockToken("STOA", 18);
         reg = new MakerRegistry(gov, gov, 3 days);
         fees = new FeeDistributor(gov, IMakerRegistry(address(reg)));
-        router = new StoaRouter(gov, IFeeDistributor(address(fees)), address(weth), ISignatureTransfer(address(new MockPermit2())), 1 days);
+        router = new StoaRouter(
+            gov, IFeeDistributor(address(fees)), address(weth), ISignatureTransfer(address(new MockPermit2())), 1 days
+        );
         uni = new MockAdapter(2, 1); // 1 in -> 2 out, any pair
         vm.startPrank(gov);
         router.addAdapter(address(uni));
@@ -203,7 +205,9 @@ contract TokenUtilityTest is RouterHelper {
         vm.etch(address(0x64), address(clock).code);
         clock = ArbSysClock(address(0x64));
         b = new BondRegistry(gov, IERC20(address(stoa)), 3 days);
-        pool = new StoaPoolL2(address(weth), address(usdg), IMakerRegistry(address(b)), IFeeDistributor(address(fees)), gov, 500e6);
+        pool = new StoaPoolL2(
+            address(weth), address(usdg), IMakerRegistry(address(b)), IFeeDistributor(address(fees)), gov, 500e6
+        );
         maker = makeAddr("maker");
         stoa.mint(maker, 2_000_000 ether);
         vm.prank(maker);

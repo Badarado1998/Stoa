@@ -18,7 +18,8 @@ contract DeployVenuesRobinhood is Script, VenuesRobinhood, VenuePackageRobinhood
         require(vm.parseJsonAddress(json, ".router") == LIVE_ROUTER, "router mismatch");
 
         vm.startBroadcast();
-        CLTickSpacingAdapter aero = new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), LIVE_ROUTER, aeroSpacings());
+        CLTickSpacingAdapter aero =
+            new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), LIVE_ROUTER, aeroSpacings());
         CLTickSpacingAdapter ramses =
             new CLTickSpacingAdapter(ICLTickSpacingFactory(RAMSES_CL_FACTORY), LIVE_ROUTER, ramsesSpacings());
         vm.stopBroadcast();

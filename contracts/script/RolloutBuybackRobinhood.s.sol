@@ -31,7 +31,10 @@ contract RolloutBuybackRobinhood is SafeRunner, TokenPackageRobinhood {
             _safe(
                 "buyback step 1 of 2: schedule the FeeDistributor handover",
                 LIVE_TIMELOCK,
-                abi.encodeCall(TimelockController.scheduleBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt, tl.getMinDelay())),
+                abi.encodeCall(
+                    TimelockController.scheduleBatch,
+                    (o.targets, o.values, o.payloads, o.predecessor, o.salt, tl.getMinDelay())
+                ),
                 0
             );
         } else if (ts > 1) {
@@ -39,7 +42,9 @@ contract RolloutBuybackRobinhood is SafeRunner, TokenPackageRobinhood {
             _safe(
                 "buyback step 2 of 2: hand the FeeDistributor to StoaBuyback",
                 LIVE_TIMELOCK,
-                abi.encodeCall(TimelockController.executeBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt)),
+                abi.encodeCall(
+                    TimelockController.executeBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt)
+                ),
                 0
             );
         } else {

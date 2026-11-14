@@ -54,10 +54,22 @@ contract ForkRobinhoodTokenTest is RouterHelper, SafeTestHelper, VenuesRobinhood
         assertEq(fees.owner(), LIVE_TIMELOCK);
         Op memory o = _handoverOp(address(bb));
         uint256 d = tl.getMinDelay();
-        _safeExec(LIVE_SAFE, LIVE_TIMELOCK, abi.encodeCall(TimelockController.scheduleBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt, d)), 0);
+        _safeExec(
+            LIVE_SAFE,
+            LIVE_TIMELOCK,
+            abi.encodeCall(
+                TimelockController.scheduleBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt, d)
+            ),
+            0
+        );
         assertEq(tl.hashOperationBatch(o.targets, o.values, o.payloads, o.predecessor, o.salt), _id(o));
         vm.warp(block.timestamp + d);
-        _safeExec(LIVE_SAFE, LIVE_TIMELOCK, abi.encodeCall(TimelockController.executeBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt)), 0);
+        _safeExec(
+            LIVE_SAFE,
+            LIVE_TIMELOCK,
+            abi.encodeCall(TimelockController.executeBatch, (o.targets, o.values, o.payloads, o.predecessor, o.salt)),
+            0
+        );
         assertEq(fees.owner(), address(bb), "buyback owns the FeeDistributor");
 
         // the timelock can no longer withdraw fees; it still changes other settings through the buyback contract

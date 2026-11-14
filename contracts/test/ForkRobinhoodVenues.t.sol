@@ -17,12 +17,28 @@ interface ISafe {
     function nonce() external view returns (uint256);
     function approveHash(bytes32 hash) external;
     function getTransactionHash(
-        address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas,
-        uint256 gasPrice, address gasToken, address refundReceiver, uint256 nonce_
+        address to,
+        uint256 value,
+        bytes calldata data,
+        uint8 operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address refundReceiver,
+        uint256 nonce_
     ) external view returns (bytes32);
     function execTransaction(
-        address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas,
-        uint256 gasPrice, address gasToken, address refundReceiver, bytes calldata signatures
+        address to,
+        uint256 value,
+        bytes calldata data,
+        uint8 operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address refundReceiver,
+        bytes calldata signatures
     ) external payable returns (bool);
 }
 
@@ -90,9 +106,12 @@ contract ForkRobinhoodVenuesTest is RouterHelper, VenuesRobinhood, VenuePackageR
 
         // round 1: one Safe transaction schedules both operations (MultiSendCallOnly)
         bytes[] memory calls = new bytes[](2);
-        calls[0] = abi.encodeCall(TimelockController.scheduleBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt, minDelay));
+        calls[0] = abi.encodeCall(
+            TimelockController.scheduleBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt, minDelay)
+        );
         calls[1] = abi.encodeCall(
-            TimelockController.scheduleBatch, (b.targets, b.values, b.payloads, b.predecessor, b.salt, minDelay + rDelay + MARGIN)
+            TimelockController.scheduleBatch,
+            (b.targets, b.values, b.payloads, b.predecessor, b.salt, minDelay + rDelay + MARGIN)
         );
         _safeExec(MULTISEND_CALL_ONLY, abi.encodeCall(IMultiSend.multiSend, (_pack(LIVE_TIMELOCK, calls))), 1);
         assertEq(tl.hashOperationBatch(a.targets, a.values, a.payloads, a.predecessor, a.salt), _id(a), "id A matches");
@@ -106,12 +125,20 @@ contract ForkRobinhoodVenuesTest is RouterHelper, VenuesRobinhood, VenuePackageR
 
         // round 2 (48h later): propose both adapters on the router
         vm.warp(block.timestamp + 1);
-        _safeExec(LIVE_TIMELOCK, abi.encodeCall(TimelockController.executeBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt)), 0);
+        _safeExec(
+            LIVE_TIMELOCK,
+            abi.encodeCall(TimelockController.executeBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt)),
+            0
+        );
         assertGt(router.pending(router.proposalId(false, address(aero))), 0, "aero proposed");
 
         // round 3 (another 1 day + 1h): execute on the router
         vm.warp(block.timestamp + rDelay + MARGIN);
-        _safeExec(LIVE_TIMELOCK, abi.encodeCall(TimelockController.executeBatch, (b.targets, b.values, b.payloads, b.predecessor, b.salt)), 0);
+        _safeExec(
+            LIVE_TIMELOCK,
+            abi.encodeCall(TimelockController.executeBatch, (b.targets, b.values, b.payloads, b.predecessor, b.salt)),
+            0
+        );
         assertTrue(router.isAdapter(address(aero)) && router.isAdapter(address(ramses)), "both adapters live");
         assertEq(router.adapterCount(), before + 2);
         assertTrue(tl.isOperationDone(_id(b)));
@@ -159,8 +186,12 @@ contract ForkRobinhoodVenuesTest is RouterHelper, VenuesRobinhood, VenuePackageR
         assertEq(alice.balance - e0, back);
         console2.log("  round trip back (wei):", back);
         assertGt(back, amt * 99 / 100, "round trip loses < 1%");
-        assertEq(IERC20(USDG).balanceOf(address(aero)) + IERC20(USDG).balanceOf(address(ramses)), 0, "adapters keep nothing");
-        assertEq(IERC20(WETH).balanceOf(address(aero)) + IERC20(WETH).balanceOf(address(ramses)), 0, "adapters keep nothing");
+        assertEq(
+            IERC20(USDG).balanceOf(address(aero)) + IERC20(USDG).balanceOf(address(ramses)), 0, "adapters keep nothing"
+        );
+        assertEq(
+            IERC20(WETH).balanceOf(address(aero)) + IERC20(WETH).balanceOf(address(ramses)), 0, "adapters keep nothing"
+        );
     }
 
     /// signer 1 approves the hash on-chain, signer 2 executes with both "pre-approved" signatures (v = 1)
@@ -172,7 +203,9 @@ contract ForkRobinhoodVenuesTest is RouterHelper, VenuesRobinhood, VenuePackageR
         vm.prank(s1);
         safe.approveHash(h);
         (address lo, address hi) = s1 < s2 ? (s1, s2) : (s2, s1);
-        bytes memory sigs = abi.encodePacked(bytes32(uint256(uint160(lo))), bytes32(0), uint8(1), bytes32(uint256(uint160(hi))), bytes32(0), uint8(1));
+        bytes memory sigs = abi.encodePacked(
+            bytes32(uint256(uint160(lo))), bytes32(0), uint8(1), bytes32(uint256(uint160(hi))), bytes32(0), uint8(1)
+        );
         vm.prank(s2);
         assertTrue(safe.execTransaction(to, 0, data, operation, 0, 0, 0, address(0), payable(address(0)), sigs));
     }

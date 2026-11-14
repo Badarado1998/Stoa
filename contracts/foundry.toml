@@ -15,3 +15,7 @@ remappings = [
 
 [fuzz]
 runs = 512
+
+[fmt]
+# deployed and verified on Sourcify byte for byte: keep the source exactly as compiled
+ignore = ["src/StoaBuyback.sol"]

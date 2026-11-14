@@ -23,7 +23,9 @@ contract DeployTokenUtilityRobinhood is Script, TokenPackageRobinhood {
         require(vm.parseJsonAddress(json, ".timelock") == LIVE_TIMELOCK, "timelock mismatch");
 
         vm.startBroadcast();
-        StoaBuyback bb = new StoaBuyback(LIVE_TIMELOCK, FeeDistributor(LIVE_FEES), StoaRouter(payable(LIVE_ROUTER)), IERC20(STOA), KEEPER);
+        StoaBuyback bb = new StoaBuyback(
+            LIVE_TIMELOCK, FeeDistributor(LIVE_FEES), StoaRouter(payable(LIVE_ROUTER)), IERC20(STOA), KEEPER
+        );
         BondRegistry reg = new BondRegistry(LIVE_TIMELOCK, IERC20(STOA), BOND_UNBOND_DELAY);
         vm.stopBroadcast();
 

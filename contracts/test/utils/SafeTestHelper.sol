@@ -9,12 +9,28 @@ interface ISafeT {
     function nonce() external view returns (uint256);
     function approveHash(bytes32 hash) external;
     function getTransactionHash(
-        address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas,
-        uint256 gasPrice, address gasToken, address refundReceiver, uint256 nonce_
+        address to,
+        uint256 value,
+        bytes calldata data,
+        uint8 operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address refundReceiver,
+        uint256 nonce_
     ) external view returns (bytes32);
     function execTransaction(
-        address to, uint256 value, bytes calldata data, uint8 operation, uint256 safeTxGas, uint256 baseGas,
-        uint256 gasPrice, address gasToken, address payable refundReceiver, bytes calldata signatures
+        address to,
+        uint256 value,
+        bytes calldata data,
+        uint8 operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address payable refundReceiver,
+        bytes calldata signatures
     ) external payable returns (bool);
 }
 
@@ -30,8 +46,9 @@ abstract contract SafeTestHelper is Test {
         vm.prank(s1);
         safe.approveHash(h);
         (address lo, address hi) = s1 < s2 ? (s1, s2) : (s2, s1);
-        bytes memory sigs =
-            abi.encodePacked(bytes32(uint256(uint160(lo))), bytes32(0), uint8(1), bytes32(uint256(uint160(hi))), bytes32(0), uint8(1));
+        bytes memory sigs = abi.encodePacked(
+            bytes32(uint256(uint160(lo))), bytes32(0), uint8(1), bytes32(uint256(uint160(hi))), bytes32(0), uint8(1)
+        );
         vm.prank(s2);
         assertTrue(safe.execTransaction(to, 0, data, operation, 0, 0, 0, address(0), payable(address(0)), sigs));
     }

@@ -44,21 +44,42 @@ contract RolloutVenuesRobinhood is SafeRunner, VenuePackageRobinhood {
         if (tsA == 0) {
             uint256 minDelay = tl.getMinDelay();
             bytes[] memory calls = new bytes[](2);
-            calls[0] = abi.encodeCall(TimelockController.scheduleBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt, minDelay));
+            calls[0] = abi.encodeCall(
+                TimelockController.scheduleBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt, minDelay)
+            );
             calls[1] = abi.encodeCall(
                 TimelockController.scheduleBatch,
                 (b.targets, b.values, b.payloads, b.predecessor, b.salt, minDelay + router.delay() + MARGIN)
             );
-            _safe("step 1 of 3: schedule", MULTISEND_CALL_ONLY, abi.encodeCall(IMultiSendLite.multiSend, (_pack(LIVE_TIMELOCK, calls))), 1);
+            _safe(
+                "step 1 of 3: schedule",
+                MULTISEND_CALL_ONLY,
+                abi.encodeCall(IMultiSendLite.multiSend, (_pack(LIVE_TIMELOCK, calls))),
+                1
+            );
         } else if (tsA > 1) {
             if (block.timestamp < tsA) return console2.log("WAIT: step 2 (propose) opens at unix time", tsA);
-            _safe("step 2 of 3: propose", LIVE_TIMELOCK, abi.encodeCall(TimelockController.executeBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt)), 0);
+            _safe(
+                "step 2 of 3: propose",
+                LIVE_TIMELOCK,
+                abi.encodeCall(
+                    TimelockController.executeBatch, (a.targets, a.values, a.payloads, a.predecessor, a.salt)
+                ),
+                0
+            );
         } else {
             uint256 eta = router.pending(router.proposalId(false, ads[0]));
             require(tsB > 1 && eta > 0, "unexpected state: check the timelock and router");
             uint256 ready = tsB > eta ? tsB : eta;
             if (block.timestamp < ready) return console2.log("WAIT: step 3 (add to router) opens at unix time", ready);
-            _safe("step 3 of 3: add to router", LIVE_TIMELOCK, abi.encodeCall(TimelockController.executeBatch, (b.targets, b.values, b.payloads, b.predecessor, b.salt)), 0);
+            _safe(
+                "step 3 of 3: add to router",
+                LIVE_TIMELOCK,
+                abi.encodeCall(
+                    TimelockController.executeBatch, (b.targets, b.values, b.payloads, b.predecessor, b.salt)
+                ),
+                0
+            );
         }
     }
 }
