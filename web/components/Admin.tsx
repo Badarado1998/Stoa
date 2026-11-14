@@ -261,9 +261,15 @@ export default function Admin() {
         <div className="panel pad">
           <div className="lbl">PROTOCOL FEES</div>
           <ul className="list"><li>{WS} <b>{fmt(accW, 18, 6)}</b></li><li>{US} <b>{fmt(accU, UD, 2)}</b></li></ul>
-          <input className="inp" placeholder={`Send to (default ${short(address)})`} value={to} onChange={(e) => setTo(e.target.value.trim())} />
-          {b(`Withdraw ${WS}`, () => call(`Withdraw ${WS}`, F!, "withdrawProtocol", [WHYPE, accW, recipient]), accW === 0n)}
-          {b(`Withdraw ${US}`, () => call(`Withdraw ${US}`, F!, "withdrawProtocol", [USDC, accU, recipient]), accU === 0n)}
+          {CONTRACTS.buyback && F && same(ownerOf(F), CONTRACTS.buyback) ? (
+            <p className="note">The FeeDistributor is owned by StoaBuyback <code>{short(CONTRACTS.buyback)}</code>: protocol fees can only buy and burn $STOA (weekly keeper run). Other fee settings go through StoaBuyback.exec from the timelock.</p>
+          ) : (
+            <>
+              <input className="inp" placeholder={`Send to (default ${short(address)})`} value={to} onChange={(e) => setTo(e.target.value.trim())} />
+              {b(`Withdraw ${WS}`, () => call(`Withdraw ${WS}`, F!, "withdrawProtocol", [WHYPE, accW, recipient]), accW === 0n)}
+              {b(`Withdraw ${US}`, () => call(`Withdraw ${US}`, F!, "withdrawProtocol", [USDC, accU, recipient]), accU === 0n)}
+            </>
+          )}
         </div>
 
         {P && <div className="panel pad">

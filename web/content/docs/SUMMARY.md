@@ -21,6 +21,7 @@
 * [LP tokens](lp-tokens.md)
 * [Portfolio](portfolio.md)
 * [Referrals](referrals.md)
+* [$STOA](token.md)
 
 ## Run a pool
 

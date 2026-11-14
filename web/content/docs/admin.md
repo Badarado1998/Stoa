@@ -55,7 +55,7 @@ Adding Aero and Ramses on Robinhood Chain takes three Safe transactions, all fro
 | Set the per-swap cap on a maker pool | Currently **$500** per swap on WHYPE/USDC. |
 | Withdraw pool inventory | Maker pool inventory is supplied by Stoa today, not by outside depositors. |
 | Set the referral share | Currently **10%** of the protocol fee. |
-| Withdraw protocol fees | Only the protocol's share; referral earnings are claimable only by the referrer. |
+| Withdraw protocol fees | Only the protocol's share; referral earnings are claimable only by the referrer. On Robinhood Chain, from 17 November 2026, nobody can: the FeeDistributor is owned by StoaBuyback, which can only turn protocol fees into burned $STOA (see [$STOA](token.md)). |
 
 Pool settings (how long quotes stay valid, the pool fee within its hard maximum of 0.30%, the quote check) belong to the *pool guardian*, which is the maker registry's owner: the timelock. Changing them waits 48 hours in public like every other owner action. The router guardian wallet has exactly one power: pausing the router.
 

@@ -121,3 +121,33 @@ export const adminAbi = parseAbi([
   "function quoteGuard() view returns (address)",
   "function sweep(address token, address to)",
 ]);
+
+/** $STOA utility on Robinhood Chain (contracts/src/StoaBuyback.sol, BondRegistry.sol). */
+export const buybackAbi = parseAbi([
+  "function totalBurned() view returns (uint256)",
+  "function keeper() view returns (address)",
+  "event BoughtAndBurned(address indexed token, uint256 amountIn, uint256 stoaBurned)",
+]);
+export const bondAbi = parseAbi([
+  "function totalBonded() view returns (uint256)",
+  "function totalSlashed() view returns (uint256)",
+  "function unbondDelay() view returns (uint64)",
+  "function bonds(address maker) view returns (uint128 amount, uint128 pending, uint64 unlockAt)",
+  "function isPool(address pool) view returns (bool)",
+  "function minBond(address pool) view returns (uint256)",
+  "function approved(address pool, address maker) view returns (bool)",
+  "function bond(uint256 amount)",
+  "function requestUnbond(uint256 amount)",
+  "function withdrawUnbonded()",
+  "event PoolListed(address indexed pool, uint256 minBond)",
+  "error NotPool()",
+  "error ZeroAmount()",
+  "error InsufficientBond()",
+  "error StillLocked()",
+  "error UnsupportedToken()",
+  "error TooLarge()",
+]);
+export const feeStateAbi = parseAbi([
+  "function owner() view returns (address)",
+  "function protocolAccrued(address token) view returns (uint256)",
+]);

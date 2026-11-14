@@ -5,8 +5,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import WalletButton from "./WalletButton";
 import NetSwitch from "./NetSwitch";
 
-const TABS = [["/trade", "Trade"], ["/pools", "Pools"], ["/earn", "Earn"], ["/curators", "Curators"], ["/build", "Build"]] as const;
-const MENU = [["/", "Walk the Stoa", ""], ["/trade", "Trade", "I"], ["/pools", "Pools", ""], ["/earn", "Earn", "II"], ["/curators", "Curators", "III"], ["/build", "Build", "IV"], ["/referrals", "Referrals", ""], ["/portfolio", "Portfolio", ""], ["/docs", "Docs", ""]] as const;
+const TABS = [["/trade", "Trade"], ["/pools", "Pools"], ["/earn", "Earn"], ["/curators", "Curators"], ["/token", "$STOA"], ["/build", "Build"]] as const;
+const MENU = [["/", "Walk the Stoa", ""], ["/trade", "Trade", "I"], ["/pools", "Pools", ""], ["/earn", "Earn", "II"], ["/curators", "Curators", "III"], ["/build", "Build", "IV"], ["/token", "$STOA", ""], ["/referrals", "Referrals", ""], ["/portfolio", "Portfolio", ""], ["/docs", "Docs", ""]] as const;
 
 export default function Header({ extra }: { extra?: ReactNode }) {
   const path = usePathname();

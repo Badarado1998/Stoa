@@ -13,3 +13,5 @@ What a swap costs on Stoa.
 The protocol fee is charged once per swap, even when a route has two legs: by the Stoa pool if the route uses one, otherwise by the router.
 
 Example: a $1,000 swap pays $0.20 in protocol fee, of which $0.02 goes to the referrer if there is one.
+
+On Robinhood Chain the protocol's share buys $STOA every week and burns it: see [$STOA](token.md).
