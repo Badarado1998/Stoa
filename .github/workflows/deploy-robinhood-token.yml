@@ -1,0 +1,79 @@
+name: Deploy $STOA utility (Robinhood Chain)
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys StoaBuyback (protocol fees buy and burn $STOA) and BondRegistry (makers bond $STOA; slashed bonds burn), both
+# owned by the 48h timelock, verifies them on Sourcify and publishes the addresses to web/lib/deployments-4663.json.
+# The FeeDistributor handover to StoaBuyback then runs through the Safe in rollout-robinhood-venues.yml.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test -z "$(jq -r '.stoaBuyback // empty' ../web/lib/deployments-4663.json)" || { echo "::error::already deployed"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          echo "Deployer: $(cast wallet address --private-key "$PK") · $(cast balance $(cast wallet address --private-key "$PK") --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit tests
+        run: forge test --no-match-contract Fork
+
+      - name: Fork tests - Safe hands the FeeDistributor to the buyback, live fees bought and burned, real $STOA bonds
+        run: forge test --match-contract ForkRobinhoodToken -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployTokenUtilityRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-token.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          V="--verifier sourcify --chain 4663"
+          TL=0xAC75133729d6B5d615aA696d0828dC31fcB83ed8; STOA=0x13E6993417616De724F2b337D65063f229e96718
+          B=$(jq -r .stoaBuyback deployments/4663-token.json); R=$(jq -r .bondRegistry deployments/4663-token.json)
+          forge verify-contract $B src/StoaBuyback.sol:StoaBuyback $V --constructor-args $(cast abi-encode "c(address,address,address,address,address)" $TL 0x76c30317bB8C0bC47E2aC5D83b329FE9F386F4e7 0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5 $STOA 0xbf666e8D054935170b9f09127247905A975b3B80) || true
+          forge verify-contract $R src/BondRegistry.sol:BondRegistry $V --constructor-args $(cast abi-encode "c(address,address,uint64)" $TL $STOA 259200) || true
+
+      - name: Publish addresses to the web app
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          jq -s '.[0] * .[1]' web/lib/deployments-4663.json contracts/deployments/4663-token.json > /tmp/d.json
+          mv /tmp/d.json web/lib/deployments-4663.json
+          cat web/lib/deployments-4663.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add web/lib/deployments-4663.json
+          git commit -m "deploy: \$STOA buyback & burn and maker bonds on Robinhood Chain"
+          git pull --rebase && git push

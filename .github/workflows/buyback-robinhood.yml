@@ -1,0 +1,42 @@
+name: $STOA buyback & burn (weekly, Robinhood Chain)
+
+# Every Monday: for each token the FeeDistributor holds protocol fees in, worth at least $1 and with a route to $STOA,
+# the keeper (the Robinhood deployer wallet) calls StoaBuyback.buyback: the fees are swapped into $STOA through the
+# Stoa router and burned in the same transaction. Fees already in $STOA are burned directly. Anything below $1 or
+# without a route waits for the next run. Does nothing until StoaBuyback owns the FeeDistributor.
+on:
+  workflow_dispatch:
+    inputs:
+      min_usd:
+        description: "Skip tokens whose fees are worth less than this (USD)"
+        default: "1"
+  schedule:
+    - cron: "41 13 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: buyback-robinhood
+  cancel-in-progress: false
+
+jobs:
+  buyback:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      RPC: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      LOGS_RPC: https://rpc.mainnet.chain.robinhood.com
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+      MIN_USD: ${{ inputs.min_usd || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Buy back and burn
+        run: |
+          set -o pipefail
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          bash script/buyback.sh 2>&1 | tee /tmp/out.txt
+          grep -vE '^(logs|status|transactionHash) ' /tmp/out.txt | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true

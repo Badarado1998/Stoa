@@ -1,11 +1,13 @@
-name: Add Aero + Ramses to the Robinhood router (Safe rounds)
+name: Robinhood governance steps (Safe rounds)
 
-# Runs every hour until done, then disables itself. Each run moves the addition one step forward if that step is due
-# (contracts/script/RolloutVenuesRobinhood.s.sol): 1) schedule in the 48h timelock, 2) propose on the router once
-# ready, 3) add both adapters once the router's 1-day wait has passed. Otherwise it only logs when the next step opens.
+# Runs every hour until everything is done, then disables itself. Each run moves each pending governance action one
+# step forward if that step is due, otherwise it only logs when the next step opens:
+# - Aero + Ramses (script/RolloutVenuesRobinhood.s.sol): 1) schedule in the 48h timelock, 2) propose on the router,
+#   3) add both adapters once the router's 1-day wait has passed
+# - $STOA buyback (script/RolloutBuybackRobinhood.s.sol): 1) schedule, 2) hand the FeeDistributor to StoaBuyback
 # Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
 # one of them set it approves and the other signer can press the same step on stoadex.com/admin (Robinhood).
-# Delete OWNER_PRIVATE_KEY once the run log says DONE.
+# Delete OWNER_PRIVATE_KEY once the run summary says every step is done.
 on:
   workflow_dispatch:
   schedule:
@@ -49,6 +51,9 @@ jobs:
             echo "No signer key yet." > /tmp/out.txt; exit 0
           fi
           forge script script/RolloutVenuesRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee /tmp/out.txt
+          if [ -n "$(jq -r '.stoaBuyback // empty' deployments/4663.json)" ]; then
+            forge script script/RolloutBuybackRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
+          fi
           grep -E "WAIT|APPROVED|EXECUTED|DONE" /tmp/out.txt | sed 's/^ *//' >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Stop the hourly runs once done
@@ -56,7 +61,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if grep -q "DONE:" /tmp/out.txt; then
-            echo "Aero and Ramses are live. Delete the OWNER_PRIVATE_KEY secret." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$(grep -c "DONE:" /tmp/out.txt)" -ge 2 ]; then
+            echo "Every pending step is done. Delete the OWNER_PRIVATE_KEY and DEPLOYER_PRIVATE_KEY secrets." >> "$GITHUB_STEP_SUMMARY"
             gh workflow disable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY"
           fi
