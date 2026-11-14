@@ -326,6 +326,7 @@ function TradeOn({ net }: { net: Net }) {
         {noRoute && stoa && [sell.address, buy.address].includes(stoa.address) && (
           <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
             ${stoa.symbol} still trades on its Pons bonding curve. Stoa routes it as soon as it graduates to its Uniswap V4 pool; until then, buy it on Pons.
+            <div style={{ marginTop: 10 }}><a className="ghost" style={{ display: "inline-flex", borderColor: "var(--line)", background: "#fff" }} href={`https://ponsfamily.com/launchpad/${stoa.address}`} target="_blank" rel="noopener noreferrer">Buy ${stoa.symbol} on Pons ↗</a></div>
           </div>
         )}
         {risky && (
