@@ -1,12 +1,12 @@
 "use client";
 import { useAccount } from "wagmi";
-import { elysium } from "@/lib/chain";
-import { useWalletModal } from "./Providers";
+import { useNet, useWalletModal } from "./Providers";
 import { short } from "./WalletModal";
 
 export default function WalletButton() {
   const { address, isConnected, chainId } = useAccount();
   const { open } = useWalletModal();
+  const elysium = useNet().chain;
   if (!isConnected) return <button className="cta" type="button" onClick={open}>Connect</button>;
   const wrong = chainId !== elysium.id;
   return (

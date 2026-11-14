@@ -2,18 +2,19 @@
 import { useAccount, useBalance, useReadContracts } from "wagmi";
 import { erc20Abi } from "viem";
 import Link from "next/link";
-import { CONTRACTS, elysium } from "@/lib/chain";
-import { TOKENS, VERIFIED, isNative } from "@/lib/tokens";
-
-const ALL = [...TOKENS, ...VERIFIED];
-const CORE = new Set(TOKENS.map((t) => t.address));
+import { isNative } from "@/lib/tokens";
 import { feesAbi } from "@/lib/abi";
 import { fmt } from "@/lib/swap";
-import { useWalletModal } from "./Providers";
+import { useNet, useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
 import SwapHistory from "./SwapHistory";
 
 export default function Portfolio() {
+  const net = useNet();
+  const elysium = net.chain, CONTRACTS = net.contracts;
+  // core tokens always, plus the verified bridged tokens on Elysium (shown when held)
+  const ALL = net.tokens.filter((t, i) => i < net.core || t.tone === "bridged");
+  const CORE = new Set(net.tokens.slice(0, net.core).map((t) => t.address));
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
   const native = useBalance({ address, chainId: elysium.id, query: { enabled: !!address } });
@@ -28,7 +29,7 @@ export default function Portfolio() {
   return (
     <div className="grid2 eq">
       <div className="panel" style={{ overflow: "hidden" }}>
-        <table className="tbl"><thead><tr><th>TOKEN</th><th style={{ textAlign: "right" }}>BALANCE</th></tr></thead>
+        <table className="tbl"><thead><tr><th>TOKEN · {net.short.toUpperCase()}</th><th style={{ textAlign: "right" }}>BALANCE</th></tr></thead>
           <tbody>
             {ALL.map((t) => {
               const v = isNative(t) ? native.data?.value : bal(erc.indexOf(t));

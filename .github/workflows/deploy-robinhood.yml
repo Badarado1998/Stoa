@@ -42,7 +42,7 @@ jobs:
       - name: Check settings
         run: |
           test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
-          test ! -f ../web/lib/deployments-4663.json || { echo "::error::already deployed (web/lib/deployments-4663.json exists)"; exit 1; }
+          test -z "$(jq -r '.router // empty' ../web/lib/deployments-4663.json)" || { echo "::error::already deployed (see web/lib/deployments-4663.json)"; exit 1; }
           [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
           ME=$(cast wallet address --private-key "$PK")
           echo "Deployer: $ME"

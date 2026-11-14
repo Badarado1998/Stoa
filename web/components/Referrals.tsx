@@ -1,16 +1,16 @@
 "use client";
 import { useState } from "react";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
-import { CONTRACTS, SITE, elysium } from "@/lib/chain";
-import { USDC, WHYPE } from "@/lib/tokens";
+import { SITE } from "@/lib/chain";
 import { feesAbi } from "@/lib/abi";
 import { fmt } from "@/lib/swap";
-import { useWalletModal } from "./Providers";
+import { useNet, useWalletModal } from "./Providers";
 import CopyButton from "./CopyButton";
 
-const TOK = [{ s: "USDC", a: USDC, d: 6 }, { s: "WHYPE", a: WHYPE, d: 18 }];
-
 export default function Referrals() {
+  const net = useNet();
+  const elysium = net.chain, CONTRACTS = net.contracts;
+  const TOK = [net.tokens[2], net.tokens[1]].map((t) => ({ s: t.symbol, a: t.address, d: t.decimals }));
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
   const pub = usePublicClient({ chainId: elysium.id });
@@ -47,14 +47,14 @@ export default function Referrals() {
         ) : (
           <>
             <div className="box" style={{ marginTop: 12 }}><div className="row"><span className="addrchip" style={{ wordBreak: "break-all" }}>{link}</span><CopyButton text={link} /></div></div>
-            <div className="lbl" style={{ marginTop: 20 }}>EARNED, NOT CLAIMED</div>
+            <div className="lbl" style={{ marginTop: 20 }}>EARNED ON {net.short.toUpperCase()}, NOT CLAIMED</div>
             <ul className="list">{TOK.map((t, i) => <li key={t.s}>{t.s} <b>{CONTRACTS.fees ? fmt(amounts[i], t.d, 6) : "—"}</b></li>)}</ul>
             <button className="big pri" type="button" disabled={!any || busy || !CONTRACTS.fees} onClick={claim}>{busy ? "Claiming…" : !CONTRACTS.fees ? "Opens at launch" : any ? "Claim" : "Nothing to claim yet"}</button>
             {msg && <div className={msg.ok ? "ok" : "err"}>{msg.t}</div>}
           </>
         )}
       </div>
-      <div className="panel pad"><div className="lbl">HOW IT WORKS</div><ul className="list"><li>Share your stoadex.com link <b>Any channel</b></li><li>Friends trade through it <b>Remembered on their device</b></li><li>You earn from their swaps <b>10% of protocol fee</b></li></ul></div>
+      <div className="panel pad"><div className="lbl">HOW IT WORKS</div><ul className="list"><li>Share your stoadex.com link <b>Any channel</b></li><li>Friends trade through it <b>Remembered on their device</b></li><li>You earn from their swaps <b>10% of protocol fee</b></li><li>Works on every network <b>Claim per network</b></li></ul></div>
     </div>
   );
 }

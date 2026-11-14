@@ -1,5 +1,9 @@
 # Contract addresses
 
+Stoa runs on two networks: Elysium and Robinhood Chain. Each has its own contracts, Safe and timelock.
+
+## Elysium
+
 Network tokens on Elysium and Stoa contracts, live on Elysium mainnet since block 5,216,650.
 
 | Contract | Address |
@@ -23,3 +27,25 @@ Outside venues the router uses: Uniswap V4 PoolManager `0xe2E105D3f7209A9da11F83
 Token addresses come from the [Elysium contract list](https://elysium.kinetiq.xyz/docs/contract-addresses). Always check an address here before approving it.
 
 Every Stoa contract above is source-verified on the [Elysium explorer](https://elysium.kinetiq.xyz/address/0x104752D50ef893da579Ad813918269e09Ea17dbA) and on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA), so anyone can read the code and check that the deployed bytecode matches it. The contracts are not upgradeable. New venues can be added to the router only after a public 24-hour wait. Who holds admin rights and what they can do is listed in [Admin and permissions](admin.md).
+
+## Robinhood Chain
+
+Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same router code as on Elysium, with the Uniswap V2, V3 and V4 adapters. There are no maker pools on Robinhood Chain yet.
+
+| Contract | Address |
+| --- | --- |
+| WETH | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` |
+| USDG | `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` |
+| Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+| StoaRouter | [`0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5`](https://robinhoodchain.blockscout.com/address/0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5) |
+| FeeDistributor | [`0x76c30317bB8C0bC47E2aC5D83b329FE9F386F4e7`](https://robinhoodchain.blockscout.com/address/0x76c30317bB8C0bC47E2aC5D83b329FE9F386F4e7) |
+| MakerRegistry | [`0x350268AF3FE9995131F6C3970fc602DC24E0EE9D`](https://robinhoodchain.blockscout.com/address/0x350268AF3FE9995131F6C3970fc602DC24E0EE9D) |
+| UniswapV2Adapter | [`0x5C8537e7d755884326dE0969Ce7BDb14195f56Be`](https://robinhoodchain.blockscout.com/address/0x5C8537e7d755884326dE0969Ce7BDb14195f56Be) |
+| UniswapV3Adapter | [`0x28802Ad6F9859d14dfC6226eA9A8b60686D3A2E6`](https://robinhoodchain.blockscout.com/address/0x28802Ad6F9859d14dfC6226eA9A8b60686D3A2E6) |
+| UniswapV4Adapter | [`0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8`](https://robinhoodchain.blockscout.com/address/0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8) |
+| Admin Safe (2 of 3) | [`0xa1a495484536c52046d07209C60059cf9613D386`](https://robinhoodchain.blockscout.com/address/0xa1a495484536c52046d07209C60059cf9613D386) |
+| Timelock (48h) | [`0xAC75133729d6B5d615aA696d0828dC31fcB83ed8`](https://robinhoodchain.blockscout.com/address/0xAC75133729d6B5d615aA696d0828dC31fcB83ed8) |
+
+Outside venues the router uses there: Uniswap V2 factory `0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f`, Uniswap V3 factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` and Uniswap V4 PoolManager `0x8366a39CC670B4001A1121B8F6A443A643e40951`. The V4 adapter accepts pools with no hook, Pons V2 pools and the pools of four other hooks that passed a live buy-and-sell test before deployment.
+
+Every Stoa contract on Robinhood Chain is source-verified on [Sourcify](https://repo.sourcify.dev/4663/0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5) (exact match).

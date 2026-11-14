@@ -29,6 +29,18 @@ Ownership of the router, the maker pool, the maker registry, the fee distributor
 
 The deployer wallet has no admin rights of its own; it is one of the three Safe signers and can act only together with a second signer.
 
+## Robinhood Chain
+
+Stoa on Robinhood Chain has the same setup, with its own contracts. They were deployed on 14 November 2026 by a fresh wallet that handed everything over in the same run and kept no rights:
+
+| Role | Address | Type |
+| --- | --- | --- |
+| Owner of every Stoa contract | `0xAC75133729d6B5d615aA696d0828dC31fcB83ed8` | Timelock, **48 hours**, controlled by the admin Safe |
+| Admin Safe | `0xa1a495484536c52046d07209C60059cf9613D386` | Safe multisig, **2 of 3**, the same three signers as on Elysium |
+| Router guardian (emergency pause only) | `0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9` | Wallet, also one of the Safe signers |
+
+The deployer briefly held timelock roles at a zero delay so the timelock could accept the contracts and raise its own delay to 48 hours; it then revoked every role it had, including admin. The Safe is the only proposer, executor and canceller. Maker bonds on Robinhood Chain also take 3 days to withdraw. The Uniswap V4 adapter's allowed hooks are fixed in its code and cannot be changed by anyone.
+
 ## What the owner can do
 
 | Power | Limit |

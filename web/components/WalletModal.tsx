@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useBalance } from "wagmi";
-import { elysium, txUrl } from "@/lib/chain";
+import { txUrl } from "@/lib/chain";
+import { NETS } from "@/lib/networks";
+import { useNet, useSetNet } from "./Providers";
 import { fmt } from "@/lib/swap";
 
 export const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
@@ -11,6 +13,8 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
   const { connectors, connect, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
+  const net = useNet(), setNet = useSetNet();
+  const elysium = net.chain;
   const { data: bal } = useBalance({ address, chainId: elysium.id, query: { enabled: !!address } });
   const [copied, setCopied] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -63,14 +67,18 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
               <div className="row"><span className="lbl">ACCOUNT</span><span className="lbl">{connector?.name}</span></div>
               <div className="row"><span className="addrchip">{short(address)}</span>
                 <button className="cp" type="button" onClick={async () => { try { await navigator.clipboard.writeText(address!); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }}>{copied ? "Copied" : "Copy"}</button></div>
-              <div className="row"><span className="lbl">BALANCE</span><span className="addrchip">{bal ? `${fmt(bal.value, 18, 4)} HYPE` : "—"}</span></div>
+              <div className="row"><span className="lbl">BALANCE</span><span className="addrchip">{bal ? `${fmt(bal.value, 18, 4)} ${net.gas}` : "—"}</span></div>
+            </div>
+            <div className="box">
+              <div className="row"><span className="lbl">NETWORK</span></div>
+              <div className="seg netseg">{NETS.map((n) => <button key={n.key} type="button" className={n.key === net.key && !wrongChain ? "on" : undefined} onClick={() => (n.key === net.key ? switchChain({ chainId: n.chain.id }) : setNet(n))}>{n.short}</button>)}</div>
             </div>
             {wrongChain && <button className="big pri" type="button" onClick={() => switchChain({ chainId: elysium.id })}>Switch to {elysium.name}</button>}
             <button className="ghost" style={{ borderColor: "var(--line)", background: "#fff", justifyContent: "center" }} type="button" onClick={() => { disconnect(); onClose(); }}>Disconnect</button>
           </div>
         ) : (
           <>
-            <p className="wsub">Pick a wallet to start trading on {elysium.name}.</p>
+            <p className="wsub">Pick a wallet to start trading on {net.name}.</p>
             {installed.length > 0 && (
               <>
                 <div className="wh">INSTALLED</div>

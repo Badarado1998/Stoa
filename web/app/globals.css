@@ -327,3 +327,15 @@ html,body{overflow-x:clip}
 .heroca .addrchip{font-size:11.5px}
 .heroca,.heroca *{letter-spacing:normal;text-transform:none}
 .heroca .stoaca{flex-wrap:nowrap;gap:8px;font-family:var(--mono)}
+
+/* network switcher */
+.netsw{position:relative}
+.netsw>.ghost{gap:8px;border-color:var(--line);background:#fff}
+.netsw i{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.netm{position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:230px;padding:6px;display:flex;flex-direction:column;gap:2px}
+.netm button{display:flex;align-items:center;gap:12px;padding:10px 12px;border:0;background:none;border-radius:10px;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.netm button:hover,.netm button.on{background:var(--soft,#F2F5F9)}
+.netm span{display:flex;flex-direction:column}
+.netm small{color:var(--muted);font-size:12px;margin-top:2px}
+.netseg{margin-top:8px}
+@media (max-width:560px){.netsw .hide-s{display:none}}

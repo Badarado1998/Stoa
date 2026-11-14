@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="foot">
       <div>
         <Link className="brand" href="/"><img src="/logo.png" alt="" /><span>STOA</span></Link>
-        <p className="note" style={{ maxWidth: 260 }}>The PropAMM hub on Elysium. Maker-quoted pools, checked on every swap.</p>
+        <p className="note" style={{ maxWidth: 260 }}>The best-price swap router on Elysium and Robinhood Chain. Every venue, checked on every swap.</p>
       </div>
       <div className="cols">
         <div><h4>PRODUCT</h4><Link href="/trade">Trade</Link><Link href="/pools">Pools</Link><Link href="/earn">Earn</Link><Link href="/portfolio">Portfolio</Link></div>

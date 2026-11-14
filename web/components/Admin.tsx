@@ -2,11 +2,10 @@
 import { useState } from "react";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { BaseError, encodeFunctionData, isAddress, zeroAddress, type Address, type Hash, type Hex } from "viem";
-import { CONTRACTS, VENUE_NAMES, addressUrl, elysium, txUrl } from "@/lib/chain";
+import { addressUrlOn, txUrlOn } from "@/lib/networks";
 import { adminAbi } from "@/lib/abi";
-import { USDC, WHYPE } from "@/lib/tokens";
 import { fmt } from "@/lib/swap";
-import { useWalletModal } from "./Providers";
+import { useNet, useWalletModal } from "./Providers";
 import { approvedSignatures, batch, safeAbi, timelockAbi } from "@/lib/safe";
 
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
@@ -14,6 +13,10 @@ const same = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toL
 
 /** Owner and guardian console. The contracts enforce every permission; this page only sends the calls. */
 export default function Admin() {
+  const net = useNet();
+  const elysium = net.chain, CONTRACTS = net.contracts, VENUE_NAMES = net.venues, WHYPE = net.wrapped, USDC = net.stable;
+  const WS = net.tokens[1].symbol, US = net.tokens[2].symbol, UD = net.tokens[2].decimals;
+  const txUrl = (h: string) => txUrlOn(net, h), addressUrl = (a: string) => addressUrlOn(net, a);
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
   const pub = usePublicClient({ chainId: elysium.id });
@@ -42,20 +45,21 @@ export default function Admin() {
       { address: R!, abi: adminAbi, functionName: "delay" as const, chainId: elysium.id },
       { address: F!, abi: adminAbi, functionName: "protocolAccrued" as const, args: [WHYPE], chainId: elysium.id },
       { address: F!, abi: adminAbi, functionName: "protocolAccrued" as const, args: [USDC], chainId: elysium.id },
-      { address: P!, abi: adminAbi, functionName: "paused" as const, chainId: elysium.id },
+      // no maker pool on some networks: the slot then reads the router again and is ignored
+      { address: (P ?? R)!, abi: adminAbi, functionName: "paused" as const, chainId: elysium.id },
       ...(S ? [
         { address: S, abi: safeAbi, functionName: "getOwners" as const, chainId: elysium.id },
         { address: S, abi: safeAbi, functionName: "getThreshold" as const, chainId: elysium.id },
       ] : []),
     ],
-    query: { enabled: !!R && !!F && !!P, refetchInterval: 15_000 },
+    query: { enabled: !!R && !!F, refetchInterval: 15_000 },
   });
   const r = (i: number) => reads.data?.[i]?.result;
   const n = owned.length * 2;
   const guardian = r(n) as Address | undefined, paused = r(n + 1) as boolean | undefined;
   const locked = r(n + 2) as boolean | undefined, delay = r(n + 3) as bigint | undefined;
   const accW = (r(n + 4) as bigint | undefined) ?? 0n, accU = (r(n + 5) as bigint | undefined) ?? 0n;
-  const poolPaused = r(n + 6) as boolean | undefined;
+  const poolPaused = P ? (r(n + 6) as boolean | undefined) : undefined;
   const routerOwner = r(0) as Address | undefined;
   const safeOwners = (S ? (r(n + 7) as Address[] | undefined) : undefined) ?? [];
   const threshold = S ? (r(n + 8) as bigint | undefined) : undefined;
@@ -140,7 +144,7 @@ export default function Admin() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {msg && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && txUrl(msg.hash) && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
+      {msg && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
 
       <div className="panel pad">
         <div className="lbl">YOU ARE</div>
@@ -187,7 +191,7 @@ export default function Admin() {
       <div className="grid2 eq">
         <div className="panel pad">
           <div className="lbl">EMERGENCY</div>
-          <p className="note">Router swaps: <b>{paused === undefined ? "—" : paused ? "PAUSED" : "running"}</b> · Maker pool: <b>{poolPaused === undefined ? "—" : poolPaused ? "PAUSED" : "running"}</b> · Guardian <code>{short(guardian)}</code></p>
+          <p className="note">{net.name} router swaps: <b>{paused === undefined ? "—" : paused ? "PAUSED" : "running"}</b>{P && <> · Maker pool: <b>{poolPaused === undefined ? "—" : poolPaused ? "PAUSED" : "running"}</b></>} · Guardian <code>{short(guardian)}</code></p>
           {b("Pause router", () => call("Pause router", R, "pause", [], true), paused === true)}
           {b("Unpause router", () => call("Unpause router", R, "unpause"), paused === false)}
           {P && b(poolPaused ? "Unpause pool" : "Pause pool", () => call(poolPaused ? "Unpause pool" : "Pause pool", P, "setPaused", [!poolPaused]))}
@@ -197,19 +201,19 @@ export default function Admin() {
 
         <div className="panel pad">
           <div className="lbl">PROTOCOL FEES</div>
-          <ul className="list"><li>WHYPE <b>{fmt(accW, 18, 6)}</b></li><li>USDC <b>{fmt(accU, 6, 2)}</b></li></ul>
+          <ul className="list"><li>{WS} <b>{fmt(accW, 18, 6)}</b></li><li>{US} <b>{fmt(accU, UD, 2)}</b></li></ul>
           <input className="inp" placeholder={`Send to (default ${short(address)})`} value={to} onChange={(e) => setTo(e.target.value.trim())} />
-          {b("Withdraw WHYPE", () => call("Withdraw WHYPE", F!, "withdrawProtocol", [WHYPE, accW, recipient]), accW === 0n)}
-          {b("Withdraw USDC", () => call("Withdraw USDC", F!, "withdrawProtocol", [USDC, accU, recipient]), accU === 0n)}
+          {b(`Withdraw ${WS}`, () => call(`Withdraw ${WS}`, F!, "withdrawProtocol", [WHYPE, accW, recipient]), accW === 0n)}
+          {b(`Withdraw ${US}`, () => call(`Withdraw ${US}`, F!, "withdrawProtocol", [USDC, accU, recipient]), accU === 0n)}
         </div>
 
-        <div className="panel pad">
+        {P && <div className="panel pad">
           <div className="lbl">MAKERS (WHYPE/USDC POOL)</div>
           <input className="inp" placeholder="Maker address 0x…" value={maker} onChange={(e) => setMaker(e.target.value.trim())} />
           {b("Approve maker", () => call("Approve maker", G!, "setMakerApproval", [P, maker, true]), !isAddress(maker) || !G || !P)}
           {b("Revoke maker", () => call("Revoke maker", G!, "setMakerApproval", [P, maker, false]), !isAddress(maker) || !G || !P)}
           <p className="note">A maker also needs a HYPE bond of at least the pool minimum before it can quote.</p>
-        </div>
+        </div>}
 
         <div className="panel pad">
           <div className="lbl">VENUES</div>

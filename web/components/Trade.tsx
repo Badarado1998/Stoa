@@ -5,12 +5,12 @@ import { fmtUsd, usePrices } from "@/lib/prices";
 import { useStoaToken } from "@/lib/stoaToken";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
-import { CONTRACTS, VENUE_NAMES, deployed, elysium, txUrl } from "@/lib/chain";
-import { TOKENS, VERIFIED, BRIDGED, POPULAR, NATIVE, WHYPE, USDC, isNative, type Token } from "@/lib/tokens";
+import { NATIVE, isNative, type Token } from "@/lib/tokens";
+import { txUrlOn, type Net } from "@/lib/networks";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
-import { useWalletModal } from "./Providers";
+import { useNet, useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
 
@@ -21,12 +21,12 @@ const SLIPS = [0.1, 0.5, 1];
 const DEADLINE_S = 120;
 
 /** Readable message for wallet and contract errors. */
-function explain(e: unknown): string {
+function explain(e: unknown, gas = "HYPE"): string {
   if (e instanceof BaseError) {
     const rev = e.walk((x) => x instanceof ContractFunctionRevertedError);
     if (rev instanceof ContractFunctionRevertedError && rev.data?.errorName && ERROR_TEXT[rev.data.errorName]) return ERROR_TEXT[rev.data.errorName];
     if (/User rejected|denied/i.test(e.shortMessage)) return "You rejected the request in your wallet.";
-    if (/insufficient funds/i.test(e.shortMessage)) return "Not enough HYPE to pay for gas.";
+    if (/insufficient funds/i.test(e.shortMessage)) return `Not enough ${gas} to pay for gas.`;
     return e.shortMessage;
   }
   return (e as Error)?.message ?? "Something went wrong.";
@@ -43,21 +43,30 @@ function useReferrer(self?: string) {
 }
 
 export default function Trade() {
+  const net = useNet();
+  // a fresh swap form per network: tokens, quotes and balances never mix chains
+  return <TradeOn key={net.key} net={net} />;
+}
+
+function TradeOn({ net }: { net: Net }) {
+  const chain = net.chain, CONTRACTS = net.contracts, VENUE_NAMES = net.venues, deployed = net.deployed;
+  const WHYPE = net.wrapped, USDC = net.stable, W = net.tokens[1].symbol, G = net.gas;
+  const txUrl = (h: string) => txUrlOn(net, h);
   const { address, isConnected, chainId } = useAccount();
-  const pub = usePublicClient({ chainId: elysium.id });
+  const pub = usePublicClient({ chainId: chain.id });
   const { switchChain } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
   const { open: openWallet } = useWalletModal();
   const referrer = useReferrer(address);
 
-  const [tokens, setTokens] = useState<Token[]>([...TOKENS, ...VERIFIED, ...BRIDGED, ...POPULAR]);
-  const stoa = useStoaToken();
+  const [tokens, setTokens] = useState<Token[]>(net.tokens);
+  const stoa = useStoaToken(net);
   useEffect(() => {
-    // $STOA goes right after HYPE/WHYPE/USDC; a token with the same ticker from any other address is dropped
-    if (stoa) setTokens((ts) => [...ts.slice(0, TOKENS.length), stoa, ...ts.slice(TOKENS.length).filter((t) => t.address.toLowerCase() !== stoa.address.toLowerCase() && t.symbol.toUpperCase() !== stoa.symbol.toUpperCase())]);
-  }, [stoa]);
-  const [sell, setSell] = useState<Token>(TOKENS[2]);
-  const [buy, setBuy] = useState<Token>(TOKENS[0]);
+    // $STOA goes right after the core tokens; a token with the same ticker from any other address is dropped
+    if (stoa) setTokens((ts) => [...ts.slice(0, net.core), stoa, ...ts.slice(net.core).filter((t) => t.address.toLowerCase() !== stoa.address.toLowerCase() && t.symbol.toUpperCase() !== stoa.symbol.toUpperCase())]);
+  }, [stoa, net.core]);
+  const [sell, setSell] = useState<Token>(net.tokens[2]);
+  const [buy, setBuy] = useState<Token>(net.tokens[0]);
   const [amount, setAmount] = useState("");
   const [slip, setSlip] = useState(0.5);
   const [showSet, setShowSet] = useState(false);
@@ -74,24 +83,24 @@ export default function Trade() {
 
   const [v4Key, setV4Key] = useState<PoolKey | null>(null); // a V4 pool the router could use once registered
 
-  const kind = swapKind(sell, buy);
+  const kind = swapKind(sell, buy, WHYPE);
   const amt = parseAmount(amount, sell.decimals);
-  const usdOf = usePrices([sell, buy]);
+  const usdOf = usePrices(net, [sell, buy]);
   const sellUsd = (usdOf(sell)?.usd ?? 0) * (Number(amount) || 0);
-  const wrongChain = isConnected && chainId !== elysium.id;
+  const wrongChain = isConnected && chainId !== chain.id;
 
   // balances
-  const native = useBalance({ address, chainId: elysium.id, query: { enabled: !!address, refetchInterval: 10_000 } });
-  const sellBal = useReadContract({ address: sell.address, abi: viemErc20, functionName: "balanceOf", args: [address ?? zeroAddress], chainId: elysium.id, query: { enabled: !!address && !isNative(sell), refetchInterval: 10_000 } });
-  const buyBal = useReadContract({ address: buy.address, abi: viemErc20, functionName: "balanceOf", args: [address ?? zeroAddress], chainId: elysium.id, query: { enabled: !!address && !isNative(buy), refetchInterval: 10_000 } });
+  const native = useBalance({ address, chainId: chain.id, query: { enabled: !!address, refetchInterval: 10_000 } });
+  const sellBal = useReadContract({ address: sell.address, abi: viemErc20, functionName: "balanceOf", args: [address ?? zeroAddress], chainId: chain.id, query: { enabled: !!address && !isNative(sell), refetchInterval: 10_000 } });
+  const buyBal = useReadContract({ address: buy.address, abi: viemErc20, functionName: "balanceOf", args: [address ?? zeroAddress], chainId: chain.id, query: { enabled: !!address && !isNative(buy), refetchInterval: 10_000 } });
   const balOf = (t: Token, r: typeof sellBal) => (isNative(t) ? native.data?.value : (r.data as bigint | undefined));
   const sBal = balOf(sell, sellBal), bBal = balOf(buy, buyBal);
 
   // allowance: ERC-20 sells through the router (or nothing for wrap/unwrap)
   const needsAllowance = deployed && !isNative(sell) && kind !== "unwrap";
-  const allowance = useReadContract({ address: sell.address, abi: erc20Abi, functionName: "allowance", args: [address ?? zeroAddress, CONTRACTS.router ?? zeroAddress], chainId: elysium.id, query: { enabled: !!address && needsAllowance } });
+  const allowance = useReadContract({ address: sell.address, abi: erc20Abi, functionName: "allowance", args: [address ?? zeroAddress, CONTRACTS.router ?? zeroAddress], chainId: chain.id, query: { enabled: !!address && needsAllowance } });
   const needApprove = needsAllowance && amt !== undefined && (allowance.data as bigint | undefined ?? 0n) < amt;
-  const routerPaused = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "paused", chainId: elysium.id, query: { enabled: deployed, refetchInterval: 15_000 } });
+  const routerPaused = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "paused", chainId: chain.id, query: { enabled: deployed, refetchInterval: 15_000 } });
   const isPaused = routerPaused.data === true;
   const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
 
@@ -99,7 +108,7 @@ export default function Trade() {
     if (!amt) return null;
     if (kind === "wrap" || kind === "unwrap") return { out: amt, route: null, at: Date.now(), impact: 0 };
     if (!deployed || !pub) return null;
-    // the router finds the best route (direct or through WHYPE, best venue per leg); the swap then follows it
+    // the router finds the best route (direct or through the wrapped native token, best venue per leg); the swap then follows it
     const small = amt / 1000n > 0n ? amt / 1000n : 1n; // price impact: compare against 1/1000 of the amount
     const q = (a: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quote", args: [sell.address, buy.address, a] });
     const [{ result }, ref] = await Promise.all([q(amt), q(small).catch(() => null)]);
@@ -142,7 +151,7 @@ export default function Trade() {
     let stop = false;
     (async () => {
       try {
-        const keys = await findV4Pools(longTail.address);
+        const keys = await findV4Pools(net, longTail.address);
         const known = [
           ...((await pub.readContract({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "keysFor", args: [WHYPE, longTail.address] })) as PoolKey[]),
           ...((await pub.readContract({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "keysFor", args: [USDC, longTail.address] })) as PoolKey[]),
@@ -156,7 +165,7 @@ export default function Trade() {
       } catch { /* lookup is best effort */ }
     })();
     return () => { stop = true; };
-  }, [noRoute, longTail, pub]);
+  }, [noRoute, longTail, pub, net, CONTRACTS.v4, WHYPE, USDC]);
 
   const pick = (side: "sell" | "buy", t: Token) => {
     if (side === "sell") { if (t.address === buy.address) setBuy(sell); setSell(t); }
@@ -179,7 +188,7 @@ export default function Trade() {
       setTokens((ts) => [...ts, t]);
       pick(side, t);
     } catch {
-      setMsg({ ok: false, text: "That address is not an ERC-20 token on Elysium." });
+      setMsg({ ok: false, text: `That address is not an ERC-20 token on ${net.name}.` });
     }
   }
 
@@ -194,7 +203,7 @@ export default function Trade() {
       void native.refetch(); void sellBal.refetch(); void buyBal.refetch(); void allowance.refetch();
       return true;
     } catch (e) {
-      setMsg({ ok: false, text: explain(e) });
+      setMsg({ ok: false, text: explain(e, G) });
       return false;
     } finally {
       setBusy(null);
@@ -203,13 +212,13 @@ export default function Trade() {
 
   async function onAction() {
     if (!isConnected) return openWallet();
-    if (wrongChain) return switchChain({ chainId: elysium.id });
+    if (wrongChain) return switchChain({ chainId: chain.id });
     if (!amt) return;
     if (needApprove) {
-      return run(`Approve ${sell.symbol}`, () => writeContractAsync({ address: sell.address, abi: erc20Abi, functionName: "approve", args: [CONTRACTS.router!, unlimited ? maxUint256 : amt], chainId: elysium.id }));
+      return run(`Approve ${sell.symbol}`, () => writeContractAsync({ address: sell.address, abi: erc20Abi, functionName: "approve", args: [CONTRACTS.router!, unlimited ? maxUint256 : amt], chainId: chain.id }));
     }
-    if (kind === "wrap") return run("Wrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "deposit", value: amt, chainId: elysium.id }));
-    if (kind === "unwrap") return run("Unwrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "withdraw", args: [amt], chainId: elysium.id }));
+    if (kind === "wrap") return run("Wrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "deposit", value: amt, chainId: chain.id }));
+    if (kind === "unwrap") return run("Unwrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "withdraw", args: [amt], chainId: chain.id }));
 
     const ok = await run("Swap", async () => {
       const fresh = await getQuote(); // re-quote right before signing
@@ -219,7 +228,7 @@ export default function Trade() {
       const min = minOut(fresh.out, slip);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
       const p = swapParams(sell, buy, fresh.route, amt, min, address!, deadline, referrer ?? zeroAddress);
-      return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value: kind === "hypeIn" ? amt : undefined, chainId: elysium.id });
+      return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value: kind === "hypeIn" ? amt : undefined, chainId: chain.id });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
@@ -228,7 +237,7 @@ export default function Trade() {
   let label = "Swap", disabled = false;
   if (!amt) { label = amount ? "Enter a valid amount" : "Enter an amount"; disabled = true; }
   else if (!isConnected) label = "Connect wallet";
-  else if (wrongChain) label = `Switch to ${elysium.name}`;
+  else if (wrongChain) label = `Switch to ${chain.name}`;
   else if (!deployed && kind !== "wrap" && kind !== "unwrap") { label = "Opens at launch"; disabled = true; }
   else if (isPaused && kind !== "wrap" && kind !== "unwrap") { label = "Swaps paused"; disabled = true; }
   else if (sBal !== undefined && amt > sBal) { label = `Not enough ${sell.symbol}`; disabled = true; }
@@ -237,18 +246,18 @@ export default function Trade() {
   else if (risky && !ackToken) { label = "Confirm the token warning"; disabled = true; }
   else if (quote.impact >= IMPACT_BLOCK && !ackImpact) { label = "Confirm high price impact"; disabled = true; }
   else if (needApprove) label = unlimited ? `Approve ${sell.symbol}` : `Approve ${fmt(amt, sell.decimals, 4)} ${sell.symbol}`;
-  else if (kind === "wrap") label = "Wrap HYPE";
-  else if (kind === "unwrap") label = "Unwrap WHYPE";
+  else if (kind === "wrap") label = `Wrap ${G}`;
+  else if (kind === "unwrap") label = `Unwrap ${W}`;
   if (busy) { label = `${busy}…`; disabled = true; }
 
-  const venueName = !quote ? "—" : !quote.route ? "WHYPE contract" : describeRoute(quote.route, VENUE_NAMES);
+  const venueName = !quote ? "—" : !quote.route ? `${W} contract` : describeRoute(quote.route, VENUE_NAMES, W);
   const px = quote && amt ? rate(amt, sell.decimals, quote.out, buy.decimals) : 0;
 
   return (
     <div className="grid2">
       <div className="panel pad" style={{ position: "relative" }}>
-        {!deployed && <div className="notice">Stoa contracts are not deployed yet. Wrapping HYPE works; swaps open at launch.</div>}
-        {deployed && isPaused && <div className="notice">Swaps are paused for safety. Your funds are not affected; wrapping HYPE still works.</div>}
+        {!deployed && <div className="notice">Stoa is not live on {net.name} yet. Wrapping {G} works; swaps open at launch.</div>}
+        {deployed && isPaused && <div className="notice">Swaps are paused for safety. Your funds are not affected; wrapping {G} still works.</div>}
         <div className="rowx" style={{ marginBottom: 12 }}>
           <div className="seg" role="tablist"><button className="on" type="button">Swap</button></div>
           <button className="ghost" type="button" style={{ borderColor: "var(--line)", background: "#fff" }} aria-label="Swap settings" aria-expanded={showSet} onClick={() => setShowSet((s) => !s)}>
@@ -272,7 +281,7 @@ export default function Trade() {
           <div className="row" style={{ position: "relative" }}>
             <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} onChange={(e) => { setMsg(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
             <TokenBtn t={sell} onClick={() => setMenu(menu === "sell" ? null : "sell")} />
-            {menu === "sell" && <TokenMenu tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
+            {menu === "sell" && <TokenMenu net={net} tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
           {sellUsd > 0 && <div className="usd">≈ {fmtUsd(sellUsd)}</div>}
         </div>
@@ -284,7 +293,7 @@ export default function Trade() {
               {quote ? fmt(quote.out, buy.decimals, 6) : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => setMenu(menu === "buy" ? null : "buy")} />
-            {menu === "buy" && <TokenMenu tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
+            {menu === "buy" && <TokenMenu net={net} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
         </div>
@@ -309,9 +318,14 @@ export default function Trade() {
           <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
             {longTail.symbol} trades on a Uniswap V4 pool that Stoa&apos;s router does not use yet. Add it once (a small transaction anyone can send), then swap.
             <button className="ghost" type="button" style={{ marginTop: 10 }} disabled={!!busy || !isConnected || wrongChain}
-              onClick={() => run("Add pool", () => writeContractAsync({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "register", args: [{ ...v4Key, fee: v4Key.fee, tickSpacing: v4Key.tickSpacing }], chainId: elysium.id })).then((ok) => ok && setV4Key(null))}>
+              onClick={() => run("Add pool", () => writeContractAsync({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "register", args: [{ ...v4Key, fee: v4Key.fee, tickSpacing: v4Key.tickSpacing }], chainId: chain.id })).then((ok) => ok && setV4Key(null))}>
               Add Uniswap V4 pool
             </button>
+          </div>
+        )}
+        {noRoute && stoa && [sell.address, buy.address].includes(stoa.address) && (
+          <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
+            ${stoa.symbol} still trades on its Pons bonding curve. Stoa routes it as soon as it graduates to its Uniswap V4 pool; until then, buy it on Pons.
           </div>
         )}
         {risky && (
@@ -321,21 +335,21 @@ export default function Trade() {
           </div>
         )}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>
-        {msg && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && txUrl(msg.hash) && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
-        <p className="note">Native HYPE works directly. Maker pools cap each fill at $500 while they ramp up.</p>
+        {msg && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
+        <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on Uniswap; maker pools come later.`}</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <PoolDepth />
+        {net.makers && <PoolDepth />}
         <div className="panel pad">
-          <div className="lbl">EVERY SWAP CHECKS</div>
+          <div className="lbl">EVERY SWAP ON {net.short.toUpperCase()} CHECKS</div>
           <div className="src">
-            <div>Stoa maker pools <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>
+            {net.makers && <div>Stoa maker pools <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>}
             <div>Uniswap V2 · V3 · V4 <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
-            <div>Aero · Ramses <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
-            <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
+            {net.makers && <div>Aero · Ramses <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
+            {net.makers && <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
-          <p className="note">Every swap compares these venues, directly and through WHYPE, and takes the best price. When a maker quotes better, the router uses it automatically.</p>
+          <p className="note">Every swap compares these venues, directly and through {W}, and takes the best price.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
       </div>
     </div>
@@ -346,12 +360,12 @@ function TokenBtn({ t, onClick }: { t: Token; onClick: () => void }) {
   return <button className="tok" type="button" aria-haspopup="listbox" onClick={onClick}><TokenIcon t={t} />{t.symbol}</button>;
 }
 
-function TokenMenu({ tokens, onPick, onImport, onClose }: { tokens: Token[]; onPick: (t: Token) => void; onImport: (a: string) => void; onClose: () => void }) {
+function TokenMenu({ net, tokens, onPick, onImport, onClose }: { net: Net; tokens: Token[]; onPick: (t: Token) => void; onImport: (a: string) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [sheet, setSheet] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const list = useMemo(() => tokens.filter((t) => (t.symbol + t.name + t.address).toLowerCase().includes(q.toLowerCase())), [tokens, q]);
-  const priceOf = usePrices(tokens);
+  const priceOf = usePrices(net, tokens);
   useEffect(() => {
     setSheet(matchMedia("(max-width:560px)").matches);
     const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();

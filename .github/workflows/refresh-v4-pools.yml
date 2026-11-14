@@ -38,7 +38,7 @@ jobs:
         env:
           ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
         run: |
-          test -f web/lib/deployments-4663.json || { echo "not deployed on Robinhood Chain yet"; exit 0; }
+          test -n "$(jq -r '.uniswapV4Adapter // empty' web/lib/deployments-4663.json)" || { echo "not deployed on Robinhood Chain yet"; exit 0; }
           (cd contracts/script/data && CHAIN=robinhood python3 -I v4_top_pools.py)
           test -n "${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" || { echo "::warning::ROBINHOOD_DEPLOYER_PRIVATE_KEY missing; skipping registration"; exit 0; }
           cd contracts && RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" \

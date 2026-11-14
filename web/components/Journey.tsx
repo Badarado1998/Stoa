@@ -13,8 +13,8 @@ const CARDS: { a: number; b: number; body: React.ReactNode }[] = [
       <Link className="go" href="/trade">Trade</Link></> },
   { a: 0.365, b: 0.435, body: <><div className="k">II · EARN <b>LP VAULTS</b></div><h2>Own a piece of the pool</h2><p>Vault shares that grow with every fee. Each ring that lights up is fees flowing to every share.</p><Link className="go" href="/earn">Earn</Link></> },
   { a: 0.485, b: 0.555, body: <><div className="k">III · RUN A POOL <b>CURATORS</b></div><h2>Makers hold the center</h2><p>Bring a price feed or a strategy, post a bond, and quote. Each orbiting light is a maker refreshing its price.</p><Link className="go" href="/curators">Become a curator</Link></> },
-  { a: 0.605, b: 0.675, body: <><div className="k">IV · BUILD <b>SDK</b></div><h2>Every pool is a building block</h2><p>Router, SDK and hooks. Stack Stoa pools into vaults, aggregators and apps across Elysium.</p><Link className="go" href="/docs/router-sdk">Read the docs</Link></> },
-  { a: 0.74, b: 0.82, body: <><div className="k">THE ROUTER <b>BEST FILL</b></div><h2>Every column, checked</h2><p>Before you sign, the router compares every maker quote with Uniswap, Aero, Ramses and Liquidity Book on Elysium, then takes the best fill.</p></> },
+  { a: 0.605, b: 0.675, body: <><div className="k">IV · BUILD <b>SDK</b></div><h2>Every pool is a building block</h2><p>Router, SDK and hooks. Stack Stoa pools into vaults, aggregators and apps across Elysium and Robinhood Chain.</p><Link className="go" href="/docs/router-sdk">Read the docs</Link></> },
+  { a: 0.74, b: 0.82, body: <><div className="k">THE ROUTER <b>BEST FILL</b></div><h2>Every column, checked</h2><p>Before you sign, the router compares every venue: maker quotes, Uniswap, Aero, Ramses and Liquidity Book on Elysium, and Uniswap V2, V3 and V4 on Robinhood Chain. Then it takes the best fill.</p></> },
   { a: 0.94, b: 1.01, body: <><div className="k">V · THE AGORA <b>STOA</b></div><h2>Enter the market</h2><p>Trade, earn, run a pool or build on it. The doors are open.</p>
       <div className="btns"><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div></> },
 ];
@@ -71,13 +71,13 @@ export default function Journey() {
 
       {failed ? (
         <section className="hero" style={{ position: "relative" }}>
-          <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">The PropAMM hub on Elysium.</span>
+          <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">Best-price swaps on Elysium and Robinhood Chain.</span>
           <div className="btns" style={{ pointerEvents: "auto", marginTop: 20 }}><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div>
         </section>
       ) : (
         <>
           <section className="hero" style={{ opacity: hero, transform: `translateY(${(1 - hero) * -30}px)` }}>
-            <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">The PropAMM hub on Elysium.</span>
+            <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">Best-price swaps on Elysium and Robinhood Chain.</span>
             </section>
           <div className="hint" style={{ opacity: Math.max(0, 1 - p / 0.02) }}><span>SCROLL TO DESCEND</span><i /></div>
           {CARDS.map((c, i) => <article key={i} className={`card${p >= c.a && p <= c.b ? " show" : ""}`}>{c.body}</article>)}

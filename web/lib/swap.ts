@@ -3,11 +3,11 @@ import { NATIVE, WHYPE, type Token } from "./tokens";
 
 export type SwapKind = "wrap" | "unwrap" | "hypeIn" | "hypeOut" | "erc20";
 
-/** Which call a pair needs. HYPE<->WHYPE is a plain wrap, not a swap. */
-export function swapKind(sell: Token, buy: Token): SwapKind {
+/** Which call a pair needs. Native <-> wrapped native (HYPE/WHYPE, ETH/WETH) is a plain wrap, not a swap. */
+export function swapKind(sell: Token, buy: Token, wrapped: Address = WHYPE): SwapKind {
   const sN = sell.address === NATIVE, bN = buy.address === NATIVE;
-  if (sN && buy.address.toLowerCase() === WHYPE.toLowerCase()) return "wrap";
-  if (bN && sell.address.toLowerCase() === WHYPE.toLowerCase()) return "unwrap";
+  if (sN && buy.address.toLowerCase() === wrapped.toLowerCase()) return "wrap";
+  if (bN && sell.address.toLowerCase() === wrapped.toLowerCase()) return "unwrap";
   if (sN) return "hypeIn";
   if (bN) return "hypeOut";
   return "erc20";
@@ -28,10 +28,10 @@ export function venueName(l: Leg, known: Record<string, string> = {}): string {
 }
 
 /** "Stoa maker pool" or "Aero → Stoa maker pool (via WHYPE)". */
-export function describeRoute(r: Route, known: Record<string, string> = {}): string {
+export function describeRoute(r: Route, known: Record<string, string> = {}, hop = "WHYPE"): string {
   if (!isHop(r)) return venueName(r.leg1, known);
   const a = venueName(r.leg1, known), b = venueName(r.leg2, known);
-  return a === b ? `${a} (via WHYPE)` : `${a} → ${b} (via WHYPE)`;
+  return a === b ? `${a} (via ${hop})` : `${a} → ${b} (via ${hop})`;
 }
 
 /** The router takes native HYPE as the zero address on either side, so token addresses pass through. */

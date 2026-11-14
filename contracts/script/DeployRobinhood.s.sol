@@ -69,7 +69,9 @@ contract DeployRobinhood is Script, VenuesRobinhood {
         vm.startBroadcast();
         Out memory o = _deploy(signers, treasury, guardian, msg.sender);
         vm.stopBroadcast();
-        o.block_ = block.number;
+        // block.number is Ethereum's on Arbitrum Orbit chains; ArbSys (0x64) gives the chain's own block
+        (, bytes memory b) = address(0x64).staticcall(abi.encodeWithSignature("arbBlockNumber()"));
+        o.block_ = b.length == 32 ? abi.decode(b, (uint256)) : block.number;
         _check(o, signers, msg.sender);
         _write(o, guardian, treasury);
     }

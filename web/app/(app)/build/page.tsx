@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CONTRACTS, addressUrl, elysium } from "@/lib/chain";
 import { USDC, WHYPE } from "@/lib/tokens";
+import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
 import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
 
@@ -49,6 +50,9 @@ await wallet.writeContract({
 export default function BuildPage() {
   const rows: [string, string | undefined][] = [["WHYPE", WHYPE], ["USDC", USDC], ["Permit2", "0x000000000022D473030F116dDEE9F6B43aC78BA3"]];
   const stoa: [string, string | undefined][] = [["StoaRouter", CONTRACTS.router], ["StoaPool (WHYPE/USDC)", CONTRACTS.pool], ["FeeDistributor", CONTRACTS.fees]];
+  const R = ROBINHOOD.contracts;
+  const rhRows: [string, string][] = [["WETH", ROBINHOOD.wrapped], ["USDG", ROBINHOOD.stable], ["Permit2", "0x000000000022D473030F116dDEE9F6B43aC78BA3"]];
+  const rhStoa: [string, string | undefined][] = [["StoaRouter", R.router], ["FeeDistributor", R.fees], ["UniswapV4Adapter", R.v4], ["Admin Safe (2 of 3)", R.safe], ["Timelock (48h)", R.timelock]];
   return (
     <section className="page">
       <PageHead eyebrow="IV · BUILD" title="Every pool is a building block">Quote, route and swap from your own app or contract.</PageHead>
@@ -71,6 +75,16 @@ export default function BuildPage() {
           <ul className="list">
             {stoa.map(([n, a]) => <li key={n}>{n} {a ? <span className="addr">{addressUrl(a) ? <a href={addressUrl(a)} target="_blank" rel="noopener noreferrer"><code>{short(a)}</code></a> : <code>{short(a)}</code>}<CopyButton text={a} /></span> : <b>Deploying soon</b>}</li>)}
           </ul>
+          <div className="lbl" style={{ marginTop: 28 }}>ROBINHOOD CHAIN NETWORK</div>
+          <ul className="list">
+            <li>Chain ID <b>{ROBINHOOD.chain.id}</b></li>
+            {rhRows.map(([n, a]) => <li key={n}>{n} <span className="addr"><code>{short(a)}</code><CopyButton text={a} /></span></li>)}
+          </ul>
+          <div className="lbl" style={{ marginTop: 20 }}>STOA ON ROBINHOOD CHAIN</div>
+          <ul className="list">
+            {rhStoa.map(([n, a]) => <li key={n}>{n} {a ? <span className="addr"><a href={addressUrlOn(ROBINHOOD, a)} target="_blank" rel="noopener noreferrer"><code>{short(a)}</code></a><CopyButton text={a} /></span> : <b>Deploying soon</b>}</li>)}
+          </ul>
+          <p className="note">Same router code and ABI on both networks. On Robinhood Chain the native coin is ETH (address(0)) and the hop token is WETH.</p>
         </div>
       </div>
     </section>
