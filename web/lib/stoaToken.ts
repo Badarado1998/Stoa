@@ -61,9 +61,15 @@ function cached(): Token | undefined {
   try { const v = localStorage.getItem(KEY); return v ? (JSON.parse(v) as Token) : undefined; } catch { return undefined; }
 }
 
+/** The launched token, known at build time: shown in the first HTML, with no request at all. */
+const PINNED: Token | null = CA
+  ? { symbol: "STOA", name: "Official Stoa token", address: CA, decimals: 18, glyph: "S", tone: "bridged", logo: "/logo.png" }
+  : null;
+
 /** Checks every 3 s until the launch is seen, then stays put. Pass a network to get null outside Robinhood Chain. */
 export function useStoaToken(net?: Net) {
   const q = useQuery({
+    enabled: !PINNED,
     queryKey: ["stoa-token"],
     queryFn: find,
     refetchInterval: (query) => (query.state.data ? false : POLL_MS),
@@ -72,5 +78,5 @@ export function useStoaToken(net?: Net) {
     retry: 2,
   });
   if (net && net.key !== "robinhood") return null;
-  return q.data ?? null;
+  return PINNED ?? q.data ?? null;
 }
