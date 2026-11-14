@@ -1,12 +1,30 @@
 [
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x74f811f35134d73221e5491135e4c8f963316953",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 5086,
+  "traders": 56
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x69893f4c8ea2569aa9801c21cea0c19600d9666c",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 4400,
+  "swaps": 4407,
   "traders": 15
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x13c83fd2df0ae8c7b462d344a458275d1f6b5b82",
+  "fee": 0,
+  "tickSpacing": 60,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 3195,
+  "traders": 9
  },
  {
   "currency0": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
@@ -14,17 +32,17 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
-  "swaps": 1725,
-  "traders": 10
+  "swaps": 2034,
+  "traders": 9
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xe45a355d9e9cad2ad85f2d03e3ee3102a036acf0",
-  "fee": 3000,
-  "tickSpacing": 60,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 1671,
-  "traders": 51
+  "currency1": "0xf3aa02bb4299ec5092c059bf8baed5942b4a09ed",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 1673,
+  "traders": 37
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -32,7 +50,7 @@
   "fee": 0,
   "tickSpacing": 60,
   "hooks": "0x3ab88ddc3cf2a012af88b60828edb4553697e5dc",
-  "swaps": 1234,
+  "swaps": 1212,
   "traders": 19
  },
  {
@@ -41,35 +59,35 @@
   "fee": 0,
   "tickSpacing": 60,
   "hooks": "0x3ab88ddc3cf2a012af88b60828edb4553697e5dc",
-  "swaps": 1096,
-  "traders": 36
+  "swaps": 1093,
+  "traders": 44
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xf3aa02bb4299ec5092c059bf8baed5942b4a09ed",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 1085,
-  "traders": 41
+  "currency1": "0xe45a355d9e9cad2ad85f2d03e3ee3102a036acf0",
+  "fee": 3000,
+  "tickSpacing": 60,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 832,
+  "traders": 49
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xe9c952cd198ff412113a465d34ff2c233f6f4ca1",
+  "currency1": "0x4453e9beada48f2e31bb2bb063209a776b1d300e",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 1051,
-  "traders": 20
+  "swaps": 747,
+  "traders": 16
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x80cae4da3d7f6f6c216f6e2762bad3541b5d308b",
+  "currency1": "0x8015be0b08125467dfdd7ce1d2103c83803d13aa",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 869,
-  "traders": 6
+  "swaps": 739,
+  "traders": 19
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -77,44 +95,8 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 664,
-  "traders": 29
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x42a093ec4658e6e7b0b2fcf072e49162488dce84",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 654,
-  "traders": 19
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x5dcfb191f0cdb853bac3a6a4385e160e779e377f",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 625,
-  "traders": 25
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x063f7cc5339f92a5fd7baf3d22233044fda1f327",
-  "fee": 10000,
-  "tickSpacing": 200,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 494,
-  "traders": 36
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x935e69d28a131163e947f5e34dc3f49cf60a9fc3",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 371,
-  "traders": 9
+  "swaps": 683,
+  "traders": 20
  },
  {
   "currency0": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
@@ -122,7 +104,79 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
-  "swaps": 359,
+  "swaps": 622,
+  "traders": 30
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x5dcfb191f0cdb853bac3a6a4385e160e779e377f",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 588,
+  "traders": 19
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x36666133ea35d67f788601eb5b3436b5d911448e",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 565,
+  "traders": 5
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xec60e2eb9c8f2dddabd55b9799e691beea6da768",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 501,
+  "traders": 18
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x42a093ec4658e6e7b0b2fcf072e49162488dce84",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 481,
+  "traders": 17
+ },
+ {
+  "currency0": "0x8df4f39d592de2aaee15838b265c2392d19a4128",
+  "currency1": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
+  "swaps": 385,
+  "traders": 37
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x935e69d28a131163e947f5e34dc3f49cf60a9fc3",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 373,
+  "traders": 9
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x0f79931689af199e7cf868ed1107bba2c83c68f7",
+  "fee": 10000,
+  "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 368,
+  "traders": 34
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xe9c952cd198ff412113a465d34ff2c233f6f4ca1",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 367,
   "traders": 26
  },
  {
@@ -131,71 +185,8 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 333,
-  "traders": 19
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x2b5067cddbed0cfc78f5cc8db9f6de150fa507e4",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 318,
-  "traders": 6
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xb94ff333013130efd10081a149cd5b2a0114cccc",
-  "fee": 0,
-  "tickSpacing": 200,
-  "hooks": "0x3ea9581a32a396f69b177b65b91149cf887beacc",
-  "swaps": 299,
-  "traders": 13
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xa242987b952119515f2340823dcf719e7995b4df",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 273,
-  "traders": 5
- },
- {
-  "currency0": "0x8df4f39d592de2aaee15838b265c2392d19a4128",
-  "currency1": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
-  "swaps": 264,
-  "traders": 27
- },
- {
-  "currency0": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
-  "currency1": "0xf31bced2ea8f160052d54c8a3fd03381fedd8e0d",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
-  "swaps": 249,
-  "traders": 17
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x405caa914fd1c1408ea526c90a6cfd429ee57ebe",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 233,
-  "traders": 9
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x361464b114bd57070d1452ad5135ed8650108367",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 225,
-  "traders": 18
+  "swaps": 321,
+  "traders": 15
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -203,71 +194,35 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 225,
-  "traders": 15
+  "swaps": 311,
+  "traders": 14
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xd662d66ec991a3eae4ecbda34327264c53d4cf38",
+  "currency1": "0xc084635f201ddb48c9b680ca16ff88585cbe7a2f",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 220,
+  "swaps": 269,
   "traders": 16
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x4bb24886f044876000a1e2af23a3387a2e12edfe",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 207,
-  "traders": 5
- },
- {
-  "currency0": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
-  "currency1": "0xeb8bcc0fde0e76d26f1fbcb38bf476c837b92927",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
-  "swaps": 202,
-  "traders": 10
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x0f79931689af199e7cf868ed1107bba2c83c68f7",
+  "currency1": "0x063f7cc5339f92a5fd7baf3d22233044fda1f327",
   "fee": 10000,
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 198,
-  "traders": 19
+  "swaps": 266,
+  "traders": 33
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x7e7384e8c7e622e0bbf5813c399ffa4adb22dc44",
+  "currency1": "0x512cb69c4a0cf9d7f9d40ae5522f4f018d19ee1f",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 197,
-  "traders": 18
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x875e0130b52404c75f594ea8451597dd16c6b6e4",
-  "fee": 0,
-  "tickSpacing": 200,
-  "hooks": "0x10f11002b148be522005f9b5d666bef339392aec",
-  "swaps": 195,
-  "traders": 16
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x654cd910970603af24aa8adb894785297d3fce65",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 186,
-  "traders": 17
+  "swaps": 234,
+  "traders": 7
  },
  {
   "currency0": "0x063f7cc5339f92a5fd7baf3d22233044fda1f327",
@@ -275,26 +230,98 @@
   "fee": 10000,
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 175,
+  "swaps": 233,
   "traders": 24
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xe45a355d9e9cad2ad85f2d03e3ee3102a036acf0",
-  "fee": 10000,
-  "tickSpacing": 200,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 168,
-  "traders": 21
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xe8c58047c96627b4a9a558e5e877c311f8708e41",
+  "currency1": "0x95925e9c25fe28a046bcd43662b826afac06b22d",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 163,
-  "traders": 14
+  "swaps": 233,
+  "traders": 7
+ },
+ {
+  "currency0": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
+  "currency1": "0xf31bced2ea8f160052d54c8a3fd03381fedd8e0d",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
+  "swaps": 231,
+  "traders": 15
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x04b3cf45771d97332f49d2722e9acd6392c8c0d0",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 214,
+  "traders": 6
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xc80356dbffd1652d7e83152cb2cd174825d4eda0",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 212,
+  "traders": 5
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xd12609ddb1cd18280c7c14fb2cb5091cfea37f2d",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 207,
+  "traders": 6
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x49a591beb2a77ddcf41758f4e99126bc0510ea40",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 201,
+  "traders": 13
+ },
+ {
+  "currency0": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
+  "currency1": "0xeb8bcc0fde0e76d26f1fbcb38bf476c837b92927",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
+  "swaps": 199,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x405caa914fd1c1408ea526c90a6cfd429ee57ebe",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 171,
+  "traders": 11
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xe19ab007f4252deee3cda8fdbf2d7654c4c5c237",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 168,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x875e0130b52404c75f594ea8451597dd16c6b6e4",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0x10f11002b148be522005f9b5d666bef339392aec",
+  "swaps": 167,
+  "traders": 21
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -303,52 +330,43 @@
   "tickSpacing": 60,
   "hooks": "0x0000000000000000000000000000000000000000",
   "swaps": 161,
-  "traders": 10
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x11265018bf2d5a99fb71efae73ad670203c1df44",
-  "fee": 3000,
-  "tickSpacing": 60,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 152,
   "traders": 19
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xe19ab007f4252deee3cda8fdbf2d7654c4c5c237",
+  "currency1": "0xd662d66ec991a3eae4ecbda34327264c53d4cf38",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 144,
-  "traders": 10
- },
- {
-  "currency0": "0xaacc5bc6ea24cb753e5c2d48c88f7e361a50aacc",
-  "currency1": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
-  "swaps": 128,
-  "traders": 9
+  "swaps": 154,
+  "traders": 17
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x70e19d46a9c52c55cf95301f623edbc727f14ea6",
+  "currency1": "0x361464b114bd57070d1452ad5135ed8650108367",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 126,
-  "traders": 7
+  "swaps": 151,
+  "traders": 13
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xd1658bc4a58e505a70701ea4b8c05152c26dc1e8",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 117,
+  "currency1": "0x2056fde3761e5db4c13744213a56e8860f7ff777",
+  "fee": 5000,
+  "tickSpacing": 100,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 136,
   "traders": 5
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x3bf70f13ba92dc35a59e99d6303cfb91dec415be",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 134,
+  "traders": 12
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -356,8 +374,44 @@
   "fee": 10000,
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 116,
+  "swaps": 132,
   "traders": 7
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x1bc67a5ffe88648f3bf6bb340e4a2466d9227a00",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 132,
+  "traders": 6
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xe45a355d9e9cad2ad85f2d03e3ee3102a036acf0",
+  "fee": 10000,
+  "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 131,
+  "traders": 33
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xf03ed2f7ad9c17fbab0b3f57fa7b614d43346f5e",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 120,
+  "traders": 8
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x25af4bfa79aaf58c891c0c62bfc9b672910de117",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 116,
+  "traders": 9
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -370,30 +424,30 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xec60e2eb9c8f2dddabd55b9799e691beea6da768",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 110,
-  "traders": 12
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xa3c1d6a8648df3978a38ce1478fbc284c75d95d7",
-  "fee": 50000,
-  "tickSpacing": 200,
+  "currency1": "0x11265018bf2d5a99fb71efae73ad670203c1df44",
+  "fee": 3000,
+  "tickSpacing": 60,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 109,
-  "traders": 16
+  "swaps": 106,
+  "traders": 24
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x2fbb81fba30f1e609ef09fa0db9df7649bffdf49",
+  "currency1": "0xa5ef2ebcc0602112db7e0d18eb03485bf9a97e00",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 108,
+  "swaps": 102,
   "traders": 6
+ },
+ {
+  "currency0": "0x7701a31c0b3815fe6d09a8a313967c5977a5fa7a",
+  "currency1": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
+  "swaps": 100,
+  "traders": 8
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -401,71 +455,17 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 100,
+  "swaps": 97,
   "traders": 15
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xd12609ddb1cd18280c7c14fb2cb5091cfea37f2d",
+  "currency1": "0x7e7384e8c7e622e0bbf5813c399ffa4adb22dc44",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 99,
+  "swaps": 89,
   "traders": 10
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x171103ffb79d4c8e06f4a1626c5a1adc46d18ac9",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 99,
-  "traders": 11
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x892723bf41f2e1af70adb1ff19036810888473a3",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 92,
-  "traders": 13
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x3841415943f83c66667b7a3475561866d2d133a8",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 92,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xe9c29585eae4b9a55b02a9605aea892b40d972e8",
-  "fee": 3000,
-  "tickSpacing": 60,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 90,
-  "traders": 10
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x88e49f7e08c503e1d89ebc56ebc1119cd594dfb1",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 83,
-  "traders": 13
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xd528111bb5a1e5c10038cb9f54f46fec12bf1180",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 81,
-  "traders": 6
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -473,143 +473,8 @@
   "fee": 3000,
   "tickSpacing": 60,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 79,
-  "traders": 14
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x437c847644ff22cbcf0ea56896aa25504aad93b4",
-  "fee": 3000,
-  "tickSpacing": 60,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 77,
-  "traders": 14
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x3bf70f13ba92dc35a59e99d6303cfb91dec415be",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 74,
-  "traders": 13
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x0dbdb61849c136f4180f816c57786db83d31091c",
-  "fee": 10000,
-  "tickSpacing": 200,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 72,
-  "traders": 8
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xd2b985f83cb1b5d43392afa7c6c085b463b860b4",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 71,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x2aa8eae979e7fbeac3968a217714669e118cce77",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 70,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xa5892231026a0467845f91522d65508a73c6f089",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 69,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x766f575a1ab2eae9014b639761f80365fa0c94fe",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 65,
-  "traders": 8
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x157bb0480af41024827d89a76b470d72071ee1b7",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 65,
-  "traders": 9
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x063f7cc5339f92a5fd7baf3d22233044fda1f327",
-  "fee": 40000,
-  "tickSpacing": 800,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 64,
-  "traders": 20
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x767cb93f93f4c83fa5e47b631427cb5442b6948f",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 63,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x6daca3904cda26753d150bdb318758b2ccf419f6",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 63,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x2b5fb48f69dcc4566d7bc33556fb3d8849449ba0",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 61,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x6860ab075b5826a83bd7d616d87de3a4456d1b92",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 60,
-  "traders": 9
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xca49860d5e8300dd168329b05cdfc398b92994cb",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 59,
-  "traders": 5
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x52e7e5455fbf1eba345e470cdfd8fb32cad88317",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 57,
-  "traders": 10
+  "swaps": 84,
+  "traders": 16
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -617,8 +482,35 @@
   "fee": 3000,
   "tickSpacing": 60,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 53,
+  "swaps": 78,
+  "traders": 16
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x437c847644ff22cbcf0ea56896aa25504aad93b4",
+  "fee": 3000,
+  "tickSpacing": 60,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 76,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x0dbdb61849c136f4180f816c57786db83d31091c",
+  "fee": 10000,
+  "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 74,
   "traders": 6
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x157bb0480af41024827d89a76b470d72071ee1b7",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 72,
+  "traders": 10
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -626,26 +518,62 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 52,
-  "traders": 16
+  "swaps": 68,
+  "traders": 15
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xf32c9509579c3c06ebf4dc560619e41f3071c438",
+  "currency1": "0xfeda935745945390f88871b80837b421d248d2f8",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 52,
-  "traders": 5
+  "swaps": 68,
+  "traders": 7
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xf0394d1e25be152c9746791f5da3b287743f0e52",
-  "fee": 40000,
-  "tickSpacing": 800,
+  "currency1": "0x892723bf41f2e1af70adb1ff19036810888473a3",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 64,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x52e7e5455fbf1eba345e470cdfd8fb32cad88317",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 60,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x51bc445cbbc515a2b9bbb7d0ac6b1eee8a5cb1a7",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 59,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xe9c29585eae4b9a55b02a9605aea892b40d972e8",
+  "fee": 3000,
+  "tickSpacing": 60,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 48,
+  "swaps": 56,
   "traders": 11
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x8a47e6f298b9e7cef43d7cd01a466f60ef3e6e77",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 56,
+  "traders": 5
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
@@ -653,70 +581,142 @@
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 48,
+  "swaps": 53,
   "traders": 12
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x682c4921acdcc49941bc5c8e2d42c5a7a4b15621",
+  "currency1": "0x5e0555773d8fd45959037e875dcc0728d446ddd2",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 50,
+  "traders": 8
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x171103ffb79d4c8e06f4a1626c5a1adc46d18ac9",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
   "swaps": 48,
-  "traders": 7
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x49a591beb2a77ddcf41758f4e99126bc0510ea40",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 46,
-  "traders": 9
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xbdffd294cbcb4219faa756b70a1e3d246c539735",
-  "fee": 8388608,
-  "tickSpacing": 200,
-  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 43,
   "traders": 11
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0xd7e77807590d81901630f6a5c72d1ca085d6e2d1",
+  "currency1": "0xf0394d1e25be152c9746791f5da3b287743f0e52",
+  "fee": 40000,
+  "tickSpacing": 800,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 47,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x8ebb1624484c0d145fa9ccc9c69b1212ec7b5527",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
-  "swaps": 42,
+  "swaps": 46,
+  "traders": 8
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x33deec7f76e8f6435b8b53d6c1400c7ff39fc872",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 45,
+  "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xa692b19856ff79183997d326cf5f8fdb1d9414a2",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 44,
   "traders": 9
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x8007567d13f61c81caf5ea6af38c187d02699122",
+  "currency1": "0x1b6783d0ee68b1103e6d36de385214a569647399",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 40,
+  "traders": 6
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x7559191f12413d122493fe43de6d0b4544c6579f",
+  "fee": 3000,
+  "tickSpacing": 60,
+  "hooks": "0x0000000000000000000000000000000000000000",
   "swaps": 39,
   "traders": 6
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x236feecd909ff562e775318c77781f4946c33b3b",
-  "fee": 100000,
-  "tickSpacing": 1000,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "swaps": 38,
-  "traders": 9
+  "currency1": "0x711e4673a9c83fb085a8b8dc00d3512e062fdc3c",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 39,
+  "traders": 5
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x9cc39bfee8d110e723619d330814e9aaeb1f6c3e",
+  "currency1": "0x88e49f7e08c503e1d89ebc56ebc1119cd594dfb1",
   "fee": 8388608,
   "tickSpacing": 200,
   "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
   "swaps": 35,
   "traders": 10
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x1af1f07f778606a8acfbc9526a3ff144bdf2b1af",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 35,
+  "traders": 13
+ },
+ {
+  "currency0": "0x22d119f6f98e0b38c494ce1b46eb2d06bea0392f",
+  "currency1": "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0xe0def4221b9840a610d4e7d55812a79a6431a8ec",
+  "swaps": 34,
+  "traders": 6
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xa3c1d6a8648df3978a38ce1478fbc284c75d95d7",
+  "fee": 50000,
+  "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "swaps": 34,
+  "traders": 11
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x55978d20c94202a3843990ed0a12b30a95098983",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 33,
+  "traders": 9
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xe17f8b71908ba50948e5754d8889d875912994ff",
+  "fee": 8388608,
+  "tickSpacing": 200,
+  "hooks": "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
+  "swaps": 33,
+  "traders": 5
  }
 ]

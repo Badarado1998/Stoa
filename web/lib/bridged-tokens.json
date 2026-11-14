@@ -35,18 +35,18 @@
   "hyperevm": "0xfD739d4e423301CE9385c1fb8850539D657C296D"
  },
  {
-  "symbol": "wSPYx",
-  "name": "Wrapped SP500 xStock",
-  "address": "0x437c847644ff22Cbcf0eA56896aA25504Aad93b4",
-  "decimals": 18,
-  "hyperevm": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540"
- },
- {
   "symbol": "UBTC",
   "name": "Unit Bitcoin",
   "address": "0xE9C29585EAe4B9a55b02a9605AEa892B40d972E8",
   "decimals": 8,
   "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
+ },
+ {
+  "symbol": "wSPYx",
+  "name": "Wrapped SP500 xStock",
+  "address": "0x437c847644ff22Cbcf0eA56896aA25504Aad93b4",
+  "decimals": 18,
+  "hyperevm": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540"
  },
  {
   "symbol": "wQQQx",
@@ -68,6 +68,13 @@
   "address": "0x8264c91CedFE6CC078116083d5a3e198c16B1898",
   "decimals": 8,
   "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD"
+ },
+ {
+  "symbol": "EQTSLA",
+  "name": "EQX Tokenized TSLA",
+  "address": "0x7559191F12413d122493Fe43dE6d0B4544C6579F",
+  "decimals": 8,
+  "hyperevm": "0x883DAd2Aa97175c0D1569E1de61204ac47b2b8fb"
  },
  {
   "symbol": "PURR",
