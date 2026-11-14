@@ -55,11 +55,14 @@ jobs:
           AMT=$(cast to-wei "${{ inputs.hype }}")
           B0=$(cast balance $ME --rpc-url $RPC)
           P=$(params $NATIVE $USDC $AMT); echo "native -> stable: $P"
-          cast send $ROUTER "$SW" "$P" --value $AMT --private-key "$PK" --rpc-url $RPC | grep -E "status|transactionHash"
+          # the estimate is the bare minimum (adapters simulate inside try/catch): send with 30% + 50k headroom, as the app does
+          G=$(cast estimate $ROUTER "$SW" "$P" --value $AMT --from $ME --rpc-url $RPC); G=$((G * 13 / 10 + 50000))
+          cast send $ROUTER "$SW" "$P" --value $AMT --gas-limit $G --private-key "$PK" --rpc-url $RPC | grep -E "status|transactionHash|gasUsed"
           GOT=$(cast call $USDC 'balanceOf(address)(uint256)' $ME --rpc-url $RPC | cut -d' ' -f1)
           echo "stable now: $GOT"
           cast send $USDC 'approve(address,uint256)' $ROUTER $GOT --private-key "$PK" --rpc-url $RPC | grep -E "status"
           P=$(params $USDC $NATIVE $GOT); echo "stable -> native: $P"
-          cast send $ROUTER "$SW" "$P" --private-key "$PK" --rpc-url $RPC | grep -E "status|transactionHash"
+          G=$(cast estimate $ROUTER "$SW" "$P" --from $ME --rpc-url $RPC); G=$((G * 13 / 10 + 50000))
+          cast send $ROUTER "$SW" "$P" --gas-limit $G --private-key "$PK" --rpc-url $RPC | grep -E "status|transactionHash|gasUsed"
           B1=$(cast balance $ME --rpc-url $RPC)
           echo "native before $(cast from-wei $B0), after $(cast from-wei $B1)"

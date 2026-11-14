@@ -259,7 +259,16 @@ function TradeOn({ net }: { net: Net }) {
       const min = minOut(fresh.out, slip);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
       const p = swapParams(sell, buy, fresh.route, amt, min, address!, deadline, referrer ?? zeroAddress);
-      return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value: kind === "hypeIn" ? amt : undefined, chainId: chain.id });
+      const value = kind === "hypeIn" ? amt : undefined;
+      // Gas limit with headroom. Venue adapters pick their pool by simulating swaps inside try/catch, so the node's
+      // estimate is the bare minimum for the current block: a price move before inclusion can need a little more and
+      // the swap would run out of gas. 30% + 50k on top; only the gas actually used is paid.
+      let gas: bigint | undefined;
+      try {
+        const est = await pub!.estimateContractGas({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, account: address! });
+        gas = (est * 13n) / 10n + 50_000n;
+      } catch { /* let the wallet estimate; a revert shows up there */ }
+      return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, gas, chainId: chain.id });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
