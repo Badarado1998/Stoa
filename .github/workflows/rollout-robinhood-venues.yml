@@ -44,6 +44,10 @@ jobs:
           [ -n "$K1" ] && export SIGNER1_PK="0x${K1#0x}"
           [ -n "$K2" ] && export SIGNER2_PK="0x${K2#0x}"
           echo "OWNER_PRIVATE_KEY: $([ -n "$K1" ] && echo set || echo missing) · DEPLOYER_PRIVATE_KEY: $([ -n "$K2" ] && echo set || echo missing)"
+          if [ -z "$K1$K2" ]; then
+            echo "::notice::No signer key yet: add OWNER_PRIVATE_KEY and DEPLOYER_PRIVATE_KEY in the repository secrets."
+            echo "No signer key yet." > /tmp/out.txt; exit 0
+          fi
           forge script script/RolloutVenuesRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee /tmp/out.txt
           grep -E "WAIT|APPROVED|EXECUTED|DONE" /tmp/out.txt | sed 's/^ *//' >> "$GITHUB_STEP_SUMMARY" || true
 
