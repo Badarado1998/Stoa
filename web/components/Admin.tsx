@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
-import { BaseError, encodeFunctionData, isAddress, zeroAddress, type Address, type Hash, type Hex } from "viem";
+import { BaseError, encodeAbiParameters, encodeFunctionData, isAddress, keccak256, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import { addressUrlOn, txUrlOn } from "@/lib/networks";
 import { adminAbi } from "@/lib/abi";
 import { fmt } from "@/lib/swap";
 import { useNet, useWalletModal } from "./Providers";
 import { approvedSignatures, batch, safeAbi, timelockAbi } from "@/lib/safe";
+import { executeCall, opId, routerGovAbi, scheduleCalls, timelockBatchAbi, venueOps } from "@/lib/venuePackage";
 
 const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 const same = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
@@ -54,6 +55,21 @@ export default function Admin() {
     ],
     query: { enabled: !!R && !!F, refetchInterval: 15_000 },
   });
+  // new venue adapters (Robinhood Chain: Aero, Ramses): status of the three timelock rounds that add them
+  const nv = net.newVenues;
+  const ops = R && nv.length ? venueOps(R, nv.map((v) => v.address)) : null;
+  const firstPid = nv.length ? keccak256(encodeAbiParameters([{ type: "bool" }, { type: "address" }], [false, nv[0].address])) : undefined;
+  const roll = useReadContracts({
+    contracts: [
+      ...nv.map((v) => ({ address: R!, abi: routerGovAbi, functionName: "isAdapter" as const, args: [v.address] as const, chainId: elysium.id })),
+      { address: T!, abi: timelockBatchAbi, functionName: "getMinDelay" as const, chainId: elysium.id },
+      { address: R!, abi: routerGovAbi, functionName: "delay" as const, chainId: elysium.id },
+      { address: T!, abi: timelockBatchAbi, functionName: "getTimestamp" as const, args: [ops ? opId(ops.a) : "0x"] as const, chainId: elysium.id },
+      { address: T!, abi: timelockBatchAbi, functionName: "getTimestamp" as const, args: [ops ? opId(ops.b) : "0x"] as const, chainId: elysium.id },
+      { address: R!, abi: routerGovAbi, functionName: "pending" as const, args: [firstPid ?? "0x"] as const, chainId: elysium.id },
+    ],
+    query: { enabled: !!R && !!T && !!ops, refetchInterval: 15_000 },
+  });
   const r = (i: number) => reads.data?.[i]?.result;
   const n = owned.length * 2;
   const guardian = r(n) as Address | undefined, paused = r(n + 1) as boolean | undefined;
@@ -77,6 +93,7 @@ export default function Admin() {
       if (rc.status !== "success") throw new Error("Transaction reverted");
       setMsg({ ok: true, text: `${label}: confirmed`, hash });
       void reads.refetch();
+      void roll.refetch();
     } catch (e) {
       setMsg({ ok: false, text: e instanceof BaseError ? e.shortMessage : (e as Error).message });
     } finally {
@@ -187,6 +204,47 @@ export default function Admin() {
           </tbody>
         </table>
       </div>
+
+      {ops && T && (() => {
+        const rr = (i: number) => roll.data?.[i]?.result;
+        const k = nv.length;
+        const live = nv.map((_, i) => rr(i) as boolean | undefined);
+        const minDelay = rr(k) as bigint | undefined, rDelay = rr(k + 1) as bigint | undefined;
+        const tsA = rr(k + 2) as bigint | undefined, tsB = rr(k + 3) as bigint | undefined, eta = rr(k + 4) as bigint | undefined;
+        const names = nv.map((v) => v.name).join(" + ");
+        const now = BigInt(Math.floor(Date.now() / 1000));
+        const when = (t: bigint) => new Date(Number(t) * 1000).toLocaleString();
+        const allLive = live.length > 0 && live.every((x) => x === true);
+        const loading = roll.isLoading || tsA === undefined || tsB === undefined || minDelay === undefined || rDelay === undefined;
+        const ready3 = tsB !== undefined && eta !== undefined ? (tsB > eta ? tsB : eta) : 0n;
+        let step: { label: string; on?: () => void; wait?: string } | null = null;
+        if (!loading && !allLive) {
+          if (tsA === 0n) step = { label: `Add ${names}: step 1 of 3, schedule`, on: () => safeExec(`Add ${names}: step 1 of 3, schedule`, scheduleCalls(T, ops.a, ops.b, minDelay!, rDelay!)) };
+          else if (tsA! > 1n && tsA! > now) step = { label: "Step 2 of 3", wait: `Step 2 (propose on the router) opens ${when(tsA!)}.` };
+          else if (tsA! > 1n) step = { label: `Add ${names}: step 2 of 3, propose`, on: () => safeExec(`Add ${names}: step 2 of 3, propose`, [executeCall(T, ops.a)]) };
+          else if (tsB! > 1n && ready3 > now) step = { label: "Step 3 of 3", wait: `Step 3 (add to the router) opens ${when(ready3)}.` };
+          else if (tsB! > 1n) step = { label: `Add ${names}: step 3 of 3, add to router`, on: () => safeExec(`Add ${names}: step 3 of 3, add to router`, [executeCall(T, ops.b)]) };
+        }
+        return (
+          <div className="panel pad">
+            <div className="lbl">NEW VENUES · {net.short.toUpperCase()}</div>
+            <ul className="list">{nv.map((v, i) => (
+              <li key={v.address}>{v.name} adapter <a href={addressUrl(v.address)} target="_blank" rel="noopener noreferrer"><code>{short(v.address)}</code></a> · <b>{live[i] === undefined ? "—" : live[i] ? "in the router" : "not in the router yet"}</b></li>
+            ))}</ul>
+            {allLive ? (
+              <p className="note">Done: every swap on {net.name} now also checks {names}.</p>
+            ) : loading ? (
+              <p className="note">Reading the timelock…</p>
+            ) : (
+              <>
+                {step?.on && b(step.label, step.on, !isSigner)}
+                {step?.wait && <p className="note" style={{ marginTop: 8 }}><b>{step.wait}</b></p>}
+                <p className="note">Three rounds through the Safe and the 48h timelock, about three days in total: 1) schedule, 2) after 48 hours, propose on the router, 3) after the router&apos;s {rDelay ? Number(rDelay) / 3600 : "—"}h delay, add them. Each round: the first signer presses the button (approves), a second signer opens this page and presses the same button (sends). Each signer needs a little ETH on {net.name} for gas.</p>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="grid2 eq">
         <div className="panel pad">

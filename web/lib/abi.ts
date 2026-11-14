@@ -7,6 +7,7 @@ export const routerAbi = parseAbi([
   "function quote(address tokenIn, address tokenOut, uint256 amountIn) returns (Quote q)",
   "function swap(SwapParams p) payable returns (uint256 amountOut)",
   "function paused() view returns (bool)",
+  "function isAdapter(address) view returns (bool)",
   // errors, so wallets and the app can show a readable reason
   "error Expired()",
   "error UnknownVenue()",
@@ -94,6 +95,7 @@ export const adminAbi = parseAbi([
   "function transferOwnership(address newOwner)",
   "function guardian() view returns (address)",
   "function paused() view returns (bool)",
+  "function isAdapter(address) view returns (bool)",
   "function setupLocked() view returns (bool)",
   "function delay() view returns (uint256)",
   "function fallbackFeeBps() view returns (uint16)",

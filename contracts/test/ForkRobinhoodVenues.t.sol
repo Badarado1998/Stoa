@@ -142,11 +142,15 @@ contract ForkRobinhoodVenuesTest is RouterHelper, VenuesRobinhood, VenuePackageR
     // ---------------------------------------------------------------- helpers
 
     function _swapRoundTrip(uint256 amt) internal {
+        uint256 g = gasleft();
         StoaRouter.Quote memory q = router.quote(address(0), USDG, amt);
         console2.log("ETH in (wei):", amt);
+        console2.log("  quote gas:", g - gasleft());
         console2.log("  USDG out:", q.amountOut);
         console2.log("  leg1 venue:", q.leg1.venue, q.mid == address(0) ? "direct" : "via mid");
+        g = gasleft();
         uint256 out = _swapAs(router, alice, address(0), USDG, amt, q.amountOut, alice, address(0));
+        console2.log("  quote + swap gas:", g - gasleft());
         assertEq(out, q.amountOut, "fill equals quote");
         vm.prank(alice);
         IERC20(USDG).approve(address(router), out);

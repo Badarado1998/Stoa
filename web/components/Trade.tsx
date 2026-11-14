@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
 import { useStoaToken } from "@/lib/stoaToken";
-import { useAccount, useBalance, usePublicClient, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
 import { txUrlOn, type Net } from "@/lib/networks";
@@ -102,6 +102,12 @@ function TradeOn({ net }: { net: Net }) {
   const needApprove = needsAllowance && amt !== undefined && (allowance.data as bigint | undefined ?? 0n) < amt;
   const routerPaused = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "paused", chainId: chain.id, query: { enabled: deployed, refetchInterval: 15_000 } });
   const isPaused = routerPaused.data === true;
+  // venues being added to the router (Robinhood Chain: Aero, Ramses): listed as live only once the router uses them
+  const newLive = useReadContracts({
+    contracts: net.newVenues.map((v) => ({ address: CONTRACTS.router!, abi: routerAbi, functionName: "isAdapter" as const, args: [v.address] as const, chainId: chain.id })),
+    query: { enabled: deployed && net.newVenues.length > 0, refetchInterval: 60_000 },
+  });
+  const newVenuesLive = net.newVenues.length > 0 && net.newVenues.every((_, i) => newLive.data?.[i]?.result === true);
   const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
 
   const getQuote = useCallback(async (): Promise<Quote> => {
@@ -373,6 +379,7 @@ function TradeOn({ net }: { net: Net }) {
             {net.makers && <div>Stoa maker pools <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>}
             <div>Uniswap V2 · V3 · V4 <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
             {net.makers && <div>Aero · Ramses <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
+            {!net.makers && net.newVenues.length > 0 && <div>{net.newVenues.map((v) => v.name).join(" · ")} <em>{newVenuesLive ? "LIVE" : "BEING ADDED"}</em></div>}
             {net.makers && <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
           <p className="note">Every swap compares these venues, directly and through {W}, and takes the best price.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>

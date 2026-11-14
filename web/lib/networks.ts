@@ -38,6 +38,8 @@ export interface Net {
   venueList: string;
   /** maker pools exist on this chain */
   makers: boolean;
+  /** deployed venue adapters that may not be in the router yet (the admin page adds them through the timelock) */
+  newVenues: { address: Address; name: string }[];
 }
 
 const addr = (v?: string) => (v && /^0x[0-9a-fA-F]{40}$/.test(v) ? (v as Address) : undefined);
@@ -67,6 +69,7 @@ export const ELYSIUM: Net = {
   explorer: "https://elysium.kinetiq.xyz",
   venueList: "Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book",
   makers: true,
+  newVenues: [],
 };
 
 // ---------------------------------------------------------------- Robinhood Chain (chain 4663)
@@ -122,7 +125,7 @@ export const ROBINHOOD: Net = {
   deployed: Boolean(rhContracts.router),
   deployBlock: BigInt(D.block ?? 0),
   venues: Object.fromEntries(
-    ([[D.uniswapV2Adapter, "Uniswap V2"], [D.uniswapV3Adapter, "Uniswap V3"], [D.uniswapV4Adapter, "Uniswap V4"]] as const)
+    ([[D.uniswapV2Adapter, "Uniswap V2"], [D.uniswapV3Adapter, "Uniswap V3"], [D.uniswapV4Adapter, "Uniswap V4"], [D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"]] as const)
       .filter(([a]) => addr(a))
       .map(([a, n]) => [a!.toLowerCase(), n]),
   ),
@@ -135,6 +138,9 @@ export const ROBINHOOD: Net = {
   explorer: "https://robinhoodchain.blockscout.com",
   venueList: "Uniswap V2, V3 and V4",
   makers: false,
+  newVenues: ([[D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"]] as const)
+    .filter(([a]) => addr(a))
+    .map(([a, name]) => ({ address: a as Address, name })),
 };
 
 export const NETS: Net[] = [ELYSIUM, ROBINHOOD];
