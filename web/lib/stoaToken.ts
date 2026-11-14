@@ -1,55 +1,75 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, erc20Abi, getAddress, http, pad, type Address } from "viem";
-import type { Net } from "./networks";
+import { ROBINHOOD, type Net } from "./networks";
 import type { Token } from "./tokens";
 
-/** $STOA lives on Robinhood Chain, launched on Pons. It is found on-chain, not typed in: the web looks for a token the
- *  dev wallet created through Pons' V2 launch factory, so it appears the moment the launch lands and a copycat from
- *  any other wallet never can. NEXT_PUBLIC_STOA_DEV overrides the dev wallet, NEXT_PUBLIC_STOA_CA the token. */
-const DEV = (process.env.NEXT_PUBLIC_STOA_DEV || "0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9") as Address;
+/** $STOA lives on Robinhood Chain, launched on Pons. It is found on-chain, not typed in: the web looks for a token
+ *  the dev wallet created through Pons' V2 launch factory, so it appears seconds after the launch transaction lands,
+ *  and a copycat from any other wallet never can. Pons records the creator (the wallet that sent the launch, with or
+ *  without a dev buy) as the third indexed topic. NEXT_PUBLIC_STOA_CA, once set, skips the lookup. */
+export const STOA_DEV = (process.env.NEXT_PUBLIC_STOA_DEV || "0x8DAc20C0FE1C59D337808f234921a89Ee0C1346a") as Address;
 const CA = process.env.NEXT_PUBLIC_STOA_CA as Address | undefined;
 const PONS_FACTORY = "0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e" as Address;
 /** TokenLaunched: topic1 = token, topic2 = bonding curve, topic3 = creator */
 const LAUNCH_TOPIC = "0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607" as const;
-const LOOKBACK = 9_000_000n; // ~10 days of Robinhood Chain blocks per query window
+/** Robinhood Chain block when the watcher went live; the dev wallet had sent no transaction yet (nonce 0) */
+const FROM_BLOCK = 114_270_000n;
+const SPAN = 9_000_000n; // the public RPC caps a log query at 10M blocks
+const POLL_MS = 3_000;
+const TICKER = (process.env.NEXT_PUBLIC_STOA_TICKER || "STOA").toUpperCase();
 
-async function find(net: Net): Promise<Token | null> {
-  const client = createPublicClient({ chain: net.chain, transport: http(net.logsRpc) });
-  let token = CA ?? null;
-  if (!token) {
+async function logsFrom(client: ReturnType<typeof createPublicClient>): Promise<Address[]> {
+  const q = (fromBlock: bigint, toBlock: bigint | "latest") => client.request({
+    method: "eth_getLogs",
+    params: [{ address: PONS_FACTORY, fromBlock: `0x${fromBlock.toString(16)}`, toBlock: toBlock === "latest" ? "latest" : `0x${toBlock.toString(16)}`, topics: [LAUNCH_TOPIC, null, null, pad(STOA_DEV)] }],
+  }) as Promise<{ topics: `0x${string}`[] }[]>;
+  let logs: { topics: `0x${string}`[] }[];
+  try {
+    logs = await q(FROM_BLOCK, "latest"); // one request while the range fits the RPC's 10M-block cap
+  } catch {
+    logs = [];
     const head = await client.getBlockNumber();
-    let created: Address[] = [];
-    for (let z = head, i = 0; i < 4 && !created.length; z -= LOOKBACK, i++) {
-      const from = z > LOOKBACK ? z - LOOKBACK + 1n : 0n;
-      const logs = await client.request({
-        method: "eth_getLogs",
-        params: [{ address: PONS_FACTORY, fromBlock: `0x${from.toString(16)}`, toBlock: `0x${z.toString(16)}`, topics: [LAUNCH_TOPIC, null, null, pad(DEV)] }],
-      });
-      created = (logs as { topics: `0x${string}`[] }[]).map((l) => getAddress(`0x${l.topics[1].slice(26)}`));
-    }
-    if (!created.length) return null;
-    // prefer the one whose ticker is STOA if the dev wallet ever made more than one
-    const syms = await Promise.all(created.map((a) => client.readContract({ address: a, abi: erc20Abi, functionName: "symbol" }).catch(() => "")));
-    const i = syms.findIndex((s) => s.toUpperCase().replace("$", "") === "STOA");
-    if (i < 0) return null;
-    token = created[i];
+    for (let a = FROM_BLOCK; a <= head; a += SPAN) logs.push(...(await q(a, a + SPAN - 1n < head ? a + SPAN - 1n : head)));
   }
-  const [symbol, decimals] = await Promise.all([
-    client.readContract({ address: token, abi: erc20Abi, functionName: "symbol" }),
-    client.readContract({ address: token, abi: erc20Abi, functionName: "decimals" }),
-  ]);
-  return { symbol, name: "Official Stoa token", address: token, decimals, glyph: symbol[0] ?? "S", tone: "bridged", logo: "/logo.png" };
+  return logs.map((l) => getAddress(`0x${l.topics[1].slice(26)}`));
 }
 
-/** On Robinhood Chain: polls every 15 s until the launch is seen, then stays put. Null elsewhere. */
-export function useStoaToken(net: Net) {
+async function find(): Promise<Token | null> {
+  const seen = cached();
+  if (seen && (!CA || seen.address.toLowerCase() === CA.toLowerCase())) return seen;
+  const client = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc, { batch: true }) });
+  const created = CA ? [CA] : await logsFrom(client);
+  if (!created.length) return null;
+  // symbol and decimals for every candidate in one batched request; only the ticker STOA counts
+  const meta = await Promise.all(created.map((a) => Promise.all([
+    client.readContract({ address: a, abi: erc20Abi, functionName: "symbol" }).catch(() => ""),
+    client.readContract({ address: a, abi: erc20Abi, functionName: "decimals" }).catch(() => 18),
+  ])));
+  const i = meta.findIndex(([s]) => s.toUpperCase().replace("$", "") === TICKER);
+  if (i < 0) return null;
+  const [symbol, decimals] = meta[i];
+  const t: Token = { symbol, name: "Official Stoa token", address: created[i], decimals, glyph: symbol[0] ?? "S", tone: "bridged", logo: "/logo.png" };
+  try { localStorage.setItem(KEY, JSON.stringify(t)); } catch { /* storage blocked */ }
+  return t;
+}
+
+/** A launch seen before on this device shows at once, before the chain is asked again. */
+const KEY = `stoa.token.${STOA_DEV.toLowerCase()}`;
+function cached(): Token | undefined {
+  try { const v = localStorage.getItem(KEY); return v ? (JSON.parse(v) as Token) : undefined; } catch { return undefined; }
+}
+
+/** Checks every 3 s until the launch is seen, then stays put. Pass a network to get null outside Robinhood Chain. */
+export function useStoaToken(net?: Net) {
   const q = useQuery({
-    queryKey: ["stoa-token", net.key],
-    queryFn: () => find(net),
-    refetchInterval: (query) => (query.state.data ? false : 15_000),
-    staleTime: (query) => (query.state.data ? Infinity : 10_000),
-    enabled: net.key === "robinhood",
+    queryKey: ["stoa-token"],
+    queryFn: find,
+    refetchInterval: (query) => (query.state.data ? false : POLL_MS),
+    refetchIntervalInBackground: true,
+    staleTime: (query) => (query.state.data ? Infinity : 2_000),
+    retry: 2,
   });
-  return net.key === "robinhood" ? q.data ?? null : null;
+  if (net && net.key !== "robinhood") return null;
+  return q.data ?? null;
 }
