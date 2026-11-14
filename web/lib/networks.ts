@@ -70,7 +70,9 @@ export const ELYSIUM: Net = {
 };
 
 // ---------------------------------------------------------------- Robinhood Chain (chain 4663)
-const RH_RPCS = (process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL || "https://rpc.mainnet.chain.robinhood.com").split(",").map((s) => s.trim()).filter(Boolean);
+const RH_PUBLIC_RPC = "https://rpc.mainnet.chain.robinhood.com";
+/** Reads and transactions: NEXT_PUBLIC_ROBINHOOD_RPC_URL (comma list, first = primary), public RPC otherwise. */
+const RH_RPCS = (process.env.NEXT_PUBLIC_ROBINHOOD_RPC_URL || RH_PUBLIC_RPC).split(",").map((s) => s.trim()).filter(Boolean);
 export const robinhood = defineChain({
   id: 4663,
   name: "Robinhood Chain",
@@ -124,7 +126,8 @@ export const ROBINHOOD: Net = {
       .filter(([a]) => addr(a))
       .map(([a, n]) => [a!.toLowerCase(), n]),
   ),
-  logsRpc: process.env.NEXT_PUBLIC_ROBINHOOD_LOGS_RPC_URL || RH_RPCS[0],
+  // log scans stay on the public RPC: free Alchemy and dRPC plans cap eth_getLogs at 10 and 10,000 blocks
+  logsRpc: process.env.NEXT_PUBLIC_ROBINHOOD_LOGS_RPC_URL || RH_PUBLIC_RPC,
   logsSpan: 9_000_000n, // the public RPC caps a log query at 10M blocks
   v4PoolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
   dexscreener: "robinhood",
