@@ -23,18 +23,21 @@
   "symbol": "MRDN",
   "address": "0x6437614ea1efba0eb4b43bc1af53808722b1cf13",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x6437614ea1efba0eb4b43bc1af53808722b1cf13.webp"
  },
  {
   "symbol": "ANT",
   "address": "0x36c2861a1f94c6f277a388338a4f8a686e0d9b30",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x36c2861a1f94c6f277a388338a4f8a686e0d9b30.webp"
  },
  {
   "symbol": "MORPH",
   "address": "0x6dbe95076584f869dd09a44131e9a3c13f34d7d6",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x6dbe95076584f869dd09a44131e9a3c13f34d7d6.webp"
  },
  {
   "symbol": "C",
@@ -45,19 +48,22 @@
   "symbol": "GLINT",
   "address": "0x113f06cdc9305167e1ec74ba1652c9ecdfe93114",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x113f06cdc9305167e1ec74ba1652c9ecdfe93114.webp"
  },
  {
   "symbol": "CHARLIE",
   "address": "0x5fea0f4e7239907602bb779c52a559279f542f45",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x5fea0f4e7239907602bb779c52a559279f542f45.webp"
  },
  {
   "symbol": "BULW",
   "address": "0x0f8110b99bc4c5c0b22aa7dcf17a06935f7b8f4a",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x0f8110b99bc4c5c0b22aa7dcf17a06935f7b8f4a.webp"
  },
  {
   "symbol": "SHARK",
@@ -68,7 +74,8 @@
   "symbol": "OAK",
   "address": "0x6511c233790ec10f7d673c64dc82c3f941d57828",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x6511c233790ec10f7d673c64dc82c3f941d57828.webp"
  },
  {
   "symbol": "VI",
@@ -78,7 +85,8 @@
  {
   "symbol": "PONS",
   "address": "0x39dbed3a2bd333467115de45665cc57f813c4571",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x39dbed3a2bd333467115de45665cc57f813c4571.webp"
  },
  {
   "symbol": "UP",
@@ -88,7 +96,8 @@
  {
   "symbol": "FOREVER",
   "address": "0xacc8de336f5d2366fa7334383d8fab73499f582a",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xacc8de336f5d2366fa7334383d8fab73499f582a.webp"
  },
  {
   "symbol": "ATC",
@@ -99,31 +108,36 @@
   "symbol": "FHERUM",
   "address": "0x8665f6e7ce1df1abe042d4b044e681be98a62974",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x8665f6e7ce1df1abe042d4b044e681be98a62974.webp"
  },
  {
   "symbol": "TEXEL",
   "address": "0x0ddcab9ae04bda0c87ecc1640636fa11e8e613e8",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x0ddcab9ae04bda0c87ecc1640636fa11e8e613e8.webp"
  },
  {
   "symbol": "ZOLVA",
   "address": "0x8e04549484d0612be8373a0263b11928a5f7681f",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x8e04549484d0612be8373a0263b11928a5f7681f.webp"
  },
  {
   "symbol": "ROOQ",
   "address": "0x56f316047b358c0d3c04540ff47ff4373df48ec0",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x56f316047b358c0d3c04540ff47ff4373df48ec0.webp"
  },
  {
   "symbol": "BULL",
   "address": "0x30768b5482e5dd8a2487ce0be61e01fa03af37ff",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x30768b5482e5dd8a2487ce0be61e01fa03af37ff.webp"
  },
  {
   "symbol": "mihao",
@@ -133,7 +147,8 @@
  {
   "symbol": "FRONG",
   "address": "0x6245e67affa44a23077f0ea7f981a8dc743a0c47",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x6245e67affa44a23077f0ea7f981a8dc743a0c47.webp"
  },
  {
   "symbol": "FUND",
@@ -143,76 +158,89 @@
  {
   "symbol": "AI",
   "address": "0x2e8c31162b855a2ffa90f6f8634643ad6f111e18",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x2e8c31162b855a2ffa90f6f8634643ad6f111e18.webp"
  },
  {
   "symbol": "PLOG",
   "address": "0x534b76f46d69caee896c4f993a86ea2e12248b90",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x534b76f46d69caee896c4f993a86ea2e12248b90.webp"
  },
  {
   "symbol": "FOBO",
   "address": "0x000de658153f47f23e92973c8eb1e89762703676",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x000de658153f47f23e92973c8eb1e89762703676.webp"
  },
  {
   "symbol": "HOOKR",
   "address": "0x18e674231a58c239dc7daedcffe15ec3a24cff5c",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x18e674231a58c239dc7daedcffe15ec3a24cff5c.webp"
  },
  {
   "symbol": "APESHIT",
   "address": "0x9258a4c8ffa26683390686355def8c5ad380c3ee",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x9258a4c8ffa26683390686355def8c5ad380c3ee.webp"
  },
  {
   "symbol": "OSTRA",
   "address": "0x68ff81dfff6eccefb74706fe1e0a86320cb2eb96",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x68ff81dfff6eccefb74706fe1e0a86320cb2eb96.webp"
  },
  {
   "symbol": "AUTONOMO",
   "address": "0xe83c85e1ead16fcfe85401e2b337fb4fb5b5cc96",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xe83c85e1ead16fcfe85401e2b337fb4fb5b5cc96.webp"
  },
  {
   "symbol": "LOBIN",
   "address": "0x75d874378ae31b33ab9e7a40b4dca96134221111",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x75d874378ae31b33ab9e7a40b4dca96134221111.webp"
  },
  {
   "symbol": "ZENO",
   "address": "0x31ced11f076e45da2508da2db4a2f296021a1e21",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x31ced11f076e45da2508da2db4a2f296021a1e21.webp"
  },
  {
   "symbol": "UPOCH",
   "address": "0xdafaa1ed0b9f5746a0cfa2be80371cf06a986977",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xdafaa1ed0b9f5746a0cfa2be80371cf06a986977.webp"
  },
  {
   "symbol": "MHD",
   "address": "0xd39142cf605e31988153718fc6487b4d95389eca",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xd39142cf605e31988153718fc6487b4d95389eca.webp"
  },
  {
   "symbol": "ACTUARY",
   "address": "0x767e31c8ba121aa381eda90abeab5c4289d08853",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x767e31c8ba121aa381eda90abeab5c4289d08853.webp"
  },
  {
   "symbol": "TIDE",
   "address": "0x5dd89189769deb28e1e24fb8623e28856b6b5300",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x5dd89189769deb28e1e24fb8623e28856b6b5300.webp"
  },
  {
   "symbol": "DYC",
@@ -223,68 +251,80 @@
   "symbol": "LETRO",
   "address": "0xa2753fd0bc86b8ceb55ffd2698679c7f214785f1",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xa2753fd0bc86b8ceb55ffd2698679c7f214785f1.webp"
  },
  {
   "symbol": "EGL",
   "address": "0xa78557b829215d36c88303ce2f34448dda9b46fa",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xa78557b829215d36c88303ce2f34448dda9b46fa.webp"
  },
  {
   "symbol": "ONAGI",
   "address": "0xbf2f5b48428fc7c6fb13bd7a4848f209f482b9df",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xbf2f5b48428fc7c6fb13bd7a4848f209f482b9df.webp"
  },
  {
   "symbol": "GIRAFF",
   "address": "0x20b25da8785990cc89330af56310024bb199cd36",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x20b25da8785990cc89330af56310024bb199cd36.webp"
  },
  {
   "symbol": "Metrion",
   "address": "0x5eb674dcf0d6b4398d143a90642a905391e91c92",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x5eb674dcf0d6b4398d143a90642a905391e91c92.webp"
  },
  {
   "symbol": "KURO",
   "address": "0x6104df5db9ee0bd9165ff480db2fa054113796f7",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x6104df5db9ee0bd9165ff480db2fa054113796f7.webp"
  },
  {
   "symbol": "LGND",
   "address": "0x8c214b77f7ededa453ebd43df848cc02ecc1b431",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x8c214b77f7ededa453ebd43df848cc02ecc1b431.webp"
  },
  {
   "symbol": "LOCKRA",
   "address": "0x2fc6de9c65a620f918ca7d1191d3afa495ca2898",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x2fc6de9c65a620f918ca7d1191d3afa495ca2898.webp"
  },
  {
   "symbol": "SPIN",
   "address": "0x4497957bacc03d67012dec81b27faece952b1111",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x4497957bacc03d67012dec81b27faece952b1111.webp"
  },
  {
   "symbol": "INTC",
   "address": "0xc72b96e0e48ecd4dc75e1e45396e26300bc39681",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xc72b96e0e48ecd4dc75e1e45396e26300bc39681.webp"
  },
  {
   "symbol": "RIPPLES",
   "address": "0xc465130ac047cc363d3839b4de1c8f35cf8ae9fd",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xc465130ac047cc363d3839b4de1c8f35cf8ae9fd.webp"
  },
  {
   "symbol": "FLORA",
   "address": "0x7bae7a90c7328969614b3efbee8c4a9026befea8",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x7bae7a90c7328969614b3efbee8c4a9026befea8.webp"
  },
  {
   "symbol": "USDG",
@@ -295,74 +335,87 @@
   "symbol": "QUERO",
   "address": "0x71d85b295653d9c3e7dd2fc26f26f2c3db51b2fc",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x71d85b295653d9c3e7dd2fc26f26f2c3db51b2fc.webp"
  },
  {
   "symbol": "SID",
   "address": "0x99f2f175df58e31d8f8368f11e2e2c7f8dbdc3f8",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x99f2f175df58e31d8f8368f11e2e2c7f8dbdc3f8.webp"
  },
  {
   "symbol": "ACAT",
   "address": "0xd281bf1649c5db6744d23f61bb25b05b4d1dff35",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xd281bf1649c5db6744d23f61bb25b05b4d1dff35.webp"
  },
  {
   "symbol": "KALYX",
   "address": "0xc928115d65ba633c806ea14ff6d35b9163e0e2b1",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xc928115d65ba633c806ea14ff6d35b9163e0e2b1.webp"
  },
  {
   "symbol": "STREET",
   "address": "0xf9ee3fbcf3fc11b5681e9a44666d2e1e4f8c5834",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xf9ee3fbcf3fc11b5681e9a44666d2e1e4f8c5834.webp"
  },
  {
   "symbol": "GRIFT",
   "address": "0x9f4ba41f91a59a34e17ee8c9eb3a51363b11abd5",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0x9f4ba41f91a59a34e17ee8c9eb3a51363b11abd5.webp"
  },
  {
   "symbol": "PNL",
   "address": "0xbba60ab93fc409b1a34371cbf6c3173795ed2c7e",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xbba60ab93fc409b1a34371cbf6c3173795ed2c7e.webp"
  },
  {
   "symbol": "RAID",
   "address": "0xd56a6c45941ee8aae31ce6a30bd049e0f7489cbd",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xd56a6c45941ee8aae31ce6a30bd049e0f7489cbd.webp"
  },
  {
   "symbol": "GIGATENEV",
   "address": "0xc9675fe679c7d4e1b94416f66d61c96127eb964a",
-  "decimals": 18
+  "decimals": 18,
+  "logo": "/tokens/0xc9675fe679c7d4e1b94416f66d61c96127eb964a.webp"
  },
  {
   "symbol": "ONION",
   "address": "0xb406249c7350e6384ce15ec2cd95afd9ebbe7cbb",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xb406249c7350e6384ce15ec2cd95afd9ebbe7cbb.webp"
  },
  {
   "symbol": "WAFERMAP",
   "address": "0xfda080f64d84c989cfc50ff18253542cfe502db3",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xfda080f64d84c989cfc50ff18253542cfe502db3.webp"
  },
  {
   "symbol": "BOMBERS",
   "address": "0xf5893950430b949565666997b11765e6618b8508",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0xf5893950430b949565666997b11765e6618b8508.webp"
  },
  {
   "symbol": "SENTRO",
   "address": "0x0bd8190edff57bb502eb2facd61fe7e991da08d6",
   "decimals": 18,
-  "launchpad": "Pons"
+  "launchpad": "Pons",
+  "logo": "/tokens/0x0bd8190edff57bb502eb2facd61fe7e991da08d6.webp"
  }
 ]
