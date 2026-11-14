@@ -1,0 +1,97 @@
+name: Deploy on Robinhood Chain
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet (chain 4663): sends nothing.
+# One run deploys the 2-of-3 Safe, the 48h timelock and Stoa (router + Uniswap V2/V3/V4 adapters), hands the
+# contracts to the timelock, registers the most traded Uniswap V4 pools and publishes the addresses to the web app.
+# Needs the secret ROBINHOOD_DEPLOYER_PRIVATE_KEY (a fresh wallet holding ~0.003 ETH on Robinhood Chain). The deployer
+# keeps no rights afterwards; the daily pool refresh reuses it only to pay gas for registering new V4 pools.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+      # same three signers as the Elysium Safe: owner, Elysium deployer, treasury
+      SIGNERS: "0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9,0x056896d7d62fB4faE30f53d76CB55264f4c5c500,0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c"
+      TREASURY: "0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c"
+      GUARDIAN: "0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test ! -f ../web/lib/deployments-4663.json || { echo "::error::already deployed (web/lib/deployments-4663.json exists)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          echo "Deployer: $ME"
+          echo "Balance:  $(cast balance $ME --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          for s in ${SIGNERS//,/ }; do [ "${s,,}" != "${ME,,}" ] || echo "::notice::the deployer is also a Safe signer"; done
+
+      - name: Unit tests
+        run: forge test --no-match-contract Fork
+
+      - name: Fork tests against Robinhood Chain (every venue and allowed hook, live)
+        run: forge test --match-contract ForkRobinhood -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663.json
+
+      - name: Register the most traded Uniswap V4 pools
+        if: ${{ inputs.broadcast }}
+        run: |
+          (cd script/data && CHAIN=robinhood python3 -I v4_top_pools.py) || echo "::warning::ranking failed; using the saved list"
+          RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="$PK" ADAPTER="$(jq -r .uniswapV4Adapter deployments/4663.json)" \
+            SEED=script/data/v4-seed-pools-4663.json ./script/seed-v4.sh
+
+      - name: Verify on Blockscout
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          D=deployments/4663.json; V="--verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api/ --chain 4663 --watch"
+          ME=$(cast wallet address --private-key "$PK")
+          WETH=0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73
+          R=$(jq -r .router $D); TL=$(jq -r .timelock $D); REG=$(jq -r .makerRegistry $D); FD=$(jq -r .feeDistributor $D)
+          forge verify-contract $REG src/MakerRegistry.sol:MakerRegistry $V --constructor-args $(cast abi-encode "c(address,address,uint64)" $ME $TREASURY 259200) || true
+          forge verify-contract $FD src/FeeDistributor.sol:FeeDistributor $V --constructor-args $(cast abi-encode "c(address,address)" $ME $REG) || true
+          forge verify-contract $R src/StoaRouter.sol:StoaRouter $V --constructor-args $(cast abi-encode "c(address,address,address,address,uint256)" $ME $FD $WETH 0x000000000022D473030F116dDEE9F6B43aC78BA3 86400) || true
+          forge verify-contract $(jq -r .uniswapV2Adapter $D) src/adapters/UniswapV2Adapter.sol:UniswapV2Adapter $V --constructor-args $(cast abi-encode "c(address,address,address)" 0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f $WETH $R) || true
+          forge verify-contract $(jq -r .uniswapV3Adapter $D) src/adapters/UniswapV3Adapter.sol:UniswapV3Adapter $V --constructor-args $(cast abi-encode "c(address,address,address)" 0x1f7d7550B1b028f7571E69A784071F0205FD2EfA $WETH $R) || true
+          forge verify-contract $(jq -r .uniswapV4Adapter $D) src/adapters/UniswapV4Adapter.sol:UniswapV4Adapter $V --guess-constructor-args --rpc-url "$ROBINHOOD_RPC_URL" || true
+          forge verify-contract $TL lib/openzeppelin-contracts/contracts/governance/TimelockController.sol:TimelockController $V --guess-constructor-args --rpc-url "$ROBINHOOD_RPC_URL" || true
+
+      - name: Publish addresses to the web app
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          cp contracts/deployments/4663.json web/lib/deployments-4663.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add web/lib/deployments-4663.json contracts/script/data/v4-seed-pools-4663.json
+          git commit -m "deploy: Stoa on Robinhood Chain (Safe 2 of 3, 48h timelock)"
+          git pull --rebase && git push
