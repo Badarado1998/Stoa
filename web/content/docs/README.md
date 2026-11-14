@@ -1,6 +1,6 @@
 # Introduction
 
-Stoa is the PropAMM hub on Elysium: pools priced live by professional makers, with every swap checked against other venues before you sign.
+Stoa is a best-price swap router on Elysium and Robinhood Chain: every swap is checked against every major venue on the network before you sign. On Elysium it is also a PropAMM hub, with pools priced live by professional makers.
 
 ## What Stoa is
 
@@ -10,7 +10,7 @@ Most AMMs price a trade with a fixed formula. On Stoa, every pool is priced by *
 
 | You are | What you do on Stoa |
 | --- | --- |
-| Trader | Swap at the best price across Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book. |
+| Trader | Swap at the best price: Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book on Elysium; Uniswap V2/V3/V4 on Robinhood Chain. |
 | Liquidity provider | Pool vaults (ERC-4626 shares that grow with fees) open after the external audit. |
 | Curator / maker | Run a pool: bring a price source, post a HYPE bond, quote every block. |
 | Builder | Use the router, SDK and LP tokens inside your own app or contract. |
@@ -19,7 +19,7 @@ Most AMMs price a trade with a fixed formula. On Stoa, every pool is priced by *
 
 | Item | Value |
 | --- | --- |
-| Network | Elysium (Hyperliquid L2 by Kinetiq), chain ID 99901 |
+| Networks | Elysium (Hyperliquid L2 by Kinetiq), chain ID 99901 · Robinhood Chain, chain ID 4663 |
 | First pool | WHYPE / USDC |
 | Protocol fee | 2 bps per swap |
 | Quote validity | 2 blocks |

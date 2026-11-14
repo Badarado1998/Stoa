@@ -1,11 +1,16 @@
 # Trade
 
-Swap tokens at maker prices.
+Swap tokens at the best price on Elysium or Robinhood Chain.
 
-1. Open [Trade](https://stoadex.com/trade) and connect a wallet on Elysium (chain 99901).
-2. Pick the token to sell and the token to buy. Native HYPE works directly; the router wraps and unwraps it for you.
-3. Enter an amount. The router compares Stoa maker pools and Uniswap, directly and through WHYPE, and shows the route it found.
+1. Open [Trade](https://stoadex.com/trade) and pick a network with the button at the top right: **Elysium** (chain 99901) or **Robinhood Chain** (chain 4663). If your wallet is already on one of them, the app follows it. A direct link to Robinhood Chain: [stoadex.com/trade?chain=robinhood](https://stoadex.com/trade?chain=robinhood).
+2. Pick the token to sell and the token to buy. The native coin works directly (HYPE on Elysium, ETH on Robinhood Chain); the router wraps and unwraps it for you.
+3. Enter an amount. The router compares every venue on that network, directly and through the wrapped native token (WHYPE or WETH), and shows the route it found.
 4. Check the rate, route and slippage, then confirm in your wallet.
+
+| Network | Venues checked on every swap |
+| --- | --- |
+| Elysium | Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses, Liquidity Book |
+| Robinhood Chain | Uniswap V2, V3 and V4, including Pons launch pools |
 
 ## Slippage
 
@@ -18,15 +23,20 @@ Choose 0.1%, 0.5% or 1%. If the fill would be worse than your limit, the swap re
 - Token labels in the picker:
   - **✓ bridged from HyperEVM**: major tokens (KNTQ, kHYPE, USD₮0, UBTC, UETH, PURR) that came through Elysium's canonical bridge. Stoa checked on-chain that each address is the bridge's own copy of the HyperEVM token.
   - **Bridged from HyperEVM**: other tokens from the same bridge that Stoa can trade both ways, refreshed daily. Anyone can bridge any HyperEVM token, so these still show the token warning.
-  - **Montra launch / PerpMe launch**: created by that launchpad, checked from its public token list or its verified factory contract. This says where the token came from, not that it is safe.
+  - **Montra launch / PerpMe launch / Pons launch**: created by that launchpad, checked from its public token list, its verified factory contract or its launch pool. This says where the token came from, not that it is safe.
+  - **Official Stoa token**: $STOA on Robinhood Chain, read on-chain from the dev wallet's launch on Pons. It is the only STOA marked this way.
   - **Unverified**: anything else, including tokens you import by address. Check the address before you trade.
 
 {% hint style="warning" %}
 
-Maker pools cap each fill at **$500** while they ramp up. Larger swaps fill on the deepest outside venue, where price impact depends on that pool's depth.
+On Elysium, maker pools cap each fill at **$500** while they ramp up. Larger swaps fill on the deepest outside venue, where price impact depends on that pool's depth.
 
 {% endhint %}
 
 ## Tokens on Uniswap V4
 
-Most launchpad tokens on Elysium trade in Uniswap V4 pools, which cannot be discovered on-chain. If the router has no route for a token you imported, the swap screen looks up its V4 pool and offers **Add Uniswap V4 pool**: a one-time transaction anyone can send that lets the router use that pool for everyone. Only pools whose hooks are on Stoa's allowlist can be added.
+Most launchpad tokens on Elysium and Robinhood Chain trade in Uniswap V4 pools, which the router cannot discover by itself. The most traded ones are registered every day. If the router has no route for a token you imported, the swap screen looks up its V4 pool and offers **Add Uniswap V4 pool**: a one-time transaction anyone can send that lets the router use that pool for everyone. Only pools whose hooks are on Stoa's allowlist can be added.
+
+## Tokens still on a bonding curve
+
+A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 pool. Until then Stoa cannot route it; the swap screen says so and links to the token on Pons. For $STOA, a watcher registers its V4 pool on the router within minutes of graduation.

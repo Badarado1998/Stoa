@@ -6,16 +6,17 @@ What can go wrong, and what limits it.
 | --- | --- |
 | A contract bug affects pool funds | Maker pool inventory is supplied by Stoa, not by outside depositors; per-swap caps stay until the audit |
 | A venue misbehaves or lies about its output | The router measures what you actually received and reverts below your minimum; it also reverts if a venue does not take exactly your input |
-| A malicious venue is added | New venues wait 72 hours in public before they can go live (48-hour timelock, then the router's 24-hour wait); the guardian can pause the router at once. Uniswap V4 pools can only be added if their hooks are on an allowlist fixed at deployment |
+| A malicious venue is added | New venues wait 72 hours in public before they can go live (48-hour timelock, then the router's 24-hour wait); the guardian can pause the router at once. Uniswap V4 pools can only be added if their hooks are on an allowlist fixed at deployment, on each network |
 | Something goes wrong | The router can be paused at once by the owner or the guardian |
 | The admin key is misused or lost | Admin cannot upgrade code, move funds from your wallet or add a venue without a 24-hour public wait. Every contract is owned by a 48-hour timelock controlled by a 2-of-3 Safe multisig: one leaked key is not enough, and every admin action is public for 48 hours before it runs. All Safe signers are held by the team. See [Admin and permissions](admin.md) |
 | A maker posts abusive quotes | Makers must be approved and bond at least 10 HYPE, which can be slashed. Bonds take 3 days to withdraw, longer than the 48-hour timelock, so a maker cannot pull out before a slash |
 | Contracts are not externally audited yet | A full [internal review](security-review.md) found no critical or high issues; per-swap cap of $500 on maker pools; vaults stay closed until the external audit |
 | Unlimited token approvals | The app approves only the amount of each swap unless you opt in |
-| Fake or copycat tokens | Tokens imported by address are marked unverified and need an explicit confirmation |
+| Fake or copycat tokens | Tokens imported by address are marked unverified and need an explicit confirmation. The official $STOA is read on-chain from the dev wallet's launch, so a copycat can never carry the "Official Stoa token" mark |
 | Thin pools | Price impact is shown; above 15% you must confirm before swapping |
 | A maker loses money in a fast market | Daily loss limits, spreads that widen with volatility, emergency stop |
 | A stale price is used | Quotes expire after 2 blocks; pools reject expired quotes |
-| No maker quote available | The router fills on the best outside venue (Uniswap, Aero, Ramses or Liquidity Book) |
+| No maker quote available | The router fills on the best outside venue (Uniswap, Aero, Ramses or Liquidity Book on Elysium; Uniswap on Robinhood Chain) |
 | Thin pool for a small token | Price impact is shown before you sign; your slippage limit reverts bad fills |
 | HyperCore upgrade is delayed | Makers keep using the Hyperliquid API until it ships |
+| Two networks, two sets of contracts | Robinhood Chain has its own router, Safe and 48-hour timelock, with the same signers and the same rules. A pause on one network does not stop the other. See [Contract addresses](contracts.md) |
