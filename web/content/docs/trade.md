@@ -43,7 +43,7 @@ A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 
 
 ## Pools on Robinhood Chain
 
-[Pools](https://stoadex.com/pools?chain=robinhood) lists, for each listed token, the most liquid pool the router checks on Robinhood Chain: Uniswap V2 and V3 pools from the official factories, and Uniswap V4 pools registered in Stoa's adapter. Liquidity and 24-hour volume come from DexScreener and are for display only; a swap always uses the on-chain quote.
+[Pools](https://stoadex.com/pools?chain=robinhood) lists the most liquid pools the router checks on Robinhood Chain: Uniswap V2 and V3 pools from the official factories, Uniswap V4 pools registered in Stoa's adapter and, once the admin Safe has added them to the router, Aero and Ramses pools. Liquidity and 24-hour volume come from DexScreener and are for display only; a swap always uses the on-chain quote.
 
 ## Links to a pair
 

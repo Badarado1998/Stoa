@@ -6,6 +6,10 @@ import rhPopular from "./popular-tokens-4663.json";
 
 /** Everything the app needs to know about one chain. Elysium keeps its original modules (chain.ts, tokens.ts);
  *  Robinhood Chain is described here. Components read the selected one with useNet(). */
+/** A venue adapter deployed for the router but possibly not added yet (the admin page adds it through the timelock).
+ *  Concentrated-liquidity venues keyed by tick spacing: `factory` and `spacings` are what the adapter checks. */
+export interface NewVenue { address: Address; name: string; dexId: string; factory: string; spacings: number[] }
+
 export interface Net {
   key: "elysium" | "robinhood";
   name: string;
@@ -39,7 +43,7 @@ export interface Net {
   /** maker pools exist on this chain */
   makers: boolean;
   /** deployed venue adapters that may not be in the router yet (the admin page adds them through the timelock) */
-  newVenues: { address: Address; name: string }[];
+  newVenues: NewVenue[];
 }
 
 const addr = (v?: string) => (v && /^0x[0-9a-fA-F]{40}$/.test(v) ? (v as Address) : undefined);
@@ -138,9 +142,12 @@ export const ROBINHOOD: Net = {
   explorer: "https://robinhoodchain.blockscout.com",
   venueList: "Uniswap V2, V3 and V4",
   makers: false,
-  newVenues: ([[D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"]] as const)
+  newVenues: ([
+    [D.aeroAdapter, "Aero", "aero", "0xc63d7338c178e805c544b8f897066bd3bbcbe136", [1, 10, 50, 100, 150, 200, 250]],
+    [D.ramsesAdapter, "Ramses", "ramses", "0xe0c4ceb92d08ca985bb70fe0a22feb121a9854a8", [1, 5, 10, 50, 100, 200, 300, 500]],
+  ] as const)
     .filter(([a]) => addr(a))
-    .map(([a, name]) => ({ address: a as Address, name })),
+    .map(([a, name, dexId, factory, spacings]) => ({ address: a as Address, name, dexId, factory, spacings: [...spacings] })),
 };
 
 export const NETS: Net[] = [ELYSIUM, ROBINHOOD];

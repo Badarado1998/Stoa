@@ -4,6 +4,8 @@ import { elysium, RPCS } from "./chain";
 import { robinhood } from "./networks";
 
 const wc = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
+// JSON-RPC batching per endpoint: dRPC's free plan rejects batches of more than 3 calls
+const rpc = (u: string) => http(u, { batch: /drpc\./.test(u) ? { batchSize: 3 } : true });
 const rhRpcs = robinhood.rpcUrls.default.http;
 
 export const wagmiConfig = createConfig({
@@ -16,8 +18,8 @@ export const wagmiConfig = createConfig({
       : []),
   ],
   transports: {
-    [elysium.id]: RPCS.length ? fallback(RPCS.map((u) => http(u, { batch: true })), { rank: false, retryCount: 1 }) : http(),
-    [robinhood.id]: fallback(rhRpcs.map((u) => http(u, { batch: true })), { rank: false, retryCount: 1 }),
+    [elysium.id]: RPCS.length ? fallback(RPCS.map(rpc), { rank: false, retryCount: 1 }) : http(),
+    [robinhood.id]: fallback(rhRpcs.map(rpc), { rank: false, retryCount: 1 }),
   },
   ssr: true,
 });
