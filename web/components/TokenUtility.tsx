@@ -6,14 +6,15 @@ import { BaseError, encodeFunctionData, erc20Abi, parseUnits, zeroAddress, type 
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { CA } from "@/lib/stoaToken";
-import { bondAbi, buybackAbi, feeStateAbi, routerAbi } from "@/lib/abi";
+import { bondAbi, buybackAbi, feeStateAbi, routerAbi, v4AdapterAbi } from "@/lib/abi";
 import { getLogsOn } from "@/lib/logs";
 import { fmt } from "@/lib/swap";
 import { usePrices, fmtUsd } from "@/lib/prices";
 import { opId, timelockBatchAbi, ZERO32, type BatchOp } from "@/lib/venuePackage";
 import { useWalletModal } from "./Providers";
 import { Sk } from "./ui";
-import { BURN as BURN_ADDR, PONS_URL, STOA_CURVE, curveAbi } from "@/lib/stoaSupply";
+import { BURN as BURN_ADDR, PONS_HOOK, PONS_URL, STOA_CURVE, curveAbi } from "@/lib/stoaSupply";
+import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 
 const net = ROBINHOOD;
 const C = net.contracts;
@@ -48,9 +49,15 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   );
 }
 
-/** where $STOA stands on its Pons bonding curve; once it graduates the panel says so and links to the trade */
-function CurvePanel() {
+/** where $STOA stands on its Pons bonding curve; once it graduates the panel says so and links to the trade.
+ *  Between graduation and the watcher's next run, anyone can add the graduation pool to the router from here. */
+function CurvePanel({ routable }: { routable?: boolean }) {
   const pub = usePublicClient({ chainId: net.chain.id });
+  const { isConnected } = useAccount();
+  const { open } = useWalletModal();
+  const { writeContractAsync } = useWriteContract();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   const r = useReadContracts({
     contracts: [
       { address: STOA_CURVE, abi: curveAbi, functionName: "graduationThreshold", chainId: net.chain.id },
@@ -66,6 +73,29 @@ function CurvePanel() {
   const inCurve = r.data?.[2]?.result as bigint | undefined, burned = r.data?.[3]?.result as bigint | undefined, supply = r.data?.[4]?.result as bigint | undefined;
   const pct = grad ? 100 : eth.data !== undefined && thr ? Math.min(99.9, (Number(eth.data) / Number(thr)) * 100) : undefined;
   const circ = supply !== undefined && burned !== undefined && inCurve !== undefined ? supply - burned - inCurve : undefined;
+  // graduated but not routable yet: the Pons graduation pool, if the adapter does not know it
+  const pending = useQuery({
+    queryKey: ["stoa-grad-pool", grad, routable],
+    enabled: !!pub && !!C.v4 && grad === true && routable === false,
+    refetchInterval: 30_000,
+    queryFn: async (): Promise<PoolKey | null> => {
+      const keys = (await findV4Pools(net, STOA)).filter((k) => k.hooks.toLowerCase() === PONS_HOOK && k.currency0 === zeroAddress);
+      const known = (await pub!.readContract({ address: C.v4!, abi: v4AdapterAbi, functionName: "keysFor", args: [WETH, STOA] })) as PoolKey[];
+      return keys.find((k) => !known.some((x) => sameKey(x, k))) ?? null;
+    },
+  });
+  async function addPool(k: PoolKey) {
+    if (!pub) return;
+    setBusy(true); setMsg(null);
+    try {
+      const hash = await writeContractAsync({ address: C.v4!, abi: v4AdapterAbi, functionName: "register", args: [k], chainId: net.chain.id });
+      const rc = await pub.waitForTransactionReceipt({ hash });
+      if (rc.status !== "success") throw new Error("Transaction reverted");
+      setMsg({ ok: true, text: "Pool added: $STOA now routes on Stoa", hash }); void pending.refetch();
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof BaseError ? e.shortMessage : (e as Error).message });
+    } finally { setBusy(false); }
+  }
   const ethTxt = (v?: bigint) => (v === undefined ? undefined : (Number(v) / 1e18).toFixed(3).replace(/\.?0+$/, ""));
   return (
     <div className="panel pad">
@@ -75,9 +105,22 @@ function CurvePanel() {
       </div>
       <p style={{ marginTop: 12 }}>
         {grad
-          ? "$STOA has graduated to its Uniswap V4 pool. Stoa adds that pool to the router within minutes of graduation, and the weekly buyback can now buy $STOA."
-          : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router within minutes, and the weekly buyback starts buying $STOA.</>}
+          ? routable === false
+            ? "$STOA has graduated to its Uniswap V4 pool. Stoa's watcher adds that pool to the router on its next run, or anyone can add it now below."
+            : "$STOA has graduated to its Uniswap V4 pool and routes on Stoa. The weekly buyback can now buy and burn $STOA."
+          : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router (anyone can add it from this page), and the weekly buyback starts buying $STOA.</>}
       </p>
+      {grad && routable === false && pending.data && (
+        <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
+          The graduation pool is not on Stoa&apos;s router yet. Adding it is one small transaction anyone can send; it only pays gas.
+          <div style={{ marginTop: 10 }}>
+            {isConnected
+              ? <button className="ghost" type="button" disabled={busy} onClick={() => addPool(pending.data!)}>{busy ? "Adding pool…" : "Add $STOA's pool to Stoa"}</button>
+              : <button className="ghost" type="button" onClick={open}>Connect wallet to add the pool</button>}
+          </div>
+        </div>
+      )}
+      {msg && <p className="note" style={{ color: msg.ok ? undefined : "#B4532A" }}>{msg.text}{msg.hash && <> · <a href={txUrlOn(net, msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</p>}
       <div className="rows">
         <span>Still on the curve</span><span>{big(inCurve) ?? "…"} STOA</span>
         <span>Circulating</span><span>{big(circ) ?? "…"} STOA</span>
@@ -143,7 +186,7 @@ export default function TokenUtility() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <CurvePanel />
+      <CurvePanel routable={route.data} />
       {/* 1. buyback & burn */}
       <div className="panel pad">
         <div className="rowx"><div className="lbl">1 · PROTOCOL FEES BUY AND BURN $STOA</div><span className="chip live">{status ?? "…"}</span></div>

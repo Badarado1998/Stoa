@@ -150,7 +150,8 @@ function TradeOn({ net }: { net: Net }) {
   }, [getQuote, amt, kind]);
 
   // No route for an imported token: look for its Uniswap V4 pool, which anyone can add to the router once.
-  const longTail = [sell, buy].find((t) => t.tone === "other");
+  // $STOA counts too: between its graduation and the watcher's next run, anyone can add its pool from here
+  const longTail = [sell, buy].find((t) => t.tone === "other" || (!!stoa && t.address === stoa.address));
   useEffect(() => {
     setV4Key(null);
     if (!noRoute || !longTail || !CONTRACTS.v4 || !pub) return;
@@ -363,7 +364,7 @@ function TradeOn({ net }: { net: Net }) {
             </button>
           </div>
         )}
-        {noRoute && stoa && [sell.address, buy.address].includes(stoa.address) && (
+        {noRoute && !v4Key && stoa && [sell.address, buy.address].includes(stoa.address) && (
           <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
             ${stoa.symbol} still trades on its Pons bonding curve. Stoa routes it as soon as it graduates to its Uniswap V4 pool; until then, buy it on Pons.
             <div style={{ marginTop: 10 }}><a className="ghost" style={{ display: "inline-flex", borderColor: "var(--line)", background: "#fff" }} href={`https://ponsfamily.com/launchpad/${stoa.address}`} target="_blank" rel="noopener noreferrer">Buy ${stoa.symbol} on Pons ↗</a></div>

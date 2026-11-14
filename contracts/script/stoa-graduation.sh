@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Watches for $STOA's Uniswap V4 pool on Robinhood Chain (created when the token graduates from its Pons bonding
-# curve) and registers it on Stoa's V4 adapter right away, so $STOA routes on stoadex.com within minutes.
+# curve) and registers it on Stoa's V4 adapter right away, so $STOA routes on stoadex.com without anyone
+# having to press the button on the $STOA page.
 # Usage: RPC=... PRIVATE_KEY=... ./script/stoa-graduation.sh   (anyone may register; the key only pays gas)
 set -euo pipefail
 cd "$(dirname "$0")/.."

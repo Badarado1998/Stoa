@@ -20,6 +20,7 @@ export const CHANGES: Change[] = [
       "The $STOA page shows live progress on the Pons bonding curve: ETH raised against the 4.2 ETH graduation threshold, read from the curve contract.",
       "Public supply endpoints for trackers: /api/stoa/supply (JSON), /api/stoa/total-supply and /api/stoa/circulating-supply (plain numbers).",
       "Circulating supply counts everything minted, minus burned $STOA and the unsold $STOA still on the curve.",
+      "Once $STOA graduates, anyone can add its Uniswap V4 pool to the router from the $STOA page or the swap screen, without waiting for the watcher.",
     ],
     link: { href: "/token", label: "Open the $STOA page" },
   },
@@ -80,7 +81,7 @@ export const CHANGES: Change[] = [
     items: [
       "Official $STOA launched on Pons by the dev wallet. CA: 0x13E6993417616De724F2b337D65063f229e96718.",
       "The CA is pinned on the home page, footer and $STOA page, rendered on the server.",
-      "A watcher registers the $STOA pool on the router within minutes of graduating from the Pons curve. Until then the app links to Pons.",
+      "A watcher registers the $STOA pool on the router after it graduates from the Pons curve. Until then the app links to Pons.",
     ],
     link: { href: "/token", label: "About $STOA" },
   },

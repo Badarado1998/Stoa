@@ -39,7 +39,7 @@ Most launchpad tokens on Elysium and Robinhood Chain trade in Uniswap V4 pools, 
 
 ## Tokens still on a bonding curve
 
-A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 pool. Until then Stoa cannot route it; the swap screen says so and links to the token on Pons. For $STOA, a watcher registers its V4 pool on the router within minutes of graduation.
+A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 pool. Until then Stoa cannot route it; the swap screen says so and links to the token on Pons. For $STOA, a watcher registers its V4 pool on the router after graduation, and anyone can add it sooner from the $STOA page or the swap screen.
 
 ## Pools on Robinhood Chain
 

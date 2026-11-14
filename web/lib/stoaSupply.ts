@@ -9,6 +9,8 @@ export const curveAbi = parseAbi([
   "function graduationThreshold() view returns (uint256)",
   "function graduated() view returns (bool)",
 ]);
+/** the hook Pons gives the Uniswap V4 pool it creates at graduation (ETH pair, locked liquidity) */
+export const PONS_HOOK = "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044" as Address;
 export const PONS_URL = `https://ponsfamily.com/launchpad/${CA}`;
 
 export type Supply = {
