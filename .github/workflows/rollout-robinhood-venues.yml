@@ -1,0 +1,58 @@
+name: Add Aero + Ramses to the Robinhood router (Safe rounds)
+
+# Runs every hour until done, then disables itself. Each run moves the addition one step forward if that step is due
+# (contracts/script/RolloutVenuesRobinhood.s.sol): 1) schedule in the 48h timelock, 2) propose on the router once
+# ready, 3) add both adapters once the router's 1-day wait has passed. Otherwise it only logs when the next step opens.
+# Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
+# one of them set it approves and the other signer can press the same step on stoadex.com/admin (Robinhood).
+# Delete OWNER_PRIVATE_KEY once the run log says DONE.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: rollout-robinhood-venues
+  cancel-in-progress: false
+
+jobs:
+  step:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      RPC: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      K1: ${{ secrets.OWNER_PRIVATE_KEY }}
+      K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Next step (if due)
+        run: |
+          set -o pipefail
+          [ "$(cast chain-id --rpc-url "$RPC")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain"; exit 1; }
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+          # keys may be saved with or without 0x
+          [ -n "$K1" ] && export SIGNER1_PK="0x${K1#0x}"
+          [ -n "$K2" ] && export SIGNER2_PK="0x${K2#0x}"
+          echo "OWNER_PRIVATE_KEY: $([ -n "$K1" ] && echo set || echo missing) · DEPLOYER_PRIVATE_KEY: $([ -n "$K2" ] && echo set || echo missing)"
+          forge script script/RolloutVenuesRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee /tmp/out.txt
+          grep -E "WAIT|APPROVED|EXECUTED|DONE" /tmp/out.txt | sed 's/^ *//' >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Stop the hourly runs once done
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if grep -q "DONE:" /tmp/out.txt; then
+            echo "Aero and Ramses are live. Delete the OWNER_PRIVATE_KEY secret." >> "$GITHUB_STEP_SUMMARY"
+            gh workflow disable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY"
+          fi
