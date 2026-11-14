@@ -1,4 +1,6 @@
-# Launch checklist
+# Elysium launch checklist (12 November 2026)
+
+Kept as a record of the Elysium launch. Robinhood Chain was deployed later by `.github/workflows/deploy-robinhood.yml`; current addresses and governance are in the main README.
 
 Everything in code is done and tested (unit, attack, live fork tests on Elysium, UI end-to-end on a local mainnet fork). What is left needs the owner's accounts, money or keys. Do it in this order.
 

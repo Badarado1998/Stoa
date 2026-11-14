@@ -1,0 +1,15 @@
+name: Feature or venue request
+description: A new venue, token, chain or product idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Stoa to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: Volumes, liquidity or user requests that support it, with links if you have them.

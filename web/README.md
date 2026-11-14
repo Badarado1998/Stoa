@@ -1,43 +1,45 @@
 # Stoa web app
 
-Next.js 15 (App Router) + wagmi/viem + three.js. Elysium (chain 99901).
+The app at [stoadex.com](https://stoadex.com). Next.js 15 (App Router), wagmi and viem, three.js. One app for both networks: the network switcher (or `?chain=elysium|robinhood`) picks Elysium (99901) or Robinhood Chain (4663), and the app follows the wallet's chain.
 
 | Route | What it does |
-|---|---|
-| `/` | 3D "Walk the Stoa" journey (three.js, scroll-driven), generated ambient sound |
-| `/trade` | Live swaps through `StoaRouter`: quote (`quoteBest`), approve, swap. Native HYPE in/out, HYPE⇄WHYPE wrap, token import by address, slippage, referral from `?ref=` |
-| `/pools` | Pool list + live maker quote of the WHYPE/USDC pool |
-| `/earn` | Vaults (disabled until after the audit) |
-| `/curators`, `/build` | Curator guide, code samples, contract addresses |
-| `/referrals` | Referral link + claim from `FeeDistributor` |
-| `/portfolio` | Balances and referral earnings |
-| `/docs/*` | Docs rendered from `content/docs/*.md` |
+| --- | --- |
+| `/` | "Walk the Stoa": scroll-driven 3D introduction |
+| `/trade` | Swaps through `StoaRouter`: live quote over every venue, approve (exact amount by default), swap with slippage and a gas headroom, native coin in and out, wrap/unwrap, token import by address, Uniswap V4 pool registration, referrals from `?ref=`. Deep links: `/trade?chain=robinhood&sell=ETH&buy=0x…` |
+| `/pools` | Elysium: the maker pool and its live quote. Robinhood Chain: the most liquid pools the router checks, verified on-chain, with DexScreener liquidity and volume |
+| `/token` | $STOA: buyback & burn status and history, maker bonds (bond, unbond, withdraw) |
+| `/earn` | LP vaults, closed until the external audit |
+| `/curators`, `/build` | Curator guide, integration samples |
+| `/referrals`, `/portfolio` | Referral link and claims, balances and swap history |
+| `/admin` | Owner, Safe signer and guardian console: pause, venue proposals, timelocked Safe rounds |
+| `/docs/*` | Rendered from [`content/docs`](content/docs) (GitBook format) |
 
 ## Setup
 
-```
+```bash
 npm install
-cp .env.example .env.local   # RPC + contract addresses after deploy
+cp .env.example .env.local
 npm run dev
 ```
 
-Without `NEXT_PUBLIC_ROUTER` the app shows "not deployed yet" and only wrapping HYPE works.
-WalletConnect appears when `NEXT_PUBLIC_WC_PROJECT_ID` is set (free project id from Reown); browser wallets (MetaMask, Rabby, OKX) work without it.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_RPC_URL` | Elysium RPCs, comma-separated, first is primary |
+| `NEXT_PUBLIC_ROBINHOOD_RPC_URL` | Robinhood Chain RPCs for reads and transactions (defaults to the public RPC) |
+| `NEXT_PUBLIC_ROBINHOOD_LOGS_RPC_URL` | Robinhood Chain RPC for `eth_getLogs`; keep the public one, free provider plans cap the block range |
+| `NEXT_PUBLIC_WC_PROJECT_ID` | Reown (WalletConnect) project id; browser wallets work without it |
+| `NEXT_PUBLIC_SITE_URL` | Canonical site URL |
 
-## Docs = GitBook
-
-`content/docs` is a GitBook-ready folder (`SUMMARY.md`, `README.md`, one `.md` per page, GitBook `{% hint %}` blocks).
-Connect it to GitBook with Git Sync (project directory `content/docs`) to publish stoadex.com/docs. The site renders the same files.
+Contract addresses come from `lib/deployments.json` (Elysium) and `lib/deployments-4663.json` (Robinhood Chain), which the deploy workflows commit. RPC keys set here are visible in the browser: restrict them to the site's domain in each provider's dashboard.
 
 ## Tests
 
+```bash
+npm test                 # swap helpers: amounts, slippage, routing kind, referral
+npm run build            # type check and production build
+./scripts/ui-e2e.sh      # anvil + contracts + built app + headless browser (needs Foundry and ../contracts)
 ```
-npm test                 # swap helpers (amount parsing, slippage, routing kind, referral)
-./scripts/ui-e2e.sh      # anvil + contracts + built app + headless browser:
-                         # connect wallet, approve, USDC→HYPE swap with referral, HYPE→imported token swap
-```
-`ui-e2e.sh` needs Foundry and `../contracts`.
 
-## Deploy (Vercel)
+## Deploy
 
-Import the repo in Vercel, set the env vars from `.env.example`, deploy. Point stoadex.com at the project.
+Vercel project with root `web/`. Every push to `main` deploys to production.

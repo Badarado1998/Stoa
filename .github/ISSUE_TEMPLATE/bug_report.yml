@@ -1,0 +1,33 @@
+name: Bug report
+description: Something on stoadex.com or in the contracts does not work as documented
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Trade / swaps, Pools, $STOA page, Referrals / portfolio, Admin console, Contracts, Maker bot, Docs, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: chain
+    attributes:
+      label: Network
+      options: [Robinhood Chain, Elysium, Both / not network-specific]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Tokens, amounts, wallet type and browser help. Never paste a private key or seed phrase.
+  - type: input
+    id: tx
+    attributes:
+      label: Transaction hash (if any)

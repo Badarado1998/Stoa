@@ -1,58 +1,55 @@
-# Stoa contracts (v1)
+# Stoa contracts
 
-Maker-quoted pools (PropAMM) for Elysium, chain 99901.
+Solidity 0.8.28, Foundry. Deployed on Elysium (chain 99901) and Robinhood Chain (chain 4663). No proxies: every contract is immutable and source-verified on Sourcify.
 
-| Contract | Job |
-|---|---|
-| `MakerRegistry` | Lists pools, approves makers, holds maker bonds in native HYPE (unbond delay, slashing to treasury). Its owner is also the guardian. |
-| `StoaPool` | One per pair. An approved, bonded maker posts bid/ask, sizes and an expiry (max 2 blocks). Fills use up the quoted size. Per-swap cap in USDC (500 at launch). Charges the 2 bps protocol fee. Optional `IQuoteGuard` (set by the guardian) rejects quotes far from an independent price. |
-| `StoaRouter` | `quote` (eth_call) finds the best route: every Stoa pool and fallback venue (Uniswap adapters), direct or in two legs through WHYPE with the best venue per leg. `swap` executes a given route through allowlisted venues only, measures what the user actually receives (never trusts a venue), and charges the 2 bps fee once per swap (by the pool if the route uses one, otherwise by the router). Native HYPE in and out, Permit2 signature transfers, owner `sweep` for stray tokens. Pausable by the owner or a guardian; new venues are timelocked after setup. |
-| `UniswapV2Adapter` | Fills swaps directly on Uniswap V2 pairs (direct or two hops through WHYPE). Only the router can call it. |
-| `UniswapV3Adapter` | Fills swaps directly on Uniswap V3 pools, every fee tier, direct or through WHYPE. Quotes by simulating the pool swap. Only the router can call it. |
-| `UniswapV4Adapter` | Fills swaps on Uniswap V4 pools, including native-HYPE pools and launchpad pools with hooks (most long-tail tokens on Elysium trade there). V4 pools cannot be listed on-chain, so it keeps up to 6 pool keys per pair: anyone can register an initialized pool whose hooks contract is on the allowlist fixed at deployment; the owner can only remove keys. |
-| `CLTickSpacingAdapter` | Fills swaps on V3-style pools keyed by tick spacing. Deployed twice: Aero Slipstream and Ramses CL. |
-| `LiquidityBookAdapter` | Fills swaps on Liquidity Book (DLMM) pairs, every bin step the factory lists. |
-| `FeeDistributor` | Receives protocol fees, credits 10% to the swap's referrer, the rest accrues to the protocol. Rejects fee notices not backed by tokens. |
+## Contracts
 
-## Launch mode: router first
+| Contract | Job | Elysium | Robinhood |
+| --- | --- | :-: | :-: |
+| `StoaRouter` | `quote` (eth_call) finds the best route over every Stoa pool and venue adapter, direct or in two legs through the wrapped native token. `swap` executes it through allowlisted venues only, measures what the trader receives against `minOut`, and charges the 2 bps fee once per swap. Native coin in and out, Permit2 transfers, pausable by owner or guardian; new venues wait `delay` after setup. | ✓ | ✓ |
+| `StoaPool` | Maker-quoted pool for one pair. An approved, bonded maker posts bid/ask, sizes and an expiry (max 2 blocks); fills use up the quoted size. Per-swap cap, optional `IQuoteGuard`. | ✓ | |
+| `StoaPoolL2` | `StoaPool` for Arbitrum Orbit chains: quote expiry counts the chain's own blocks (ArbSys), not the parent chain's `block.number`. | | ready |
+| `MakerRegistry` | Lists pools, approves makers, holds maker bonds in the native coin; slashed bonds go to the treasury. | ✓ | ✓ |
+| `BondRegistry` | Same pool-facing interface, bonds in $STOA (one bond per maker across pools, 3-day unbonding); slashed bonds are burned. | | ✓ |
+| `FeeDistributor` | Receives protocol fees, credits 10% to the swap's referrer, the rest accrues to the protocol. Rejects fee notices not backed by tokens. | ✓ | ✓ |
+| `StoaBuyback` | Owns the FeeDistributor: protocol fees leave it only as a router swap into $STOA that is burned in the same call. The owner keeps the other settings through `exec`, which refuses `withdrawProtocol`. | | ✓ |
+| `UniswapV2Adapter`, `UniswapV3Adapter` | Fill on Uniswap V2 pairs and V3 pools (every standard fee tier). Only the router can call them. | ✓ | ✓ |
+| `UniswapV4Adapter` | Fills on V4 pools, including native-coin pools and launchpad pools with hooks. Anyone can register an initialized pool whose hooks are on the allowlist fixed at deployment (max 6 keys per pair). | ✓ | ✓ |
+| `CLTickSpacingAdapter` | Fills on V3-style pools keyed by tick spacing: Aero Slipstream and Ramses. | ✓ | being added |
+| `LiquidityBookAdapter` | Fills on Liquidity Book (DLMM) pairs. | ✓ | |
 
-Stoa can launch with no pool capital. With no maker quotes live, every swap is filled on the deepest outside venue (Uniswap V2/V3/V4, Aero, Ramses or Liquidity Book; addresses in `script/VenuesElysium.sol`) and Stoa takes its 2 bps. Maker pools join the same router later and win whenever they quote a better price.
+Addresses: [stoadex.com/docs/contracts](https://stoadex.com/docs/contracts). Security model, trusted roles and known limits: [SECURITY.md](SECURITY.md).
 
-Native HYPE is passed as `address(0)` on either side of `swap`; the router wraps and unwraps it.
+## Governance
 
-Security model, trusted roles and the Slither triage: [SECURITY.md](SECURITY.md).
+Every contract is owned by an OpenZeppelin `TimelockController` with a 48-hour delay. Its only proposer, executor and canceller is a 2-of-3 Safe. The router's guardian can pause swaps and nothing else. Adding a venue after setup takes the timelock plus the router's own delay (24 hours), so 72 hours in public.
 
-## Run
+`script/SafeRunner.sol` runs Safe transactions the way the admin page does (`approveHash`, then `execTransaction` with pre-approved signatures); `RolloutVenuesRobinhood` and `RolloutBuybackRobinhood` use it to move timelocked actions forward when they are due.
 
-```
+## Tests
+
+```bash
 forge build
-forge test
+forge test                                   # 73 unit, attack and fuzz tests
+ELYSIUM_RPC_URL=https://rpc.elysium.kinetiq.xyz forge test --match-contract "ForkElysium|ForkVenues"
+ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com forge test --match-contract ForkRobinhood
 ```
 
-57 unit and attack tests plus 11 fork tests against Elysium mainnet (`ELYSIUM_RPC_URL=https://rpc.elysium.kinetiq.xyz forge test --match-contract Fork`; CI runs them on every push), including a fuzz test that checks a pool never pays out more than its maker's quote and that `quoteOut` matches `swap`, and a Permit2 swap signed against the real Permit2 deployment.
+The 20 fork tests trade against live pools on both chains: every venue and every allowed V4 hook with a real buy and sell, a Permit2 swap signed against the real Permit2, the real Safe and timelock adding venues and handing the FeeDistributor to `StoaBuyback`, live protocol fees bought and burned, and real $STOA bonded, unbonded and slashed. Local forks of Robinhood Chain mock the ArbSys precompile.
 
-## Deploy (Elysium mainnet)
+## Deploy
 
-Preferred: GitHub → Actions → **Deploy contracts** (dry run first, then tick *broadcast*). Needs repo secrets `DEPLOYER_PRIVATE_KEY`, `ELYSIUM_RPC_URL` and variables `OWNER`, `TREASURY` (optional `CURATOR`, `MAKER`, `GUARDIAN`, `MIN_BOND`, `MAX_SWAP_USDC`, `ROUTER_DELAY`). After a broadcast the workflow commits `deployments/99901.json` and `web/lib/deployments.json`, and Vercel redeploys the site with the addresses.
+All deployments run from GitHub Actions with a dry run first, then a broadcast, and commit the addresses to `web/lib/deployments*.json`:
 
-Manual:
+| Workflow | Deploys |
+| --- | --- |
+| `deploy-contracts.yml` | Elysium (router, pool, registry, distributor, adapters) |
+| `deploy-robinhood.yml` | Robinhood Chain: Safe, timelock, router, registry, distributor, Uniswap adapters |
+| `deploy-robinhood-venues.yml` | Aero and Ramses adapters for the Robinhood router |
+| `deploy-robinhood-token.yml` | `StoaBuyback` and `BondRegistry` |
 
-```
-OWNER=0x... TREASURY=0x... \
-forge script script/Deploy.s.sol --rpc-url $ELYSIUM_RPC --broadcast --account deployer
-```
+## Not in v1
 
-Ownership moves to `OWNER` in two steps: run `acceptOwnership()` from the multisig on each contract.
-
-## Not in v1 yet
-
-- Public LP vaults (ERC-4626). v1 inventory comes from the pool owner.
-- Fee-on-transfer (taxed) tokens through the Uniswap adapters.
-- `liquidationSwap`.
-- An external audit. Do not raise caps before one.
-
-## Known trade-offs
-
-- One live quote per pool. Several approved makers overwrite each other; v1 runs one maker per pool.
-- A maker could update its quote ahead of a pending swap in the same block. Traders are protected by `minOut`; quotes are capped in size and time.
-- Fee-on-transfer and rebasing tokens are not supported.
+- Public LP vaults (ERC-4626): they open after an external audit.
+- Fee-on-transfer and rebasing tokens (swaps revert; funds are not lost).
+- An external audit. Per-swap caps stay low until there is one.
