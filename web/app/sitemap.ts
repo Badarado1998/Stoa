@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/chain";
 import { flatDocs } from "@/lib/docs";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/docs"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/docs", "/changelog"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = SITE.replace(/\/$/, "");
