@@ -13,11 +13,12 @@ import { usePrices, fmtUsd } from "@/lib/prices";
 import { opId, timelockBatchAbi, ZERO32, type BatchOp } from "@/lib/venuePackage";
 import { useWalletModal } from "./Providers";
 import { Sk } from "./ui";
+import { BURN as BURN_ADDR, PONS_URL, STOA_CURVE, curveAbi } from "@/lib/stoaSupply";
 
 const net = ROBINHOOD;
 const C = net.contracts;
 const STOA = CA;
-const BURN = "0x000000000000000000000000000000000000dEaD" as Address;
+const BURN = BURN_ADDR;
 const USDG = net.stable, WETH = net.wrapped;
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const n = (v: bigint | undefined, d = 18, max = 2) => (v === undefined ? undefined : fmt(v, d, max));
@@ -43,6 +44,48 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
       <div className="lbl">{label}</div>
       <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
       {sub && <p className="note" style={{ marginTop: 6 }}>{sub}</p>}
+    </div>
+  );
+}
+
+/** where $STOA stands on its Pons bonding curve; once it graduates the panel says so and links to the trade */
+function CurvePanel() {
+  const pub = usePublicClient({ chainId: net.chain.id });
+  const r = useReadContracts({
+    contracts: [
+      { address: STOA_CURVE, abi: curveAbi, functionName: "graduationThreshold", chainId: net.chain.id },
+      { address: STOA_CURVE, abi: curveAbi, functionName: "graduated", chainId: net.chain.id },
+      { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [STOA_CURVE], chainId: net.chain.id },
+      { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [BURN], chainId: net.chain.id },
+      { address: STOA, abi: erc20Abi, functionName: "totalSupply", chainId: net.chain.id },
+    ] as const,
+    query: { refetchInterval: 20_000 },
+  });
+  const eth = useQuery({ queryKey: ["stoa-curve-eth"], enabled: !!pub, refetchInterval: 20_000, queryFn: () => pub!.getBalance({ address: STOA_CURVE }) });
+  const thr = r.data?.[0]?.result as bigint | undefined, grad = r.data?.[1]?.result as boolean | undefined;
+  const inCurve = r.data?.[2]?.result as bigint | undefined, burned = r.data?.[3]?.result as bigint | undefined, supply = r.data?.[4]?.result as bigint | undefined;
+  const pct = grad ? 100 : eth.data !== undefined && thr ? Math.min(99.9, (Number(eth.data) / Number(thr)) * 100) : undefined;
+  const circ = supply !== undefined && burned !== undefined && inCurve !== undefined ? supply - burned - inCurve : undefined;
+  const ethTxt = (v?: bigint) => (v === undefined ? undefined : (Number(v) / 1e18).toFixed(3).replace(/\.?0+$/, ""));
+  return (
+    <div className="panel pad">
+      <div className="rowx"><div className="lbl">$STOA ON ITS PONS BONDING CURVE</div><span className="chip live">{grad ? "Graduated" : pct === undefined ? "…" : `${pct.toFixed(1)}%`}</span></div>
+      <div style={{ marginTop: 14, height: 12, borderRadius: 999, background: "#E6ECF5", overflow: "hidden" }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ? Math.round(pct) : 0}>
+        <div style={{ width: `${pct ?? 0}%`, height: "100%", borderRadius: 999, background: "var(--accent)", transition: "width .6s ease" }} />
+      </div>
+      <p style={{ marginTop: 12 }}>
+        {grad
+          ? "$STOA has graduated to its Uniswap V4 pool. Stoa adds that pool to the router within minutes of graduation, and the weekly buyback can now buy $STOA."
+          : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router within minutes, and the weekly buyback starts buying $STOA.</>}
+      </p>
+      <div className="rows">
+        <span>Still on the curve</span><span>{big(inCurve) ?? "…"} STOA</span>
+        <span>Circulating</span><span>{big(circ) ?? "…"} STOA</span>
+      </div>
+      <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        {grad ? <Link className="cta" href={`/trade?chain=robinhood&buy=${STOA}`}>Trade $STOA on Stoa</Link> : <a className="cta" href={PONS_URL} target="_blank" rel="noopener noreferrer">Buy on Pons ↗</a>}
+        <a className="note" style={{ marginTop: 0 }} href="/api/stoa/supply" target="_blank" rel="noopener noreferrer">Supply API</a>
+      </div>
     </div>
   );
 }
@@ -100,6 +143,7 @@ export default function TokenUtility() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <CurvePanel />
       {/* 1. buyback & burn */}
       <div className="panel pad">
         <div className="rowx"><div className="lbl">1 · PROTOCOL FEES BUY AND BURN $STOA</div><span className="chip live">{status ?? "…"}</span></div>

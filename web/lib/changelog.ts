@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-curve-and-supply",
+    date: "2026-11-15",
+    title: "$STOA curve progress and supply API",
+    tag: "$STOA",
+    items: [
+      "The $STOA page shows live progress on the Pons bonding curve: ETH raised against the 4.2 ETH graduation threshold, read from the curve contract.",
+      "Public supply endpoints for trackers: /api/stoa/supply (JSON), /api/stoa/total-supply and /api/stoa/circulating-supply (plain numbers).",
+      "Circulating supply counts everything minted, minus burned $STOA and the unsold $STOA still on the curve.",
+    ],
+    link: { href: "/token", label: "Open the $STOA page" },
+  },
+  {
     id: "stoa-buyback-and-bonds",
     date: "2026-11-15",
     title: "$STOA buyback & burn and maker bonds",

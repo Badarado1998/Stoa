@@ -3,14 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, erc20Abi, getAddress, http, pad, type Address } from "viem";
 import { ROBINHOOD, type Net } from "./networks";
 import type { Token } from "./tokens";
+import { CA } from "./stoaAddress";
 
 /** $STOA lives on Robinhood Chain, launched on Pons. It is found on-chain, not typed in: the web looks for a token
  *  the dev wallet created through Pons' V2 launch factory, so it appears seconds after the launch transaction lands,
  *  and a copycat from any other wallet never can. Pons records the creator (the wallet that sent the launch, with or
  *  without a dev buy) as the third indexed topic. NEXT_PUBLIC_STOA_CA, once set, skips the lookup. */
 export const STOA_DEV = (process.env.NEXT_PUBLIC_STOA_DEV || "0x8DAc20C0FE1C59D337808f234921a89Ee0C1346a") as Address;
-/** pinned after launch (Pons, 14 Nov 2026, tx 0x8d67fba0…); the log lookup below stays as a fallback for other builds */
-export const CA = (process.env.NEXT_PUBLIC_STOA_CA || "0x13E6993417616De724F2b337D65063f229e96718") as Address;
+/** pinned after launch (lib/stoaAddress.ts); the log lookup below stays as a fallback for other builds */
+export { CA };
 const PONS_FACTORY = "0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e" as Address;
 /** TokenLaunched: topic1 = token, topic2 = bonding curve, topic3 = creator */
 const LAUNCH_TOPIC = "0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607" as const;

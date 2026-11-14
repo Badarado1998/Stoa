@@ -27,6 +27,21 @@ Stoa maker pools on Robinhood Chain are quoted by makers who bond $STOA in the *
 - Withdrawing a bond takes **3 days**, longer than the 48-hour timelock, so a slash always lands before a maker can leave.
 - Bonding opens with the first Robinhood Chain maker pool. A bond earns nothing by itself: it only lets an approved maker quote. To run a pool, see [Become a curator](become-a-curator.md).
 
+## Supply
+
+$STOA has a fixed supply of 1,000,000,000, all minted at launch on Pons. Nothing can mint more.
+
+- **Total supply** is everything minted minus what sits at the burn address `0x…dEaD`.
+- **Circulating supply** is the total supply minus the unsold $STOA still on the Pons bonding curve. When the curve graduates, that $STOA moves into the Uniswap V4 pool and counts as circulating.
+
+The numbers are read from Robinhood Chain every 5 minutes and served for trackers and anyone else:
+
+| Endpoint | Returns |
+| --- | --- |
+| [`/api/stoa/supply`](https://stoadex.com/api/stoa/supply) | JSON: max, total, circulating, burned, on the curve, curve progress |
+| [`/api/stoa/total-supply`](https://stoadex.com/api/stoa/total-supply) | Total supply as a plain number |
+| [`/api/stoa/circulating-supply`](https://stoadex.com/api/stoa/circulating-supply) | Circulating supply as a plain number |
+
 ## What $STOA is not
 
 - **Not a share of fees.** Protocol fees burn $STOA. Holders are not paid anything.
