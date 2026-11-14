@@ -14,6 +14,11 @@ abstract contract VenuesRobinhood {
     address internal constant UNI_V3_FACTORY = 0x1f7d7550B1b028f7571E69A784071F0205FD2EfA;
     address internal constant V4_POOL_MANAGER = 0x8366a39CC670B4001A1121B8F6A443A643e40951;
 
+    // Concentrated-liquidity factories that key pools by tick spacing (CLTickSpacingAdapter). Each is the factory()
+    // of live WETH/USDG pools; the spacings are every value seen in the factory's PoolCreated events.
+    address internal constant AERO_CL_FACTORY = 0xc63d7338c178e805c544B8f897066bD3BBcBE136; // Aero Slipstream
+    address internal constant RAMSES_CL_FACTORY = 0xE0c4ceb92d08CA985bB70fe0a22fEb121A9854A8; // Ramses V3
+
     // Safe v1.3.0 (canonical addresses, present on Robinhood Chain)
     address internal constant SAFE_FACTORY = 0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2;
     address internal constant SAFE_SINGLETON_L2 = 0x3E5c63644E683549055b9Be8653de26E0B4CD36E;
@@ -29,5 +34,21 @@ abstract contract VenuesRobinhood {
         h[3] = 0x4e3468951D49f2EEa976eD0D6e75fFCb44a9a544;
         h[4] = 0x0Af57F62982D03066ef917AcAd87F771c06528Ec;
         h[5] = 0xee588bCF2bd3e658f5160489f4199d1851BBf0Cc;
+    }
+
+    function aeroSpacings() internal pure returns (int24[] memory s) {
+        int24[7] memory v = [int24(1), 10, 50, 100, 150, 200, 250];
+        s = new int24[](7);
+        for (uint256 i; i < 7; ++i) {
+            s[i] = v[i];
+        }
+    }
+
+    function ramsesSpacings() internal pure returns (int24[] memory s) {
+        int24[8] memory v = [int24(1), 5, 10, 50, 100, 200, 300, 500];
+        s = new int24[](8);
+        for (uint256 i; i < 8; ++i) {
+            s[i] = v[i];
+        }
     }
 }

@@ -1,0 +1,85 @@
+name: Deploy Aero + Ramses adapters (Robinhood Chain)
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys two CLTickSpacingAdapters (Aero Slipstream and Ramses V3) for the live router and publishes their addresses
+# to web/lib/deployments-4663.json. The adapters have no owner. They are not used until the admin Safe adds them to the
+# router through the 48h timelock: /admin on Robinhood Chain shows the three steps (schedule, propose, execute).
+# Pays gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY (about 0.0002 ETH).
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      # log scans need the public RPC; contract calls and the fork test can use a faster one
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test -z "$(jq -r '.aeroAdapter // empty' ../web/lib/deployments-4663.json)" || { echo "::error::already deployed (see web/lib/deployments-4663.json)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          echo "Deployer: $ME"
+          echo "Balance:  $(cast balance $ME --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit tests
+        run: forge test --no-match-contract Fork
+
+      - name: Fork test - the real Safe adds both adapters through the timelock, then live swaps
+        run: forge test --match-contract ForkRobinhoodVenues --match-test test_fork_safeAddsVenuesThroughTimelock -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployVenuesRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-venues.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          V="--verifier sourcify --chain 4663"
+          R=0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5
+          A=$(jq -r .aeroAdapter deployments/4663-venues.json); M=$(jq -r .ramsesAdapter deployments/4663-venues.json)
+          forge verify-contract $A src/adapters/CLTickSpacingAdapter.sol:CLTickSpacingAdapter $V \
+            --constructor-args $(cast abi-encode "c(address,address,int24[])" 0xc63d7338c178e805c544B8f897066bD3BBcBE136 $R "[1,10,50,100,150,200,250]") || true
+          forge verify-contract $M src/adapters/CLTickSpacingAdapter.sol:CLTickSpacingAdapter $V \
+            --constructor-args $(cast abi-encode "c(address,address,int24[])" 0xE0c4ceb92d08CA985bB70fe0a22fEb121A9854A8 $R "[1,5,10,50,100,200,300,500]") || true
+
+      - name: Publish addresses to the web app
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          jq -s '.[0] * .[1]' web/lib/deployments-4663.json contracts/deployments/4663-venues.json > /tmp/d.json
+          mv /tmp/d.json web/lib/deployments-4663.json
+          cat web/lib/deployments-4663.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add web/lib/deployments-4663.json
+          git commit -m "deploy: Aero and Ramses adapters on Robinhood Chain (not routed until the Safe adds them)"
+          git pull --rebase && git push
