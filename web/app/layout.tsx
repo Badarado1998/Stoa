@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   title: { default: "Stoa — The market, quoted live", template: "%s · Stoa" },
   description: "The best-price swap router on Elysium and Robinhood Chain. Every swap is checked against every major venue and filled where the price is best.",
   // no fixed title or url here, so each page's own title is used when a link is shared
-  openGraph: { description: "Swap at the best price across every Elysium DEX. Maker-quoted pools, checked on every swap.", siteName: "Stoa", type: "website", images: [{ url: "/og-v2.png", width: 1200, height: 630, alt: "Stoa: swap at the best price across every Elysium DEX" }] },
-  twitter: { card: "summary_large_image", site: "@StoaDEX", description: "Swap at the best price across every Elysium DEX. Maker-quoted pools, checked on every swap.", images: ["/og-v2.png"] },
+  openGraph: { description: "Swap at the best price on Elysium and Robinhood Chain. Every pool checked on every trade.", siteName: "Stoa", type: "website", images: [{ url: "/og-v3.png", width: 1200, height: 630, alt: "Stoa: swap at the best price on Elysium and Robinhood Chain" }] },
+  twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap at the best price on Elysium and Robinhood Chain. Every pool checked on every trade.", images: ["/og-v3.png"] },
 };
 export const viewport: Viewport = { themeColor: "#EEF2F6", width: "device-width", initialScale: 1 };
 
