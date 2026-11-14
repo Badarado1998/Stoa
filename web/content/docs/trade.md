@@ -40,3 +40,11 @@ Most launchpad tokens on Elysium and Robinhood Chain trade in Uniswap V4 pools, 
 ## Tokens still on a bonding curve
 
 A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 pool. Until then Stoa cannot route it; the swap screen says so and links to the token on Pons. For $STOA, a watcher registers its V4 pool on the router within minutes of graduation.
+
+## Pools on Robinhood Chain
+
+[Pools](https://stoadex.com/pools?chain=robinhood) lists, for each listed token, the most liquid pool the router checks on Robinhood Chain: Uniswap V2 and V3 pools from the official factories, and Uniswap V4 pools registered in Stoa's adapter. Liquidity and 24-hour volume come from DexScreener and are for display only; a swap always uses the on-chain quote.
+
+## Links to a pair
+
+A swap link can pick the network and both tokens: `stoadex.com/trade?chain=robinhood&sell=ETH&buy=0x…`. `sell` and `buy` take a ticker from the list or a token address. A token that is not on the list is imported by address and shows the unverified-token check before you can swap.

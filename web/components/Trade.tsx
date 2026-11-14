@@ -174,6 +174,31 @@ function TradeOn({ net }: { net: Net }) {
   };
   const flip = () => { setSell(buy); setBuy(sell); setQuote(null); };
 
+  // deep link: /trade?chain=robinhood&sell=ETH&buy=0x… (ticker or address); applied once, on the network it names
+  const linked = useRef(false);
+  useEffect(() => {
+    if (linked.current || !pub) return;
+    const p = new URLSearchParams(location.search);
+    const c = p.get("chain");
+    if (c && c !== net.key) return;
+    linked.current = true;
+    const all = stoa && !tokens.some((t) => t.address === stoa.address) ? [...tokens, stoa] : tokens;
+    const find = (v: string) => all.find((t) => t.address.toLowerCase() === v.toLowerCase() || t.symbol.toLowerCase() === v.toLowerCase());
+    let s = sell, b = buy;
+    const want = { sell: p.get("sell")?.trim(), buy: p.get("buy")?.trim() };
+    const custom: ["sell" | "buy", string][] = [];
+    for (const side of ["sell", "buy"] as const) {
+      const v = want[side];
+      if (!v) continue;
+      const t = find(v);
+      if (t) { if (side === "sell") s = t; else b = t; }
+      else if (isAddress(v)) custom.push([side, v]);
+    }
+    if (s.address === b.address) b = s.address === net.tokens[0].address ? net.tokens[2] : net.tokens[0];
+    setSell(s); setBuy(b);
+    (async () => { for (const [side, v] of custom) await addCustom(v, side); })();
+  }, [pub]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function addCustom(addr: string, side: "sell" | "buy") {
     if (!isAddress(addr) || !pub) return;
     const known = tokens.find((t) => t.address.toLowerCase() === addr.toLowerCase());
