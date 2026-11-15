@@ -1,5 +1,7 @@
 # Contract addresses
 
+All source code (contracts, tests, deploy scripts, this web app) is public at [github.com/StoaDex/Stoa](https://github.com/StoaDex/Stoa). Every deployed contract below is source-verified on Sourcify, so you can match the code on GitHub to what runs on-chain.
+
 Stoa runs on two networks: Elysium and Robinhood Chain. Each has its own contracts, Safe and timelock.
 
 ## Elysium

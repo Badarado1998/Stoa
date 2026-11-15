@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping with Stoa. This repository is private; these notes are for the team and invited contributors.
+Thanks for helping with Stoa. This repository is public: issues and pull requests are welcome. Security problems go to the private channel in SECURITY.md, not to a public issue.
 
 ## Before you open a pull request
 

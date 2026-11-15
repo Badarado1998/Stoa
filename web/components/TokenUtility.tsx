@@ -137,6 +137,58 @@ function CurvePanel({ routable }: { routable?: boolean }) {
   );
 }
 
+/** $STOA market cap since launch, from /api/stoa/price (rebuilt from the curve's trades) */
+function PricePanel() {
+  const [range, setRange] = useState<"24h" | "all">("all");
+  const q = useQuery({
+    queryKey: ["stoa-price"],
+    refetchInterval: 60_000,
+    queryFn: async () => (await (await fetch("/api/stoa/price")).json()) as { points: { t: number; eth: number }[]; supply: number; ethUsd: number | null; trades: number; graduated?: boolean },
+  });
+  const all = q.data?.points ?? [];
+  if (q.data?.graduated) return null; // after graduation the price lives in the Uniswap V4 pool
+  const now = all.length ? all[all.length - 1].t : 0;
+  const pts = range === "24h" ? all.filter((p) => p.t >= now - 86_400) : all;
+  const usd = q.data?.ethUsd ?? null, supply = q.data?.supply ?? 1e9;
+  const mcap = (eth: number) => (usd ? eth * supply * usd : null);
+  const fmtUsd = (v: number | null) => (v === null ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
+  const last = all.length ? all[all.length - 1].eth : 0;
+  const base = pts.length ? pts[0].eth : 0;
+  const ch = base ? (last / base - 1) * 100 : 0;
+  const W = 600, H = 150;
+  let path = "", area = "";
+  if (pts.length > 1) {
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
+    const lo = Math.min(...pts.map((p) => p.eth)), hi = Math.max(...pts.map((p) => p.eth));
+    const x = (t: number) => ((t - t0) / Math.max(1, t1 - t0)) * W;
+    const y = (v: number) => H - 8 - ((v - lo) / Math.max(1e-30, hi - lo)) * (H - 16);
+    path = pts.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p.eth).toFixed(1)}`).join("");
+    area = `${path}L${W},${H}L0,${H}Z`;
+  }
+  return (
+    <div className="panel pad">
+      <div className="rowx">
+        <div className="lbl">$STOA MARKET CAP · ON THE CURVE</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {(["24h", "all"] as const).map((r) => <button key={r} type="button" className="chip" style={{ cursor: "pointer", border: 0, opacity: range === r ? 1 : 0.55 }} onClick={() => setRange(r)}>{r === "all" ? "Since launch" : "24h"}</button>)}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 30, fontWeight: 700 }}>{q.isLoading ? "…" : fmtUsd(mcap(last))}</span>
+        {pts.length > 1 && <span style={{ fontFamily: "var(--mono)", color: ch >= 0 ? "#1F8A4C" : "#B4532A" }}>{ch >= 0 ? "+" : ""}{ch.toFixed(1)}% {range === "all" ? "since launch" : "in 24h"}</span>}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 150, marginTop: 10, display: "block" }} role="img" aria-label="$STOA market cap chart">
+        <defs><linearGradient id="stoaArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#4C97F0" stopOpacity=".25" /><stop offset="1" stopColor="#4C97F0" stopOpacity="0" /></linearGradient></defs>
+        {area && <path d={area} fill="url(#stoaArea)" />}
+        {path && <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
+      </svg>
+      <p className="note">
+        Rebuilt from {q.data?.trades ?? "…"} trades on the Pons curve: the curve&apos;s own reserves after each buy and sell, times the 1B supply, in USD at today&apos;s ETH price{usd ? ` ($${usd.toFixed(0)})` : ""}.
+      </p>
+    </div>
+  );
+}
+
 export default function TokenUtility() {
   const pub = usePublicClient({ chainId: net.chain.id });
   const live = !!(C.buyback && C.bonds && C.fees && C.timelock);
@@ -191,6 +243,7 @@ export default function TokenUtility() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <CurvePanel routable={route.data} />
+      <PricePanel />
       {/* 1. buyback & burn */}
       <div className="panel pad">
         <div className="rowx"><div className="lbl">1 · PROTOCOL FEES BUY AND BURN $STOA</div><span className="chip live">{status ?? "…"}</span></div>

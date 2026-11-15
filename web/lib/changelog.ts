@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "open-source-and-price-chart",
+    date: "2026-11-15",
+    title: "Source code public, $STOA chart, share links",
+    tag: "Both chains",
+    items: [
+      "The full repository is public: github.com/StoaDex/Stoa (contracts, tests, deploy scripts, web app), linked from the footer and the contracts page.",
+      "$STOA page: market cap since launch, rebuilt from every buy and sell on the Pons curve.",
+      "Launches: share buttons; links carry the sharer's referral. Referrals now claims fees in any token, not just the two base tokens.",
+      "New guide: How to buy $STOA. Swap screen suggests going through the stablecoin when two tokens have no direct route.",
+    ],
+    link: { href: "/token", label: "Open the $STOA page" },
+  },
+  {
     id: "pons-launches-page",
     date: "2026-11-15",
     title: "Pons launches page",

@@ -417,6 +417,18 @@ function TradeOn({ net }: { net: Net }) {
             <div style={{ marginTop: 10 }}><a className="ghost" style={{ display: "inline-flex", borderColor: "var(--line)", background: "#fff" }} href={`https://ponsfamily.com/launchpad/${stoa.address}`} target="_blank" rel="noopener noreferrer">Buy ${stoa.symbol} on Pons ↗</a></div>
           </div>
         )}
+        {(() => {
+          // the router hops only through the wrapped gas token; some tokens trade only against the stablecoin
+          const st = tokens.find((t) => t.address.toLowerCase() === USDC.toLowerCase());
+          const isSt = (t: Token) => t.address.toLowerCase() === USDC.toLowerCase();
+          if (!noRoute || v4Key || !st || isSt(sell) || isSt(buy) || sell.tone === "other" || buy.tone === "other" || (stoa && [sell.address, buy.address].includes(stoa.address))) return null;
+          return (
+            <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
+              No route between these two right now. Some tokens only trade against {st.symbol}: swap to {st.symbol} first, then from {st.symbol} to {buy.symbol}.
+              <div style={{ marginTop: 10 }}><button type="button" className="ghost" onClick={() => pick("buy", st)}>Swap to {st.symbol} first</button></div>
+            </div>
+          );
+        })()}
         {risky && (
           <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
             This token was imported by address and is not verified by Stoa. Anyone can create a token with any name. Check the address before you trade.

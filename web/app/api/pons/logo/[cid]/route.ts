@@ -13,9 +13,23 @@ function sniff(b: Uint8Array): string | null {
   return null;
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ cid: string }> }) {
+/** CIDs we serve: only logos of tokens on the Launches list (read from our own CDN-cached API, refreshed each minute) */
+let allowed: { at: number; set: Set<string> } | null = null;
+async function isListed(origin: string, cid: string) {
+  if (!allowed || Date.now() - allowed.at > 60_000) {
+    try {
+      const d = (await (await fetch(`${origin}/api/pons/launches`, { signal: AbortSignal.timeout(15_000) })).json()) as { launches?: { logo: string | null }[] };
+      const set = new Set((d.launches ?? []).map((l) => l.logo?.split("/").pop() ?? "").filter(Boolean));
+      if (set.size) allowed = { at: Date.now(), set };
+    } catch { /* keep the previous list */ }
+  }
+  return !!allowed?.set.has(cid);
+}
+
+export async function GET(req: Request, { params }: { params: Promise<{ cid: string }> }) {
   const { cid } = await params;
   if (!CID.test(cid)) return new Response("bad cid", { status: 400 });
+  if (!(await isListed(new URL(req.url).origin, cid))) return new Response("not a listed Pons logo", { status: 404, headers: { "cache-control": "public, s-maxage=300" } });
   for (const g of GATEWAYS) {
     try {
       const r = await fetch(g + cid, { signal: AbortSignal.timeout(8_000) });
