@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "pons-launches-page",
+    date: "2026-11-15",
+    title: "Pons launches page",
+    tag: "Robinhood Chain",
+    items: [
+      "New Launches page: every Pons token on its bonding curve that raised at least 0.05 ETH in the last few days, by ETH raised, with curve progress, market cap, creator tax and age, plus recent graduations.",
+      "Read straight from the Pons factory and curves once a minute (/api/pons/launches). Until the Pons curve adapter is live (18 Nov), the buttons open Pons; after that they open a Stoa swap.",
+    ],
+    link: { href: "/launches", label: "Open Launches" },
+  },
+  {
     id: "pons-curve-adapter",
     date: "2026-11-15",
     title: "Pons bonding curves on Stoa",
