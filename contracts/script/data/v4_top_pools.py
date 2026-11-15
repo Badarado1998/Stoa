@@ -42,7 +42,7 @@ def rpc(method, params):
     req = urllib.request.Request(RPC, data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode(),
                                  headers={"content-type": "application/json", "user-agent": "curl/8.5.0"})
     err = None
-    for i in range(6):
+    for i in range(10):
         try:
             out = json.load(urllib.request.urlopen(req, timeout=120))
             if "result" in out:
@@ -50,7 +50,7 @@ def rpc(method, params):
             err = out.get("error")
         except Exception as e:  # rate limits and timeouts: back off and retry
             err = e
-        time.sleep(1.5 * (i + 1))
+        time.sleep(min(2.0 * (i + 1), 20))
     raise RuntimeError(f"{method} failed: {err}")
 
 
@@ -104,7 +104,8 @@ def main():
     def swaps(b):
         return rpc("eth_getLogs", [{"fromBlock": hex(b), "toBlock": hex(min(b + step - 1, head)), "address": PM, "topics": [SWAP]}])
     count, traders = collections.Counter(), collections.defaultdict(set)
-    with cf.ThreadPoolExecutor(4) as ex:
+    # Robinhood Chain's public RPC rate-limits hard (HTTP 429): fewer parallel log queries there
+    with cf.ThreadPoolExecutor(2 if RH else 4) as ex:
         for logs in ex.map(swaps, range(head - SPAN, head, step)):
             for l in logs:
                 count[l["topics"][1]] += 1
