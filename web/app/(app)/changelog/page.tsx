@@ -3,9 +3,12 @@ import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import { CHANGES, fmtDate } from "@/lib/changelog";
 
+const description = "What Stoa shipped, with dates: Robinhood Chain and Elysium releases, contracts and $STOA.";
 export const metadata: Metadata = {
   title: "Changelog",
-  description: "What Stoa shipped, with dates: Robinhood Chain and Elysium releases, contracts and $STOA.",
+  description,
+  openGraph: { title: "Changelog · Stoa", description, type: "website", siteName: "Stoa" },
+  twitter: { card: "summary_large_image", site: "@StoaDex", title: "Changelog · Stoa", description },
   alternates: { types: { "application/rss+xml": "/changelog/rss.xml" } },
 };
 

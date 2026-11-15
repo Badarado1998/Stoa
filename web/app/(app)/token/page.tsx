@@ -4,9 +4,12 @@ import { PageHead } from "@/components/ui";
 import StoaCA from "@/components/StoaCA";
 import TokenUtility from "@/components/TokenUtility";
 
+const description = "Stoa's protocol fees buy and burn $STOA every week, and makers bond it to quote Stoa pools. Live curve progress, burns and supply.";
 export const metadata: Metadata = {
   title: "$STOA",
-  description: "What $STOA does: Stoa's protocol fees buy and burn it every week, and makers bond it to quote Stoa pools.",
+  description,
+  openGraph: { title: "$STOA · Stoa", description, type: "website", siteName: "Stoa" },
+  twitter: { card: "summary_large_image", site: "@StoaDex", title: "$STOA · Stoa", description },
 };
 
 export default function TokenPage() {
