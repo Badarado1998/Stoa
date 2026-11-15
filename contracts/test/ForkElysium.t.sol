@@ -28,6 +28,8 @@ contract ForkElysiumTest is RouterHelper {
     uint256 aliceKey;
     bool on;
 
+    bool liquid;
+
     function setUp() public {
         string memory rpc = vm.envOr("ELYSIUM_RPC_URL", string(""));
         if (bytes(rpc).length == 0) return;
@@ -44,10 +46,16 @@ contract ForkElysiumTest is RouterHelper {
         router.addAdapter(address(v3));
         fees.setNotifier(address(router), true);
         vm.deal(alice, 100 ether);
+        // these tests run our V2/V3 adapters against live Uniswap pools: skip them (not fail) while Elysium has no
+        // V2/V3 liquidity for WHYPE/USDC
+        liquid = v2.quote(WHYPE, USDC, 0.0001 ether) > 0 || v3.quote(WHYPE, USDC, 0.0001 ether) > 0;
+        if (!liquid) {
+            console2.log("no Uniswap V2/V3 liquidity for WHYPE/USDC on Elysium right now: swap tests skipped");
+        }
     }
 
     function test_fork_quotesFromBothVenues() public {
-        if (!on) return vm.skip(true);
+        if (!on || !liquid) return vm.skip(true);
         uint256 q2 = v2.quote(WHYPE, USDC, 0.0001 ether);
         uint256 q3 = v3.quote(WHYPE, USDC, 0.0001 ether);
         console2.log("0.0001 WHYPE -> USDC  v2:", q2, " v3:", q3);
@@ -58,7 +66,7 @@ contract ForkElysiumTest is RouterHelper {
     }
 
     function test_fork_swapHypeForUsdcAndBack() public {
-        if (!on) return vm.skip(true);
+        if (!on || !liquid) return vm.skip(true);
         StoaRouter.Quote memory b = router.quote(address(0), USDC, 0.0001 ether);
         uint256 out =
             _swapAs(router, alice, address(0), USDC, 0.0001 ether, b.amountOut * 995 / 1000, alice, address(0));
@@ -80,7 +88,7 @@ contract ForkElysiumTest is RouterHelper {
 
     /// @notice Real Permit2 on Elysium with a real EIP-712 signature.
     function test_fork_permit2Swap() public {
-        if (!on) return vm.skip(true);
+        if (!on || !liquid) return vm.skip(true);
         uint256 usdcIn = _swapAs(router, alice, address(0), USDC, 0.0001 ether, 1, alice, address(0));
         vm.prank(alice);
         IERC20(USDC).approve(PERMIT2, type(uint256).max);
