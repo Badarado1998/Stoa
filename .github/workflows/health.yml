@@ -2,7 +2,8 @@ name: Health check
 
 # Hourly, on both chains: the site answers, each router is not paused and quotes (HYPE -> USDC on Elysium,
 # ETH -> USDG on Robinhood Chain), and the keys that pay for automation still have gas (Elysium deployer for the
-# daily pool refresh; Robinhood deployer for the $STOA graduation watcher and the weekly buyback).
+# daily pool refresh; Robinhood deployer for the $STOA graduation watcher and the weekly buyback), and once the Pons
+# curve adapter is in the router, that ETH -> $STOA still has a route.
 # A failure opens a GitHub issue, which emails the repo owner. The issue gets a new comment only when the problem
 # changes or once a day while it lasts, so one low balance doesn't send 24 emails a day.
 on:
@@ -52,6 +53,13 @@ jobs:
           { [ -n "$rq" ] && [ "$rq" -gt 1000000 ]; } || fail+=("Robinhood router quote for 0.01 ETH -> USDG is '$rq'")
           rb=$(cast balance 0xbf666e8D054935170b9f09127247905A975b3B80 --rpc-url $RH_RPC)
           [ "$(echo "$rb > 1000000000000000" | bc)" = 1 ] || fail+=("Robinhood deployer 0xbf666e8D054935170b9f09127247905A975b3B80 low: $(cast from-wei $rb) ETH (top up ~0.005 ETH)")
+          # $STOA must stay buyable on Stoa once the Pons curve adapter is in the router: on its curve, then its V4 pool
+          PONS=$(jq -r '.ponsAdapter // empty' web/lib/deployments-4663.json)
+          if [ -n "$PONS" ] && [ "$(cast call $RH_ROUTER 'isAdapter(address)(bool)' $PONS --rpc-url $RH_RPC)" = "true" ]; then
+            sq=$(cast call $RH_ROUTER 'quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))' 0x0000000000000000000000000000000000000000 0x13E6993417616De724F2b337D65063f229e96718 1000000000000000 --rpc-url $RH_RPC | sed -E 's/^\(([0-9]+).*/\1/')
+            { [ -n "$sq" ] && [ "$sq" -gt 0 ]; } || fail+=("no route ETH -> \$STOA on Robinhood Chain (quote '$sq'). If \$STOA just graduated, add its Uniswap V4 pool on stoadex.com/token")
+            echo "robinhood: quote 0.001 ETH = $sq STOA raw"
+          fi
           echo "robinhood: quote 0.01 ETH = $rq USDG raw, paused=$rp"
           if [ ${#fail[@]} -gt 0 ]; then printf '%s\n' "${fail[@]}" > /tmp/fail.txt; cat /tmp/fail.txt; echo "failed=1" >> $GITHUB_OUTPUT; fi
       - name: Report
