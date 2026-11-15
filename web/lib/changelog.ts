@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "buyback-live",
+    date: "2026-11-17",
+    title: "$STOA buyback and burn is live",
+    tag: "$STOA",
+    items: [
+      "The FeeDistributor on Robinhood Chain now belongs to StoaBuyback, after the 48-hour timelock. Protocol fees can only be swapped into $STOA through the router and burned in the same transaction.",
+      "A keeper runs it every Monday for each fee token worth at least $1. Every run is on the $STOA page with its transaction.",
+    ],
+    link: { href: "/token", label: "Open the $STOA page" },
+  },
+  {
+  },
+  {
     id: "bounty-ended",
     date: "2026-11-17",
     title: "The paid bug bounty has ended",

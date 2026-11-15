@@ -14,7 +14,7 @@ Every swap through Stoa on Robinhood Chain pays a 2 bps protocol fee to the FeeD
 
 Every buyback emits `BoughtAndBurned(token, amountIn, stoaBurned)`, and `totalBurned()` on StoaBuyback adds them up.
 
-The handover of the FeeDistributor to StoaBuyback was scheduled in the timelock on 15 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xcde838eaf0c90199f58053964acf903f6d69853fce3b07681125546d0ccc7c07)) and runs from 17 November 2026. Fees collected before then are included in the first run.
+The handover of the FeeDistributor to StoaBuyback was scheduled in the timelock on 15 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xcde838eaf0c90199f58053964acf903f6d69853fce3b07681125546d0ccc7c07)) and executed after the 48-hour delay, on 17 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xef3052b0a8b03974ca69ea098181a3863fdbaa9b924498c5e3ec55eeddf5859c)): StoaBuyback now owns the FeeDistributor. The keeper runs every Monday at 13:41 UTC, and fees collected before the handover are included in its first run.
 
 Today this covers Robinhood Chain, where $STOA lives. Fees on Elysium stay in Elysium's FeeDistributor.
 
