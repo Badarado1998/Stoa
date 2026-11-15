@@ -25,7 +25,7 @@ What can go wrong, and what limits it.
 | Thin pools | Price impact is shown; above 15% you must confirm before swapping |
 | A maker loses money in a fast market | Daily loss limits, spreads that widen with volatility, emergency stop |
 | A stale price is used | Quotes expire after 2 blocks; pools reject expired quotes |
-| No maker quote available | The router fills on the best outside venue (Uniswap, Aero, Ramses or Liquidity Book on Elysium; Uniswap on Robinhood Chain) |
+| No maker quote available | The router fills on the best outside venue (Uniswap, Aero, Ramses or Liquidity Book on Elysium; Uniswap, Aero, Ramses or a Pons curve on Robinhood Chain) |
 | Thin pool for a small token | Price impact is shown before you sign; your slippage limit reverts bad fills |
 | HyperCore upgrade is delayed | Makers keep using the Hyperliquid API until it ships |
 | Two networks, two sets of contracts | Robinhood Chain has its own router, Safe and 48-hour timelock, with the same signers and the same rules. A pause on one network does not stop the other. See [Contract addresses](contracts.md) |

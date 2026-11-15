@@ -10,7 +10,7 @@ Swap tokens on Robinhood Chain or Elysium, on the best route Stoa finds across t
 | Network | Venues checked on every swap |
 | --- | --- |
 | Elysium | Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses, Liquidity Book |
-| Robinhood Chain | Uniswap V2, V3 and V4, including Pons launch pools; Pons bonding curves once the admin Safe has added them |
+| Robinhood Chain | Uniswap V2, V3 and V4 (including Pons graduation pools), Aero, Ramses and Pons bonding curves |
 
 ## Safety check
 

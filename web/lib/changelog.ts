@@ -12,6 +12,16 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "aero-ramses-live",
+    date: "2026-11-18",
+    title: "Aero and Ramses are live on Robinhood Chain",
+    tag: "Robinhood Chain",
+    items: [
+      "The Aero Slipstream and Ramses V3 adapters are in the router after the 48-hour timelock and the router's 24-hour wait. Every swap on Robinhood Chain now checks Uniswap V2, V3 and V4, Aero, Ramses and the Pons curves, and takes the best fill.",
+    ],
+    link: { href: "/trade?chain=robinhood", label: "Open Trade" },
+  },
+  {
     id: "pons-curves-live",
     date: "2026-11-18",
     title: "Pons launch curves are live on Stoa",
