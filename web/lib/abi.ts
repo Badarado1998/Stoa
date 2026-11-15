@@ -151,3 +151,7 @@ export const feeStateAbi = parseAbi([
   "function owner() view returns (address)",
   "function protocolAccrued(address token) view returns (uint256)",
 ]);
+
+/** PonsCurveAdapter: the token's Pons curve if the adapter can trade on it now (else the zero address) */
+export const ponsAdapterAbi = parseAbi(["function curveOf(address token) view returns (address)"]);
+export const ponsCurveAbi = parseAbi(["function feeBps() view returns (uint256)", "function creatorTaxBps() view returns (uint256)"]);

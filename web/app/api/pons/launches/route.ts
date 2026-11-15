@@ -3,7 +3,9 @@ import { ROBINHOOD } from "@/lib/networks";
 
 // Live Pons launches on Robinhood Chain: tokens still on their bonding curve (with real ETH raised) and the ones that
 // graduated recently. Read from the chain once a minute for every visitor; Pons' own site is the source for the rest.
-export const revalidate = 60;
+// Not prerendered at build (a slow RPC would fail the deploy); Vercel's CDN caches each answer for a minute instead.
+export const dynamic = "force-dynamic";
+const CACHE = { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" };
 
 const FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e" as Address;
 const LAUNCHED = parseAbiItem("event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairToken, uint256 a, uint256 b)");
@@ -115,7 +117,7 @@ export async function GET() {
         launchedAt: Number((r(6) as bigint | undefined) ?? 0n), creatorTaxBps: Number((r(7) as bigint | undefined) ?? 0n),
       };
     });
-    return Response.json({ updated: new Date().toISOString(), scanned: all.length, ethUsd, launches: out });
+    return Response.json({ updated: new Date().toISOString(), scanned: all.length, ethUsd, launches: out }, { headers: CACHE });
   } catch {
     return Response.json({ error: "Robinhood Chain RPC unavailable, try again shortly", launches: [] }, { status: 503 });
   }

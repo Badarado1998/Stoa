@@ -8,7 +8,8 @@ import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viem
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
 import { txUrlOn, type Net } from "@/lib/networks";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
-import { ERROR_TEXT, erc20Abi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
+import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
+import { useQuery } from "@tanstack/react-query";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
@@ -110,6 +111,23 @@ function TradeOn({ net }: { net: Net }) {
   const newVenuesLive = net.newVenues.length > 0 && net.newVenues.every((_, i) => newLive.data?.[i]?.result === true);
   const ponsLive = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "isAdapter", args: [net.pons ?? zeroAddress], chainId: chain.id, query: { enabled: deployed && !!net.pons, refetchInterval: 60_000 } }).data === true;
   const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
+  // once the Pons curve adapter is live: live Pons launches join the token list (unverified, like any import)
+  useEffect(() => {
+    if (!ponsLive || net.key !== "robinhood") return;
+    let stop = false;
+    fetch("/api/pons/launches").then((r) => r.json()).then((d: { launches?: { token: Address; symbol: string; progress: number; graduated: boolean }[] }) => {
+      if (stop || !d.launches?.length) return;
+      setTokens((ts) => {
+        const have = new Set(ts.map((t) => t.address.toLowerCase()));
+        const add: Token[] = d.launches!.filter((l) => !have.has(l.token.toLowerCase())).map((l) => {
+          const sym = l.symbol.replace(/[^\w.$-]/g, "").slice(0, 12) || "TOKEN";
+          return { symbol: sym, name: l.graduated ? "Pons · graduated" : `Pons curve · ${l.progress.toFixed(0)}%`, address: l.token, decimals: 18, glyph: sym[0] ?? "?", tone: "other" as const };
+        });
+        return add.length ? [...ts, ...add] : ts;
+      });
+    }).catch(() => { /* the list is a convenience; pasting an address still works */ });
+    return () => { stop = true; };
+  }, [ponsLive, net.key]);
 
   const getQuote = useCallback(async (): Promise<Quote> => {
     if (!amt) return null;
@@ -217,7 +235,14 @@ function TradeOn({ net }: { net: Net }) {
         pub.readContract({ address: addr, abi: erc20Abi, functionName: "decimals" }),
       ]);
       const sym = String(symbol).replace(/[^\w.$-]/g, "").slice(0, 12) || "TOKEN";
-      const t: Token = { symbol: sym, name: "Unverified", address: addr, decimals: Number(decimals), glyph: sym[0] ?? "?", tone: "other" };
+      let name = "Unverified";
+      if (net.pons) {
+        try {
+          const curve = await pub.readContract({ address: net.pons, abi: ponsAdapterAbi, functionName: "curveOf", args: [addr] });
+          if (curve !== zeroAddress) name = "Pons curve · unverified";
+        } catch { /* adapter not deployed on this build */ }
+      }
+      const t: Token = { symbol: sym, name, address: addr, decimals: Number(decimals), glyph: sym[0] ?? "?", tone: "other" };
       setTokens((ts) => [...ts, t]);
       pick(side, t);
     } catch {
@@ -293,6 +318,26 @@ function TradeOn({ net }: { net: Net }) {
   if (busy) { label = `${busy}…`; disabled = true; }
 
   const venueName = !quote ? "—" : !quote.route ? `${W} contract` : describeRoute(quote.route, VENUE_NAMES, W);
+  // a fill on a Pons curve: its fee and the token's creator tax are already in the quoted amount; say so
+  const usesPons = !!net.pons && !!quote?.route && [quote.route.leg1.venue, quote.route.leg2?.venue].some((v) => !!v && v.toLowerCase() === net.pons!.toLowerCase());
+  const ponsFees = useQuery({
+    queryKey: ["pons-fees", sell.address, buy.address],
+    enabled: usesPons && !!pub,
+    staleTime: 300_000,
+    queryFn: async () => {
+      for (const t of [buy, sell]) {
+        if (isNative(t) || t.address.toLowerCase() === net.wrapped.toLowerCase()) continue;
+        const curve = await pub!.readContract({ address: net.pons!, abi: ponsAdapterAbi, functionName: "curveOf", args: [t.address] });
+        if (curve === zeroAddress) continue;
+        const [fee, tax] = await Promise.all([
+          pub!.readContract({ address: curve, abi: ponsCurveAbi, functionName: "feeBps" }),
+          pub!.readContract({ address: curve, abi: ponsCurveAbi, functionName: "creatorTaxBps" }),
+        ]);
+        return { fee: Number(fee) / 100, tax: Number(tax) / 100 };
+      }
+      return null;
+    },
+  });
   const px = quote && amt ? rate(amt, sell.decimals, quote.out, buy.decimals) : 0;
 
   return (
@@ -344,6 +389,7 @@ function TradeOn({ net }: { net: Net }) {
           <div className="det">
             <span>Rate</span><span>1 {sell.symbol} = {px.toPrecision(6)} {buy.symbol}</span>
             <span>Filled by</span><span>{venueName}</span>
+            {usesPons && ponsFees.data && <><span>Curve fees</span><span>Pons {ponsFees.data.fee}% + creator tax {ponsFees.data.tax}% (in the price)</span></>}
             {kind !== "wrap" && kind !== "unwrap" && <><span>Protocol fee</span><span>2 bps</span>
               <span>Price impact</span><span style={{ color: quote.impact >= IMPACT_WARN ? "#B4532A" : undefined }}>{quote.impact < 0.01 ? "< 0.01" : quote.impact.toFixed(2)}%</span>
               <span>Minimum received</span><span>{fmt(minOut(quote.out, slip), buy.decimals, 6)} {buy.symbol}</span></>}
