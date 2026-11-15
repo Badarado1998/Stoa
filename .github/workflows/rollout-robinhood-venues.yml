@@ -5,6 +5,7 @@ name: Robinhood governance steps (Safe rounds)
 # - Aero + Ramses (script/RolloutVenuesRobinhood.s.sol): 1) schedule in the 48h timelock, 2) propose on the router,
 #   3) add both adapters once the router's 1-day wait has passed
 # - $STOA buyback (script/RolloutBuybackRobinhood.s.sol): 1) schedule, 2) hand the FeeDistributor to StoaBuyback
+# - Pons curves (script/RolloutPonsRobinhood.s.sol, once deployed): same three steps as Aero + Ramses
 # Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
 # one of them set it approves and the other signer can press the same step on stoadex.com/admin (Robinhood).
 # Delete OWNER_PRIVATE_KEY once the run summary says every step is done.
@@ -51,9 +52,16 @@ jobs:
             echo "No signer key yet." > /tmp/out.txt; exit 0
           fi
           forge script script/RolloutVenuesRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee /tmp/out.txt
+          want=1
           if [ -n "$(jq -r '.stoaBuyback // empty' deployments/4663.json)" ]; then
             forge script script/RolloutBuybackRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
+            want=$((want + 1))
           fi
+          if [ -n "$(jq -r '.ponsAdapter // empty' deployments/4663.json)" ]; then
+            forge script script/RolloutPonsRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
+            want=$((want + 1))
+          fi
+          echo "$want" > /tmp/want.txt
           grep -E "WAIT|APPROVED|EXECUTED|DONE" /tmp/out.txt | sed 's/^ *//' >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Stop the hourly runs once done
@@ -61,7 +69,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$(grep -c "DONE:" /tmp/out.txt)" -ge 2 ]; then
+          if [ "$(grep -c "DONE:" /tmp/out.txt)" -ge "$(cat /tmp/want.txt 2>/dev/null || echo 99)" ]; then
             echo "Every pending step is done. Delete the OWNER_PRIVATE_KEY and DEPLOYER_PRIVATE_KEY secrets." >> "$GITHUB_STEP_SUMMARY"
             gh workflow disable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY"
           fi

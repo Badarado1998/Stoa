@@ -17,21 +17,21 @@ import {SafeRunner, ISafeLite, IMultiSendLite} from "./SafeRunner.sol";
 ///      execTransaction). With one key it approves and waits for another signer, on /admin or in a later run.
 ///      Fork testing: SIGNER1_ADDR / SIGNER2_ADDR with `--unlocked` instead of keys. Signers pay their own gas
 ///      (about 0.00001 ETH per step on Robinhood Chain).
-contract RolloutVenuesRobinhood is SafeRunner, VenuePackageRobinhood {
+/// @dev Shared by every "add adapters to the live router" rollout (Aero + Ramses, Pons curves). One call moves one
+///      package one step forward. Logs DONE once every adapter in the package is in the router.
+abstract contract VenueRollout is SafeRunner, VenuePackageRobinhood {
     StoaRouter constant router = StoaRouter(payable(LIVE_ROUTER));
     TimelockController constant tl = TimelockController(payable(LIVE_TIMELOCK));
 
-    function run() external {
+    function _rollout(string memory name, address[] memory ads) internal {
         require(block.chainid == 4663, "not Robinhood Chain");
         safe = ISafeLite(LIVE_SAFE);
-        string memory json = vm.readFile("deployments/4663.json");
-        address[] memory ads = new address[](2);
-        ads[0] = vm.parseJsonAddress(json, ".aeroAdapter");
-        ads[1] = vm.parseJsonAddress(json, ".ramsesAdapter");
-        require(vm.parseJsonAddress(json, ".router") == LIVE_ROUTER, "router mismatch");
-
-        if (router.isAdapter(ads[0]) && router.isAdapter(ads[1])) {
-            console2.log("DONE: Aero and Ramses are in the router. Delete the signer key secrets now.");
+        bool all = true;
+        for (uint256 i; i < ads.length; ++i) {
+            if (!router.isAdapter(ads[i])) all = false;
+        }
+        if (all) {
+            console2.log(string.concat("DONE: ", name, " in the router."));
             return;
         }
         _loadSigners();
@@ -39,7 +39,7 @@ contract RolloutVenuesRobinhood is SafeRunner, VenuePackageRobinhood {
         (Op memory a, Op memory b) = _ops(LIVE_ROUTER, ads);
         uint256 tsA = tl.getTimestamp(_id(a));
         uint256 tsB = tl.getTimestamp(_id(b));
-        console2.log("now", block.timestamp);
+        console2.log(name, "- now", block.timestamp);
 
         if (tsA == 0) {
             uint256 minDelay = tl.getMinDelay();
@@ -81,5 +81,16 @@ contract RolloutVenuesRobinhood is SafeRunner, VenuePackageRobinhood {
                 0
             );
         }
+    }
+}
+
+contract RolloutVenuesRobinhood is VenueRollout {
+    function run() external {
+        string memory json = vm.readFile("deployments/4663.json");
+        require(vm.parseJsonAddress(json, ".router") == LIVE_ROUTER, "router mismatch");
+        address[] memory ads = new address[](2);
+        ads[0] = vm.parseJsonAddress(json, ".aeroAdapter");
+        ads[1] = vm.parseJsonAddress(json, ".ramsesAdapter");
+        _rollout("Aero and Ramses are", ads);
     }
 }
