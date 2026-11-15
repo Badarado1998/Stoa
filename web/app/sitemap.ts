@@ -3,8 +3,9 @@ import { SITE } from "@/lib/chain";
 import { flatDocs } from "@/lib/docs";
 import { CA } from "@/lib/stoaAddress";
 import type { Launch } from "@/lib/ponsLaunch";
+import { listedTokens } from "@/lib/tokenInfo";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens"];
 /** rebuilt every hour: the token pages of the launches closest to graduation and the latest graduations */
 export const revalidate = 3600;
 
@@ -28,5 +29,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...PAGES.map((p) => ({ url: `${base}${p}`, changeFrequency: "weekly" as const, priority: p === "" ? 1 : 0.7 })),
     ...flatDocs().map((d) => ({ url: `${base}/docs/${d.slug}`, changeFrequency: "monthly" as const, priority: 0.5 })),
     ...tokens.map((t) => ({ url: `${base}/launches/${t}`, changeFrequency: "hourly" as const, priority: t === CA ? 0.7 : 0.4 })),
+    ...listedTokens().map(({ net, token }) => ({ url: `${base}/tokens/${net.key}/${token.address}`, changeFrequency: "daily" as const, priority: 0.5 })),
   ];
 }

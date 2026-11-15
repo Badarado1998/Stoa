@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   // no fixed title or url here, so each page's own title is used when a link is shared
   openGraph: { description: "Swap at the best price on Elysium and Robinhood Chain. Every pool checked on every trade.", siteName: "Stoa", type: "website", images: [{ url: "/og-v3.png", width: 1200, height: 630, alt: "Stoa: swap at the best price on Elysium and Robinhood Chain" }] },
   twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap at the best price on Elysium and Robinhood Chain. Every pool checked on every trade.", images: ["/og-v3.png"] },
+  // installed as an app (manifest.ts): name and status bar on iPhone home screens
+  appleWebApp: { capable: true, title: "Stoa", statusBarStyle: "default" },
 };
 // structured data for search engines: who Stoa is and what the site does
 const LD = [

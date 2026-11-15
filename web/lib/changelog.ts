@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "tokens-embed-app",
+    date: "2026-11-18",
+    title: "Token pages, a buy widget for any site, and Stoa as an app",
+    tag: "Both chains",
+    items: [
+      "Tokens: every token Stoa lists has its own page with its price, liquidity and the best route on Stoa right now, plus Buy and Sell.",
+      "Embed: any website can show a live Buy on Stoa card for a listed token or $STOA. Buy opens Stoa in a new tab with the site's referral; no wallet connects inside the card. Copy the code from a token page.",
+      "Portfolio: every swap in your history now has Share, with your referral.",
+      "Install: Stoa can be added to a phone's home screen and opens full screen on Trade.",
+    ],
+    link: { href: "/tokens", label: "Browse tokens" },
+  },
+  {
     id: "share-swap",
     date: "2026-11-18",
     title: "Share your swap",

@@ -8,6 +8,8 @@ import { useNet } from "./Providers";
 import { routedEvent } from "@/lib/abi";
 import { NATIVE } from "@/lib/tokens";
 import { fmt } from "@/lib/swap";
+import { SITE } from "@/lib/chain";
+import { shareOrCopy } from "@/lib/share";
 
 type Row = { hash: Hash; time: number; tokenIn: Address; tokenOut: Address; amountIn: bigint; amountOut: bigint };
 type Meta = Record<string, { symbol: string; decimals: number }>;
@@ -24,6 +26,7 @@ export default function SwapHistory() {
   const [meta, setMeta] = useState<Meta>(KNOWN);
   useEffect(() => { setRows(null); setErr(false); setMeta(KNOWN); }, [net.key]); // eslint-disable-line react-hooks/exhaustive-deps
   const [err, setErr] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
     if (!address || !CONTRACTS.router || !net.logsRpc) return;
@@ -62,6 +65,12 @@ export default function SwapHistory() {
     return () => { stop = true; };
   }, [address, pub, net]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // each swap has a shareable page that carries this wallet's referral (/swap/<chain>/<hash>)
+  async function share(r: Row) {
+    const link = `${SITE}/swap/${net.key}/${r.hash}${address ? `?ref=${address}` : ""}`;
+    const text = `Swapped ${fmt(r.amountIn, m(r.tokenIn).decimals, 4)} ${m(r.tokenIn).symbol} for ${fmt(r.amountOut, m(r.tokenOut).decimals, 4)} ${m(r.tokenOut).symbol} on @StoaDEX.`;
+    if ((await shareOrCopy(link, text)) === "copied") { setCopied(r.hash); setTimeout(() => setCopied(null), 1600); }
+  }
   const m = (a: Address) => meta[a.toLowerCase()] ?? (a === NATIVE ? { symbol: net.gas, decimals: 18 } : { symbol: "…", decimals: 18 });
   if (!CONTRACTS.router) return <p className="note">Your swaps on {net.name} will show here once Stoa is live there.</p>;
   if (err) return <p className="note">Could not load swap history right now.</p>;
@@ -76,7 +85,10 @@ export default function SwapHistory() {
             <td>{r.time ? new Date(r.time * 1000).toLocaleString() : "—"}</td>
             <td style={{ fontFamily: "var(--mono)" }}>{fmt(r.amountIn, m(r.tokenIn).decimals, 4)} {m(r.tokenIn).symbol}</td>
             <td style={{ fontFamily: "var(--mono)" }}>{fmt(r.amountOut, m(r.tokenOut).decimals, 4)} {m(r.tokenOut).symbol}</td>
-            <td style={{ textAlign: "right" }}>{<a href={txUrl(r.hash)} target="_blank" rel="noopener noreferrer">View</a>}</td>
+            <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+              <button type="button" className="linkbtn" onClick={() => share(r)}>{copied === r.hash ? "Copied" : "Share"}</button>
+              {" · "}<a href={txUrl(r.hash)} target="_blank" rel="noopener noreferrer">View</a>
+            </td>
           </tr>
         ))}
       </tbody>

@@ -18,7 +18,8 @@ export default function Header({ extra }: { extra?: ReactNode }) {
     f(); addEventListener("scroll", f, { passive: true });
     return () => removeEventListener("scroll", f);
   }, [path]);
-  const on = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
+  // a section is active on its own path and below it (/launches/<token>), not on look-alikes (/tokens is not /token)
+  const on = (h: string) => (h === "/" ? path === "/" : path === h || path.startsWith(`${h}/`));
   return (
     <>
       <header className={`hdr${solid && path !== "/" ? " solid" : ""}`}>
