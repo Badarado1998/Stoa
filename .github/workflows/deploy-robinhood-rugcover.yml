@@ -1,0 +1,85 @@
+name: Deploy Rug Cover (Robinhood Chain)
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys RugCover (creator-bonded cover for Pons tokens; backers earn creator fees and forfeited bonds), owned by the
+# 48h timelock from the constructor, with CREATE2 through the standard deterministic deployer. Once the web app ships
+# the address (web/lib/deployments-4663.json `rugCover`), the script refuses any other address. Verifies on Sourcify.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transaction (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      # The CREATE2 address depends on the exact bytecode, metadata hash included. The metadata lists every remapping
+      # forge passes to solc, and forge adds one for each nested submodule it finds (OpenZeppelin's own erc4626-tests,
+      # halmos-cheatcodes, ds-test). So check out the top-level submodules only, as the address was computed with,
+      # and pin Foundry to that version too.
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          R=$(jq -r '.rugCover // empty' ../web/lib/deployments-4663.json)
+          if [ -n "$R" ] && [ "$(cast code $R --rpc-url "$ROBINHOOD_RPC_URL")" != "0x" ]; then echo "::error::already deployed at $R"; exit 1; fi
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          echo "Deployer: $(cast wallet address --private-key "$PK") · $(cast balance $(cast wallet address --private-key "$PK") --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit and attack tests
+        run: forge test --match-contract RugCoverTest
+
+      - name: Fork test - real Pons creator, live router, breach, claim, burn
+        run: forge test --match-contract ForkRobinhoodRugCover -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployRugCoverRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-rugcover.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          R=$(jq -r .rugCover deployments/4663-rugcover.json)
+          ARGS=$(cast abi-encode "c(address,address,address,address,address,address,(uint32,uint16,uint16,uint16,uint16,uint16,uint16,uint16,uint64,uint64,uint64,uint64,uint64,uint96))" \
+            0xAC75133729d6B5d615aA696d0828dC31fcB83ed8 0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5 \
+            0x13E6993417616De724F2b337D65063f229e96718 0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e \
+            0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9 0xbf666e8D054935170b9f09127247905A975b3B80 \
+            "(604800,200,7500,100,2500,100,1000,50,2000000000000000,50000000000000000,1000000000000000000,5000000000000000,250000000000000000,20000000000000000000)")
+          forge verify-contract $R src/RugCover.sol:RugCover --verifier sourcify --chain 4663 --constructor-args $ARGS || true
+
+      - name: Check the deployed contract
+        if: ${{ inputs.broadcast }}
+        run: |
+          cat deployments/4663-rugcover.json
+          R=$(jq -r .rugCover deployments/4663-rugcover.json)
+          echo "owner $(cast call $R 'owner()(address)' --rpc-url "$ROBINHOOD_RPC_URL")"
+          echo "guardian $(cast call $R 'guardian()(address)' --rpc-url "$ROBINHOOD_RPC_URL")"
+          echo "keeper $(cast call $R 'keeper()(address)' --rpc-url "$ROBINHOOD_RPC_URL")"
+          echo "STOA creator from the Pons factory $(cast call $R 'creatorOf(address)(address)' 0x13E6993417616De724F2b337D65063f229e96718 --rpc-url "$ROBINHOOD_RPC_URL")"
+          echo "::notice::RugCover deployed at $R"
