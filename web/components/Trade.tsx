@@ -4,11 +4,13 @@ import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
 import { useStoaToken } from "@/lib/stoaToken";
 import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
+import { BaseError, decodeEventLog, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash, type TransactionReceipt } from "viem";
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
 import { txUrlOn, type Net } from "@/lib/networks";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route, fmtAmt } from "@/lib/swap";
-import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
+import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routedEvent, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
+import { SITE } from "@/lib/chain";
+import { shareOrCopy } from "@/lib/share";
 import { useQuery } from "@tanstack/react-query";
 import VenueCompare from "./VenueCompare";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
@@ -79,6 +81,9 @@ function TradeOn({ net }: { net: Net }) {
   const [noRoute, setNoRoute] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
+  // the last confirmed swap, offered as a shareable link that carries the trader's referral
+  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const [unlimited, setUnlimited] = useState(false); // approve only the swap amount unless the user opts in
   const [ackToken, setAckToken] = useState(false);
   const [ackImpact, setAckImpact] = useState(false);
@@ -251,14 +256,15 @@ function TradeOn({ net }: { net: Net }) {
     }
   }
 
-  async function run(label: string, fn: () => Promise<Hash>) {
+  async function run(label: string, fn: () => Promise<Hash>, onOk?: (r: TransactionReceipt, hash: Hash) => void) {
     if (!pub) return;
-    setBusy(label); setMsg(null);
+    setBusy(label); setMsg(null); setDone(null);
     try {
       const hash = await fn();
       const r = await pub.waitForTransactionReceipt({ hash });
       if (r.status !== "success") throw new Error("Transaction reverted");
       setMsg({ ok: true, text: `${label} confirmed`, hash });
+      onOk?.(r, hash);
       void native.refetch(); void sellBal.refetch(); void buyBal.refetch(); void allowance.refetch();
       return true;
     } catch (e) {
@@ -297,6 +303,16 @@ function TradeOn({ net }: { net: Net }) {
         gas = (est * 13n) / 10n + 50_000n;
       } catch { /* let the wallet estimate; a revert shows up there */ }
       return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, gas, chainId: chain.id });
+    }, (r, hash) => {
+      // what the trader actually paid and got, from the router's Routed event in the receipt
+      const s0 = sell, b0 = buy, a0 = amt;
+      let paid = a0, got: bigint | undefined;
+      for (const l of r.logs) {
+        if (l.address.toLowerCase() !== CONTRACTS.router!.toLowerCase()) continue;
+        try { const ev = decodeEventLog({ abi: [routedEvent], data: l.data, topics: l.topics }); paid = ev.args.amountIn; got = ev.args.amountOut; break; } catch { /* another event */ }
+      }
+      if (got === undefined) return;
+      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals) });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
@@ -368,7 +384,7 @@ function TradeOn({ net }: { net: Net }) {
               BALANCE {sBal !== undefined ? fmt(sBal, sell.decimals, 4) : "—"}
             </button></div>
           <div className="row" style={{ position: "relative" }}>
-            <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} onChange={(e) => { setMsg(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
+            <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} onChange={(e) => { setMsg(null); setDone(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
             <TokenBtn t={sell} onClick={() => setMenu(menu === "sell" ? null : "sell")} />
             {menu === "sell" && <TokenMenu net={net} tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
@@ -441,7 +457,23 @@ function TradeOn({ net }: { net: Net }) {
           </div>
         )}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>
-        {msg && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
+        {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
+        {done && (() => {
+          const link = `${SITE}/swap/${done.net}/${done.hash}${address ? `?ref=${address}` : ""}`;
+          const text = `Swapped ${done.inTxt} ${done.symIn} for ${done.outTxt} ${done.symOut} on @StoaDEX. Every venue checked, filled at the best one.`;
+          const post = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`;
+          return (
+            <div className="sharecard">
+              <div className="rowx"><span className="lbl">SWAP CONFIRMED</span><a className="lbl" href={txUrl(done.hash)} target="_blank" rel="noopener noreferrer">VIEW ↗</a></div>
+              <div className="sc-amt">{done.inTxt} {done.symIn} → <b>{done.outTxt} {done.symOut}</b></div>
+              <div className="sc-btns">
+                <a className="sc-x" href={post} target="_blank" rel="noopener noreferrer">Share on X</a>
+                <button type="button" className="ghost" onClick={async () => { if ((await shareOrCopy(link, text)) === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1600); } }}>{copied ? "Link copied" : "Share link"}</button>
+              </div>
+              <p className="note">Your link carries your referral: you earn 10% of Stoa&apos;s fee on every swap made through it.</p>
+            </div>
+          );
+        })()}
         <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on the best live venue; maker pools come later.`}</p>
       </div>
 

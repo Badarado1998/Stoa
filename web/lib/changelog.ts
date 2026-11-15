@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "share-swap",
+    date: "2026-11-18",
+    title: "Share your swap",
+    tag: "Both chains",
+    items: [
+      "After a swap confirms, Trade shows what you paid and got, with Share on X and Share link. The link opens a page for that swap, read from the transaction, with its own link card.",
+      "The link carries your referral: anyone who swaps through it pays you 10% of Stoa's fee, as on Referrals.",
+    ],
+    link: { href: "/trade", label: "Open Trade" },
+  },
+  {
     id: "faq",
     date: "2026-11-18",
     title: "FAQ in the docs",

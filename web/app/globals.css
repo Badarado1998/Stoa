@@ -270,6 +270,12 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .tabs a.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(30,38,51,.08)}
 .err{margin-top:10px;padding:10px 12px;border-radius:10px;background:#FDF1F0;border:1px solid #F3D3CF;color:#8A2B20;font-size:13px;word-break:break-word}
 .ok{margin-top:10px;padding:10px 12px;border-radius:10px;background:#EEF8F2;border:1px solid #CBE8D6;color:#1E6B41;font-size:13px}
+.sharecard{margin-top:12px;padding:14px 16px;border-radius:14px;background:#EEF8F2;border:1px solid #CBE8D6}
+.sharecard .lbl{color:#1E6B41}.sharecard a.lbl{text-decoration:none}
+.sc-amt{margin-top:6px;font-size:16px;color:var(--ink);overflow-wrap:anywhere}.sc-amt b{color:#1E6B41}
+.sc-btns{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.sc-x{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:10px;background:#18202C;color:#fff;font-size:13px;font-weight:600;text-decoration:none}
+.sharecard .ghost{border-color:#CBE8D6;background:#fff}
 .addrchip{font-family:var(--mono);font-size:12.5px}
 .tokm input{display:block;width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:12px;margin:4px 0 6px;outline:none}
 .big:disabled{background:#E9EDF3;color:#8A93A1;cursor:default;box-shadow:none}
