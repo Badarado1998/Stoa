@@ -6,14 +6,14 @@
 
 | Stage | Where the token trades | What Stoa does |
 | --- | --- | --- |
-| On the curve | The token's Pons bonding curve. Buys push the price up, sells push it down (x·y=k on the curve's reserves) | Trades on the curve through the Pons curve adapter, once the admin Safe has added it to the router (scheduled 18 Nov 2026) |
+| On the curve | The token's Pons bonding curve. Buys push the price up, sells push it down (x·y=k on the curve's reserves) | Trades on the curve through the Pons curve adapter (live since 18 Nov 2026) |
 | Graduated | A Uniswap V4 pool that Pons creates and fills when the curve reaches its target, usually 4.2 ETH. The pool's liquidity is locked | Routes the V4 pool. Stoa's keeper adds every new graduation pool to the router, usually within the hour |
 
 ## Find a token
 
 - [Launches](https://stoadex.com/launches) shows every Pons curve that raised at least 0.05 ETH in the last few days, with curve progress, market cap, creator tax and age, plus recent graduations. Search by name, ticker or address, sort by closest to graduation, newest or market cap.
 - Every launch has its own page, `stoadex.com/launches/<token address>` (tap a token on Launches): curve progress, price, market cap and creator tax, refreshed every 10 seconds, with a Trade or Pons button. Its link card on X and Telegram shows the token's logo and progress.
-- On the swap screen, pick the token from the list (live launches are in it once the curve adapter is live) or paste its contract address.
+- On the swap screen, pick the token from the list (live launches are in it) or paste its contract address.
 - Tokens marked **Covered** have a creator who bonded ETH behind their wallet with [Rug Cover](rug-cover.md). Buy them with ETH and tick "Buy with Rug Cover" to be covered.
 
 ## Costs

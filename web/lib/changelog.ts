@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "pons-curves-live",
+    date: "2026-11-18",
+    title: "Pons launch curves are live on Stoa",
+    tag: "Robinhood Chain",
+    items: [
+      "The Pons curve adapter is in the router: every Pons token still on its bonding curve trades on Stoa from ETH or any token Stoa routes (other tokens hop through WETH in the same transaction).",
+      "Quotes use the curve's own math, Pons' 1% fee and the token's creator tax included. The buy that would graduate a curve is left to Pons, and so are a launch's first seconds, while Pons charges its anti-sniper tax.",
+      "Launches and every token page now show Trade on Stoa for live curves.",
+    ],
+    link: { href: "/launches", label: "Open Launches" },
+  },
+  {
     id: "stock-pages",
     date: "2026-11-17",
     title: "A page for every stock token",
