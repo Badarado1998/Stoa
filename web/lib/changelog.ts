@@ -12,6 +12,16 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "team-wallet",
+    date: "2026-11-18",
+    title: "Team wallet on the $STOA page",
+    tag: "$STOA",
+    items: [
+      "The $STOA page and docs now show Stoa's team wallet on fomo with its live balance. fomo's team tag requires the team to hold at least 0.5% of supply there; the team bought 6.8M $STOA on the Pons curve for it on 15 November and keeps at least 0.5% while the tag is active.",
+    ],
+    link: { href: "/token", label: "Open the $STOA page" },
+  },
+  {
     id: "maker-guide",
     date: "2026-11-18",
     title: "Become a maker: the full guide",

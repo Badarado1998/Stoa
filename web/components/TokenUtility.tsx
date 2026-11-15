@@ -228,6 +228,11 @@ function PricePanel() {
   );
 }
 
+// Stoa's team account on fomo (fomo.family, username @StoaDex). fomo's team tag needs the team to hold at least 0.5% of supply
+// there; the team bought 6.8M $STOA on the Pons curve for it on 15 Nov 2026 and keeps at least 0.5% while the tag is active.
+const TEAM_WALLET = "0xfe6f7c6e2ad2c3594fe7fb61c28c4499bbb83bf0" as Address;
+const TEAM_BUY_TX = "0xbf4ca2f6bff0c6124ebafe82eaca82faf873248e3d027322182efb60f49d7bf3";
+
 export default function TokenUtility() {
   const pub = usePublicClient({ chainId: net.chain.id });
   const live = !!(C.buyback && C.bonds && C.fees && C.timelock);
@@ -243,6 +248,7 @@ export default function TokenUtility() {
       { address: C.bonds!, abi: bondAbi, functionName: "totalBonded", chainId: net.chain.id },
       { address: C.bonds!, abi: bondAbi, functionName: "totalSlashed", chainId: net.chain.id },
       { address: STOA, abi: erc20Abi, functionName: "totalSupply", chainId: net.chain.id },
+      { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [TEAM_WALLET], chainId: net.chain.id },
     ] as const : [],
     query: { enabled: live, refetchInterval: 30_000 },
   });
@@ -252,6 +258,7 @@ export default function TokenUtility() {
   const burnedBuyback = v(1) as bigint | undefined, burnedAll = v(2) as bigint | undefined;
   const accU = v(3) as bigint | undefined, accW = v(4) as bigint | undefined, ts = v(5) as bigint | undefined;
   const bonded = v(6) as bigint | undefined, slashed = v(7) as bigint | undefined, supply = v(8) as bigint | undefined;
+  const team = v(9) as bigint | undefined;
   const px = usePrices(net, [net.tokens[1], net.tokens[2]]);
   const waitingUsd = accU !== undefined && accW !== undefined ? Number(accU) / 1e6 + (Number(accW) / 1e18) * (px(net.tokens[1])?.usd ?? 0) : undefined;
 
@@ -321,6 +328,14 @@ export default function TokenUtility() {
         <Cell label="UNBONDING DELAY" v="3 days" sub="Longer than the 48h timelock" />
       </div>
       {live && <BondPanel />}
+
+      <div className="panel pad">
+        <div className="rowx"><div className="lbl">TEAM WALLET · FOMO</div>{team !== undefined && supply ? <span className="chip live">{((Number(team) / Number(supply)) * 100).toFixed(2)}% of supply</span> : null}</div>
+        <p style={{ marginTop: 10 }}>
+          Stoa&apos;s team account on <a href="https://fomo.family" target="_blank" rel="noopener noreferrer">fomo</a>, @StoaDex, holds {team === undefined ? "…" : `${big(team)} $STOA`}. fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer">transaction</a>) and keeps at least 0.5% there while the tag is active.
+        </p>
+        <p className="note">Wallet: <a href={addressUrlOn(net, TEAM_WALLET)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{TEAM_WALLET}</a></p>
+      </div>
 
       <div className="panel pad">
         <div className="lbl">WHAT $STOA IS NOT</div>

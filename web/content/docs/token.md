@@ -42,6 +42,10 @@ The numbers are read from Robinhood Chain every 5 minutes and served for tracker
 | [`/api/stoa/total-supply`](https://stoadex.com/api/stoa/total-supply) | Total supply as a plain number |
 | [`/api/stoa/circulating-supply`](https://stoadex.com/api/stoa/circulating-supply) | Circulating supply as a plain number |
 
+## Team wallet
+
+Stoa's team account on [fomo](https://fomo.family), @StoaDex, holds $STOA at `0xfe6f7c6e2ad2c3594fe7fb61c28c4499bbb83bf0`. fomo gives a token's team a team tag, so holders on fomo see updates straight from the team, only if the team's fomo account holds at least 0.5% of supply. The team bought 6.8M $STOA (0.68%) on the Pons curve with 0.1 ETH on 15 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xbf4ca2f6bff0c6124ebafe82eaca82faf873248e3d027322182efb60f49d7bf3)) and keeps at least 0.5% there while the tag is active. The live balance is on the [$STOA page](https://stoadex.com/token).
+
 ## What $STOA is not
 
 - **Not a share of fees.** Protocol fees burn $STOA. Holders are not paid anything.
