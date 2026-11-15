@@ -125,6 +125,8 @@ contract ForkRobinhoodTokenTest is RouterHelper, SafeTestHelper, VenuesRobinhood
         if (!on) return vm.skip(true);
         BondRegistry reg = new BondRegistry(LIVE_TIMELOCK, IERC20(STOA), BOND_UNBOND_DELAY);
         uint256 amt = 1_000_000 ether;
+        // the holder's live balance moves with trading: give it exactly what the test bonds (real token contract)
+        deal(STOA, STOA_HOLDER, amt);
         vm.startPrank(STOA_HOLDER);
         IERC20(STOA).approve(address(reg), amt);
         reg.bond(amt); // refuses fee-on-transfer tokens: $STOA must arrive in full
