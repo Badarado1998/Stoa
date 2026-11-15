@@ -8,7 +8,10 @@ import { fmtAmt, isHop, describeRoute, type Route } from "@/lib/swap";
 
 // adapters' quote is not marked view (some venues simulate the swap), but it is only ever eth_call'ed here
 const adapterAbi = parseAbi(["function quote(address tokenIn, address tokenOut, uint256 amountIn) view returns (uint256)"]);
-const routerAbi = parseAbi(["function isAdapter(address) view returns (bool)"]);
+const routerAbi = parseAbi([
+  "function isAdapter(address) view returns (bool)",
+  "function quote(address,address,uint256) view returns ((uint256 amountOut, address mid, (address venue, bool isPool) leg1, (address venue, bool isPool) leg2))",
+]);
 const lc = (a: string) => a.toLowerCase();
 
 /** The swap screen's proof of "best price": what each venue the router uses would give for this exact amount, direct,
@@ -31,19 +34,27 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
   const a = lc(sell.address) === lc(NATIVE) ? net.wrapped : sell.address;
   const b = lc(buy.address) === lc(NATIVE) ? net.wrapped : buy.address;
   const quotes = useQuery({
-    // keyed on Stoa's own quote too: venue quotes refresh together with it (every 4s), so the two lists never drift apart
-    queryKey: ["venue-quotes", net.key, a, b, amt.toString(), out.toString(), live.data?.join()],
-    enabled: !!pub && !!live.data?.length && lc(a) !== lc(b),
+    // Stoa's own quote is read in the same multicall, so the venues and Stoa's fill below come from the same block
+    queryKey: ["venue-quotes", net.key, sell.address, buy.address, amt.toString(), live.data?.join()],
+    enabled: !!pub && !!router && !!live.data?.length && lc(a) !== lc(b),
     staleTime: 3_000,
+    refetchInterval: 4_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
       const vs = live.data!;
-      const res = await pub!.multicall({ contracts: vs.map((v) => ({ address: v, abi: adapterAbi, functionName: "quote" as const, args: [a, b, amt] as const })), allowFailure: true });
-      return vs.map((v, i) => ({ venue: v, name: net.venues[lc(v)] ?? "Venue", out: (res[i]?.result as bigint | undefined) ?? 0n }));
+      const res = await pub!.multicall({
+        contracts: [
+          { address: router!, abi: routerAbi, functionName: "quote" as const, args: [sell.address, buy.address, amt] as const },
+          ...vs.map((v) => ({ address: v, abi: adapterAbi, functionName: "quote" as const, args: [a, b, amt] as const })),
+        ] as never,
+        allowFailure: true,
+      }) as { result?: unknown }[];
+      const stoa = (res[0]?.result as { amountOut: bigint } | undefined)?.amountOut ?? 0n;
+      return { stoa, rows: vs.map((v, i) => ({ venue: v, name: net.venues[lc(v)] ?? "Venue", out: (res[i + 1]?.result as bigint | undefined) ?? 0n })) };
     },
   });
 
-  const all = (quotes.data ?? []).filter((r) => r.out > 0n).sort((x, y) => (y.out > x.out ? 1 : y.out < x.out ? -1 : 0));
+  const all = (quotes.data?.rows ?? []).filter((r) => r.out > 0n).sort((x, y) => (y.out > x.out ? 1 : y.out < x.out ? -1 : 0));
   // a venue quoting under half of the best has almost no liquidity for this pair: not a real alternative, and it would
   // make Stoa's edge look bigger than it is
   const rows = all.filter((r) => r.out * 2n >= all[0]?.out);
@@ -51,7 +62,8 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
   const thin = all.length - rows.length;
   const used = !isHop(route) && !route.leg1.isPool ? lc(route.leg1.venue) : null;
   const worst = rows[rows.length - 1];
-  const gain = out - worst.out;
+  const fill = quotes.data?.stoa || out; // same block as the venue quotes; the swap box's figure if the read failed
+  const gain = fill - worst.out;
   const d = buy.decimals, sym = buy.symbol;
   return (
     <div className="cmp">
@@ -59,7 +71,7 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
       <div className="det" style={{ marginTop: 6 }}>
         {(isHop(route) || route.leg1.isPool) && <>
           <span style={{ color: "var(--ink)", fontWeight: 600 }}>✓ {describeRoute(route, net.venues, net.tokens[1].symbol)}</span>
-          <span style={{ color: "var(--accent)", fontWeight: 600 }}>{fmtAmt(out, d)} {sym}</span></>}
+          <span style={{ color: "var(--accent)", fontWeight: 600 }}>{fmtAmt(fill, d)} {sym}</span></>}
         {rows.map((r) => {
           const on = lc(r.venue) === used;
           return [
