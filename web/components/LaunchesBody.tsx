@@ -52,7 +52,15 @@ export default function LaunchesBody() {
     try { await navigator.clipboard.writeText(url); setCopied(key); setTimeout(() => setCopied(null), 1600); } catch { /* clipboard blocked */ }
   }
 
-  const live = (q.data?.launches ?? []).filter((l) => !l.graduated);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"close" | "new" | "cap">("close");
+  const [near, setNear] = useState(false);
+  const needle = search.trim().toLowerCase();
+  const live = (q.data?.launches ?? [])
+    .filter((l) => !l.graduated)
+    .filter((l) => !near || l.progress >= 80)
+    .filter((l) => !needle || (l.symbol + " " + l.name + " " + l.token).toLowerCase().includes(needle))
+    .sort((a, b) => sort === "new" ? b.launchedAt - a.launchedAt : sort === "cap" ? (b.mcapUsd ?? 0) - (a.mcapUsd ?? 0) : b.progress - a.progress);
   const grads = (q.data?.launches ?? []).filter((l) => l.graduated);
   const shown = all ? live : live.slice(0, 20);
   const trade = (l: Launch) => `/trade?chain=robinhood&buy=${l.token}`;
@@ -65,12 +73,22 @@ export default function LaunchesBody() {
       </PageHead>
       {net.key !== "robinhood" && <div className="notice" style={{ marginBottom: 16 }}>Pons runs on Robinhood Chain. Swaps from this page switch you there.</div>}
 
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+        <input type="search" placeholder="Search name, ticker or address" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search launches"
+          style={{ flex: "1 1 220px", minWidth: 0, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--line)", background: "#fff", font: "inherit", fontSize: 14 }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {([["close", "Closest to graduation"], ["new", "Newest"], ["cap", "Market cap"]] as const).map(([k, label]) => (
+            <button key={k} type="button" className="chip" style={{ cursor: "pointer", border: 0, opacity: sort === k ? 1 : 0.55 }} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>
+          ))}
+          <button type="button" className="chip" style={{ cursor: "pointer", border: 0, opacity: near ? 1 : 0.55 }} aria-pressed={near} onClick={() => setNear(!near)}>80%+ only</button>
+        </div>
+      </div>
       <div className="panel" style={{ overflow: "hidden", marginBottom: 20 }}>
         <table className="tbl">
           <thead><tr><th>TOKEN</th><th>CURVE</th><th className="hm">MARKET CAP</th><th className="hm">CREATOR TAX</th><th className="hm">AGE</th><th /></tr></thead>
           <tbody>
             {q.isLoading && [0, 1, 2, 3, 4].map((i) => <tr key={i}><td colSpan={6}><Sk w={260} /></td></tr>)}
-            {!q.isLoading && !live.length && <tr><td colSpan={6} style={{ color: "var(--muted)" }}>{q.data?.error ?? "No curve has raised 0.05 ETH in the last few days."}</td></tr>}
+            {!q.isLoading && !live.length && <tr><td colSpan={6} style={{ color: "var(--muted)" }}>{q.data?.error ?? (needle || near ? "No launch matches." : "No curve has raised 0.05 ETH in the last few days.")}</td></tr>}
             {shown.map((l) => (
               <tr key={l.token}>
                 <td>
@@ -117,7 +135,7 @@ export default function LaunchesBody() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
             {grads.map((l) => <Link key={l.token} href={trade(l)} className="chip" title={l.name}>{l.symbol}</Link>)}
           </div>
-          <p className="note">Graduated tokens trade on their Uniswap V4 pool. If the swap screen offers to add the pool to the router, that is one small transaction anyone can send.</p>
+          <p className="note">Graduated tokens trade on their Uniswap V4 pool. Stoa&apos;s watcher adds each graduation pool to the router, usually within the hour; if the swap screen still offers to add it, that is one small transaction anyone can send.</p>
         </div>
       )}
 

@@ -1,8 +1,9 @@
-name: $STOA graduation watcher
+name: Pons graduation watcher ($STOA and every other launch)
 
-# Every 10 minutes: when $STOA graduates from its Pons bonding curve to a Uniswap V4 pool on Robinhood Chain,
-# register that pool on Stoa's V4 adapter so $STOA routes on stoadex.com right away. Does nothing until then, and
-# nothing once the pool is registered.
+# Every 10 minutes (GitHub runs it about every 40): when $STOA, or any other Pons launch, graduates from its bonding
+# curve to a Uniswap V4 pool on Robinhood Chain, register that pool on Stoa's V4 adapter so the token routes on
+# stoadex.com right away. Does nothing for pools already registered. Gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY
+# (about 0.000005 ETH per pool).
 on:
   schedule:
     - cron: "*/10 * * * *"
@@ -21,3 +22,11 @@ jobs:
           RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
           PRIVATE_KEY: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
         run: ./script/stoa-graduation.sh
+
+      - name: Register the pools of other recently graduated Pons tokens
+        working-directory: contracts
+        env:
+          RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+          PRIVATE_KEY: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+        # log scans need the public RPC's 10M-block range, so this step always reads from it
+        run: RPC=https://rpc.mainnet.chain.robinhood.com ./script/pons-graduations.sh

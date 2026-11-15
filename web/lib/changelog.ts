@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "pons-graduations-routed",
+    date: "2026-11-15",
+    title: "Every Pons graduation routes on Stoa",
+    tag: "Robinhood Chain",
+    items: [
+      "The graduation watcher now registers the Uniswap V4 pool of every Pons token that graduates, not just $STOA, so they trade on Stoa without anyone pressing Add pool. Only the pool Pons creates at graduation, at most 10 per run.",
+      "Launches: search by name, ticker or address; sort by closest to graduation, newest or market cap; an 80%+ filter.",
+    ],
+    link: { href: "/launches", label: "Open Launches" },
+  },
+  {
     id: "open-source-and-price-chart",
     date: "2026-11-15",
     title: "Source code public, $STOA chart, share links",
