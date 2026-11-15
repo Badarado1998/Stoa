@@ -51,6 +51,7 @@ Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same rout
 | StoaBuyback ($STOA buyback & burn, owns the FeeDistributor) | [`0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244`](https://robinhoodchain.blockscout.com/address/0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244) |
 | BondRegistry ($STOA maker bonds) | [`0x7eD43F104f9317578806De89e9d478D297d468D4`](https://robinhoodchain.blockscout.com/address/0x7eD43F104f9317578806De89e9d478D297d468D4) |
 | SpotlightMarket (weekly sponsored slots, paid to $STOA voters; deployed 15 Nov 2026 with CREATE2, [Sourcify](https://repo.sourcify.dev/4663/0xf3A995D4240c0F36da697E5292B294052a1706B5); week 1 opens 23 Nov 2026) | [`0xf3A995D4240c0F36da697E5292B294052a1706B5`](https://robinhoodchain.blockscout.com/address/0xf3A995D4240c0F36da697E5292B294052a1706B5) |
+| RugCover (creator-bonded cover for Pons tokens, paid to covered buyers; address fixed by CREATE2, live once its code is there) | [`0x64498e94fEaC6750885818e5EE7921042395B301`](https://robinhoodchain.blockscout.com/address/0x64498e94fEaC6750885818e5EE7921042395B301) |
 | $STOA | [`0x13E6993417616De724F2b337D65063f229e96718`](https://robinhoodchain.blockscout.com/address/0x13E6993417616De724F2b337D65063f229e96718) |
 | Admin Safe (2 of 3) | [`0xa1a495484536c52046d07209C60059cf9613D386`](https://robinhoodchain.blockscout.com/address/0xa1a495484536c52046d07209C60059cf9613D386) |
 | Timelock (48h) | [`0xAC75133729d6B5d615aA696d0828dC31fcB83ed8`](https://robinhoodchain.blockscout.com/address/0xAC75133729d6B5d615aA696d0828dC31fcB83ed8) |

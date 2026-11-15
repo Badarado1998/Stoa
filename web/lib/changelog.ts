@@ -12,6 +12,20 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    // ship date: set to the day the web goes live, right after the RugCover deploy
+    id: "rug-cover",
+    date: "2026-11-19",
+    title: "Rug Cover: buy Pons tokens with their creator's ETH behind them",
+    tag: "Robinhood Chain",
+    items: [
+      "A Pons token's creator can bond 0.05 to 1 ETH behind a promise not to sell or move the tokens in their wallet for 7 days. The floor is the wallet's whole balance when the cover opens.",
+      "Buy a Covered token with ETH on Trade and tick \"Buy with Rug Cover\" (+1%). If the creator's wallet drops below its floor before the bond is released, anyone can trigger the breach and you claim the ETH you spent from the bond.",
+      "$STOA holders can lock as backers and receive 90% of creator fees and forfeited bonds in ETH. Every buyer premium buys $STOA and burns it.",
+      "Covered badges on Trade, Launches and Tokens; each Pons token's page shows its cover, a breach button, and what the creator wallet bought at launch and still holds.",
+    ],
+    link: { href: "/cover", label: "Open Rug Cover" },
+  },
+  {
     id: "wrapped",
     date: "2026-11-16",
     title: "Stoa Wrapped: your swaps as a trading card",

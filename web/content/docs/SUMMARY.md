@@ -26,6 +26,7 @@
 * [$STOA](token.md)
 * [How to buy $STOA](buy-stoa.md)
 * [Spotlight](spotlight.md)
+* [Rug Cover](rug-cover.md)
 
 ## Run a pool
 

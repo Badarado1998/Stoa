@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useCoverLive } from "@/lib/cover";
 import { useQuery } from "@tanstack/react-query";
 import { BaseError, encodeFunctionData, erc20Abi, parseUnits, zeroAddress, type Address, type Hash } from "viem";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
@@ -341,6 +342,17 @@ export default function TokenUtility() {
       </div>
 
       <div className="panel pad">
+        <div className="rowx"><div className="lbl">4 · HOLDERS BACK RUG COVER</div><CoverStatus /></div>
+        <p style={{ marginTop: 10 }}>
+          Pons creators bond ETH behind a promise not to sell or move the tokens in their wallet, and pay a fee. Holders who lock $STOA as backers receive 90% of those fees and of bonds forfeited in a breach, in ETH, over 7 days. Locked $STOA never pays a claim. Every buyer premium buys $STOA and burns it.
+        </p>
+        <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <Link className="cta" href="/cover">Open Rug Cover</Link>
+          <Link className="note" style={{ marginTop: 0 }} href="/docs/rug-cover">Rules and risks</Link>
+        </div>
+      </div>
+
+      <div className="panel pad">
         <div className="rowx"><div className="lbl">TEAM WALLET · FOMO</div>{team !== undefined && supply ? <span className="chip live">{((Number(team) / Number(supply)) * 100).toFixed(2)}% of supply</span> : null}</div>
         <p style={{ marginTop: 10 }}>
           Stoa&apos;s team account on <a href="https://fomo.family" target="_blank" rel="noopener noreferrer">fomo</a>, @StoaDex, holds {team === undefined ? "…" : `${big(team)} $STOA`}. fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer">transaction</a>) and keeps at least 0.5% there while the tag is active.
@@ -352,7 +364,7 @@ export default function TokenUtility() {
         <div className="lbl">WHAT $STOA IS NOT</div>
         <ul className="list">
           <li>A share of fees <b>Fees burn $STOA; holders are not paid from fees</b></li>
-          <li>A promised yield <b>Spotlight pays voters only from projects&apos; bids</b></li>
+          <li>A promised yield <b>Spotlight pays voters only from projects&apos; bids; Rug Cover backers only from creators</b></li>
           <li>Audited <b>Contracts are verified, not yet audited</b></li>
         </ul>
         <p className="note">Contracts: <a href={addressUrlOn(net, C.buyback ?? zeroAddress)} target="_blank" rel="noopener noreferrer">StoaBuyback</a> · <a href={addressUrlOn(net, C.bonds ?? zeroAddress)} target="_blank" rel="noopener noreferrer">BondRegistry</a> · <a href={addressUrlOn(net, STOA)} target="_blank" rel="noopener noreferrer">$STOA</a>. How it works in detail: <Link href="/docs/token">docs</Link>.</p>
@@ -433,4 +445,10 @@ function BondPanel() {
       </p>
     </div>
   );
+}
+
+/** live or not yet: Rug Cover switches on once its contract's code is at its CREATE2 address */
+function CoverStatus() {
+  const live = useCoverLive();
+  return <span className="chip live">{live ? "Live" : "Deploying"}</span>;
 }

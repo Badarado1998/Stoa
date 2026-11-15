@@ -20,5 +20,6 @@
   "stoaBuyback": "0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244",
   "ponsAdapter": "0x58c2C83b66088B57B9dd487Ba1090992Bc9eEbe0",
   "spotlightMarket": "0xf3A995D4240c0F36da697E5292B294052a1706B5",
-  "spotlightStart": 1795392000
+  "spotlightStart": 1795392000,
+  "rugCover": "0x64498e94fEaC6750885818e5EE7921042395B301"
 }

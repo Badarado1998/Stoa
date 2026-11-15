@@ -18,6 +18,8 @@ import { useNet, useWalletModal } from "./Providers";
 import { SpotlightPicks } from "./SpotlightStrip";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
+import { useCoverOffer } from "./CoverTrade";
+import { COVER, coverAbi, explainCover, useCoverLive, useOpenTokens } from "@/lib/cover";
 
 type Quote = { out: bigint; route: Route | null; at: number; impact: number } | null;
 const IMPACT_WARN = 3; // %
@@ -83,7 +85,7 @@ function TradeOn({ net }: { net: Net }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   // the last confirmed swap, offered as a shareable link that carries the trader's referral
-  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string } | null>(null);
+  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
   const [unlimited, setUnlimited] = useState(false); // approve only the swap amount unless the user opts in
   const [ackToken, setAckToken] = useState(false);
@@ -96,6 +98,10 @@ function TradeOn({ net }: { net: Net }) {
   const usdOf = usePrices(net, [sell, buy]);
   const sellUsd = (usdOf(sell)?.usd ?? 0) * (Number(amount) || 0);
   const wrongChain = isConnected && chainId !== chain.id;
+  // Rug Cover: a covered ETH buy goes through the cover contract, which swaps through the router for the buyer
+  const cover = useCoverOffer({ net, sell, buy, amt, address, onUseEth: () => pick("sell", net.tokens[0]) });
+  const coverLive = useCoverLive() && net.key === "robinhood";
+  const coveredSet = useOpenTokens(coverLive);
 
   // balances
   const native = useBalance({ address, chainId: chain.id, query: { enabled: !!address, refetchInterval: 10_000 } });
@@ -257,7 +263,7 @@ function TradeOn({ net }: { net: Net }) {
     }
   }
 
-  async function run(label: string, fn: () => Promise<Hash>, onOk?: (r: TransactionReceipt, hash: Hash) => void) {
+  async function run(label: string, fn: () => Promise<Hash>, onOk?: (r: TransactionReceipt, hash: Hash) => void, why: (e: unknown) => string = (e) => explain(e, G)) {
     if (!pub) return;
     setBusy(label); setMsg(null); setDone(null);
     try {
@@ -269,7 +275,7 @@ function TradeOn({ net }: { net: Net }) {
       void native.refetch(); void sellBal.refetch(); void buyBal.refetch(); void allowance.refetch();
       return true;
     } catch (e) {
-      setMsg({ ok: false, text: explain(e, G) });
+      setMsg({ ok: false, text: why(e) });
       return false;
     } finally {
       setBusy(null);
@@ -285,6 +291,36 @@ function TradeOn({ net }: { net: Net }) {
     }
     if (kind === "wrap") return run("Wrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "deposit", value: amt, chainId: chain.id }));
     if (kind === "unwrap") return run("Unwrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "withdraw", args: [amt], chainId: chain.id }));
+
+    if (cover.on) {
+      if (!cover.ok) return;
+      const ok = await run("Covered buy", async () => {
+        const fresh = await getQuote();
+        if (!fresh?.route) throw new Error("No route for this swap right now.");
+        if (fresh.impact >= IMPACT_BLOCK && !ackImpact) throw new Error(`Price impact is now ${fresh.impact.toFixed(1)}%. Confirm the high price impact to continue.`);
+        setQuote(fresh);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
+        const p = swapParams(sell, buy, fresh.route, amt, minOut(fresh.out, slip), address!, deadline, referrer ?? zeroAddress);
+        const premium = (amt * BigInt(cover.term!.premiumBps)) / 10_000n;
+        const value = amt + premium;
+        let gas: bigint | undefined;
+        try {
+          const est = await pub!.estimateContractGas({ address: COVER!, abi: coverAbi, functionName: "buyCovered", args: [p], value, account: address! });
+          gas = (est * 13n) / 10n + 50_000n;
+        } catch { /* the wallet estimates; a revert shows up there */ }
+        return writeContractAsync({ address: COVER!, abi: coverAbi, functionName: "buyCovered", args: [p], value, gas, chainId: chain.id });
+      }, (r, hash) => {
+        let paid = amt, got: bigint | undefined;
+        for (const l of r.logs) {
+          if (l.address.toLowerCase() !== CONTRACTS.router!.toLowerCase()) continue;
+          try { const ev = decodeEventLog({ abi: [routedEvent], data: l.data, topics: l.topics }); paid = ev.args.amountIn; got = ev.args.amountOut; break; } catch { /* another event */ }
+        }
+        cover.refetch();
+        if (got !== undefined) setDone({ hash, net: net.key, symIn: sell.symbol, symOut: buy.symbol, inTxt: fmtAmt(paid, sell.decimals), outTxt: fmtAmt(got, buy.decimals), covered: true });
+      }, explainCover);
+      if (ok) { setAmount(""); setAckImpact(false); }
+      return;
+    }
 
     const ok = await run("Swap", async () => {
       const fresh = await getQuote(); // re-quote right before signing
@@ -325,11 +361,13 @@ function TradeOn({ net }: { net: Net }) {
   else if (wrongChain) label = `Switch to ${chain.name}`;
   else if (!deployed && kind !== "wrap" && kind !== "unwrap") { label = "Opens at launch"; disabled = true; }
   else if (isPaused && kind !== "wrap" && kind !== "unwrap") { label = "Swaps paused"; disabled = true; }
-  else if (sBal !== undefined && amt > sBal) { label = `Not enough ${sell.symbol}`; disabled = true; }
+  else if (sBal !== undefined && amt + (cover.on ? cover.premium : 0n) > sBal) { label = `Not enough ${sell.symbol}`; disabled = true; }
   else if (quoting && !quote) { label = "Finding the best price…"; disabled = true; }
   else if (noRoute || !quote) { label = "No route for this pair"; disabled = true; }
   else if (risky && !ackToken) { label = "Confirm the token warning"; disabled = true; }
   else if (quote.impact >= IMPACT_BLOCK && !ackImpact) { label = "Confirm high price impact"; disabled = true; }
+  else if (cover.on && !cover.ok) { label = "Not covered: untick Rug Cover to swap"; disabled = true; }
+  else if (cover.on) label = `Buy with cover · pay ${fmt(amt + cover.premium, 18, 6)} ETH`;
   else if (needApprove) label = unlimited ? `Approve ${sell.symbol}` : `Approve ${fmt(amt, sell.decimals, 4)} ${sell.symbol}`;
   else if (kind === "wrap") label = `Wrap ${G}`;
   else if (kind === "unwrap") label = `Unwrap ${W}`;
@@ -387,7 +425,7 @@ function TradeOn({ net }: { net: Net }) {
           <div className="row" style={{ position: "relative" }}>
             <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} onChange={(e) => { setMsg(null); setDone(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
             <TokenBtn t={sell} onClick={() => setMenu(menu === "sell" ? null : "sell")} />
-            {menu === "sell" && <TokenMenu net={net} tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
+            {menu === "sell" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
           {sellUsd > 0 && <div className="usd">≈ {fmtUsd(sellUsd)}</div>}
         </div>
@@ -399,7 +437,7 @@ function TradeOn({ net }: { net: Net }) {
               {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => setMenu(menu === "buy" ? null : "buy")} />
-            {menu === "buy" && <TokenMenu net={net} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
+            {menu === "buy" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
         </div>
@@ -412,9 +450,11 @@ function TradeOn({ net }: { net: Net }) {
             {kind !== "wrap" && kind !== "unwrap" && <><span>Protocol fee</span><span>2 bps</span>
               <span>Price impact</span><span style={{ color: quote.impact >= IMPACT_WARN ? "#B4532A" : undefined }}>{quote.impact < 0.01 ? "< 0.01" : quote.impact.toFixed(2)}%</span>
               <span>Minimum received</span><span>{fmtAmt(minOut(quote.out, slip), buy.decimals)} {buy.symbol}</span></>}
+            {cover.on && <><span>Rug Cover premium</span><span>{fmtAmt(cover.premium, 18)} ETH, burned as $STOA</span></>}
             {referrer && <><span>Referred by</span><span>{referrer.slice(0, 6)}…{referrer.slice(-4)}</span></>}
           </div>
         )}
+        {cover.block}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
           <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} />
         )}
@@ -467,6 +507,7 @@ function TradeOn({ net }: { net: Net }) {
             <div className="sharecard">
               <div className="rowx"><span className="lbl">SWAP CONFIRMED</span><a className="lbl" href={txUrl(done.hash)} target="_blank" rel="noopener noreferrer">VIEW ↗</a></div>
               <div className="sc-amt">{done.inTxt} {done.symIn} → <b>{done.outTxt} {done.symOut}</b></div>
+              {done.covered && <p className="note" style={{ marginTop: 4 }}>Covered: if the creator&apos;s wallet drops below its floor before release, claim your ETH on <a href="/cover">Rug Cover</a>.</p>}
               <div className="sc-btns">
                 <a className="sc-x" href={post} target="_blank" rel="noopener noreferrer">Share on X</a>
                 <button type="button" className="ghost" onClick={async () => { if ((await shareOrCopy(link, text)) === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1600); } }}>{copied ? "Link copied" : "Share link"}</button>
@@ -501,7 +542,7 @@ function TokenBtn({ t, onClick }: { t: Token; onClick: () => void }) {
   return <button className="tok" type="button" aria-haspopup="listbox" onClick={onClick}><TokenIcon t={t} />{t.symbol}</button>;
 }
 
-function TokenMenu({ net, tokens, onPick, onImport, onClose }: { net: Net; tokens: Token[]; onPick: (t: Token) => void; onImport: (a: string) => void; onClose: () => void }) {
+function TokenMenu({ net, tokens, covered, onPick, onImport, onClose }: { net: Net; tokens: Token[]; covered?: Set<string>; onPick: (t: Token) => void; onImport: (a: string) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [sheet, setSheet] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -523,7 +564,7 @@ function TokenMenu({ net, tokens, onPick, onImport, onClose }: { net: Net; token
       <input placeholder="Search or paste address" value={q} onChange={(e) => setQ(e.target.value.trim())} aria-label="Search token" autoFocus={!sheet} />
       <div className="tokl">
         {net.key === "robinhood" && !q && <SpotlightPicks onImport={onImport} />}
-        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small className={t.tone === "bridged" ? "vf" : undefined}>{t.address === NATIVE ? "Native" : t.name}</small></span>{(() => { const p = priceOf(t); return p ? <span className="tokp"><b>{fmtUsd(p.usd)}</b>{p.ch24 !== undefined && <small className={p.ch24 >= 0 ? "up" : "dn"}>{p.ch24 >= 0 ? "+" : ""}{p.ch24.toFixed(1)}%</small>}</span> : null; })()}</button>)}
+        {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}{covered?.has(t.address.toLowerCase()) && <span className="chip cov">Covered</span>}</b><small className={t.tone === "bridged" ? "vf" : undefined}>{t.address === NATIVE ? "Native" : t.name}</small></span>{(() => { const p = priceOf(t); return p ? <span className="tokp"><b>{fmtUsd(p.usd)}</b>{p.ch24 !== undefined && <small className={p.ch24 >= 0 ? "up" : "dn"}>{p.ch24 >= 0 ? "+" : ""}{p.ch24.toFixed(1)}%</small>}</span> : null; })()}</button>)}
         {list.length === 0 && isAddress(q) && <button type="button" onClick={() => onImport(q)}>Import {q.slice(0, 6)}…{q.slice(-4)}</button>}
         {list.length === 0 && !isAddress(q) && <p className="note" style={{ padding: "0 8px" }}>Paste a token address to import it.</p>}
       </div>

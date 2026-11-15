@@ -14,6 +14,7 @@
 - [Launches](https://stoadex.com/launches) shows every Pons curve that raised at least 0.05 ETH in the last few days, with curve progress, market cap, creator tax and age, plus recent graduations. Search by name, ticker or address, sort by closest to graduation, newest or market cap.
 - Every launch has its own page, `stoadex.com/launches/<token address>` (tap a token on Launches): curve progress, price, market cap and creator tax, refreshed every 10 seconds, with a Trade or Pons button. Its link card on X and Telegram shows the token's logo and progress.
 - On the swap screen, pick the token from the list (live launches are in it once the curve adapter is live) or paste its contract address.
+- Tokens marked **Covered** have a creator who bonded ETH behind their wallet with [Rug Cover](rug-cover.md). Buy them with ETH and tick "Buy with Rug Cover" to be covered.
 
 ## Costs
 

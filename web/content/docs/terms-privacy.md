@@ -14,6 +14,8 @@ The terms of use for the Stoa interface and how it handles your data.
 
 **Spotlight.** Tokens shown under Spotlight are sponsored: their projects paid for the slot and $STOA holders voted for them. Stoa does not review them. What Spotlight voters receive depends only on what projects bid; nothing is promised, and locking $STOA is at your own risk. See [Spotlight](spotlight.md).
 
+**Rug Cover.** Rug Cover is a smart contract with fixed rules, not insurance, and nobody guarantees a payout. A covered buyer can claim only what the contract's rules allow, from the creator's bond, and only if the creator's own wallet drops below its floor before the bond is released. Other wallets, other sellers and price moves are not covered. Backing Rug Cover with $STOA earns only what creators pay or forfeit, which can be nothing. See [Rug Cover](rug-cover.md).
+
 **No advice.** Nothing on this site is financial, investment, legal or tax advice.
 
 **Where you may not use it.** Do not use Stoa if you are located in, or are a resident of, a country or region under comprehensive sanctions, if you are on a sanctions list, or if using it is illegal where you are. You are responsible for following the laws that apply to you.

@@ -14,6 +14,7 @@ import { CA } from "@/lib/stoaAddress";
 import { SITE } from "@/lib/chain";
 import { ponsCurveAbi } from "@/lib/ponsLaunch";
 import { shareOrCopy, useRefFromUrl } from "@/lib/share";
+import { useCoverLive, useOpenTokens } from "@/lib/cover";
 
 const PONS = (a: string) => `https://ponsfamily.com/launchpad/${a}`;
 const usd = (v: number | null) => (v === null ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
@@ -68,9 +69,13 @@ export default function LaunchesBody() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"close" | "new" | "cap">("close");
   const [near, setNear] = useState(false);
+  const [onlyCov, setOnlyCov] = useState(false);
+  const coverLive = useCoverLive();
+  const covered = useOpenTokens(coverLive);
   const needle = search.trim().toLowerCase();
   const live = liveRows
     .filter((l) => !near || l.progress >= 80)
+    .filter((l) => !onlyCov || covered.has(l.token.toLowerCase()))
     .filter((l) => !needle || (l.symbol + " " + l.name + " " + l.token).toLowerCase().includes(needle))
     .sort((a, b) => sort === "new" ? b.launchedAt - a.launchedAt : sort === "cap" ? (b.mcapUsd ?? 0) - (a.mcapUsd ?? 0) : b.progress - a.progress);
   const grads = (q.data?.launches ?? []).filter((l) => l.graduated);
@@ -94,6 +99,7 @@ export default function LaunchesBody() {
             <button key={k} type="button" className="chip" style={{ cursor: "pointer", border: 0, opacity: sort === k ? 1 : 0.55 }} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>
           ))}
           <button type="button" className="chip" style={{ cursor: "pointer", border: 0, opacity: near ? 1 : 0.55 }} aria-pressed={near} onClick={() => setNear(!near)}>80%+ only</button>
+          {coverLive && <button type="button" className="chip" style={{ cursor: "pointer", border: 0, opacity: onlyCov ? 1 : 0.55 }} aria-pressed={onlyCov} onClick={() => setOnlyCov(!onlyCov)}>Covered only</button>}
         </div>
       </div>
       <div className="panel" style={{ overflow: "hidden", marginBottom: 20 }}>
@@ -101,7 +107,7 @@ export default function LaunchesBody() {
           <thead><tr><th>TOKEN</th><th>CURVE</th><th className="hm">MARKET CAP</th><th className="hm">CREATOR TAX</th><th className="hm">AGE</th><th /></tr></thead>
           <tbody>
             {q.isLoading && [0, 1, 2, 3, 4].map((i) => <tr key={i}><td colSpan={6}><Sk w={260} /></td></tr>)}
-            {!q.isLoading && !live.length && <tr><td colSpan={6} style={{ color: "var(--muted)" }}>{q.data?.error ?? (needle || near ? "No launch matches." : "No curve has raised 0.05 ETH in the last few days.")}</td></tr>}
+            {!q.isLoading && !live.length && <tr><td colSpan={6} style={{ color: "var(--muted)" }}>{q.data?.error ?? (needle || near || onlyCov ? "No launch matches." : "No curve has raised 0.05 ETH in the last few days.")}</td></tr>}
             {shown.map((l) => (
               <tr key={l.token}>
                 <td>
@@ -112,7 +118,7 @@ export default function LaunchesBody() {
                       {l.logo && <img src={l.logo} alt="" width={30} height={30} loading="lazy" style={{ position: "absolute", inset: 0, width: 30, height: 30, objectFit: "cover" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
                     </span>
                     <Link href={`/launches/${l.token}`} style={{ minWidth: 0, color: "inherit" }}>
-                      <div style={{ fontWeight: 600 }}>{l.symbol}{l.token.toLowerCase() === CA.toLowerCase() && <span className="chip live" style={{ marginLeft: 6 }}>Stoa&apos;s token</span>}</div>
+                      <div style={{ fontWeight: 600 }}>{l.symbol}{l.token.toLowerCase() === CA.toLowerCase() && <span className="chip live" style={{ marginLeft: 6 }}>Stoa&apos;s token</span>}{covered.has(l.token.toLowerCase()) && <span className="chip cov">Covered</span>}</div>
                       <div style={{ fontSize: 12.5, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>{l.name}</div>
                     </Link>
                   </div>
@@ -146,7 +152,7 @@ export default function LaunchesBody() {
         <div className="panel pad" style={{ marginBottom: 20 }}>
           <div className="lbl">RECENTLY GRADUATED · NOW ON UNISWAP V4</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-            {grads.map((l) => <Link key={l.token} href={`/launches/${l.token}`} className="chip" title={l.name}>{l.symbol}</Link>)}
+            {grads.map((l) => <Link key={l.token} href={`/launches/${l.token}`} className="chip" title={l.name}>{l.symbol}{covered.has(l.token.toLowerCase()) && " · Covered"}</Link>)}
           </div>
           <p className="note">Graduated tokens trade on their Uniswap V4 pool. Stoa&apos;s watcher adds each graduation pool to the router, usually within the hour; if the swap screen still offers to add it, that is one small transaction anyone can send.</p>
         </div>
@@ -158,7 +164,7 @@ export default function LaunchesBody() {
           : <>Connect a wallet and the links you share from this page carry your referral (10% of Stoa&apos;s protocol fee on the swaps they bring).</>}
       </p>
       <p className="note">
-        <Link href="/docs/trade-pons">How Pons trading on Stoa works</Link>. Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Progress and market cap update every 10 seconds straight from the curves; the list itself refreshes every minute{q.data?.scanned ? `, from the last ${q.data.scanned.toLocaleString()} launches` : ""}. Tap a token for its own page and link card.
+        <Link href="/docs/trade-pons">How Pons trading on Stoa works</Link>. Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Progress and market cap update every 10 seconds straight from the curves; the list itself refreshes every minute{q.data?.scanned ? `, from the last ${q.data.scanned.toLocaleString()} launches` : ""}. Tap a token for its own page and link card.{coverLive && <> Covered: the creator bonded ETH behind its wallet on <Link href="/cover">Rug Cover</Link>.</>}
       </p>
     </>
   );

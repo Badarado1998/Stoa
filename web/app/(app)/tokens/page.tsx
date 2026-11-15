@@ -4,6 +4,7 @@ import { PageHead } from "@/components/ui";
 import { NETS } from "@/lib/networks";
 import { listedTokens } from "@/lib/tokenInfo";
 import SpotlightStrip from "@/components/SpotlightStrip";
+import { CoveredStrip } from "@/components/CoverPanel";
 
 const description = "Every token Stoa lists on Robinhood Chain and Elysium, each with its live price and Stoa's best route for it.";
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function TokensPage() {
         Every token Stoa lists, by network. Each page shows the live price and the best route on Stoa right now. Listed tokens are not reviewed by Stoa: check the contract address before you buy.
       </PageHead>
       <SpotlightStrip />
+      <CoveredStrip />
       {nets.map((n) => {
         const ts = all.filter((x) => x.net.key === n.key);
         if (!ts.length) return null;

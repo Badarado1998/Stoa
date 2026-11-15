@@ -41,21 +41,26 @@ Straight from the chain: every swap that settles through a Stoa router emits one
 
 ### What does $STOA do?
 
-Three things, all on Robinhood Chain:
+Four things, all on Robinhood Chain:
 
 1. **Protocol fees buy and burn it.** From 17 November 2026, the 2 bps protocol fee goes to StoaBuyback, a contract whose only way to move fees out is to swap them into $STOA and burn it. A keeper runs it every Monday.
 2. **Makers bond it.** A maker that quotes a Stoa pool on Robinhood Chain bonds $STOA. A slashed bond is burned, not paid to anyone.
 3. **Holders vote in Spotlight.** From 23 November 2026, projects bid ETH for three sponsored slots a week, and holders who lock $STOA and vote for the winners are paid 90% of those bids. The other 10% buys $STOA and burns it.
+4. **Holders back Rug Cover.** Holders who lock $STOA in Rug Cover receive 90% of the fees and forfeited bonds that Pons creators pay, in ETH. Every buyer premium buys $STOA and burns it.
 
 Details on [$STOA](token.md).
 
 ### Do holders earn a share of fees?
 
-No. Fees burn $STOA instead of paying holders, and bonding earns nothing by itself. Holders who lock and vote in [Spotlight](spotlight.md) can be paid ETH, but that ETH comes from projects' bids, not from Stoa's fees, and depends on what projects bid each week. Nothing is promised.
+No. Fees burn $STOA instead of paying holders, and bonding earns nothing by itself. Holders who lock and vote in [Spotlight](spotlight.md) can be paid ETH, but that ETH comes from projects' bids, not from Stoa's fees, and depends on what projects bid each week. Rug Cover backers are paid only from what Pons creators pay or forfeit, never from buyers' premiums or Stoa's fees. Nothing is promised.
 
 ### What is Spotlight?
 
 A weekly market for Stoa's sponsored slots. Projects bid ETH, $STOA holders lock and vote, and the three largest bids with at least 1M $STOA of votes win. Their voters share 90% of the bids; 10% is burned; losing bids are refunded. Winners show on Trade, Launches and Tokens for a week, marked "Sponsored". Rules and risks: [Spotlight](spotlight.md).
+
+### What is Rug Cover?
+
+A Pons token's creator bonds ETH behind a promise not to sell or move the tokens in their wallet. If you buy the token on Stoa with cover (1% more) and the creator's wallet drops below its promise before the bond is released, you claim back the ETH you spent, from the bond. It watches only the creator's own wallet, and it is a contract rule, not insurance. Rules and limits: [Rug Cover](rug-cover.md).
 
 ### Does the team hold $STOA?
 

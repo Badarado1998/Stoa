@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CoverChip } from "@/components/CoverPanel";
 import { notFound, redirect } from "next/navigation";
 import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
@@ -61,7 +62,7 @@ export default async function TokenPage({ params }: P) {
             {token.logo ? <img src={token.logo} alt="" width={52} height={52} style={{ borderRadius: 999, objectFit: "cover", background: "#EAF1FB" }} />
               : <span style={{ width: 52, height: 52, borderRadius: 999, background: "#EAF1FB", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "var(--accent)" }}>{sym.slice(0, 1)}</span>}
             <div>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{sym}</div>
+              <div style={{ fontSize: 24, fontWeight: 700 }}>{sym}{net.key === "robinhood" && <CoverChip token={token.address} />}</div>
               <div className="note" style={{ marginTop: 2 }}>{t?.name && t.name !== sym ? `${t.name} · ` : ""}{net.name}{t?.launchpad ? ` · ${t.launchpad} launch` : ""}</div>
             </div>
           </div>
@@ -92,7 +93,7 @@ export default async function TokenPage({ params }: P) {
           </div>
           <div className="notice" style={{ marginTop: 16, marginBottom: 0 }}>
             Listed because it trades on {net.name}. Not reviewed by Stoa: anyone can create a token with any name, so check the contract address before you buy.
-            {t?.launchpad === "Pons" && <> Curve progress and creator tax: <Link href={`/launches/${token.address}`}>{sym} on Launches</Link>.</>}
+            {t?.launchpad === "Pons" && <> Curve progress, creator tax and Rug Cover: <Link href={`/launches/${token.address}`}>{sym} on Launches</Link>.</>}
           </div>
         </div>
 

@@ -6,7 +6,7 @@ import WalletButton from "./WalletButton";
 import NetSwitch from "./NetSwitch";
 
 const TABS = [["/trade", "Trade"], ["/pools", "Pools"], ["/launches", "Launches"], ["/earn", "Earn"], ["/curators", "Curators"], ["/token", "$STOA"], ["/build", "Build"]] as const;
-const MENU = [["/", "Walk the Stoa", ""], ["/trade", "Trade", "I"], ["/pools", "Pools", ""], ["/launches", "Launches", ""], ["/earn", "Earn", "II"], ["/curators", "Curators", "III"], ["/build", "Build", "IV"], ["/token", "$STOA", ""], ["/spotlight", "Spotlight", ""], ["/referrals", "Referrals", ""], ["/portfolio", "Portfolio", ""], ["/wrapped", "Wrapped", ""], ["/docs", "Docs", ""]] as const;
+const MENU = [["/", "Walk the Stoa", ""], ["/trade", "Trade", "I"], ["/pools", "Pools", ""], ["/launches", "Launches", ""], ["/earn", "Earn", "II"], ["/curators", "Curators", "III"], ["/build", "Build", "IV"], ["/token", "$STOA", ""], ["/spotlight", "Spotlight", ""], ["/cover", "Rug Cover", ""], ["/referrals", "Referrals", ""], ["/portfolio", "Portfolio", ""], ["/wrapped", "Wrapped", ""], ["/docs", "Docs", ""]] as const;
 
 export default function Header({ extra }: { extra?: ReactNode }) {
   const path = usePathname();

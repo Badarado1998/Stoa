@@ -2,6 +2,44 @@
 
 A review of the deployed contracts by the Stoa team, published in full. **This is not an external audit.** An independent audit is still planned before caps rise or vaults open.
 
+## Update, 15 November 2026: RugCover
+
+A review of the Rug Cover contract before its deployment.
+
+| Item | Value |
+| --- | --- |
+| Contract | RugCover: Pons creators bond ETH behind their wallet's balance; covered buyers claim from the bond after a breach; $STOA backers earn creator fees and forfeited bonds |
+| Code | [contracts/src/RugCover.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/RugCover.sol), about 665 lines of Solidity 0.8.28 |
+| Address | `0x64498e94fEaC6750885818e5EE7921042395B301` on Robinhood Chain (CREATE2) |
+
+**Method.** Line-by-line reading against a list of ways to drain or game the cover, each with its own test: a creator buying their own cover from other wallets and dumping, a floor below the creator's balance, moving tokens out instead of selling, a dump in the last minute of a term, buying more and selling only the extra, selling more cover than the bond, a wallet that is not the Pons creator, a backer locking just before income lands, a covered buy routed to another token or recipient, a reentrant claim, parameter changes on open terms, and pause and emergency exits. Payouts are fixed in ETH at purchase, so no price feed can be pushed. 32 unit, attack and fuzz tests, including a fuzz test (512 runs) that a creator who rugs their own cover always loses money, and one that every wei that comes in leaves to a buyer, a creator, a backer, the breach caller or the burn, with under 100 wei of rounding left behind; a fork test with a real Pons token's creator on the live router (open, covered buy, dump, breach, claim, burn); Slither 0.11 with 102 detectors. All pass.
+
+**Result.** No issue allows anyone to take ETH or $STOA. Nobody, owner and guardian included, can send funds anywhere except to a buyer, a creator, a backer, the breach caller or the burn. Two low findings and four informational.
+
+### L-8 The keeper sets the burn's price limit
+
+The same as L-4 and L-6: `burn` takes its minimum output from the keeper, so a leaked keeper key could burn the pot at a bad price. The pot holds premiums and 10% of creator income, and can only become burned $STOA.
+
+### L-9 The guardian can pause new covers indefinitely
+
+The guardian can pause, and only the timelock can unpause, so a misused guardian key could stop new covers, covered buys and locks for at least 48 hours. Claims, breaches, releases, unlocks and ETH claims keep working during a pause, and backers can take all their $STOA out at once.
+
+### I-12 Only the creator's own wallet is watched (by design)
+
+A creator who spread tokens to other wallets before opening a cover can still sell those. The app says so wherever cover is offered, and each token's page shows what the creator wallet bought in the token's first minute and how much of it is gone.
+
+### I-13 A creator can buy their own cover (by design)
+
+Cover sold on a term never exceeds 75% of the bond, and the breach bounty is at most 2%, so a creator who covers themselves and dumps always forfeits at least 23% of the bond, plus the fee, the premiums and Pons' fees. At least 10% of the forfeited part is burned whoever the backers are. The fuzz test above checks the loss.
+
+### I-14 Cover follows the purchase, not the balance (by design)
+
+A buyer who already sold is still paid after a breach. Claims need no oracle and no token handover, and the money always comes from the bond of the creator who broke the promise.
+
+### I-15 Slither results on RugCover (false positives or by design)
+
+"Sends ETH to arbitrary user": claims, releases, credits and reward claims send only the caller's own entitlement, to an address the caller chooses. "Reentrancy" in `buyCovered` and `burn`: both are `nonReentrant`, update state before the call, and call only the trusted router. "Timestamp": terms and streams are measured in days. "Assembly": `creatorOf` reads two words of the Pons factory's answer and masks them to addresses. "Strict equality": zero checks are intended.
+
 ## Update, 15 November 2026: SpotlightMarket
 
 A review of the Spotlight contract before its deployment (week 1 opens 23 November 2026).

@@ -36,6 +36,7 @@ interface Swap { chain: Net["key"]; hash: string; time: number; tIn: string; tOu
 const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 20_000 };
 const quoteAbi = parseAbi(["function quote(address,address,uint256) returns ((uint256 amountOut, address mid, (address venue, bool isPool) leg1, (address venue, bool isPool) leg2))"]);
 const accountsAbi = parseAbi(["function accounts(address holder) view returns (uint128 active, uint128 pending, uint64 unlockAt)"]);
+const backersAbi = parseAbi(["function backers(address) view returns (uint128 active, uint128 pending, uint64 unlockAt)"]);
 const lc = (a: string) => a.toLowerCase();
 /** at or above this much $STOA (held plus locked in Spotlight) a card is Gold; any $STOA makes it Marble */
 export const GOLD_STOA = 1_000_000;
@@ -131,14 +132,17 @@ async function chainRead(net: Net, who: Address): Promise<{ swaps: Swap[]; refer
 
 async function stoaOf(who: Address): Promise<{ held: number; locked: number }> {
   const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc, ua) });
-  const spot = ROBINHOOD.contracts.spotlight;
-  const [bal, acc] = await Promise.allSettled([
+  const spot = ROBINHOOD.contracts.spotlight, cover = ROBINHOOD.contracts.cover;
+  const [bal, acc, back] = await Promise.allSettled([
     c.readContract({ address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [who] }),
     spot ? c.readContract({ address: spot, abi: accountsAbi, functionName: "accounts", args: [who] }) : Promise.reject(new Error("no spotlight")),
+    // Rug Cover backers: fails (and counts nothing) until the contract is deployed
+    cover ? c.readContract({ address: cover, abi: backersAbi, functionName: "backers", args: [who] }) : Promise.reject(new Error("no cover")),
   ]);
   return {
     held: bal.status === "fulfilled" ? Number(bal.value) / 1e18 : 0,
-    locked: acc.status === "fulfilled" ? (Number(acc.value[0]) + Number(acc.value[1])) / 1e18 : 0,
+    locked: (acc.status === "fulfilled" ? (Number(acc.value[0]) + Number(acc.value[1])) / 1e18 : 0)
+      + (back.status === "fulfilled" ? (Number(back.value[0]) + Number(back.value[1])) / 1e18 : 0),
   };
 }
 

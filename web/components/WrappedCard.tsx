@@ -77,7 +77,7 @@ export function WrappedActions({ w }: { w: Wrapped }) {
         ? <Link className="big" href={`/trade?ref=${w.address}`}>Swap on Stoa</Link>
         : <Link className="big" href="/wrapped">Make your own</Link>}
       <p className="note">
-        Read from the Stoa routers on Robinhood Chain and Elysium: every swap paid to this wallet, valued like Stats. Classic, then Marble with any $STOA, Gold with 1M $STOA or more held or locked in Spotlight.
+        Read from the Stoa routers on Robinhood Chain and Elysium: every swap paid to this wallet, valued like Stats. Classic, then Marble with any $STOA, Gold with 1M $STOA or more held, or locked in Spotlight or Rug Cover.
         {" "}The link carries this wallet as referrer: anyone who swaps after opening it pays its referral share.
       </p>
     </div>
