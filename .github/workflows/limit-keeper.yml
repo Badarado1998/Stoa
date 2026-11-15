@@ -1,0 +1,42 @@
+name: Limit order keeper (Robinhood Chain)
+
+# About every 5 minutes (GitHub may run it later): fills every open limit order whose minimum the router can pay now,
+# along the router's own best route, and returns the deposits of expired orders to their makers. Does nothing until
+# StoaLimit is deployed and the web app ships its address.
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "Only print what it would do"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: limit-keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      RPC: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+      DRY: ${{ inputs.dry && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Fill and expire limit orders
+        run: |
+          set -o pipefail
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          bash script/limit.sh 2>&1 | tee /tmp/out.txt
+          sed 's/^/- /' /tmp/out.txt >> "$GITHUB_STEP_SUMMARY" || true
