@@ -21,6 +21,12 @@ const curveAbi = parseAbi([
   "function isNativeQuote() view returns (bool)",
   "function creatorTaxBps() view returns (uint256)",
 ]);
+const logoAbi = parseAbi(["function logo() view returns (string)"]);
+/** ipfs://<cid> logos go through our own proxy (/api/pons/logo); anything else is not shown */
+const logoUrl = (v: unknown) => {
+  const m = /^ipfs:\/\/(?:ipfs\/)?([A-Za-z0-9]{46,130})$/.exec(String(v ?? "").trim());
+  return m ? `/api/pons/logo/${m[1]}` : null;
+};
 const routerAbi = parseAbi(["function quote(address,address,uint256) returns ((uint256 amountOut, address mid, (address venue, bool isPool) leg1, (address venue, bool isPool) leg2))"]);
 const USDG = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address;
 /** ~3.5 days of Robinhood Chain blocks (about 9.4 blocks a second) */
@@ -31,7 +37,7 @@ const MIN_RAISED = 50_000_000_000_000_000n; // 0.05 ETH
 export type Launch = {
   token: Address; curve: Address; name: string; symbol: string;
   raised: string; threshold: string; progress: number; graduated: boolean;
-  mcapEth: string; mcapUsd: number | null; launchedAt: number; creatorTaxBps: number;
+  mcapEth: string; mcapUsd: number | null; launchedAt: number; creatorTaxBps: number; logo: string | null;
 };
 
 const eth = (v: bigint, dp = 4) => (Number(v) / 1e18).toFixed(dp);
@@ -94,6 +100,7 @@ export async function GET() {
         { address: x.curve, abi: curveAbi, functionName: "launchSupply" } as const,
         { address: x.curve, abi: curveAbi, functionName: "launchedAt" } as const,
         { address: x.curve, abi: curveAbi, functionName: "creatorTaxBps" } as const,
+        { address: x.token, abi: logoAbi, functionName: "logo" } as const,
       ]),
     });
     let ethUsd: number | null = null;
@@ -103,7 +110,7 @@ export async function GET() {
     } catch { /* USD column stays empty */ }
 
     const out: Launch[] = pick.map((x, i) => {
-      const r = (k: number) => det[8 * i + k]?.result;
+      const r = (k: number) => det[9 * i + k]?.result;
       const thr = (r(2) as bigint | undefined) ?? 0n, qr = (r(3) as bigint | undefined) ?? 0n, tr = (r(4) as bigint | undefined) ?? 0n;
       const supply = (r(5) as bigint | undefined) ?? 10n ** 27n;
       // spot price on the curve (ETH per token) times the full supply; graduated curves are empty, so no curve price
@@ -115,6 +122,7 @@ export async function GET() {
         progress: x.grad ? 100 : thr > 0n ? Math.min(99.9, Number((x.raised * 10_000n) / thr) / 100) : 0,
         mcapEth: eth(mcap, 2), mcapUsd: mcap > 0n && ethUsd ? (Number(mcap) / 1e18) * ethUsd : null,
         launchedAt: Number((r(6) as bigint | undefined) ?? 0n), creatorTaxBps: Number((r(7) as bigint | undefined) ?? 0n),
+        logo: logoUrl(r(8)),
       };
     });
     return Response.json({ updated: new Date().toISOString(), scanned: all.length, ethUsd, launches: out }, { headers: CACHE });

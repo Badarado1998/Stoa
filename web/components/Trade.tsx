@@ -115,13 +115,13 @@ function TradeOn({ net }: { net: Net }) {
   useEffect(() => {
     if (!ponsLive || net.key !== "robinhood") return;
     let stop = false;
-    fetch("/api/pons/launches").then((r) => r.json()).then((d: { launches?: { token: Address; symbol: string; progress: number; graduated: boolean }[] }) => {
+    fetch("/api/pons/launches").then((r) => r.json()).then((d: { launches?: { token: Address; symbol: string; progress: number; graduated: boolean; logo: string | null }[] }) => {
       if (stop || !d.launches?.length) return;
       setTokens((ts) => {
         const have = new Set(ts.map((t) => t.address.toLowerCase()));
         const add: Token[] = d.launches!.filter((l) => !have.has(l.token.toLowerCase())).map((l) => {
           const sym = l.symbol.replace(/[^\w.$-]/g, "").slice(0, 12) || "TOKEN";
-          return { symbol: sym, name: l.graduated ? "Pons · graduated" : `Pons curve · ${l.progress.toFixed(0)}%`, address: l.token, decimals: 18, glyph: sym[0] ?? "?", tone: "other" as const };
+          return { symbol: sym, name: l.graduated ? "Pons · graduated" : `Pons curve · ${l.progress.toFixed(0)}%`, address: l.token, decimals: 18, glyph: sym[0] ?? "?", tone: "other" as const, logo: l.logo ?? undefined };
         });
         return add.length ? [...ts, ...add] : ts;
       });

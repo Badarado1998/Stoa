@@ -56,7 +56,11 @@ export default function LaunchesBody() {
               <tr key={l.token}>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="glyph" aria-hidden style={{ width: 30, height: 30, borderRadius: 999, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#EAF1FB", color: "var(--accent)", fontWeight: 700, flex: "none" }}>{l.symbol[0]}</span>
+                    <span aria-hidden style={{ position: "relative", overflow: "hidden", width: 30, height: 30, borderRadius: 999, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#EAF1FB", color: "var(--accent)", fontWeight: 700, flex: "none" }}>
+                      {l.symbol[0]}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {l.logo && <img src={l.logo} alt="" width={30} height={30} loading="lazy" style={{ position: "absolute", inset: 0, width: 30, height: 30, objectFit: "cover" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                    </span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 600 }}>{l.symbol}{l.token.toLowerCase() === CA.toLowerCase() && <span className="chip live" style={{ marginLeft: 6 }}>Stoa&apos;s token</span>}</div>
                       <div style={{ fontSize: 12.5, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>{l.name}</div>

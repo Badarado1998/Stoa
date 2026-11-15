@@ -13,7 +13,13 @@ export function PageHead({ eyebrow, title, children, action }: { eyebrow: string
 export function TokenIcon({ t }: { t: Pick<Token, "glyph" | "tone" | "logo"> }) {
   const cls = t.tone === "native" ? "n" : t.tone === "hype" ? "h" : t.tone === "usd" ? "u" : "";
   // eslint-disable-next-line @next/next/no-img-element
-  if (t.logo) return <img className="ti img" src={t.logo} alt="" width={26} height={26} loading="lazy" />;
+  // a logo that fails to load falls back to the glyph underneath it
+  if (t.logo) return (
+    <span className="ti" style={{ position: "relative", overflow: "hidden", background: "linear-gradient(135deg,#6B7482,#A9B2C0)" }}>
+      {t.glyph}
+      <img className="ti img" src={t.logo} alt="" width={26} height={26} loading="lazy" style={{ position: "absolute", inset: 0 }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+    </span>
+  );
   return <span className={`ti ${cls}`} style={t.tone === "other" ? { background: "linear-gradient(135deg,#6B7482,#A9B2C0)" } : undefined}>{t.glyph}</span>;
 }
 
