@@ -4,6 +4,7 @@
 
 * [Introduction](introduction.md)
 * [How Stoa works](how-stoa-works.md)
+* [FAQ](faq.md)
 * [Contact](contact.md)
 
 ## How pools work

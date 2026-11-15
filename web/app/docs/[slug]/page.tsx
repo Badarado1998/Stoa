@@ -20,6 +20,15 @@ function describe(lead: string, html: string): string {
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 120)).replace(/[,;:.\s]+$/, "")}…`;
 }
 
+/** FAQPage structured data from the FAQ page: each h3 is a question, the text up to the next heading its answer. */
+function faqLd(html: string) {
+  const items = [...html.matchAll(/<h3 id="[^"]*">([\s\S]*?)<\/h3>([\s\S]*?)(?=<h[23] |$)/g)];
+  return {
+    "@context": "https://schema.org", "@type": "FAQPage",
+    mainEntity: items.map(([, q, a]) => ({ "@type": "Question", name: plain(q), acceptedAnswer: { "@type": "Answer", text: plain(a).replace(/\s+([.,;:)])/g, "$1") } })),
+  };
+}
+
 export const dynamicParams = false;
 export function generateStaticParams() {
   return flatDocs().map((d) => ({ slug: d.slug }));
@@ -53,6 +62,7 @@ export default async function DocPageView({ params }: { params: Promise<{ slug: 
             { "@type": "ListItem", position: 2, name: d.title, item: `${SITE}/docs/${slug}` },
           ],
         }) }} />
+        {slug === "faq" && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd(d.html)) }} />}
         <article className="dmain">
           <div className="crumb">{d.group}</div>
           <h1>{d.title}</h1>

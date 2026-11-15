@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "faq",
+    date: "2026-11-18",
+    title: "FAQ in the docs",
+    tag: "Both chains",
+    items: [
+      "A new FAQ answers the questions people ask most: whether Stoa is audited, what has been checked, whether the team can touch your funds, how much volume Stoa does and how it is counted, what $STOA does, and what a swap costs. Each answer links to the full page.",
+      "The Audits page now lists the current test counts (73 unit tests, 22 fork tests on Robinhood Chain, 11 on Elysium) and the Robinhood Chain router on Sourcify.",
+    ],
+    link: { href: "/docs/faq", label: "Read the FAQ" },
+  },
+  {
     id: "team-wallet",
     date: "2026-11-18",
     title: "Team wallet on the $STOA page",

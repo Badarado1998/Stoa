@@ -6,8 +6,8 @@ Stoa contracts have **not been externally audited yet**. The team has published 
 
 ## What has been done
 
-- 57 unit and attack tests, plus 11 fork tests that run the router against live Elysium mainnet pools on every change
-- Static analysis with Slither, with every finding triaged
-- Every deployed contract is source-verified on [Sourcify](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA)
+- 73 unit and attack tests, plus fork tests that run the contracts against live venues: 22 on Robinhood Chain and 11 on Elysium
+- Static analysis with Slither (102 detectors), with every High and Medium result triaged
+- Every deployed contract is source-verified on Sourcify (router on [Elysium](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA) and on [Robinhood Chain](https://repo.sourcify.dev/4663/0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5))
 - Admin powers and their limits are listed in [Admin and permissions](admin.md)
 - Contracts are not upgradeable: the code you see is the code that runs
