@@ -12,6 +12,21 @@ Swap tokens at the best price on Elysium or Robinhood Chain.
 | Elysium | Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses, Liquidity Book |
 | Robinhood Chain | Uniswap V2, V3 and V4, including Pons launch pools; Pons bonding curves once the admin Safe has added them |
 
+## Safety check
+
+When you buy an unverified token, Trade runs a safety check first. It simulates buying a small amount through the live router and selling it straight back, on the chain as it is now, without sending anything. It reports:
+
+- whether the test sell worked: a token you cannot sell back is the classic honeypot;
+- any tax the token takes that its quote does not show, on the buy and on the sell;
+- what buying and selling back at once costs, pool fees and price impact included;
+- how much of the supply the creator's wallet holds (Pons launches) and the ten largest wallets hold (Robinhood Chain).
+
+A pass means the token behaves today. Its owner can still change what the token allows later, so trade only what you can afford to lose. Each Pons token's page on Launches shows the same check.
+
+## Limit orders
+
+On Robinhood Chain, the **Limit** tab sells at a price you set instead of the price right now. See [Limit orders](limit-orders.md).
+
 ## Slippage
 
 Choose 0.1%, 0.5% or 1%. If the fill would be worse than your limit, the swap reverts.

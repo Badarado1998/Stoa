@@ -19,6 +19,7 @@
 
 * [Trade](trade.md)
 * [Trade Pons tokens](trade-pons.md)
+* [Limit orders](limit-orders.md)
 * [Provide liquidity](provide-liquidity.md)
 * [LP tokens](lp-tokens.md)
 * [Portfolio](portfolio.md)
@@ -39,6 +40,7 @@
 ## Build on Stoa
 
 * [Router and SDK](router-sdk.md)
+* [API for bots and apps](api.md)
 * [LP tokens as collateral](lp-collateral.md)
 * [Liquidation venue](liquidation-venue.md)
 * [Aggregator integration](aggregators.md)

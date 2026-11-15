@@ -26,6 +26,21 @@ export const CHANGES: Change[] = [
     link: { href: "/cover", label: "Open Rug Cover" },
   },
   {
+    // ship date: set together with the Rug Cover entry
+    id: "trader-tools",
+    date: "2026-11-19",
+    title: "Limit orders, a token safety check, profit and loss, an API for bots, and Stoa as an app",
+    tag: "Both chains",
+    items: [
+      "Limit orders on Robinhood Chain: the Limit tab sells at a price you set; Stoa's keeper fills it through the router, never below your minimum, and you can cancel any time.",
+      "Safety check: before you buy an unverified token, Trade simulates buying and selling it back through the live router and shows hidden taxes, whether it can be sold, and who holds the supply.",
+      "Profit and loss in Portfolio for every token you bought through Stoa, valued with the router's own quote.",
+      "A public API for bots and apps: the best route and a ready-to-send swap in one call, with your own referrer.",
+      "Install Stoa as an app on your phone or desktop: it opens straight to Trade and loads fast on a weak signal.",
+    ],
+    link: { href: "/docs/limit-orders", label: "Limit orders" },
+  },
+  {
     id: "wrapped",
     date: "2026-11-16",
     title: "Stoa Wrapped: your swaps as a trading card",

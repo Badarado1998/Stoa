@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   description: "Quote, route and swap through Stoa from your own app or contract: router SDK, contract addresses, maker kit and aggregator integration.",
   alternates: { canonical: "/build" },
 };
+const API = `GET https://stoadex.com/api/v1/quote
+  ?chain=robinhood&sellToken=native
+  &buyToken=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168
+  &amount=10000000000000000&slippageBps=50
+  &taker=0xYourWallet&referrer=0xYourWallet
+→ { amountOut, minOut, route, tx: { to, data, value } }`;
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 const SOL = `// 1. off-chain: route = router.quote(USDC, WHYPE, 250e6)  (eth_call)
@@ -60,6 +66,11 @@ export default function BuildPage() {
   return (
     <section className="page">
       <PageHead eyebrow="IV · BUILD" title="Every pool is a building block">Quote, route and swap from your own app or contract.</PageHead>
+      <div className="panel pad" style={{ marginBottom: 20 }}>
+        <div className="rowx"><div className="lbl">HTTP API FOR BOTS · NO KEY</div><Link className="note" style={{ marginTop: 0 }} href="/docs/api">Docs →</Link></div>
+        <p style={{ marginTop: 10 }}>One call returns the best route for your amount and the swap transaction to send. Pass your wallet as <code>referrer</code> and earn 10% of Stoa&apos;s fee on every swap your bot sends.</p>
+        <pre className="code" style={{ marginTop: 12 }}>{API}</pre>
+      </div>
       <div className="grid2 eq">
         <div className="panel pad">
           <div className="lbl">TYPESCRIPT (VIEM) · COMPLETE EXAMPLE</div>

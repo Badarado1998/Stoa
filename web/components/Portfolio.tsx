@@ -8,6 +8,7 @@ import { fmt } from "@/lib/swap";
 import { useNet, useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
 import SwapHistory from "./SwapHistory";
+import PnlPanel from "./PnlPanel";
 
 export default function Portfolio() {
   const net = useNet();
@@ -44,6 +45,7 @@ export default function Portfolio() {
           <Link className="go" href="/referrals">Referrals</Link></div>
         <div className="panel pad"><div className="lbl">VAULT SHARES</div><p className="note">Vaults open after the audit.</p></div>
       </div>
+      {address && net.contracts.router && net.deployed && <PnlPanel net={net} address={address} />}
       <div className="panel pad" style={{ gridColumn: "1 / -1", overflowX: "auto" }}><div className="lbl" style={{ marginBottom: 12 }}>YOUR SWAPS</div><SwapHistory /></div>
     </div>
   );

@@ -31,7 +31,7 @@ Rewards are paid in stablecoins: USDG on Robinhood Chain or USDC on Elysium.
 
 ## Scope
 
-**In scope:** Stoa's own contracts on Elysium and Robinhood Chain, as listed on [Contracts](contracts.md): StoaRouter, the venue adapters, StoaPool maker pools, MakerRegistry, FeeDistributor, StoaBuyback, BondRegistry, SpotlightMarket, RugCover, and how they use the timelock and the admin Safe. Also the app at [stoadex.com](https://stoadex.com), for issues that could make someone sign a harmful transaction.
+**In scope:** Stoa's own contracts on Elysium and Robinhood Chain, as listed on [Contracts](contracts.md): StoaRouter, the venue adapters, StoaPool maker pools, MakerRegistry, FeeDistributor, StoaBuyback, BondRegistry, SpotlightMarket, RugCover, StoaLimit, and how they use the timelock and the admin Safe. Also the app at [stoadex.com](https://stoadex.com), for issues that could make someone sign a harmful transaction.
 
 **Out of scope:**
 

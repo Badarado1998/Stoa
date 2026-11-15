@@ -2,6 +2,32 @@
 
 A review of the deployed contracts by the Stoa team, published in full. **This is not an external audit.** An independent audit is still planned before caps rise or vaults open.
 
+## Update, 16 November 2026: StoaLimit
+
+A review of the limit order contract before its deployment.
+
+| Item | Value |
+| --- | --- |
+| Contract | StoaLimit: makers deposit what they sell with a minimum; the keeper or the maker fills it through StoaRouter |
+| Code | [contracts/src/StoaLimit.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/StoaLimit.sol), about 260 lines of Solidity 0.8.28 |
+| Address | `0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3` on Robinhood Chain (CREATE2) |
+
+**Method.** Line-by-line reading and 16 unit, attack and fuzz tests: fills at and below the minimum, sell orders paid in ETH, fills by a stranger, the keeper routing through an unlisted venue, fills after expiry and twice, cancels by the maker and by strangers before and after expiry, a maker contract that tries to take its refund twice, pause scope, admin roles, bad inputs, a fee-on-transfer token, the per-maker cap, and a fuzz test (512 runs of 40 random creates, fills and cancels) that the contract always holds exactly the deposits of open orders and lists exactly the open orders. A fork test fills a buy order for USDG and a sell order of $STOA for ETH on the live router. All pass.
+
+**Result.** No issue lets anyone take a deposit. A deposit only ever goes back to its maker or through the router, which pays the maker and reverts below the order's minimum. One low finding and two informational.
+
+### L-10 The keeper decides when, and along which route, an order fills
+
+Only the keeper or the maker can fill. A misused keeper key could fill orders at exactly their minimum when the market paid more, or not fill them at all. It can never pay a maker less than the minimum, send anything elsewhere, or keep a deposit; the maker can fill or cancel at any time.
+
+### I-16 Fills are limited to the keeper and the maker (by design)
+
+A permissionless fill would let anyone push a pool to exactly an order's minimum, fill, and keep the difference. The cost is that fills wait for the keeper, about every 5 minutes.
+
+### I-17 Tokens that change balances on their own are not supported
+
+Fee-on-transfer tokens are refused when the order is created. A token that rebases downwards could leave the contract short for the last order in that token; the docs ask for standard tokens only.
+
 ## Update, 15 November 2026: RugCover
 
 A review of the Rug Cover contract before its deployment.

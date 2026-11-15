@@ -62,6 +62,14 @@ A weekly market for Stoa's sponsored slots. Projects bid ETH, $STOA holders lock
 
 A Pons token's creator bonds ETH behind a promise not to sell or move the tokens in their wallet. If you buy the token on Stoa with cover (1% more) and the creator's wallet drops below its promise before the bond is released, you claim back the ETH you spent, from the bond. It watches only the creator's own wallet, and it is a contract rule, not insurance. Rules and limits: [Rug Cover](rug-cover.md).
 
+### Can I install Stoa as an app?
+
+Yes. On Android and in desktop Chrome or Edge, use **Install the app** at the bottom of any page, or the banner on Trade on your phone. On iPhone and iPad, open stoadex.com in Safari, tap Share, then **Add to Home Screen**. The app opens straight to Trade, loads fast on a weak signal, and always fetches prices and balances live.
+
+### Is there an API for bots?
+
+Yes: one HTTP call returns the best route and a ready-to-send swap, and your bot can earn the referral share. See [API for bots and apps](api.md).
+
 ### Does the team hold $STOA?
 
 Yes. The team wallet on fomo holds at least 0.5% of supply, with its live balance on the [$STOA page](https://stoadex.com/token). Buys on the Pons curve also pay $STOA's 1.8% creator tax to the creator wallet set at launch. See [Team wallet](token.md).

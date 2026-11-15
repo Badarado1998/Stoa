@@ -15,6 +15,7 @@ import { SITE } from "@/lib/chain";
 import { routerAbi } from "@/lib/abi";
 import { shareOrCopy, useRefFromUrl } from "@/lib/share";
 import CoverPanel, { CoverChip } from "./CoverPanel";
+import SafetyPanel from "./SafetyPanel";
 
 const PONS = (a: string) => `https://ponsfamily.com/launchpad/${a}`;
 const usd = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
@@ -167,6 +168,7 @@ export default function LaunchToken({ token }: { token: Address }) {
       </div>
 
       <CoverPanel token={token} symbol={sym} />
+      <SafetyPanel chain="robinhood" token={token} />
 
       <div className="grid3" style={{ marginBottom: 16 }}>
         <Cell label="MARKET CAP" v={l ? usd(l.mcapUsd) : undefined} sub={l ? `${l.native && +l.mcapEth > 0 ? `${(+l.mcapEth).toLocaleString("en-US")} ETH · ` : ""}${l.supply.toLocaleString("en-US")} supply` : undefined} />

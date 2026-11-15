@@ -14,6 +14,9 @@ What can go wrong, and what limits it.
 | A Rug Cover creator rugs through another wallet, or holders dump | Rug Cover watches only the creator's own wallet, and every page that offers cover says so. The token's page shows what the creator wallet bought at launch and how much of it is already gone |
 | A creator buys their own cover, then dumps | Cover sold on a token never exceeds 75% of its creator's bond, so the creator always forfeits at least a quarter of it; at least 10% of what is forfeited is burned whoever the backers are |
 | A bug in RugCover | The guardian can pause new covers, covered buys and locks at once; claims, breaches, releases, unlocks and ETH claims keep working, and backers can take their $STOA out immediately during a pause. Beta caps of 1 ETH of bond per token and 20 ETH in all |
+| A limit order does not fill at the moment its price is touched | The keeper checks about every 5 minutes and can be later; the maker can press Fill now, and can always cancel and take the deposit back, even during a pause |
+| A bug in StoaLimit | The guardian can pause new orders and fills at once; cancels keep working, so every deposit can always go back to its maker. Fills never pay below the order's minimum, enforced by the router |
+| The safety check passes a token that turns bad later | The check simulates today's behavior only; the app says so next to every result. A token's owner can still change its rules |
 | A maker posts abusive quotes | Makers must be approved and bond at least 10 HYPE, which can be slashed. Bonds take 3 days to withdraw, longer than the 48-hour timelock, so a maker cannot pull out before a slash |
 | Contracts are not externally audited yet | A full [internal review](security-review.md) found no critical or high issues; per-swap cap of $500 on maker pools; vaults stay closed until the external audit |
 | Unlimited token approvals | The app approves only the amount of each swap unless you opt in |

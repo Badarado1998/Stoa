@@ -19,6 +19,9 @@ import { SpotlightPicks } from "./SpotlightStrip";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
 import { useCoverOffer } from "./CoverTrade";
+import SafetyPanel from "./SafetyPanel";
+import LimitPanel from "./LimitPanel";
+import { useLimitLive } from "@/lib/limit";
 import { COVER, coverAbi, explainCover, useCoverLive, useOpenTokens } from "@/lib/cover";
 
 type Quote = { out: bigint; route: Route | null; at: number; impact: number } | null;
@@ -102,6 +105,10 @@ function TradeOn({ net }: { net: Net }) {
   const cover = useCoverOffer({ net, sell, buy, amt, address, onUseEth: () => pick("sell", net.tokens[0]) });
   const coverLive = useCoverLive() && net.key === "robinhood";
   const coveredSet = useOpenTokens(coverLive);
+  // Limit tab (Robinhood Chain, once StoaLimit is deployed)
+  const limitLive = useLimitLive() && net.key === "robinhood";
+  const [mode, setMode] = useState<"swap" | "limit">("swap");
+  const limitMode = limitLive && mode === "limit";
 
   // balances
   const native = useBalance({ address, chainId: chain.id, query: { enabled: !!address, refetchInterval: 10_000 } });
@@ -124,6 +131,12 @@ function TradeOn({ net }: { net: Net }) {
   const newVenuesLive = net.newVenues.length > 0 && net.newVenues.every((_, i) => newLive.data?.[i]?.result === true);
   const ponsLive = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "isAdapter", args: [net.pons ?? zeroAddress], chainId: chain.id, query: { enabled: deployed && !!net.pons, refetchInterval: 60_000 } }).data === true;
   const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
+  const tokenWarning = risky && (
+    <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
+      This token was imported by address and is not verified by Stoa. Anyone can create a token with any name. Check the address before you trade.
+      <label className="chk"><input type="checkbox" checked={ackToken} onChange={(e) => setAckToken(e.target.checked)} /> I checked the token address</label>
+    </div>
+  );
   // once the Pons curve adapter is live: live Pons launches join the token list (unverified, like any import)
   useEffect(() => {
     if (!ponsLive || net.key !== "robinhood") return;
@@ -403,7 +416,10 @@ function TradeOn({ net }: { net: Net }) {
         {!deployed && <div className="notice">Stoa is not live on {net.name} yet. Wrapping {G} works; swaps open at launch.</div>}
         {deployed && isPaused && <div className="notice">Swaps are paused for safety. Your funds are not affected; wrapping {G} still works.</div>}
         <div className="rowx" style={{ marginBottom: 12 }}>
-          <div className="seg" role="tablist"><button className="on" type="button">Swap</button></div>
+          <div className="seg" role="tablist">
+            <button className={limitMode ? undefined : "on"} type="button" role="tab" aria-selected={!limitMode} onClick={() => setMode("swap")}>Swap</button>
+            {limitLive && <button className={limitMode ? "on" : undefined} type="button" role="tab" aria-selected={limitMode} onClick={() => setMode("limit")}>Limit</button>}
+          </div>
           <button className="ghost" type="button" style={{ borderColor: "var(--line)", background: "#fff" }} aria-label="Swap settings" aria-expanded={showSet} onClick={() => setShowSet((s) => !s)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>{slip}%
           </button>
@@ -442,6 +458,13 @@ function TradeOn({ net }: { net: Net }) {
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
         </div>
 
+        {limitMode ? (
+          <>
+            {buy.tone === "other" && !isNative(buy) && <SafetyPanel chain={net.key} token={buy.address} compact />}
+            <LimitPanel net={net} sell={sell} buy={buy} amt={amt} marketOut={quote?.out} sBal={sBal} referrer={referrer} tokens={tokens} warning={tokenWarning} gate={risky && !ackToken ? "Confirm the token warning" : undefined} />
+          </>
+        ) : (
+          <>
         {amt && quote && (
           <div className="det">
             <span>Rate</span><span>1 {sell.symbol} = {Number(px.toPrecision(6)).toLocaleString("en-US", { maximumSignificantDigits: 6 })} {buy.symbol}</span>
@@ -455,6 +478,7 @@ function TradeOn({ net }: { net: Net }) {
           </div>
         )}
         {cover.block}
+        {buy.tone === "other" && !isNative(buy) && <SafetyPanel chain={net.key} token={buy.address} compact />}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
           <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} />
         )}
@@ -491,12 +515,7 @@ function TradeOn({ net }: { net: Net }) {
             </div>
           );
         })()}
-        {risky && (
-          <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
-            This token was imported by address and is not verified by Stoa. Anyone can create a token with any name. Check the address before you trade.
-            <label className="chk"><input type="checkbox" checked={ackToken} onChange={(e) => setAckToken(e.target.checked)} /> I checked the token address</label>
-          </div>
-        )}
+        {tokenWarning}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>
         {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
         {done && (() => {
@@ -516,6 +535,8 @@ function TradeOn({ net }: { net: Net }) {
             </div>
           );
         })()}
+          </>
+        )}
         <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on the best live venue; maker pools come later.`}</p>
       </div>
 
