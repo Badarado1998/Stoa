@@ -28,6 +28,7 @@
 ## Run a pool
 
 * [Become a curator](become-a-curator.md)
+* [Become a maker](become-a-maker.md)
 * [Getting started](getting-started.md)
 * [Build a price provider](price-provider-guide.md)
 * [Maker kit](maker-kit.md)

@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "maker-guide",
+    date: "2026-11-18",
+    title: "Become a maker: the full guide",
+    tag: "Both chains",
+    items: [
+      "New guide: Become a maker. What each network asks (a 10 HYPE bond per pool on Elysium, a $STOA bond on Robinhood Chain), the approval steps through the timelock, how a quote works on-chain, slashing and the risks.",
+      "The Maker kit, Stoa's own quoting bot, is open source in the repository's maker folder.",
+    ],
+    link: { href: "/docs/become-a-maker", label: "Read the guide" },
+  },
+  {
     id: "venue-compare",
     date: "2026-11-15",
     title: "See every venue's price on the swap screen",
