@@ -1,0 +1,6 @@
+Contact: https://github.com/StoaDex/Stoa/security/advisories/new
+Contact: https://x.com/StoaDEX
+Expires: 2027-11-16T00:00:00.000Z
+Policy: https://stoadex.com/docs/bug-bounty
+Preferred-Languages: en, id
+Canonical: https://stoadex.com/.well-known/security.txt

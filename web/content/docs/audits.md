@@ -11,3 +11,4 @@ Stoa contracts have **not been externally audited yet**. The team has published 
 - Every deployed contract is source-verified on Sourcify (router on [Elysium](https://repo.sourcify.dev/99901/0x104752D50ef893da579Ad813918269e09Ea17dbA) and on [Robinhood Chain](https://repo.sourcify.dev/4663/0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5))
 - Admin powers and their limits are listed in [Admin and permissions](admin.md)
 - Contracts are not upgradeable: the code you see is the code that runs
+- A paid [bug bounty](bug-bounty.md): up to $2,500 in stablecoins for a critical issue

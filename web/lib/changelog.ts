@@ -23,6 +23,17 @@ export const CHANGES: Change[] = [
     link: { href: "/wrapped", label: "Open your card" },
   },
   {
+    id: "bug-bounty",
+    date: "2026-11-16",
+    title: "Paid bug bounty: up to $2,500 in stablecoins",
+    tag: "Both chains",
+    items: [
+      "Report a vulnerability in Stoa's contracts or app privately, through GitHub or a DM on X, and get paid in USDG or USDC: $2,500 for critical, $1,000 high, $300 medium, $100 low.",
+      "Scope, rules and what happens after a report are on the Bug bounty page; stoadex.com/.well-known/security.txt points researchers there.",
+    ],
+    link: { href: "/docs/bug-bounty", label: "Read the rules" },
+  },
+  {
     id: "spotlight",
     date: "2026-11-15",
     title: "Spotlight: projects pay ETH, $STOA holders earn it",
