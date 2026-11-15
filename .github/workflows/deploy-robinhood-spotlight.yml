@@ -2,7 +2,8 @@ name: Deploy Spotlight Market (Robinhood Chain)
 
 # Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
 # Deploys SpotlightMarket (weekly sponsored slots paid in ETH to $STOA holders), owned by the 48h timelock from the
-# constructor, verifies it on Sourcify and prints the address (the /spotlight web push adds it to web/lib/deployments-4663.json).
+# constructor, with CREATE2 at the address the web app already ships (web/lib/deployments-4663.json `spotlightMarket`;
+# the script refuses any other address), and verifies it on Sourcify.
 # Week 0 starts Monday 23 November 2026, 07:00 WIB; the deploy must happen before that.
 on:
   workflow_dispatch:
@@ -37,7 +38,8 @@ jobs:
       - name: Check settings
         run: |
           test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
-          test -z "$(jq -r '.spotlightMarket // empty' ../web/lib/deployments-4663.json)" || { echo "::error::already deployed"; exit 1; }
+          M=$(jq -r '.spotlightMarket // empty' ../web/lib/deployments-4663.json)
+          if [ -n "$M" ] && [ "$(cast code $M --rpc-url "$ROBINHOOD_RPC_URL")" != "0x" ]; then echo "::error::already deployed at $M"; exit 1; fi
           [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
           echo "Deployer: $(cast wallet address --private-key "$PK") · $(cast balance $(cast wallet address --private-key "$PK") --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
           cp ../web/lib/deployments-4663.json deployments/4663.json
@@ -66,7 +68,7 @@ jobs:
             "(3,1000,1000000000000000,10000000000000000,500000000000000000,1000000000000000000000000)")
           forge verify-contract $M src/SpotlightMarket.sol:SpotlightMarket --verifier sourcify --chain 4663 --constructor-args $ARGS || true
 
-      - name: Show the address (added to web/lib/deployments-4663.json with the /spotlight web push, to save a deploy)
+      - name: Check the deployed contract
         if: ${{ inputs.broadcast }}
         run: |
           cat deployments/4663-spotlight.json
