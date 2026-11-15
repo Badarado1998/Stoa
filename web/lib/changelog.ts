@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "wrapped",
+    date: "2026-11-16",
+    title: "Stoa Wrapped: your swaps as a trading card",
+    tag: "Both chains",
+    items: [
+      "Every wallet gets a card read from the routers on Robinhood Chain and Elysium: volume, swaps, favorite venue, top token, biggest swap, first swap and swaps referred.",
+      "Classic edition by default, Marble with any $STOA, Gold with 1M $STOA or more held or locked in Spotlight. The card tilts in 3D and shares to X with your referral link.",
+    ],
+    link: { href: "/wrapped", label: "Open your card" },
+  },
+  {
     id: "spotlight",
     date: "2026-11-15",
     title: "Spotlight: projects pay ETH, $STOA holders earn it",

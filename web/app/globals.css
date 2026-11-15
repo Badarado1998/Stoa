@@ -387,3 +387,40 @@ html,body{overflow-x:clip}
 .em-buy{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;font-size:15px;text-decoration:none;box-shadow:0 8px 20px rgba(47,111,214,.25)}
 .em-buy:hover{background:var(--accent-d)}
 .em-foot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted)}.em-foot a{color:var(--muted);text-decoration:none}.em-foot b{font-family:var(--serif);letter-spacing:.2em;font-weight:400;color:var(--ink)}
+/* ---------- Stoa Wrapped ---------- */
+.wr-wrap{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:36px;align-items:center}
+.wr-stage{perspective:1100px;display:flex;justify-content:center;padding:10px 0 20px}
+.wr-card{--rx:0deg;--ry:0deg;--mx:50%;--my:30%;position:relative;width:380px;max-width:100%;aspect-ratio:380/540;border-radius:26px;padding:26px 26px 22px;display:flex;flex-direction:column;overflow:hidden;
+  background:linear-gradient(160deg,#FFFFFF,#EEF3FB);border:1.5px solid rgba(31,95,176,.22);box-shadow:0 40px 80px rgba(24,32,44,.18),0 2px 0 rgba(255,255,255,.9) inset;
+  transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .25s ease-out;animation:wrFloat 6s ease-in-out infinite;color:var(--ink)}
+.wr-card:hover{animation:none}
+.wr-shine{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.75),rgba(255,255,255,0) 45%);mix-blend-mode:soft-light}
+.wr-marble{background:
+  linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(150,160,175,.18) 31%,rgba(255,255,255,0) 33%),
+  linear-gradient(72deg,rgba(255,255,255,0) 58%,rgba(150,160,175,.14) 59%,rgba(255,255,255,0) 61%),
+  linear-gradient(160deg,#FFFFFF 0%,#F2F4F7 40%,#FFFFFF 60%,#E9EDF3 100%);border-color:rgba(90,102,120,.32)}
+.wr-gold{background:linear-gradient(160deg,#FFF8E4 0%,#F6E3A9 40%,#FFF4D2 60%,#E9C877 100%);border-color:rgba(176,128,31,.55)}
+.wr-gold:after{content:"";position:absolute;inset:-40%;pointer-events:none;background:linear-gradient(105deg,rgba(255,255,255,0) 40%,rgba(255,255,255,.55) 50%,rgba(255,255,255,0) 60%);animation:wrFoil 4.5s ease-in-out infinite}
+.wr-gold .wr-big,.wr-gold .wr-ed{color:#8A5A0B}.wr-gold .wr-ed{border-color:rgba(176,128,31,.55)}
+.wr-top{display:flex;justify-content:space-between;align-items:center;position:relative}
+.wr-brand{display:flex;align-items:center;gap:8px;font-family:var(--serif);letter-spacing:.3em;font-size:15px}.wr-brand img{width:26px;height:26px;object-fit:contain}
+.wr-ed{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--accent);border:1px solid rgba(31,95,176,.3);border-radius:999px;padding:4px 9px}
+.wr-year{margin-top:22px;font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--accent)}
+.wr-addr{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:4px}
+.wr-big{font-family:var(--serif);font-size:58px;line-height:1;margin-top:20px;color:var(--accent);overflow-wrap:anywhere}
+.wr-sub{font-size:14px;color:var(--muted);margin-top:8px}
+.wr-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px;margin-top:22px;position:relative}
+.wr-grid span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--muted)}
+.wr-grid b{display:block;font-size:16px;margin-top:3px;overflow-wrap:anywhere}
+.wr-chains{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;position:relative}
+.wr-chains span{font-size:11.5px;padding:4px 9px;border-radius:999px;border:1px solid rgba(31,95,176,.2);color:var(--muted)}.wr-chains span.on{color:var(--ink);border-color:rgba(31,95,176,.45)}
+.wr-gold .wr-chains span{border-color:rgba(176,128,31,.45)}.wr-gold .wr-year{color:#8A5A0B}
+.wr-foot{margin-top:12px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--muted);position:relative}
+.wr-actions{display:flex;flex-direction:column;gap:10px;max-width:420px}
+.wr-actions .big{display:flex;justify-content:center;align-items:center;text-decoration:none;margin-top:0}
+.wr-actions .big:not(.pri){background:#fff;border:1px solid var(--line);color:var(--ink)}
+.wr-actions .big:not(.pri):hover{border-color:var(--accent)}
+@keyframes wrFloat{0%,100%{transform:rotateX(4deg) rotateY(-8deg) translateY(0)}50%{transform:rotateX(-2deg) rotateY(6deg) translateY(-6px)}}
+@keyframes wrFoil{0%{transform:translateX(-60%)}60%,100%{transform:translateX(60%)}}
+@media (max-width:820px){.wr-wrap{grid-template-columns:minmax(0,1fr);gap:10px}.wr-actions{max-width:none}}
+@media (prefers-reduced-motion:reduce){.wr-card,.wr-gold:after{animation:none}.wr-card{transition:none}}
