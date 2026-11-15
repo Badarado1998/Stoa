@@ -2,12 +2,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAccount, useReadContract } from "wagmi";
-import { zeroAddress, type Address } from "viem";
+import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { BaseError, zeroAddress, type Address, type Hash } from "viem";
 import { PageHead, Sk } from "./ui";
-import { useNet } from "./Providers";
-import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
-import type { LaunchInfo } from "@/lib/ponsLaunch";
+import { useNet, useWalletModal } from "./Providers";
+import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
+import { PONS_HOOK, USDG, type LaunchInfo } from "@/lib/ponsLaunch";
+import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
+import { v4AdapterAbi } from "@/lib/abi";
 import { CA } from "@/lib/stoaAddress";
 import { SITE } from "@/lib/chain";
 import { routerAbi } from "@/lib/abi";
@@ -60,9 +62,46 @@ export default function LaunchToken({ token }: { token: Address }) {
     const text = !l ? "On Stoa:" : l.graduated ? `${sym} graduated from its Pons curve.` : `${sym} is ${l.progress.toFixed(0)}% of the way to graduation on its Pons curve.`;
     if ((await shareOrCopy(link, text)) === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1600); }
   }
-  const trade = `/trade?chain=robinhood&buy=${token}`;
+  const trade = `/trade?chain=robinhood${l?.tradeFrom === "USDG" ? "&sell=USDG" : ""}&buy=${token}`;
   const isStoa = token.toLowerCase() === CA.toLowerCase();
-  const priceUsd = l?.priceEth !== null && l?.priceEth !== undefined && l.ethUsd ? l.priceEth * l.ethUsd : null;
+  const pairSym = l?.pairSymbol ?? "ETH";
+
+  // graduated but not routable: the pool Pons created at graduation, if Stoa's V4 adapter does not know it yet.
+  // Registering it is open to anyone (one small transaction); the watcher does the same, usually within the hour.
+  const pub = usePublicClient({ chainId: ROBINHOOD.chain.id });
+  const { isConnected } = useAccount();
+  const { open } = useWalletModal();
+  const { writeContractAsync } = useWriteContract();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
+  const V4 = ROBINHOOD.contracts.v4;
+  const needPool = !!l && l.graduated && !l.routable && l.tradeFrom !== null;
+  const pool = useQuery({
+    queryKey: ["pons-grad-pool", token, needPool],
+    enabled: needPool && !!pub && !!V4,
+    refetchInterval: 60_000,
+    queryFn: async (): Promise<PoolKey | null> => {
+      const base = l!.tradeFrom === "USDG" ? USDG.toLowerCase() : zeroAddress;
+      const keys = (await findV4Pools(ROBINHOOD, token)).filter((k) =>
+        k.hooks.toLowerCase() === PONS_HOOK && [k.currency0.toLowerCase(), k.currency1.toLowerCase()].includes(base));
+      const known = (await pub!.readContract({ address: V4!, abi: v4AdapterAbi, functionName: "keysFor", args: [base === zeroAddress ? ROBINHOOD.wrapped : USDG, token] })) as PoolKey[];
+      return keys.find((k) => !known.some((x) => sameKey(x, k))) ?? null;
+    },
+  });
+  async function addPool(k: PoolKey) {
+    if (!isConnected) { open(); return; }
+    if (!pub) return;
+    setBusy(true); setMsg(null);
+    try {
+      const hash = await writeContractAsync({ address: V4!, abi: v4AdapterAbi, functionName: "register", args: [k], chainId: ROBINHOOD.chain.id });
+      const rc = await pub.waitForTransactionReceipt({ hash });
+      if (rc.status !== "success") throw new Error("Transaction reverted");
+      setMsg({ ok: true, text: `Pool added: ${sym} now trades on Stoa`, hash });
+      void q.refetch(); void pool.refetch();
+    } catch (e) {
+      setMsg({ ok: false, text: e instanceof BaseError ? e.shortMessage : (e as Error).message });
+    } finally { setBusy(false); }
+  }
 
   return (
     <>
@@ -91,23 +130,34 @@ export default function LaunchToken({ token }: { token: Address }) {
             <div style={{ height: 12, borderRadius: 999, background: "#E6ECF5", overflow: "hidden" }}><div style={{ width: `${l?.progress ?? 0}%`, height: "100%", background: "var(--accent)", transition: "width .6s" }} /></div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 6, fontSize: 13, color: "var(--muted)", fontFamily: "var(--mono)" }}>
               <span>{l ? `${l.progress.toFixed(1)}% to graduation` : <Sk w={120} />}</span>
-              <span>{l ? `${(+l.raised).toFixed(3)} / ${(+l.threshold).toFixed(1)} ETH` : ""}</span>
+              <span>{l ? `${(+l.raised).toLocaleString("en-US", { maximumFractionDigits: l.native ? 3 : 2 })} / ${(+l.threshold).toLocaleString("en-US", { maximumFractionDigits: 1 })} ${pairSym}` : ""}</span>
             </div>
           </div>
         )}
 
         <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           {l?.routable
-            ? <Link className="cta" href={trade}>Trade {sym} on Stoa</Link>
-            : <a className="cta" href={PONS(token)} target="_blank" rel="noopener noreferrer">{l?.graduated ? "Open on Pons ↗" : "Buy on Pons ↗"}</a>}
+            ? <Link className="cta" href={trade}>Trade {sym} on Stoa{l.tradeFrom === "USDG" ? " (from USDG)" : ""}</Link>
+            : pool.data
+              ? <button type="button" className="cta" disabled={busy} onClick={() => addPool(pool.data!)}>{busy ? "Adding the pool…" : isConnected ? `Add ${sym}'s pool to Stoa` : "Connect to add the pool"}</button>
+              : <a className="cta" href={PONS(token)} target="_blank" rel="noopener noreferrer">{l?.graduated ? "Open on Pons ↗" : "Buy on Pons ↗"}</a>}
+          {!l?.routable && pool.data && <a className="ghost" href={PONS(token)} target="_blank" rel="noopener noreferrer">Pons page ↗</a>}
           {l?.routable && <a className="ghost" href={PONS(token)} target="_blank" rel="noopener noreferrer">Pons page ↗</a>}
           {isStoa && <Link className="ghost" href="/token">About $STOA</Link>}
           <Link className="note" style={{ marginTop: 0 }} href="/launches">All launches</Link>
         </div>
+        {msg && <div className={msg.ok ? "notice" : "err"} style={{ marginTop: 12, marginBottom: 0 }}>{msg.text}{msg.hash && <> · <a href={txUrlOn(ROBINHOOD, msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
+        {l?.routable && l.tradeFrom === "USDG" && (
+          <p className="note">This launch was priced in USDG on Pons, so its pool pairs it with USDG: trade it on Stoa from USDG. Holding ETH? Swap it to USDG first.</p>
+        )}
         {l && !l.routable && (
           <p className="note">
-            {l.graduated
-              ? <>Its Uniswap V4 pool is not in Stoa&apos;s router yet. Stoa&apos;s watcher usually adds new graduation pools within the hour, and anyone can add the pool from the <Link href={trade}>swap screen</Link> in one small transaction.</>
+            {l.graduated && l.tradeFrom === null
+              ? <>This launch was priced in {pairSym} on Pons, so its Uniswap V4 pool pairs it with {pairSym}. Stoa routes the graduation pools paired with ETH or USDG only; trade it on Pons.</>
+              : l.graduated
+              ? <>Its Uniswap V4 pool is not in Stoa&apos;s router yet. {pool.data ? "Add it above in one small transaction (anyone can), or wait: Stoa's watcher usually adds new graduation pools within the hour." : "Stoa's watcher usually adds new graduation pools within the hour."}</>
+              : !l.native
+              ? <>This launch is priced in {pairSym} on Pons. Stoa trades Pons curves priced in ETH; buy this one on Pons until it graduates.</>
               : ponsLive
                 ? <>Stoa does not route this curve right now: it skips the first seconds after a launch, while Pons charges its anti-sniper tax, and leaves the buy that would graduate a curve to Pons. Buy on Pons, or try again shortly.</>
                 : <>Stoa trades Pons curves once its curve adapter is in the router (scheduled for 18 Nov, behind a 48-hour timelock). Until then, buy on Pons.</>}
@@ -116,8 +166,8 @@ export default function LaunchToken({ token }: { token: Address }) {
       </div>
 
       <div className="grid3" style={{ marginBottom: 16 }}>
-        <Cell label="MARKET CAP" v={l ? usd(l.mcapUsd) : undefined} sub={l ? `${(+l.mcapEth).toLocaleString("en-US")} ETH · ${l.supply.toLocaleString("en-US")} supply` : undefined} />
-        <Cell label="PRICE" v={l ? px(priceUsd) : undefined} sub={l ? (l.graduated ? "Stoa's best quote for a small buy" : "Spot price on the curve") : undefined} />
+        <Cell label="MARKET CAP" v={l ? usd(l.mcapUsd) : undefined} sub={l ? `${l.native && +l.mcapEth > 0 ? `${(+l.mcapEth).toLocaleString("en-US")} ETH · ` : ""}${l.supply.toLocaleString("en-US")} supply` : undefined} />
+        <Cell label="PRICE" v={l ? px(l.priceUsd) : undefined} sub={l ? (l.priceUsd === null ? `Priced in ${pairSym}` : l.graduated ? "Stoa's best quote for a small buy" : "Spot price on the curve") : undefined} />
         <Cell label="CREATOR TAX" v={l ? `${(l.creatorTaxBps / 100).toFixed(1)}%` : undefined} sub={l ? (l.graduated ? "Was charged on curve trades" : "On each curve buy and sell, plus Pons' 1% fee") : undefined} />
       </div>
 

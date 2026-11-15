@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "graduations-backfill-usdg",
+    date: "2026-11-15",
+    title: "More Pons graduations route, Add pool on token pages",
+    tag: "Robinhood Chain",
+    items: [
+      "Earlier Pons graduations, up to about 12 days back, are now registered on Stoa's Uniswap V4 adapter too, not just the last day's.",
+      "Launches priced in USDG graduate to a USDG pool: the watcher now registers those too, and they trade on Stoa from USDG. Launches priced in other tokens (stock tokens and the like) stay on Pons.",
+      "A graduated token whose pool is not in the router yet shows an Add pool button on its page: one small transaction, open to anyone.",
+      "The sitemap lists the token pages of the launches closest to graduation and of recent graduations, refreshed every hour.",
+    ],
+    link: { href: "/launches", label: "Open Launches" },
+  },
+  {
     id: "launch-pages-live-prices",
     date: "2026-11-15",
     title: "A page for every Pons launch, live prices",

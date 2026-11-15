@@ -7,7 +7,7 @@
 | Stage | Where the token trades | What Stoa does |
 | --- | --- | --- |
 | On the curve | The token's Pons bonding curve. Buys push the price up, sells push it down (x·y=k on the curve's reserves) | Trades on the curve through the Pons curve adapter, once the admin Safe has added it to the router (scheduled 18 Nov 2026) |
-| Graduated | A Uniswap V4 pool that Pons creates and fills when the curve reaches its target, usually 4.2 ETH. The pool's liquidity is locked | Routes the V4 pool. A watcher adds every new graduation pool to the router, usually within the hour; anyone can also add it from the swap screen |
+| Graduated | A Uniswap V4 pool that Pons creates and fills when the curve reaches its target, usually 4.2 ETH. The pool's liquidity is locked | Routes the V4 pool. A watcher adds every new graduation pool to the router, usually within the hour; anyone can also add it with one transaction from the token's page |
 
 ## Find a token
 
@@ -29,7 +29,7 @@ On a curve fill, the swap screen shows a **Curve fees** line with the exact Pons
 ## What Stoa leaves to Pons
 
 - **The buy that would graduate a curve.** That buy takes the last tokens on the curve, gets part of its ETH refunded and moves the token to Uniswap V4 in the same transaction. Stoa does not quote it; buy a little less, or buy on Pons.
-- **Curves priced in another token** instead of ETH, and **the first seconds after a launch**, when Pons charges a decaying anti-sniper tax.
+- **Curves priced in another token** instead of ETH, and **the first seconds after a launch**, when Pons charges a decaying anti-sniper tax. Once a launch priced in **USDG** graduates, its pool pairs it with USDG and Stoa routes it from USDG (swap ETH to USDG first). Launches priced in other tokens, such as stock tokens, stay on Pons.
 - **Pools other people create** for a Pons token. Only the pool Pons creates at graduation is added automatically.
 
 ## Before you buy

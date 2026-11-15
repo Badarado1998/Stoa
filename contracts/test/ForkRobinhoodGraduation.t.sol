@@ -126,6 +126,33 @@ contract ForkRobinhoodGraduationTest is RouterHelper {
         assertGt(u.amountOut, 0, "USDG reaches $STOA (through WETH)");
         console2.log("10 USDG -> STOA:", u.amountOut / 1e18);
     }
+
+    /// a Pons launch priced in USDG graduates to a USDG pool with the Pons hook: once registered, it trades from USDG
+    /// (ETH buyers swap to USDG first: the router hops only through WETH)
+    function test_fork_usdgPairedGraduationRoutesFromUsdg() public {
+        if (!on) return vm.skip(true);
+        address sic = 0x69156EF2EC33D24EfB29c1a2FA84967BE618cCbF;
+        PoolKey memory key = PoolKey({currency0: USDG, currency1: sic, fee: 0, tickSpacing: 200, hooks: PONS_HOOK});
+        if (v4.keysFor(USDG, sic).length == 0) {
+            assertEq(router.quote(USDG, sic, 10e6).amountOut, 0, "no route before the pool is registered");
+            vm.prank(makeAddr("anyone"));
+            v4.register(key);
+        }
+        deal(USDG, alice, 10e6);
+        vm.prank(alice);
+        IERC20(USDG).approve(address(router), 10e6);
+        StoaRouter.Quote memory q = router.quote(USDG, sic, 10e6);
+        assertGt(q.amountOut, 0);
+        uint256 got = _swapAs(router, alice, USDG, sic, 10e6, q.amountOut, alice, address(0));
+        assertEq(got, q.amountOut);
+        vm.prank(alice);
+        IERC20(sic).approve(address(router), got);
+        StoaRouter.Quote memory b = router.quote(sic, USDG, got);
+        uint256 back = _swapAs(router, alice, sic, USDG, got, b.amountOut, alice, address(0));
+        assertGt(back, 0);
+        assertLt(back, 10e6, "a round trip pays the price impact");
+        console2.log("10 USDG -> SIC -> USDG:", back);
+    }
 }
 
 interface IERC20Sym {

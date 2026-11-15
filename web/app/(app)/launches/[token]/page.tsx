@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
       const cap = l.mcapUsd ? `Market cap ${usd(l.mcapUsd)}. ` : "";
       description = l.graduated
         ? `$${l.symbol} (${l.name}) graduated from its Pons curve to Uniswap V4. ${cap}${l.routable ? "Trade it on Stoa." : "On Stoa."}`
-        : `$${l.symbol} (${l.name}) is ${l.progress.toFixed(1)}% of the way to graduation on its Pons curve (${(+l.raised).toFixed(2)} of ${(+l.threshold).toFixed(1)} ETH). ${cap}Live on Stoa.`;
+        : `$${l.symbol} (${l.name}) is ${l.progress.toFixed(1)}% of the way to graduation on its Pons curve (${(+l.raised).toFixed(2)} of ${(+l.threshold).toFixed(1)} ${l.pairSymbol}). ${cap}Live on Stoa.`;
     }
   } catch { /* generic card text */ }
   return {

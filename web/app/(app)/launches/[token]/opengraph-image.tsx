@@ -60,7 +60,7 @@ export default async function Image({ params }: { params: Promise<{ token: strin
                 <div style={{ display: "flex", height: 20, borderRadius: 999, background: "rgba(255,255,255,.85)", overflow: "hidden" }}>
                   <div style={{ width: `${Math.max(2, l.progress)}%`, height: 20, background: BLUE, borderRadius: 999 }} />
                 </div>
-                <span style={{ fontFamily: "Mono", fontSize: 20, color: MUTED, marginTop: 10 }}>{`${l.progress.toFixed(1)}% to graduation · ${(+l.raised).toFixed(2)} / ${(+l.threshold).toFixed(1)} ETH`}</span>
+                <span style={{ fontFamily: "Mono", fontSize: 20, color: MUTED, marginTop: 10 }}>{`${l.progress.toFixed(1)}% to graduation · ${(+l.raised).toFixed(2)} / ${(+l.threshold).toFixed(1)} ${l.pairSymbol}`}</span>
               </div>
             )}
             <div style={{ display: "flex", gap: 16, marginTop: 24 }}>
