@@ -30,11 +30,13 @@ jobs:
       ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
       PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
     steps:
+      # The CREATE2 address the app ships depends on the exact bytecode, metadata hash included. The metadata lists every
+      # remapping forge passes to solc, and forge adds one for each nested submodule it finds (OpenZeppelin's own
+      # erc4626-tests, halmos-cheatcodes, ds-test). So check out the top-level submodules only, as the address was
+      # computed with, and pin Foundry to that version too.
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
-      # pinned: the CREATE2 address the app ships depends on the exact bytecode, so CI must compile with the same Foundry
-      # (and solc settings) the address was computed with locally
+          submodules: true
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.5.1
