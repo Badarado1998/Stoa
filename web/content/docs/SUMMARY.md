@@ -22,6 +22,7 @@
 * [Portfolio](portfolio.md)
 * [Referrals](referrals.md)
 * [$STOA](token.md)
+* [How to buy $STOA](buy-stoa.md)
 
 ## Run a pool
 

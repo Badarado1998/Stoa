@@ -130,6 +130,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
       </div>
       <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         {grad || routable ? <Link className="cta" href={`/trade?chain=robinhood&buy=${STOA}`}>Trade $STOA on Stoa</Link> : <a className="cta" href={PONS_URL} target="_blank" rel="noopener noreferrer">Buy on Pons ↗</a>}
+        <Link className="note" style={{ marginTop: 0 }} href="/docs/buy-stoa">How to buy</Link>
         <a className="note" style={{ marginTop: 0 }} href="/api/stoa/supply" target="_blank" rel="noopener noreferrer">Supply API</a>
       </div>
     </div>

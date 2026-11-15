@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { zeroAddress } from "viem";
 import { PageHead, Sk } from "./ui";
 import { useNet } from "./Providers";
@@ -10,6 +10,8 @@ import { ROBINHOOD } from "@/lib/networks";
 import { routerAbi } from "@/lib/abi";
 import type { Launch } from "@/app/api/pons/launches/route";
 import { CA } from "@/lib/stoaAddress";
+import { SITE } from "@/lib/chain";
+import { cleanRef } from "@/lib/swap";
 
 const PONS = (a: string) => `https://ponsfamily.com/launchpad/${a}`;
 const usd = (v: number | null) => (v === null ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
@@ -33,6 +35,23 @@ export default function LaunchesBody() {
     chainId: ROBINHOOD.chain.id, query: { enabled: !!ROBINHOOD.pons, refetchInterval: 60_000 },
   }).data === true;
 
+  // referral: a ?ref= on this page is remembered like on Trade, and links shared from here carry the sharer's wallet
+  const { address } = useAccount();
+  const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => {
+    const r = cleanRef(new URLSearchParams(location.search).get("ref"));
+    if (r) try { localStorage.setItem("stoa.ref", r); } catch { /* storage blocked */ }
+  }, []);
+  const refQ = address ? `ref=${address}` : "";
+  const linkFor = (l?: Launch) =>
+    l && ponsLive ? `${SITE}/trade?chain=robinhood&buy=${l.token}${refQ ? `&${refQ}` : ""}` : `${SITE}/launches${refQ ? `?${refQ}` : ""}`;
+  async function share(key: string, url: string, text: string) {
+    try {
+      if (typeof navigator.share === "function") { await navigator.share({ title: "Stoa", text, url }); return; }
+    } catch { return; /* closed the share sheet */ }
+    try { await navigator.clipboard.writeText(url); setCopied(key); setTimeout(() => setCopied(null), 1600); } catch { /* clipboard blocked */ }
+  }
+
   const live = (q.data?.launches ?? []).filter((l) => !l.graduated);
   const grads = (q.data?.launches ?? []).filter((l) => l.graduated);
   const shown = all ? live : live.slice(0, 20);
@@ -40,7 +59,7 @@ export default function LaunchesBody() {
 
   return (
     <>
-      <PageHead eyebrow="PONS LAUNCHES · ROBINHOOD CHAIN" title="Every live launch, one list" action={<Link className="cta" href="/trade?chain=robinhood">Trade</Link>}>
+      <PageHead eyebrow="PONS LAUNCHES · ROBINHOOD CHAIN" title="Every live launch, one list" action={<button type="button" className="cta" onClick={() => share("page", linkFor(), "Every live Pons launch on Robinhood Chain, with curve progress:")}>{copied === "page" ? "Link copied" : "Share this list"}</button>}>
         Tokens on their Pons bonding curve that have raised at least 0.05 ETH in the last few days, by ETH raised, read straight from the curves.
         {ponsLive ? " Trade any of them on Stoa, from ETH or any token." : " Stoa's Pons curve adapter goes live on 18 Nov (48h timelock); until then the buttons open Pons."}
       </PageHead>
@@ -75,6 +94,10 @@ export default function LaunchesBody() {
                 <td className="hm" style={{ fontFamily: "var(--mono)" }}>{(l.creatorTaxBps / 100).toFixed(1)}%</td>
                 <td className="hm" style={{ fontFamily: "var(--mono)" }}>{age(l.launchedAt)}</td>
                 <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                  <button type="button" className="ghost" style={{ padding: "4px 10px", marginRight: 10, fontSize: 13 }} aria-label={`Share ${l.symbol}`}
+                    onClick={() => share(l.token, linkFor(l), `$${l.symbol} is ${l.progress.toFixed(0)}% of the way to graduation on its Pons curve.`)}>
+                    {copied === l.token ? "Copied" : "Share"}
+                  </button>
                   {ponsLive
                     ? <Link href={trade(l)} className="go" style={{ margin: 0 }}>Trade</Link>
                     : <a href={PONS(l.token)} className="go" style={{ margin: 0 }} target="_blank" rel="noopener noreferrer">Pons</a>}
@@ -96,6 +119,11 @@ export default function LaunchesBody() {
         </div>
       )}
 
+      <p className="note">
+        {address
+          ? <>Links you share from this page carry your referral: you earn 10% of Stoa&apos;s protocol fee on the swaps they bring, claimable on <Link href="/referrals">Referrals</Link>.</>
+          : <>Connect a wallet and the links you share from this page carry your referral (10% of Stoa&apos;s protocol fee on the swaps they bring).</>}
+      </p>
       <p className="note">
         Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Data refreshes every minute{q.data?.scanned ? ` from the last ${q.data.scanned.toLocaleString()} launches` : ""}.
       </p>
