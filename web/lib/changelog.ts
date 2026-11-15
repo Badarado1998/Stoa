@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stats-page",
+    date: "2026-11-15",
+    title: "Stats: volume through Stoa, read from the chain",
+    tag: "Both chains",
+    items: [
+      "A new Stats page shows the volume and swaps routed through Stoa on Robinhood Chain and Elysium: all time, last 7 days, last 24 hours, per UTC day, and the latest swaps with their transactions.",
+      "Counted from the routers' Routed events, one per settled swap, each valued once on its stablecoin or gas-token side. Updated every 5 minutes, also as JSON at /api/stats.",
+      "The volume and swap counts on Pools come from the same numbers, so they load quickly on phones and count Robinhood Chain's last 24 hours correctly.",
+    ],
+    link: { href: "/stats", label: "Open Stats" },
+  },
+  {
     id: "graduations-backfill-usdg",
     date: "2026-11-15",
     title: "More Pons graduations route, Add pool on token pages",
