@@ -17,6 +17,7 @@
 ## Use Stoa
 
 * [Trade](trade.md)
+* [Trade Pons tokens](trade-pons.md)
 * [Provide liquidity](provide-liquidity.md)
 * [LP tokens](lp-tokens.md)
 * [Portfolio](portfolio.md)

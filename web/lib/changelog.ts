@@ -18,7 +18,8 @@ export const CHANGES: Change[] = [
     tag: "Robinhood Chain",
     items: [
       "The graduation watcher now registers the Uniswap V4 pool of every Pons token that graduates, not just $STOA, so they trade on Stoa without anyone pressing Add pool. Only the pool Pons creates at graduation, at most 10 per run.",
-      "Launches: search by name, ticker or address; sort by closest to graduation, newest or market cap; an 80%+ filter.",
+      "Launches: search by name, ticker or address; sort by closest to graduation, newest or market cap; an 80%+ filter; a live link preview with the three curves closest to graduation.",
+      "New guide: Trade Pons tokens on Stoa (curve and graduated stages, costs, what is left to Pons, risks).",
     ],
     link: { href: "/launches", label: "Open Launches" },
   },

@@ -145,7 +145,7 @@ export default function LaunchesBody() {
           : <>Connect a wallet and the links you share from this page carry your referral (10% of Stoa&apos;s protocol fee on the swaps they bring).</>}
       </p>
       <p className="note">
-        Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Data refreshes every minute{q.data?.scanned ? ` from the last ${q.data.scanned.toLocaleString()} launches` : ""}.
+        <Link href="/docs/trade-pons">How Pons trading on Stoa works</Link>. Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Data refreshes every minute{q.data?.scanned ? ` from the last ${q.data.scanned.toLocaleString()} launches` : ""}.
       </p>
     </>
   );

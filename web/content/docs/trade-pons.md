@@ -1,0 +1,40 @@
+# Trade Pons tokens on Stoa
+
+[Pons](https://ponsfamily.com) is a token launchpad on Robinhood Chain. Every Pons token starts on its own bonding curve and moves to a Uniswap V4 pool when the curve fills. Stoa trades it at both stages, and [Launches](https://stoadex.com/launches) lists the live ones.
+
+## The two stages
+
+| Stage | Where the token trades | What Stoa does |
+| --- | --- | --- |
+| On the curve | The token's Pons bonding curve. Buys push the price up, sells push it down (x·y=k on the curve's reserves) | Trades on the curve through the Pons curve adapter, once the admin Safe has added it to the router (scheduled 18 Nov 2026) |
+| Graduated | A Uniswap V4 pool that Pons creates and fills when the curve reaches its target, usually 4.2 ETH. The pool's liquidity is locked | Routes the V4 pool. A watcher adds every new graduation pool to the router, usually within the hour; anyone can also add it from the swap screen |
+
+## Find a token
+
+- [Launches](https://stoadex.com/launches) shows every Pons curve that raised at least 0.05 ETH in the last few days, with curve progress, market cap, creator tax and age, plus recent graduations. Search by name, ticker or address, sort by closest to graduation, newest or market cap.
+- On the swap screen, pick the token from the list (live launches are in it once the curve adapter is live) or paste its contract address.
+
+## Costs
+
+| Cost | Size | Goes to |
+| --- | --- | --- |
+| Pons fee (curve only) | 1% of each buy and sell | Pons |
+| Creator tax (curve only) | Set by the creator at launch, usually 0% to 4%. Launches shows it for each token | The token's creator |
+| Uniswap pool fee (graduated) | The pool's own fee | The pool's liquidity providers |
+| Stoa protocol fee | 2 bps (0.02%) | Stoa's fee contract (10% to your referrer, if you have one) |
+
+On a curve fill, the swap screen shows a **Curve fees** line with the exact Pons fee and creator tax. Both are already included in the amount you see.
+
+## What Stoa leaves to Pons
+
+- **The buy that would graduate a curve.** That buy takes the last tokens on the curve, gets part of its ETH refunded and moves the token to Uniswap V4 in the same transaction. Stoa does not quote it; buy a little less, or buy on Pons.
+- **Curves priced in another token** instead of ETH, and **the first seconds after a launch**, when Pons charges a decaying anti-sniper tax.
+- **Pools other people create** for a Pons token. Only the pool Pons creates at graduation is added automatically.
+
+## Before you buy
+
+Anyone can launch a token on Pons in a minute. Stoa does not review them: most go to zero, and a creator can sell their own tokens at any time. A token being on Launches or routable on Stoa says nothing about its quality. Check the contract address, look at who is behind it, and only buy what you can afford to lose. See [Risks](risks.md).
+
+## Share and earn
+
+Every token on Launches has a **Share** button. With your wallet connected, the link carries your referral: you earn 10% of Stoa's protocol fee on the swaps it brings. See [Referrals](referrals.md).
