@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Referrals from "@/components/Referrals";
 import { PageHead } from "@/components/ui";
-export const metadata: Metadata = { title: "Referrals" };
+export const metadata: Metadata = {
+  title: "Referrals",
+  description: "Share your Stoa link and earn 10% of the protocol fee on every swap made through it, claimable on-chain on Robinhood Chain and Elysium.",
+  alternates: { canonical: "/referrals" },
+};
 export default function Page() {
   return (
     <section className="page">

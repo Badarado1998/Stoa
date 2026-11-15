@@ -4,7 +4,7 @@ import { flatDocs } from "@/lib/docs";
 import { CA } from "@/lib/stoaAddress";
 import type { Launch } from "@/lib/ponsLaunch";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/docs", "/changelog", "/launches", "/stats"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats"];
 /** rebuilt every hour: the token pages of the launches closest to graduation and the latest graduations */
 export const revalidate = 3600;
 

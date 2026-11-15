@@ -3,6 +3,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { docPage, docsIndex, flatDocs } from "@/lib/docs";
 import DocsNav from "@/components/DocsNav";
+import { SITE } from "@/lib/chain";
+
+const plain = (h: string) =>
+  h.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
+/** Search snippet: the lead, topped up from the page when it is short, cut at a word near 155 characters. */
+function describe(lead: string, html: string): string {
+  let t = plain(lead);
+  // top up from the page's first paragraphs only: tables, lists and headings read badly as a snippet
+  for (const m of html.matchAll(/<p>([\s\S]*?)<\/p>/g)) {
+    if (t.length >= 110) break;
+    t = `${t} ${plain(m[1])}`.trim();
+  }
+  if (t.length <= 158) return t;
+  const cut = t.slice(0, 155);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 120)).replace(/[,;:.\s]+$/, "")}…`;
+}
 
 export const dynamicParams = false;
 export function generateStaticParams() {
@@ -12,7 +28,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const d = docPage(slug);
-  return d ? { title: `${d.title} · Docs`, description: d.lead.replace(/<[^>]+>/g, "") } : {};
+  return d ? { title: `${d.title} · Docs`, description: describe(d.lead, d.html), alternates: { canonical: `/docs/${slug}` } } : {};
 }
 
 export default async function DocPageView({ params }: { params: Promise<{ slug: string }> }) {
@@ -31,6 +47,12 @@ export default async function DocPageView({ params }: { params: Promise<{ slug: 
     <section className="page docs-page">
       <div className="dl">
         <DocsNav index={docsIndex()} current={slug} title={d.title} corpus={corpus} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Docs", item: `${SITE}/docs/introduction` },
+            { "@type": "ListItem", position: 2, name: d.title, item: `${SITE}/docs/${slug}` },
+          ],
+        }) }} />
         <article className="dmain">
           <div className="crumb">{d.group}</div>
           <h1>{d.title}</h1>

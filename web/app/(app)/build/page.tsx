@@ -6,7 +6,11 @@ import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
 import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
 
-export const metadata: Metadata = { title: "Build" };
+export const metadata: Metadata = {
+  title: "Build",
+  description: "Quote, route and swap through Stoa from your own app or contract: router SDK, contract addresses, maker kit and aggregator integration.",
+  alternates: { canonical: "/build" },
+};
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 const SOL = `// 1. off-chain: route = router.quote(USDC, WHYPE, 250e6)  (eth_call)

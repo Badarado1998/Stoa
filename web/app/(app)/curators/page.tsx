@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Curators" };
+export const metadata: Metadata = {
+  title: "Curators",
+  description: "Run a Stoa pool on Elysium: bring a price feed or quoting strategy, post a bond, quote on-chain every block and keep the spread when the router fills you.",
+  alternates: { canonical: "/curators" },
+};
 
 const STEPS = [
   ["I", "Post a bond", "Curators lock a HYPE bond. It keeps quotes honest and can be slashed for bad pricing."],

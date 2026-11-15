@@ -3,6 +3,7 @@ import LaunchesBody from "@/components/LaunchesBody";
 
 const description = "Every live Pons launch on Robinhood Chain with curve progress, market cap and creator tax, read from the chain.";
 export const metadata: Metadata = {
+  alternates: { canonical: "/launches" },
   title: "Pons launches",
   description,
   openGraph: { title: "Pons launches · Stoa", description, type: "website", siteName: "Stoa" },

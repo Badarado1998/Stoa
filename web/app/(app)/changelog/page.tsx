@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description,
   openGraph: { title: "Changelog · Stoa", description, type: "website", siteName: "Stoa" },
   twitter: { card: "summary_large_image", site: "@StoaDex", title: "Changelog · Stoa", description },
-  alternates: { types: { "application/rss+xml": "/changelog/rss.xml" } },
+  alternates: { canonical: "/changelog", types: { "application/rss+xml": "/changelog/rss.xml" } },
 };
 
 export default function ChangelogPage() {

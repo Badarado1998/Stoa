@@ -6,6 +6,7 @@ import TokenUtility from "@/components/TokenUtility";
 
 const description = "Stoa's protocol fees buy and burn $STOA every week, and makers bond it to quote Stoa pools. Live curve progress, burns and supply.";
 export const metadata: Metadata = {
+  alternates: { canonical: "/token" },
   title: "$STOA",
   description,
   openGraph: { title: "$STOA · Stoa", description, type: "website", siteName: "Stoa" },

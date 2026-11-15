@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead, Pair } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Earn" };
+export const metadata: Metadata = {
+  title: "Earn",
+  description: "Stoa pool vaults: deposit and hold shares that grow with the fees traders pay. Vaults open only after the pool contracts are audited.",
+  alternates: { canonical: "/earn" },
+};
 
 export default function EarnPage() {
   return (

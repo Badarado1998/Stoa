@@ -5,6 +5,7 @@ import StatsBody from "@/components/StatsBody";
 
 const description = "Volume and swaps routed through Stoa on Robinhood Chain and Elysium, read straight from the routers' on-chain events.";
 export const metadata: Metadata = {
+  alternates: { canonical: "/stats" },
   title: "Stats",
   description,
   openGraph: { title: "Stats · Stoa", description, type: "website", siteName: "Stoa" },
