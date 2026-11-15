@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-graduated",
+    date: "2026-11-15",
+    title: "$STOA graduated to Uniswap V4",
+    tag: "$STOA",
+    items: [
+      "$STOA's Pons bonding curve filled on 15 November. Pons moved it to a Uniswap V4 pool (ETH / STOA) with locked liquidity.",
+      "Stoa routes that pool: buy or sell $STOA on Trade with ETH or any token Stoa routes.",
+      "The pool's hook takes 2.8% of each buy and sell, the same rate as on the curve. How to buy and Fees are updated.",
+    ],
+    link: { href: "/trade?chain=robinhood&buy=0x13E6993417616De724F2b337D65063f229e96718", label: "Buy $STOA" },
+  },
+  {
     id: "tokens-embed-app",
     date: "2026-11-15",
     title: "Token pages, a buy widget for any site, and Stoa as an app",

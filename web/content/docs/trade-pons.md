@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | Pons fee (curve only) | 1% of each buy and sell | Pons |
 | Creator tax (curve only) | Set by the creator at launch, usually 0% to 4%. Launches shows it for each token | The token's creator |
-| Uniswap pool fee (graduated) | The pool's own fee | The pool's liquidity providers |
+| Pons pool fee (graduated) | Taken by the hook on the V4 pool Pons creates. $STOA's pool has a 0% swap fee and its hook takes 2.8% of each buy and sell, the same as its curve did | Pons' hook |
 | Stoa protocol fee | 2 bps (0.02%) | Stoa's fee contract (10% to your referrer, if you have one) |
 
 On a curve fill, the swap screen shows a **Curve fees** line with the exact Pons fee and creator tax. Both are already included in the amount you see.

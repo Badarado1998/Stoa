@@ -109,7 +109,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
         {grad
           ? routable === false
             ? "$STOA has graduated to its Uniswap V4 pool. Stoa's watcher adds that pool to the router on its next run, or anyone can add it now below."
-            : "$STOA has graduated to its Uniswap V4 pool and routes on Stoa. The weekly buyback can now buy and burn $STOA."
+            : "$STOA has graduated to its Uniswap V4 pool and routes on Stoa, so the weekly buyback buys it there. The pool's Pons hook takes 2.8% of each buy and sell."
           : routable
             ? <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. $STOA already trades on Stoa on its curve, so the weekly buyback can buy it now. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity, and Stoa routes that pool instead.</>
             : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router (anyone can add it from this page), and the weekly buyback starts buying $STOA.</>}

@@ -9,13 +9,12 @@ $STOA is Stoa's official token on Robinhood Chain. Contract: `0x13E6993417616De7
 
 ## Where $STOA trades now
 
-$STOA launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2b337D65063f229e96718) and still trades on its Pons bonding curve. Live progress toward graduation is on the [$STOA page](https://stoadex.com/token).
+$STOA launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2b337D65063f229e96718) and graduated on 15 November 2026: its bonding curve filled and Pons moved it to a Uniswap V4 pool (ETH / STOA) with locked liquidity. That pool is where $STOA trades now, and Stoa routes it.
 
-| When | Where to buy | How |
-| --- | --- | --- |
-| Until the Pons curve adapter is live (scheduled 18 Nov 2026) | Pons | Open $STOA on Pons and buy with ETH |
-| From then, while $STOA is on its curve | Stoa | Swap ETH, or any token Stoa routes, for $STOA. Stoa buys it on the curve |
-| After graduation | Stoa | Stoa routes the Uniswap V4 pool Pons creates at graduation |
+| Where to buy | How |
+| --- | --- |
+| Stoa | Swap ETH, or any token Stoa routes, for $STOA. Stoa fills it in the V4 pool |
+| Pons | Open $STOA on Pons and buy with ETH; it trades the same pool |
 
 ## Buy on Stoa, step by step
 
@@ -23,9 +22,8 @@ $STOA launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2
 2. Connect your wallet. If it is on another network, Stoa asks it to switch.
 3. Pick what you pay with: ETH directly, or USDG or another token (Stoa swaps it to WETH first, in the same transaction).
 4. Enter the amount and check the details under the quote:
-   - **Filled by** says where the swap fills: *Pons curve* before graduation, *Uniswap V4* after.
-   - **Curve fees** (curve fills only): Pons' 1% fee plus $STOA's 1.8% creator tax. They are already in the amount you see.
-   - **Price impact** and **Minimum received**.
+   - **Filled by** says where the swap fills: *Uniswap V4*, $STOA's graduation pool.
+   - **Price impact** and **Minimum received**. The pool's 2.8% fee (see Costs) is already in the amount you see.
 5. Confirm in your wallet. $STOA arrives in the same transaction.
 
 ## Costs
@@ -33,9 +31,7 @@ $STOA launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2
 | Cost | Size | Goes to |
 | --- | --- | --- |
 | Stoa protocol fee | 2 bps (0.02%) | Stoa's fee contract: 10% to the referrer if you came through a referral link, the rest buys and burns $STOA every week (from the 17 Nov handover) |
-| Pons fee (curve only) | 1% | Pons |
-| $STOA creator tax (curve only) | 1.8% | $STOA's creator wallet, as set at launch on Pons |
-| Uniswap pool fee (after graduation) | The pool's fee | The pool's liquidity providers |
+| Pons pool fee | 2.8% of each buy and sell | Taken by the hook Pons gives its graduation pools, the same rate $STOA paid on its curve (Pons' 1% fee plus the 1.8% creator tax set at launch). The pool itself has a 0% swap fee |
 | Gas | A few cents at most | Robinhood Chain |
 
 ## Before you buy

@@ -9,7 +9,7 @@ Every swap through Stoa on Robinhood Chain pays a 2 bps protocol fee to the FeeD
 - **Every Monday** a keeper wallet runs the buyback for each fee token worth at least $1 that has a route to $STOA. Smaller amounts wait for the next week. Fees that are already $STOA are burned without a swap.
 - The keeper only chooses the route and a minimum output. Its script allows 2% slippage; the contract itself does not cap it, so a leaked keeper key could buy at a bad price (see L-4 in the [security review](security-review.md)). It cannot send fees anywhere else: the contract does not allow it.
 - The buyback swap pays the normal 2 bps fee, in $STOA, which the next run burns too.
-- While $STOA is still on its Pons bonding curve, the buyback buys it on the curve through Stoa's Pons curve adapter once the admin Safe has added that adapter to the router (scheduled, about 18 November 2026). A curve buy pays Pons' 1% fee and $STOA's 1.8% creator tax. After graduation the buyback buys from the Uniswap V4 pool.
+- $STOA graduated from its Pons bonding curve on 15 November 2026, so the buyback buys it from its Uniswap V4 pool, which Stoa routes. A buy there pays the pool's 2.8% Pons fee, the same rate as on the curve.
 - The owner (the 48-hour timelock) keeps the FeeDistributor's other settings, such as the referral share, through StoaBuyback. It cannot withdraw protocol fees. Changing the policy itself would mean handing the FeeDistributor to a different contract, a public 48-hour timelock action like every other.
 
 Every buyback emits `BoughtAndBurned(token, amountIn, stoaBurned)`, and `totalBurned()` on StoaBuyback adds them up.
