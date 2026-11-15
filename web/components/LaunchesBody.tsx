@@ -94,13 +94,15 @@ export default function LaunchesBody() {
                 <td className="hm" style={{ fontFamily: "var(--mono)" }}>{(l.creatorTaxBps / 100).toFixed(1)}%</td>
                 <td className="hm" style={{ fontFamily: "var(--mono)" }}>{age(l.launchedAt)}</td>
                 <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                  <button type="button" className="ghost" style={{ padding: "4px 10px", marginRight: 10, fontSize: 13 }} aria-label={`Share ${l.symbol}`}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                  <button type="button" className="ghost" style={{ padding: "3px 10px", fontSize: 12.5, minHeight: 0 }} aria-label={`Share ${l.symbol}`}
                     onClick={() => share(l.token, linkFor(l), `$${l.symbol} is ${l.progress.toFixed(0)}% of the way to graduation on its Pons curve.`)}>
                     {copied === l.token ? "Copied" : "Share"}
                   </button>
                   {ponsLive
                     ? <Link href={trade(l)} className="go" style={{ margin: 0 }}>Trade</Link>
                     : <a href={PONS(l.token)} className="go" style={{ margin: 0 }} target="_blank" rel="noopener noreferrer">Pons</a>}
+                  </div>
                 </td>
               </tr>
             ))}
