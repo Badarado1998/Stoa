@@ -13,15 +13,19 @@ on:
         description: "Blocks to look back for other Pons graduations (default 1000000, about 30h)"
         required: false
         default: "1000000"
+      max:
+        description: "Most pools to register in this run (default 10; raise it for a backfill)"
+        required: false
+        default: "10"
 
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: Register $STOA's V4 pool once it exists
+      - name: Register $STOA's V4 pool once it exists (creating it first if the curve graduated without one)
         working-directory: contracts
         env:
           RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
@@ -34,4 +38,4 @@ jobs:
           RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
           PRIVATE_KEY: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
         # log scans need the public RPC's 10M-block range, so this step always reads from it
-        run: RPC=https://rpc.mainnet.chain.robinhood.com WINDOW=${{ inputs.window || '1000000' }} ./script/pons-graduations.sh
+        run: RPC=https://rpc.mainnet.chain.robinhood.com WINDOW=${{ inputs.window || '1000000' }} MAX=${{ inputs.max || '10' }} ./script/pons-graduations.sh

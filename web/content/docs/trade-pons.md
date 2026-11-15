@@ -12,6 +12,7 @@
 ## Find a token
 
 - [Launches](https://stoadex.com/launches) shows every Pons curve that raised at least 0.05 ETH in the last few days, with curve progress, market cap, creator tax and age, plus recent graduations. Search by name, ticker or address, sort by closest to graduation, newest or market cap.
+- Every launch has its own page, `stoadex.com/launches/<token address>` (tap a token on Launches): curve progress, price, market cap and creator tax, refreshed every 10 seconds, with a Trade or Pons button. Its link card on X and Telegram shows the token's logo and progress.
 - On the swap screen, pick the token from the list (live launches are in it once the curve adapter is live) or paste its contract address.
 
 ## Costs
@@ -37,4 +38,4 @@ Anyone can launch a token on Pons in a minute. Stoa does not review them: most g
 
 ## Share and earn
 
-Every token on Launches has a **Share** button. With your wallet connected, the link carries your referral: you earn 10% of Stoa's protocol fee on the swaps it brings. See [Referrals](referrals.md).
+Every token on Launches, and every token page, has a **Share** button. The link opens the token's own page with its link card. With your wallet connected, it carries your referral: you earn 10% of Stoa's protocol fee on the swaps it brings. See [Referrals](referrals.md).

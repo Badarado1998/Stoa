@@ -5,7 +5,7 @@ Earn 10% of the protocol fee on swaps from people you refer.
 ## How it works
 
 1. Connect a wallet on [Referrals](https://stoadex.com/referrals) to get your link: `stoadex.com/trade?ref=<your address>`.
-2. Share it, or press **Share** next to any token on [Launches](https://stoadex.com/launches): those links carry your referral too. When someone opens Stoa through your link, their browser remembers you as their referrer, and every swap they make in the app names your address on-chain.
+2. Share it, or press **Share** next to any token on [Launches](https://stoadex.com/launches) or on a token's own page: those links carry your referral too. When someone opens Stoa through your link, their browser remembers you as their referrer, and every swap they make in the app names your address on-chain.
 3. Your share is recorded by the FeeDistributor contract on every one of those swaps.
 
 ## How you get paid

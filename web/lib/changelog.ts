@@ -12,6 +12,20 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "launch-pages-live-prices",
+    date: "2026-11-15",
+    title: "A page for every Pons launch, live prices",
+    tag: "Robinhood Chain",
+    items: [
+      "Every Pons launch has its own page, stoadex.com/launches/<address>: curve progress, price, market cap, creator tax and a Trade or Pons button, refreshed every 10 seconds. Its link card on X and Telegram shows the token's logo and progress.",
+      "Share links from Launches open the token's page and still carry the sharer's referral.",
+      "Live numbers: curve progress and market cap on Launches, and the latest point of the $STOA chart, are read from the curves every 10 seconds instead of a CDN copy that could be a few minutes old. The supply API is at most a minute old.",
+      "The $STOA page is ready for graduation: once $STOA moves to Uniswap V4, its market cap comes from Stoa's best quote.",
+      "The graduation watcher also creates $STOA's graduation pool if its curve fills without one (a step anyone may take through the Pons factory), then registers it. Tested end to end on a fork of Robinhood Chain: $STOA routes from ETH and from USDG right after.",
+    ],
+    link: { href: "/launches", label: "Open Launches" },
+  },
+  {
     id: "pons-graduations-routed",
     date: "2026-11-15",
     title: "Every Pons graduation routes on Stoa",

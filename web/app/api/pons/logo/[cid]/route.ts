@@ -1,6 +1,9 @@
 // Pons token logos (IPFS), served from stoadex.com so visitors never hit an IPFS gateway themselves (rate limits,
 // tracking) and the CDN keeps each one forever (an IPFS CID is content-addressed, so it never changes).
 // Raster images only, sniffed from the bytes: SVG and anything else is refused, so nothing can run on our origin.
+import { getAddress, isAddress } from "viem";
+import { curveOf, logoUrl, ponsLogoAbi, rhClient } from "@/lib/ponsLaunch";
+
 const CID = /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{50,120})$/;
 const GATEWAYS = ["https://gateway.pinata.cloud/ipfs/", "https://ipfs.io/ipfs/", "https://dweb.link/ipfs/"];
 const MAX = 2_000_000;
@@ -26,10 +29,27 @@ async function isListed(origin: string, cid: string) {
   return !!allowed?.set.has(cid);
 }
 
+/** ...or the logo a Pons token itself points to: /api/pons/logo/<cid>?t=<token> (token pages), checked on chain */
+const owned = new Map<string, boolean>();
+async function isTokenLogo(cid: string, t: string | null) {
+  if (!t || !isAddress(t, { strict: false })) return false;
+  const token = getAddress(t), key = `${token}:${cid}`;
+  if (owned.has(key)) return owned.get(key)!;
+  try {
+    const c = rhClient();
+    const [curve, logo] = await Promise.all([curveOf(token, c), c.readContract({ address: token, abi: ponsLogoAbi, functionName: "logo" })]);
+    const ok = !!curve && logoUrl(logo) === `/api/pons/logo/${cid}`;
+    if (owned.size > 5000) owned.clear();
+    owned.set(key, ok);
+    return ok;
+  } catch { return false; }
+}
+
 export async function GET(req: Request, { params }: { params: Promise<{ cid: string }> }) {
   const { cid } = await params;
   if (!CID.test(cid)) return new Response("bad cid", { status: 400 });
-  if (!(await isListed(new URL(req.url).origin, cid))) return new Response("not a listed Pons logo", { status: 404, headers: { "cache-control": "public, s-maxage=300" } });
+  const url = new URL(req.url);
+  if (!(await isTokenLogo(cid, url.searchParams.get("t"))) && !(await isListed(url.origin, cid))) return new Response("not a listed Pons logo", { status: 404, headers: { "cache-control": "public, s-maxage=300" } });
   for (const g of GATEWAYS) {
     try {
       const r = await fetch(g + cid, { signal: AbortSignal.timeout(8_000) });

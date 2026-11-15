@@ -15,6 +15,7 @@ import { useWalletModal } from "./Providers";
 import { Sk } from "./ui";
 import { BURN as BURN_ADDR, PONS_HOOK, PONS_URL, STOA_CURVE, curveAbi } from "@/lib/stoaSupply";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
+import { ponsCurveAbi } from "@/lib/ponsLaunch";
 
 const net = ROBINHOOD;
 const C = net.contracts;
@@ -66,10 +67,10 @@ function CurvePanel({ routable }: { routable?: boolean }) {
       { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [BURN], chainId: net.chain.id },
       { address: STOA, abi: erc20Abi, functionName: "totalSupply", chainId: net.chain.id },
     ] as const,
-    query: { refetchInterval: 20_000 },
+    query: { refetchInterval: 10_000 },
   });
   // ETH raised as the curve counts it for graduation (its balance can also hold fees)
-  const eth = useQuery({ queryKey: ["stoa-curve-eth"], enabled: !!pub, refetchInterval: 20_000, queryFn: () => pub!.readContract({ address: STOA_CURVE, abi: curveAbi, functionName: "realQuoteReserve" }) });
+  const eth = useQuery({ queryKey: ["stoa-curve-eth"], enabled: !!pub, refetchInterval: 10_000, queryFn: () => pub!.readContract({ address: STOA_CURVE, abi: curveAbi, functionName: "realQuoteReserve" }) });
   const thr = r.data?.[0]?.result as bigint | undefined, grad = r.data?.[1]?.result as boolean | undefined;
   const inCurve = r.data?.[2]?.result as bigint | undefined, burned = r.data?.[3]?.result as bigint | undefined, supply = r.data?.[4]?.result as bigint | undefined;
   const pct = grad ? 100 : eth.data !== undefined && thr ? Math.min(99.9, (Number(eth.data) / Number(thr)) * 100) : undefined;
@@ -137,21 +138,59 @@ function CurvePanel({ routable }: { routable?: boolean }) {
   );
 }
 
-/** $STOA market cap since launch, from /api/stoa/price (rebuilt from the curve's trades) */
+/** $STOA market cap since launch, from /api/stoa/price (rebuilt from the curve's trades), with today's point read
+ *  live from the curve every 10 seconds. After graduation: market cap from Stoa's best quote, from the V4 pool. */
 function PricePanel() {
+  const pub = usePublicClient({ chainId: net.chain.id });
   const [range, setRange] = useState<"24h" | "all">("all");
   const q = useQuery({
     queryKey: ["stoa-price"],
     refetchInterval: 60_000,
     queryFn: async () => (await (await fetch("/api/stoa/price")).json()) as { points: { t: number; eth: number }[]; supply: number; ethUsd: number | null; trades: number; graduated?: boolean },
   });
-  const all = q.data?.points ?? [];
-  if (q.data?.graduated) return null; // after graduation the price lives in the Uniswap V4 pool
-  const now = all.length ? all[all.length - 1].t : 0;
-  const pts = range === "24h" ? all.filter((p) => p.t >= now - 86_400) : all;
-  const usd = q.data?.ethUsd ?? null, supply = q.data?.supply ?? 1e9;
+  const now$ = useReadContracts({
+    contracts: [
+      { address: STOA_CURVE, abi: ponsCurveAbi, functionName: "quoteReserve", chainId: net.chain.id },
+      { address: STOA_CURVE, abi: ponsCurveAbi, functionName: "tokenReserve", chainId: net.chain.id },
+      { address: STOA_CURVE, abi: ponsCurveAbi, functionName: "graduated", chainId: net.chain.id },
+    ] as const,
+    query: { refetchInterval: 10_000 },
+  });
+  const [qr, tr, gradNow] = [now$.data?.[0]?.result, now$.data?.[1]?.result, now$.data?.[2]?.result] as [bigint | undefined, bigint | undefined, boolean | undefined];
+  const graduated = gradNow === true || q.data?.graduated === true;
+  // after graduation: what 0.001 ETH buys through Stoa's router, and ETH in USDG (not waiting on the history API)
+  const v4 = useQuery({
+    queryKey: ["stoa-v4-price"],
+    enabled: graduated && !!pub && !!net.contracts.router,
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const q = (to: Address, amt: bigint) => pub!.simulateContract({ address: net.contracts.router!, abi: routerAbi, functionName: "quote", args: [zeroAddress, to, amt] }).then((r) => r.result.amountOut).catch(() => 0n);
+      const [tok, usdg] = await Promise.all([q(STOA, 10n ** 15n), q(USDG, 10n ** 16n)]);
+      return { price: tok > 0n ? 1e15 / Number(tok) : null, ethUsd: usdg > 0n ? (Number(usdg) / 1e6) * 100 : null };
+    },
+  });
+  const usd = v4.data?.ethUsd ?? q.data?.ethUsd ?? null, supply = q.data?.supply ?? 1e9;
   const mcap = (eth: number) => (usd ? eth * supply * usd : null);
   const fmtUsd = (v: number | null) => (v === null ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
+  if (graduated) {
+    const p = v4.data?.price ?? null;
+    return (
+      <div className="panel pad">
+        <div className="lbl">$STOA MARKET CAP · UNISWAP V4</div>
+        <div style={{ fontSize: 30, fontWeight: 700, marginTop: 10 }}>{v4.isLoading ? "…" : p === null ? "—" : fmtUsd(mcap(p))}</div>
+        <p className="note">
+          {p === null
+            ? "$STOA has graduated from its Pons curve. Its market cap shows here once its Uniswap V4 pool routes on Stoa."
+            : <>From Stoa&apos;s best quote for a small buy (0.001 ETH), times the 1B supply, refreshed every 15 seconds. $STOA graduated from its Pons curve to Uniswap V4.</>}
+        </p>
+      </div>
+    );
+  }
+  const hist = q.data?.points ?? [];
+  const tip = qr !== undefined && tr ? { t: Math.floor(Date.now() / 1000), eth: Number(qr) / Number(tr) } : null;
+  const all = tip && (!hist.length || tip.t > hist[hist.length - 1].t) ? [...hist, tip] : hist;
+  const now = all.length ? all[all.length - 1].t : 0;
+  const pts = range === "24h" ? all.filter((p) => p.t >= now - 86_400) : all;
   const last = all.length ? all[all.length - 1].eth : 0;
   const base = pts.length ? pts[0].eth : 0;
   const ch = base ? (last / base - 1) * 100 : 0;
@@ -183,7 +222,7 @@ function PricePanel() {
         {path && <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
       </svg>
       <p className="note">
-        Rebuilt from {q.data?.trades ?? "…"} trades on the Pons curve: the curve&apos;s own reserves after each buy and sell, times the 1B supply, in USD at today&apos;s ETH price{usd ? ` ($${usd.toFixed(0)})` : ""}.
+        Rebuilt from {q.data?.trades ?? "…"} trades on the Pons curve: the curve&apos;s own reserves after each buy and sell, times the 1B supply, in USD at today&apos;s ETH price{usd ? ` ($${usd.toFixed(0)})` : ""}. The latest point is read live from the curve every 10 seconds.
       </p>
     </div>
   );

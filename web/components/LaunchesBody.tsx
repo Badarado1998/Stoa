@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { zeroAddress } from "viem";
 import { PageHead, Sk } from "./ui";
 import { useNet } from "./Providers";
@@ -11,7 +11,8 @@ import { routerAbi } from "@/lib/abi";
 import type { Launch } from "@/app/api/pons/launches/route";
 import { CA } from "@/lib/stoaAddress";
 import { SITE } from "@/lib/chain";
-import { cleanRef } from "@/lib/swap";
+import { ponsCurveAbi } from "@/lib/ponsLaunch";
+import { shareOrCopy, useRefFromUrl } from "@/lib/share";
 
 const PONS = (a: string) => `https://ponsfamily.com/launchpad/${a}`;
 const usd = (v: number | null) => (v === null ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
@@ -38,26 +39,36 @@ export default function LaunchesBody() {
   // referral: a ?ref= on this page is remembered like on Trade, and links shared from here carry the sharer's wallet
   const { address } = useAccount();
   const [copied, setCopied] = useState<string | null>(null);
-  useEffect(() => {
-    const r = cleanRef(new URLSearchParams(location.search).get("ref"));
-    if (r) try { localStorage.setItem("stoa.ref", r); } catch { /* storage blocked */ }
-  }, []);
+  useRefFromUrl();
   const refQ = address ? `ref=${address}` : "";
-  const linkFor = (l?: Launch) =>
-    l && ponsLive ? `${SITE}/trade?chain=robinhood&buy=${l.token}${refQ ? `&${refQ}` : ""}` : `${SITE}/launches${refQ ? `?${refQ}` : ""}`;
+  const linkFor = (l?: Launch) => `${SITE}/launches${l ? `/${l.token}` : ""}${refQ ? `?${refQ}` : ""}`;
   async function share(key: string, url: string, text: string) {
-    try {
-      if (typeof navigator.share === "function") { await navigator.share({ title: "Stoa", text, url }); return; }
-    } catch { return; /* closed the share sheet */ }
-    try { await navigator.clipboard.writeText(url); setCopied(key); setTimeout(() => setCopied(null), 1600); } catch { /* clipboard blocked */ }
+    if ((await shareOrCopy(url, text)) === "copied") { setCopied(key); setTimeout(() => setCopied(null), 1600); }
   }
+
+  // the list comes from the API (CDN-cached a minute); progress and market cap stay live, read from the curves every 10s
+  const base = useMemo(() => (q.data?.launches ?? []).filter((l) => !l.graduated), [q.data]);
+  const fresh = useReadContracts({
+    contracts: base.flatMap((l) => [
+      { address: l.curve, abi: ponsCurveAbi, functionName: "realQuoteReserve", chainId: ROBINHOOD.chain.id } as const,
+      { address: l.curve, abi: ponsCurveAbi, functionName: "quoteReserve", chainId: ROBINHOOD.chain.id } as const,
+      { address: l.curve, abi: ponsCurveAbi, functionName: "tokenReserve", chainId: ROBINHOOD.chain.id } as const,
+    ]),
+    query: { enabled: base.length > 0, refetchInterval: 10_000 },
+  });
+  const ethUsd = (q.data as { ethUsd?: number | null } | undefined)?.ethUsd ?? null;
+  const liveRows = useMemo(() => base.map((l, i) => {
+    const raised = fresh.data?.[3 * i]?.result as bigint | undefined, qr = fresh.data?.[3 * i + 1]?.result as bigint | undefined, tr = fresh.data?.[3 * i + 2]?.result as bigint | undefined;
+    if (raised === undefined || qr === undefined || !tr || !l.supply) return l;
+    const thr = +l.threshold, r = Number(raised) / 1e18, mcapEth = (Number(qr) / Number(tr)) * l.supply;
+    return { ...l, raised: r.toFixed(4), progress: thr > 0 ? Math.min(99.9, (r / thr) * 100) : l.progress, mcapEth: mcapEth.toFixed(2), mcapUsd: ethUsd ? mcapEth * ethUsd : l.mcapUsd };
+  }), [base, fresh.data, ethUsd]);
 
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"close" | "new" | "cap">("close");
   const [near, setNear] = useState(false);
   const needle = search.trim().toLowerCase();
-  const live = (q.data?.launches ?? [])
-    .filter((l) => !l.graduated)
+  const live = liveRows
     .filter((l) => !near || l.progress >= 80)
     .filter((l) => !needle || (l.symbol + " " + l.name + " " + l.token).toLowerCase().includes(needle))
     .sort((a, b) => sort === "new" ? b.launchedAt - a.launchedAt : sort === "cap" ? (b.mcapUsd ?? 0) - (a.mcapUsd ?? 0) : b.progress - a.progress);
@@ -98,10 +109,10 @@ export default function LaunchesBody() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {l.logo && <img src={l.logo} alt="" width={30} height={30} loading="lazy" style={{ position: "absolute", inset: 0, width: 30, height: 30, objectFit: "cover" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
                     </span>
-                    <div style={{ minWidth: 0 }}>
+                    <Link href={`/launches/${l.token}`} style={{ minWidth: 0, color: "inherit" }}>
                       <div style={{ fontWeight: 600 }}>{l.symbol}{l.token.toLowerCase() === CA.toLowerCase() && <span className="chip live" style={{ marginLeft: 6 }}>Stoa&apos;s token</span>}</div>
                       <div style={{ fontSize: 12.5, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>{l.name}</div>
-                    </div>
+                    </Link>
                   </div>
                 </td>
                 <td style={{ minWidth: 120 }}>
@@ -133,7 +144,7 @@ export default function LaunchesBody() {
         <div className="panel pad" style={{ marginBottom: 20 }}>
           <div className="lbl">RECENTLY GRADUATED · NOW ON UNISWAP V4</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-            {grads.map((l) => <Link key={l.token} href={trade(l)} className="chip" title={l.name}>{l.symbol}</Link>)}
+            {grads.map((l) => <Link key={l.token} href={`/launches/${l.token}`} className="chip" title={l.name}>{l.symbol}</Link>)}
           </div>
           <p className="note">Graduated tokens trade on their Uniswap V4 pool. Stoa&apos;s watcher adds each graduation pool to the router, usually within the hour; if the swap screen still offers to add it, that is one small transaction anyone can send.</p>
         </div>
@@ -145,7 +156,7 @@ export default function LaunchesBody() {
           : <>Connect a wallet and the links you share from this page carry your referral (10% of Stoa&apos;s protocol fee on the swaps they bring).</>}
       </p>
       <p className="note">
-        <Link href="/docs/trade-pons">How Pons trading on Stoa works</Link>. Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Data refreshes every minute{q.data?.scanned ? ` from the last ${q.data.scanned.toLocaleString()} launches` : ""}.
+        <Link href="/docs/trade-pons">How Pons trading on Stoa works</Link>. Unverified launches, not reviewed by Stoa: anyone can launch a token on Pons, and most go to zero. Curve trades pay Pons&apos; 1% fee and the token&apos;s creator tax on top of Stoa&apos;s 2 bps. Progress and market cap update every 10 seconds straight from the curves; the list itself refreshes every minute{q.data?.scanned ? `, from the last ${q.data.scanned.toLocaleString()} launches` : ""}. Tap a token for its own page and link card.
       </p>
     </>
   );

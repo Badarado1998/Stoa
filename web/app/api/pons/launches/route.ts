@@ -1,5 +1,6 @@
 import { createPublicClient, erc20Abi, http, parseAbi, parseAbiItem, type Address } from "viem";
 import { ROBINHOOD } from "@/lib/networks";
+import { PONS_FACTORY as FACTORY, logoUrl, ponsCurveAbi, ponsLogoAbi, type Launch } from "@/lib/ponsLaunch";
 
 // Live Pons launches on Robinhood Chain: tokens still on their bonding curve (with real ETH raised) and the ones that
 // graduated recently. Read from the chain once a minute for every visitor; Pons' own site is the source for the rest.
@@ -7,26 +8,9 @@ import { ROBINHOOD } from "@/lib/networks";
 export const dynamic = "force-dynamic";
 const CACHE = { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" };
 
-const FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e" as Address;
 const LAUNCHED = parseAbiItem("event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairToken, uint256 a, uint256 b)");
 const GRADUATED = parseAbiItem("event GraduationTokensPermanentlyLocked(address indexed token, uint256 amount)");
-const curveAbi = parseAbi([
-  "function graduated() view returns (bool)",
-  "function realQuoteReserve() view returns (uint256)",
-  "function graduationThreshold() view returns (uint256)",
-  "function quoteReserve() view returns (uint256)",
-  "function tokenReserve() view returns (uint256)",
-  "function launchSupply() view returns (uint256)",
-  "function launchedAt() view returns (uint256)",
-  "function isNativeQuote() view returns (bool)",
-  "function creatorTaxBps() view returns (uint256)",
-]);
-const logoAbi = parseAbi(["function logo() view returns (string)"]);
-/** ipfs://<cid> logos go through our own proxy (/api/pons/logo); anything else is not shown */
-const logoUrl = (v: unknown) => {
-  const m = /^ipfs:\/\/(?:ipfs\/)?([A-Za-z0-9]{46,130})$/.exec(String(v ?? "").trim());
-  return m ? `/api/pons/logo/${m[1]}` : null;
-};
+const curveAbi = ponsCurveAbi, logoAbi = ponsLogoAbi;
 const routerAbi = parseAbi(["function quote(address,address,uint256) returns ((uint256 amountOut, address mid, (address venue, bool isPool) leg1, (address venue, bool isPool) leg2))"]);
 const USDG = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address;
 /** ~3.5 days of Robinhood Chain blocks (about 9.4 blocks a second) */
@@ -34,11 +18,7 @@ const WINDOW = 2_800_000n;
 /** below this, a curve is noise (most launches never raise anything) */
 const MIN_RAISED = 50_000_000_000_000_000n; // 0.05 ETH
 
-export type Launch = {
-  token: Address; curve: Address; name: string; symbol: string;
-  raised: string; threshold: string; progress: number; graduated: boolean;
-  mcapEth: string; mcapUsd: number | null; launchedAt: number; creatorTaxBps: number; logo: string | null;
-};
+export type { Launch };
 
 const eth = (v: bigint, dp = 4) => (Number(v) / 1e18).toFixed(dp);
 const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 20_000 };
@@ -122,7 +102,7 @@ export async function GET() {
         progress: x.grad ? 100 : thr > 0n ? Math.min(99.9, Number((x.raised * 10_000n) / thr) / 100) : 0,
         mcapEth: eth(mcap, 2), mcapUsd: mcap > 0n && ethUsd ? (Number(mcap) / 1e18) * ethUsd : null,
         launchedAt: Number((r(6) as bigint | undefined) ?? 0n), creatorTaxBps: Number((r(7) as bigint | undefined) ?? 0n),
-        logo: logoUrl(r(8)),
+        logo: logoUrl(r(8)), supply: Number(supply) / 1e18,
       };
     });
     return Response.json({ updated: new Date().toISOString(), scanned: all.length, ethUsd, launches: out }, { headers: CACHE });
