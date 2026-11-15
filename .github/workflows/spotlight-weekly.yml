@@ -1,0 +1,41 @@
+name: Spotlight weekly settlement (Robinhood Chain)
+
+# Every Monday 00:07 UTC (07:07 WIB), just after a Spotlight week closes: settles the week (anyone may call finalize;
+# the keeper pays the gas) and, as the keeper, spends the burn pot on $STOA through the Stoa router and burns it.
+# Does nothing until SpotlightMarket is deployed and week 1 has started.
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "Only print what it would do"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "7 0 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spotlight-weekly
+  cancel-in-progress: false
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      RPC: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+      DRY: ${{ inputs.dry && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Settle the week and burn the pot
+        run: |
+          set -o pipefail
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          bash script/spotlight.sh 2>&1 | tee /tmp/out.txt
+          sed 's/^/- /' /tmp/out.txt >> "$GITHUB_STEP_SUMMARY" || true

@@ -27,7 +27,7 @@ export interface Net {
   tokens: Token[];
   /** how many entries at the start of `tokens` are core tokens (native, wrapped, stable) */
   core: number;
-  contracts: { router?: Address; pool?: Address; fees?: Address; v4?: Address; registry?: Address; safe?: Address; timelock?: Address; buyback?: Address; bonds?: Address };
+  contracts: { router?: Address; pool?: Address; fees?: Address; v4?: Address; registry?: Address; safe?: Address; timelock?: Address; buyback?: Address; bonds?: Address; spotlight?: Address };
   deployed: boolean;
   deployBlock: bigint;
   venues: Record<string, string>;
@@ -114,6 +114,7 @@ const RH_POPULAR: Token[] = (rhPopular as { symbol: string; address: string; dec
 const rhContracts = {
   router: addr(D.router), fees: addr(D.feeDistributor), v4: addr(D.uniswapV4Adapter), registry: addr(D.makerRegistry),
   safe: addr(D.safe), timelock: addr(D.timelock), buyback: addr(D.stoaBuyback), bonds: addr(D.bondRegistry),
+  spotlight: addr(D.spotlightMarket),
 };
 export const ROBINHOOD: Net = {
   key: "robinhood",

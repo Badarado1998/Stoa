@@ -12,6 +12,8 @@ The terms of use for the Stoa interface and how it handles your data.
 
 **Fees.** Swaps pay a 2 bps protocol fee, plus the fee of any outside venue used and network gas. See [Fees](fees.md).
 
+**Spotlight.** Tokens shown under Spotlight are sponsored: their projects paid for the slot and $STOA holders voted for them. Stoa does not review them. What Spotlight voters receive depends only on what projects bid; nothing is promised, and locking $STOA is at your own risk. See [Spotlight](spotlight.md).
+
 **No advice.** Nothing on this site is financial, investment, legal or tax advice.
 
 **Where you may not use it.** Do not use Stoa if you are located in, or are a resident of, a country or region under comprehensive sanctions, if you are on a sanctions list, or if using it is illegal where you are. You are responsible for following the laws that apply to you.

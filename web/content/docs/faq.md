@@ -10,7 +10,7 @@ Not externally, not yet. The team published its own [internal security review](s
 
 ### What has been checked so far?
 
-- 73 unit and attack tests, plus fork tests that run the contracts against live venues: 22 on Robinhood Chain and 11 on Elysium.
+- 102 unit and attack tests, plus fork tests that run the contracts against live venues: 23 on Robinhood Chain and 11 on Elysium.
 - Slither static analysis with 102 detectors over every Stoa contract. Every High and Medium result is triaged in the review.
 - A line-by-line review by the team. It found no issue that lets anyone take user funds.
 - Every deployed contract is source-verified on Sourcify, and the code is open source on [GitHub](https://github.com/StoaDex/Stoa).
@@ -41,16 +41,21 @@ Straight from the chain: every swap that settles through a Stoa router emits one
 
 ### What does $STOA do?
 
-Two things, both on Robinhood Chain:
+Three things, all on Robinhood Chain:
 
 1. **Protocol fees buy and burn it.** From 17 November 2026, the 2 bps protocol fee goes to StoaBuyback, a contract whose only way to move fees out is to swap them into $STOA and burn it. A keeper runs it every Monday.
 2. **Makers bond it.** A maker that quotes a Stoa pool on Robinhood Chain bonds $STOA. A slashed bond is burned, not paid to anyone.
+3. **Holders vote in Spotlight.** From 23 November 2026, projects bid ETH for three sponsored slots a week, and holders who lock $STOA and vote for the winners are paid 90% of those bids. The other 10% buys $STOA and burns it.
 
 Details on [$STOA](token.md).
 
 ### Do holders earn a share of fees?
 
-No. Fees burn $STOA instead of paying holders, and bonding earns nothing by itself. $STOA is not a yield product.
+No. Fees burn $STOA instead of paying holders, and bonding earns nothing by itself. Holders who lock and vote in [Spotlight](spotlight.md) can be paid ETH, but that ETH comes from projects' bids, not from Stoa's fees, and depends on what projects bid each week. Nothing is promised.
+
+### What is Spotlight?
+
+A weekly market for Stoa's sponsored slots. Projects bid ETH, $STOA holders lock and vote, and the three largest bids with at least 1M $STOA of votes win. Their voters share 90% of the bids; 10% is burned; losing bids are refunded. Winners show on Trade, Launches and Tokens for a week, marked "Sponsored". Rules and risks: [Spotlight](spotlight.md).
 
 ### Does the team hold $STOA?
 

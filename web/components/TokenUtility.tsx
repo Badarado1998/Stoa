@@ -330,6 +330,17 @@ export default function TokenUtility() {
       {live && <BondPanel />}
 
       <div className="panel pad">
+        <div className="rowx"><div className="lbl">3 · HOLDERS VOTE IN SPOTLIGHT</div><span className="chip live">Week 1 opens 23 Nov</span></div>
+        <p style={{ marginTop: 10 }}>
+          Every week projects bid ETH for three sponsored slots on Stoa. Holders lock $STOA and vote: the three largest bids with at least 1M $STOA of votes win, 90% of each goes to the holders who voted for it, and 10% buys $STOA and burns it. Losing bids are refunded.
+        </p>
+        <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <Link className="cta" href="/spotlight">Open Spotlight</Link>
+          <Link className="note" style={{ marginTop: 0 }} href="/docs/spotlight">Rules and risks</Link>
+        </div>
+      </div>
+
+      <div className="panel pad">
         <div className="rowx"><div className="lbl">TEAM WALLET · FOMO</div>{team !== undefined && supply ? <span className="chip live">{((Number(team) / Number(supply)) * 100).toFixed(2)}% of supply</span> : null}</div>
         <p style={{ marginTop: 10 }}>
           Stoa&apos;s team account on <a href="https://fomo.family" target="_blank" rel="noopener noreferrer">fomo</a>, @StoaDex, holds {team === undefined ? "…" : `${big(team)} $STOA`}. fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer">transaction</a>) and keeps at least 0.5% there while the tag is active.
@@ -340,8 +351,8 @@ export default function TokenUtility() {
       <div className="panel pad">
         <div className="lbl">WHAT $STOA IS NOT</div>
         <ul className="list">
-          <li>A share of fees <b>Fees burn $STOA; holders are not paid</b></li>
-          <li>A yield product <b>Bonding earns nothing by itself</b></li>
+          <li>A share of fees <b>Fees burn $STOA; holders are not paid from fees</b></li>
+          <li>A promised yield <b>Spotlight pays voters only from projects&apos; bids</b></li>
           <li>Audited <b>Contracts are verified, not yet audited</b></li>
         </ul>
         <p className="note">Contracts: <a href={addressUrlOn(net, C.buyback ?? zeroAddress)} target="_blank" rel="noopener noreferrer">StoaBuyback</a> · <a href={addressUrlOn(net, C.bonds ?? zeroAddress)} target="_blank" rel="noopener noreferrer">BondRegistry</a> · <a href={addressUrlOn(net, STOA)} target="_blank" rel="noopener noreferrer">$STOA</a>. How it works in detail: <Link href="/docs/token">docs</Link>.</p>

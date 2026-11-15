@@ -2,6 +2,40 @@
 
 A review of the deployed contracts by the Stoa team, published in full. **This is not an external audit.** An independent audit is still planned before caps rise or vaults open.
 
+## Update, 15 November 2026: SpotlightMarket
+
+A review of the Spotlight contract before its deployment (week 1 opens 23 November 2026).
+
+| Item | Value |
+| --- | --- |
+| Contract | SpotlightMarket: weekly sponsored slots, ETH bids paid to $STOA voters, 10% burned |
+| Code | [contracts/src/SpotlightMarket.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/SpotlightMarket.sol), about 590 lines of Solidity 0.8.28 |
+| Address | `0xf3A995D4240c0F36da697E5292B294052a1706B5` on Robinhood Chain (CREATE2) |
+
+**Method.** Line-by-line reading against a list of ways to game the market, each with its own attack test: a project voting for itself, last-second bid changes, locking just before the close, double-counting the same $STOA, spamming the candidate list, sandwiching the burn, parameter changes mid-week, a reentrant claim, a voter contract that refuses ETH, and pause and emergency exits. 29 unit and attack tests, including a fuzz test (512 runs) that every wei bid ends up with a voter, a bidder or the burn; a fork test that runs a full week on the live router with real $STOA and burns through its Uniswap V4 pool; Slither 0.11 with 102 detectors. All pass.
+
+**Result.** No issue allows anyone to take ETH or $STOA. Nobody, owner and guardian included, can send funds anywhere except to the voter, the bidder or the burn. Two low findings and three informational.
+
+### L-6 The keeper sets the burn's price limit
+
+Like the buyback (L-4), `burn` takes its minimum output from the keeper, so a leaked keeper key could burn the pot at a bad price. The pot is small (10% of winning bids plus entry fees) and can only become burned $STOA.
+
+### L-7 The guardian can pause new activity indefinitely
+
+The guardian can pause, and only the timelock can unpause, so a misused guardian key could stop new bids, locks and votes for at least 48 hours. Claims, refunds, withdrawals and settling keep working during a pause, and every holder can take all their $STOA out at once.
+
+### I-9 A project can vote for its own token (by design)
+
+Winners are ranked by bid, not by votes, and anyone can vote for any token, so a project that votes for itself shares its bid with every other voter of its token. Votes only decide eligibility (the quorum) and who is paid.
+
+### I-10 Rounding and unclaimed ETH (by design)
+
+Each voter's share is rounded down, so a few wei per winning token stay in the contract. Claims and refunds never expire.
+
+### I-11 Slither results on SpotlightMarket (false positives or by design)
+
+"Sends ETH to arbitrary user": claims and refunds send only the caller's own entitlement, to an address the caller chooses. "Reentrancy" in `burn`: it is `nonReentrant` and the router is trusted code. "Timestamp": weeks are measured in days, far beyond any block timestamp drift. "Uninitialized local" and "strict equality": zero starting values and a `from == 0` check are intended.
+
 ## Update, 15 November 2026: Robinhood Chain contracts
 
 A second round covering everything deployed since the first review, mostly on Robinhood Chain. The first review (12 November, Elysium) follows below, unchanged except for status updates.

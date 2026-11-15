@@ -25,6 +25,7 @@
 * [Referrals](referrals.md)
 * [$STOA](token.md)
 * [How to buy $STOA](buy-stoa.md)
+* [Spotlight](spotlight.md)
 
 ## Run a pool
 

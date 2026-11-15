@@ -1,6 +1,6 @@
 # $STOA
 
-$STOA is Stoa's official token, launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2b337D65063f229e96718) on Robinhood Chain: `0x13E6993417616De724F2b337D65063f229e96718`. It has two jobs, both enforced by contracts. Live numbers are on the [$STOA page](https://stoadex.com/token).
+$STOA is Stoa's official token, launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2b337D65063f229e96718) on Robinhood Chain: `0x13E6993417616De724F2b337D65063f229e96718`. It has three jobs, all enforced by contracts. Live numbers are on the [$STOA page](https://stoadex.com/token).
 
 ## 1. Protocol fees buy and burn $STOA
 
@@ -27,6 +27,10 @@ Stoa maker pools on Robinhood Chain are quoted by makers who bond $STOA in the *
 - Withdrawing a bond takes **3 days**, longer than the 48-hour timelock, so a slash always lands before a maker can leave.
 - Bonding opens with the first Robinhood Chain maker pool. A bond earns nothing by itself: it only lets an approved maker quote. To run a pool, see [Become a curator](become-a-curator.md).
 
+## 3. Holders vote in Spotlight
+
+From 23 November 2026, projects bid ETH every week for three sponsored slots on Stoa. Holders lock $STOA in **SpotlightMarket** and vote. The three largest bids with at least 1M $STOA of votes win: 90% of each goes to the holders who voted for it, and 10%, plus every entry fee, buys $STOA and burns it. Losing bids are refunded. Rules, numbers and risks: [Spotlight](spotlight.md).
+
 ## Supply
 
 $STOA has a fixed supply of 1,000,000,000, all minted at launch on Pons. Nothing can mint more.
@@ -48,8 +52,8 @@ Stoa's team account on [fomo](https://fomo.family), @StoaDex, holds $STOA at `0x
 
 ## What $STOA is not
 
-- **Not a share of fees.** Protocol fees burn $STOA. Holders are not paid anything.
-- **Not a yield product.** Bonding earns nothing by itself and can be slashed.
+- **Not a share of fees.** Protocol fees burn $STOA. Holders are not paid from Stoa's fees.
+- **Not a promised yield.** Bonding earns nothing by itself and can be slashed. Spotlight voters are paid only from what projects bid, which can be nothing in a given week.
 - **Not audited yet.** StoaBuyback and BondRegistry are source-verified on Sourcify, like every Stoa contract, and covered by unit and fork tests. They have not had an external audit.
 
 ## Contracts (Robinhood Chain)
@@ -60,5 +64,6 @@ Stoa's team account on [fomo](https://fomo.family), @StoaDex, holds $STOA at `0x
 | StoaBuyback | [`0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244`](https://robinhoodchain.blockscout.com/address/0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244) |
 | BondRegistry | [`0x7eD43F104f9317578806De89e9d478D297d468D4`](https://robinhoodchain.blockscout.com/address/0x7eD43F104f9317578806De89e9d478D297d468D4) |
 | FeeDistributor | [`0x76c30317bB8C0bC47E2aC5D83b329FE9F386F4e7`](https://robinhoodchain.blockscout.com/address/0x76c30317bB8C0bC47E2aC5D83b329FE9F386F4e7) |
+| SpotlightMarket | [`0xf3A995D4240c0F36da697E5292B294052a1706B5`](https://robinhoodchain.blockscout.com/address/0xf3A995D4240c0F36da697E5292B294052a1706B5) |
 
 Both new contracts are owned by the 48-hour timelock and verified on [Sourcify](https://repo.sourcify.dev/4663/0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244) (exact match).

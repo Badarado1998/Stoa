@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "spotlight",
+    date: "2026-11-15",
+    title: "Spotlight: projects pay ETH, $STOA holders earn it",
+    tag: "$STOA",
+    items: [
+      "Every week projects bid ETH for three sponsored slots on Stoa: the top of Trade's token list, Launches and Tokens, marked Sponsored.",
+      "$STOA holders lock and vote. The three largest bids with at least 1M $STOA of votes win; 90% of each goes to the holders who voted for it, 10% buys $STOA and burns it, and losing bids are refunded.",
+      "Week 1 opens Monday 23 November, 07:00 WIB. The contract is reviewed in the internal security review (29 unit and attack tests, a fork test on Robinhood Chain, Slither); it is not externally audited.",
+    ],
+    link: { href: "/spotlight", label: "Open Spotlight" },
+  },
+  {
     id: "stoa-graduated",
     date: "2026-11-15",
     title: "$STOA graduated to Uniswap V4",

@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import VenueCompare from "./VenueCompare";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
+import { SpotlightPicks } from "./SpotlightStrip";
 import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
 
@@ -521,6 +522,7 @@ function TokenMenu({ net, tokens, onPick, onImport, onClose }: { net: Net; token
       {sheet && <div className="rowx tokh"><b>Select a token</b><button className="x" type="button" onClick={onClose} aria-label="Close">×</button></div>}
       <input placeholder="Search or paste address" value={q} onChange={(e) => setQ(e.target.value.trim())} aria-label="Search token" autoFocus={!sheet} />
       <div className="tokl">
+        {net.key === "robinhood" && !q && <SpotlightPicks onImport={onImport} />}
         {list.map((t) => <button key={t.address} type="button" role="option" aria-selected="false" onClick={() => onPick(t)}><TokenIcon t={t} /><span className="tokn"><b>{t.symbol}</b><small className={t.tone === "bridged" ? "vf" : undefined}>{t.address === NATIVE ? "Native" : t.name}</small></span>{(() => { const p = priceOf(t); return p ? <span className="tokp"><b>{fmtUsd(p.usd)}</b>{p.ch24 !== undefined && <small className={p.ch24 >= 0 ? "up" : "dn"}>{p.ch24 >= 0 ? "+" : ""}{p.ch24.toFixed(1)}%</small>}</span> : null; })()}</button>)}
         {list.length === 0 && isAddress(q) && <button type="button" onClick={() => onImport(q)}>Import {q.slice(0, 6)}…{q.slice(-4)}</button>}
         {list.length === 0 && !isAddress(q) && <p className="note" style={{ padding: "0 8px" }}>Paste a token address to import it.</p>}

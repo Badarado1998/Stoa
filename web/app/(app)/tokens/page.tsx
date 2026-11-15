@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import { NETS } from "@/lib/networks";
 import { listedTokens } from "@/lib/tokenInfo";
+import SpotlightStrip from "@/components/SpotlightStrip";
 
 const description = "Every token Stoa lists on Robinhood Chain and Elysium, each with its live price and Stoa's best route for it.";
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function TokensPage() {
       <PageHead eyebrow="TOKENS" title="Tokens on Stoa" action={<Link className="cta" href="/trade">Trade</Link>}>
         Every token Stoa lists, by network. Each page shows the live price and the best route on Stoa right now. Listed tokens are not reviewed by Stoa: check the contract address before you buy.
       </PageHead>
+      <SpotlightStrip />
       {nets.map((n) => {
         const ts = all.filter((x) => x.net.key === n.key);
         if (!ts.length) return null;

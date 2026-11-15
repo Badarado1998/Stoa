@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { zeroAddress } from "viem";
 import { PageHead, Sk } from "./ui";
+import SpotlightStrip from "./SpotlightStrip";
 import { useNet } from "./Providers";
 import { ROBINHOOD } from "@/lib/networks";
 import { routerAbi } from "@/lib/abi";
@@ -82,6 +83,7 @@ export default function LaunchesBody() {
         Tokens on their Pons bonding curve that have raised at least 0.05 ETH in the last few days, by ETH raised, read straight from the curves.
         {ponsLive ? " Trade any of them on Stoa, from ETH or any token." : " Stoa's Pons curve adapter goes live on 18 Nov (48h timelock); until then the buttons open Pons."}
       </PageHead>
+      <SpotlightStrip />
       {net.key !== "robinhood" && <div className="notice" style={{ marginBottom: 16 }}>Pons runs on Robinhood Chain. Swaps from this page switch you there.</div>}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
