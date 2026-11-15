@@ -52,6 +52,6 @@ Parameter changes go through the 48-hour timelock and apply from the following w
 
 ## Contract
 
-`SpotlightMarket` on Robinhood Chain: `0xf3A995D4240c0F36da697E5292B294052a1706B5`. It is deployed with CREATE2 through the standard deterministic deployer, owned by the 48-hour timelock from its constructor, with the router's guardian and the buyback keeper. Source: [contracts/src/SpotlightMarket.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/SpotlightMarket.sol).
+`SpotlightMarket` on Robinhood Chain: [`0xf3A995D4240c0F36da697E5292B294052a1706B5`](https://robinhoodchain.blockscout.com/address/0xf3A995D4240c0F36da697E5292B294052a1706B5), deployed on 15 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xbe834ada0440ee669d0f7e3c3e189fb2aa4704c426bb5be6ed5359b13f84e1c9)) with CREATE2 through the standard deterministic deployer. It is owned by the 48-hour timelock from its constructor, with the router's guardian and the buyback keeper, and its source is verified on [Sourcify](https://repo.sourcify.dev/4663/0xf3A995D4240c0F36da697E5292B294052a1706B5) (exact match). Source: [contracts/src/SpotlightMarket.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/SpotlightMarket.sol).
 
 Payouts depend on what projects bid each week; nothing is promised.
