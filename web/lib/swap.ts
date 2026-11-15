@@ -61,6 +61,13 @@ export function parseAmount(v: string, decimals: number): bigint | undefined {
 }
 
 /** Format raw units for display with up to `max` decimals, trimming zeros. */
+/** Display amount with decimals that fit the size: 2 above 1,000, 4 above 1, else 6. Keeps big outputs on one line. */
+export function fmtAmt(raw: bigint, decimals: number): string {
+  const one = 10n ** BigInt(decimals);
+  const abs = raw < 0n ? -raw : raw;
+  return fmt(raw, decimals, abs >= 1000n * one ? 2 : abs >= one ? 4 : 6);
+}
+
 export function fmt(raw: bigint, decimals: number, max = 6): string {
   const neg = raw < 0n; if (neg) raw = -raw;
   const base = 10n ** BigInt(decimals);

@@ -21,6 +21,7 @@ export const CHANGES: Change[] = [
       "Venues with almost no liquidity for the pair are left out, so the comparison only counts real alternatives.",
       "Links to the Stats page now show a live card with volume and swaps.",
       "The homepage shows $STOA's live bonding-curve progress under the hero, with a button to buy it.",
+      "On phones, large amounts now fit the swap box: amounts show 2 decimals above 1,000 and 4 above 1, with the full figure on hover.",
     ],
     link: { href: "/trade?chain=robinhood", label: "Open Trade" },
   },

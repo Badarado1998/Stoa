@@ -7,7 +7,7 @@ import { useAccount, useBalance, usePublicClient, useReadContract, useReadContra
 import { BaseError, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash } from "viem";
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
 import { txUrlOn, type Net } from "@/lib/networks";
-import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
+import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route, fmtAmt } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { useQuery } from "@tanstack/react-query";
 import VenueCompare from "./VenueCompare";
@@ -340,6 +340,7 @@ function TradeOn({ net }: { net: Net }) {
     },
   });
   const px = quote && amt ? rate(amt, sell.decimals, quote.out, buy.decimals) : 0;
+  const outTxt = quote ? fmtAmt(quote.out, buy.decimals) : "";
 
   return (
     <div className="grid2">
@@ -377,8 +378,8 @@ function TradeOn({ net }: { net: Net }) {
         <div className="box">
           <div className="row"><span className="lbl">BUY</span><span className="lbl">BALANCE {bBal !== undefined ? fmt(bBal, buy.decimals, 4) : "—"}</span></div>
           <div className="row" style={{ position: "relative" }}>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 28, color: quote ? "var(--ink)" : "#AAB2BE" }}>
-              {quote ? fmt(quote.out, buy.decimals, 6) : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
+            <span className="out" style={{ fontSize: outTxt.length > 13 ? 20 : outTxt.length > 10 ? 24 : 28, color: quote ? "var(--ink)" : "#AAB2BE" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
+              {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => setMenu(menu === "buy" ? null : "buy")} />
             {menu === "buy" && <TokenMenu net={net} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
@@ -388,12 +389,12 @@ function TradeOn({ net }: { net: Net }) {
 
         {amt && quote && (
           <div className="det">
-            <span>Rate</span><span>1 {sell.symbol} = {px.toPrecision(6)} {buy.symbol}</span>
+            <span>Rate</span><span>1 {sell.symbol} = {Number(px.toPrecision(6)).toLocaleString("en-US", { maximumSignificantDigits: 6 })} {buy.symbol}</span>
             <span>Filled by</span><span>{venueName}</span>
             {usesPons && ponsFees.data && <><span>Curve fees</span><span>Pons {ponsFees.data.fee}% + creator tax {ponsFees.data.tax}% (in the price)</span></>}
             {kind !== "wrap" && kind !== "unwrap" && <><span>Protocol fee</span><span>2 bps</span>
               <span>Price impact</span><span style={{ color: quote.impact >= IMPACT_WARN ? "#B4532A" : undefined }}>{quote.impact < 0.01 ? "< 0.01" : quote.impact.toFixed(2)}%</span>
-              <span>Minimum received</span><span>{fmt(minOut(quote.out, slip), buy.decimals, 6)} {buy.symbol}</span></>}
+              <span>Minimum received</span><span>{fmtAmt(minOut(quote.out, slip), buy.decimals)} {buy.symbol}</span></>}
             {referrer && <><span>Referred by</span><span>{referrer.slice(0, 6)}…{referrer.slice(-4)}</span></>}
           </div>
         )}
@@ -441,7 +442,7 @@ function TradeOn({ net }: { net: Net }) {
         )}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>
         {msg && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
-        <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on Uniswap; maker pools come later.`}</p>
+        <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on the best live venue; maker pools come later.`}</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

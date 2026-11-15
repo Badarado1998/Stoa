@@ -4,7 +4,7 @@ import { parseAbi, type Address, type PublicClient } from "viem";
 import type { Net } from "@/lib/networks";
 import type { Token } from "@/lib/tokens";
 import { NATIVE } from "@/lib/tokens";
-import { fmt, isHop, describeRoute, type Route } from "@/lib/swap";
+import { fmtAmt, isHop, describeRoute, type Route } from "@/lib/swap";
 
 // adapters' quote is not marked view (some venues simulate the swap), but it is only ever eth_call'ed here
 const adapterAbi = parseAbi(["function quote(address tokenIn, address tokenOut, uint256 amountIn) view returns (uint256)"]);
@@ -31,10 +31,11 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
   const a = lc(sell.address) === lc(NATIVE) ? net.wrapped : sell.address;
   const b = lc(buy.address) === lc(NATIVE) ? net.wrapped : buy.address;
   const quotes = useQuery({
-    queryKey: ["venue-quotes", net.key, a, b, amt.toString(), live.data?.join()],
+    // keyed on Stoa's own quote too: venue quotes refresh together with it (every 4s), so the two lists never drift apart
+    queryKey: ["venue-quotes", net.key, a, b, amt.toString(), out.toString(), live.data?.join()],
     enabled: !!pub && !!live.data?.length && lc(a) !== lc(b),
-    staleTime: 8_000,
-    refetchInterval: 12_000,
+    staleTime: 3_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       const vs = live.data!;
       const res = await pub!.multicall({ contracts: vs.map((v) => ({ address: v, abi: adapterAbi, functionName: "quote" as const, args: [a, b, amt] as const })), allowFailure: true });
@@ -58,16 +59,16 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
       <div className="det" style={{ marginTop: 6 }}>
         {(isHop(route) || route.leg1.isPool) && <>
           <span style={{ color: "var(--ink)", fontWeight: 600 }}>✓ {describeRoute(route, net.venues, net.tokens[1].symbol)}</span>
-          <span style={{ color: "var(--accent)", fontWeight: 600 }}>{fmt(out, d, 6)} {sym}</span></>}
+          <span style={{ color: "var(--accent)", fontWeight: 600 }}>{fmtAmt(out, d)} {sym}</span></>}
         {rows.map((r) => {
           const on = lc(r.venue) === used;
           return [
             <span key={r.venue + "n"} style={on ? { color: "var(--ink)", fontWeight: 600 } : undefined}>{on ? "✓ " : ""}{r.name}</span>,
-            <span key={r.venue + "v"} style={on ? { color: "var(--accent)", fontWeight: 600 } : undefined}>{fmt(r.out, d, 6)} {sym}</span>,
+            <span key={r.venue + "v"} style={on ? { color: "var(--accent)", fontWeight: 600 } : undefined}>{fmtAmt(r.out, d)} {sym}</span>,
           ];
         })}
       </div>
-      {gain > 0n && <div className="gain">+{fmt(gain, d, 4)} {sym} on Stoa vs {worst.name}, after the 2 bps fee</div>}
+      {gain > 0n && <div className="gain">+{fmtAmt(gain, d)} {sym} on Stoa vs {worst.name}, after the 2 bps fee</div>}
       <p className="note" style={{ marginTop: 6, fontSize: 12 }}>Each venue&apos;s own quote for the whole amount, direct, before Stoa&apos;s fee. ✓ is the route Stoa fills.{thin > 0 ? ` ${thin} venue${thin === 1 ? "" : "s"} with almost no liquidity for this pair left out.` : ""}</p>
     </div>
   );
