@@ -1,7 +1,10 @@
 name: Health check
 
-# Hourly: the site answers, the router is not paused and quotes HYPE -> USDC, the deployer can still pay for the
-# daily pool refresh. Any failure opens (or comments on) a GitHub issue, which emails the repo owner.
+# Hourly, on both chains: the site answers, each router is not paused and quotes (HYPE -> USDC on Elysium,
+# ETH -> USDG on Robinhood Chain), and the keys that pay for automation still have gas (Elysium deployer for the
+# daily pool refresh; Robinhood deployer for the $STOA graduation watcher and the weekly buyback).
+# A failure opens a GitHub issue, which emails the repo owner. The issue gets a new comment only when the problem
+# changes or once a day while it lasts, so one low balance doesn't send 24 emails a day.
 on:
   schedule:
     - cron: "41 * * * *"
@@ -16,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RPC: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
+      RH_RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
       SITE: https://stoadex.com
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -35,14 +39,33 @@ jobs:
           q=$(cast call $ROUTER 'quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))' 0x0000000000000000000000000000000000000000 $USDC 1000000000000000000 --rpc-url $RPC | sed -E 's/^\(([0-9]+).*/\1/')
           { [ -n "$q" ] && [ "$q" -gt 1000000 ]; } || fail+=("router quote for 1 HYPE -> USDC is '$q'")
           bal=$(cast balance 0x056896d7d62fB4faE30f53d76CB55264f4c5c500 --rpc-url $RPC)
-          [ "$(echo "$bal > 20000000000000000" | bc)" = 1 ] || fail+=("deployer balance low: $(cast from-wei $bal) HYPE")
-          echo "quote 1 HYPE = $q USDC raw, paused=$paused, site=$code"
+          [ "$(echo "$bal > 20000000000000000" | bc)" = 1 ] || fail+=("Elysium deployer 0x056896d7d62fB4faE30f53d76CB55264f4c5c500 low: $(cast from-wei $bal) HYPE (top up ~0.05 HYPE)")
+          echo "elysium: quote 1 HYPE = $q USDC raw, paused=$paused, site=$code"
+          # Robinhood Chain
+          RH_ROUTER=$(jq -r .router web/lib/deployments-4663.json)
+          USDG=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168
+          code=$(curl -s -o /tmp/rh.html -w '%{http_code}' -m 20 "$SITE/trade?chain=robinhood")
+          [ "$code" = 200 ] || fail+=("site $SITE/trade?chain=robinhood answered $code")
+          rp=$(cast call $RH_ROUTER 'paused()(bool)' --rpc-url $RH_RPC)
+          [ "$rp" = "false" ] || fail+=("Robinhood router paused=$rp")
+          rq=$(cast call $RH_ROUTER 'quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))' 0x0000000000000000000000000000000000000000 $USDG 10000000000000000 --rpc-url $RH_RPC | sed -E 's/^\(([0-9]+).*/\1/')
+          { [ -n "$rq" ] && [ "$rq" -gt 1000000 ]; } || fail+=("Robinhood router quote for 0.01 ETH -> USDG is '$rq'")
+          rb=$(cast balance 0xbf666e8D054935170b9f09127247905A975b3B80 --rpc-url $RH_RPC)
+          [ "$(echo "$rb > 1000000000000000" | bc)" = 1 ] || fail+=("Robinhood deployer 0xbf666e8D054935170b9f09127247905A975b3B80 low: $(cast from-wei $rb) ETH (top up ~0.005 ETH)")
+          echo "robinhood: quote 0.01 ETH = $rq USDG raw, paused=$rp"
           if [ ${#fail[@]} -gt 0 ]; then printf '%s\n' "${fail[@]}" > /tmp/fail.txt; cat /tmp/fail.txt; echo "failed=1" >> $GITHUB_OUTPUT; fi
       - name: Report
         if: steps.check.outputs.failed == '1'
         run: |
           body="$(cat /tmp/fail.txt)"$'\n\n'"Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           n=$(gh issue list --state open --label health --json number --jq '.[0].number')
-          if [ -n "$n" ]; then gh issue comment "$n" --body "$body"
-          else gh label create health --color B60205 2>/dev/null; gh issue create --title "Health check failed" --label health --body "$body"; fi
+          if [ -z "$n" ]; then gh label create health --color B60205 2>/dev/null; gh issue create --title "Health check failed" --label health --body "$body"; exit 1; fi
+          # same problem as the last report and reported less than a day ago: stay quiet (the run still fails)
+          c=$(gh api "repos/${{ github.repository }}/issues/$n" --jq .comments)
+          if [ "$c" -gt 0 ]; then last=$(gh api "repos/${{ github.repository }}/issues/$n/comments?per_page=100&page=$(( (c + 99) / 100 ))" --jq 'last | {b: .body, t: .created_at}')
+          else last=$(gh api "repos/${{ github.repository }}/issues/$n" --jq '{b: .body, t: .created_at}'); fi
+          prev=$(echo "$last" | jq -r .b | sed '/^Run: /d' | sed '/^$/d')
+          age=$(( $(date +%s) - $(date -d "$(echo "$last" | jq -r .t)" +%s) ))
+          if [ "$prev" = "$(sed '/^$/d' /tmp/fail.txt)" ] && [ "$age" -lt 86000 ]; then echo "unchanged since the last report ${age}s ago, not commenting"
+          else gh issue comment "$n" --body "$body"; fi
           exit 1
