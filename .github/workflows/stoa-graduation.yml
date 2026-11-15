@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+    inputs:
+      window:
+        description: "Blocks to look back for other Pons graduations (default 1000000, about 30h)"
+        required: false
+        default: "1000000"
 
 jobs:
   watch:
@@ -29,4 +34,4 @@ jobs:
           RPC: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
           PRIVATE_KEY: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
         # log scans need the public RPC's 10M-block range, so this step always reads from it
-        run: RPC=https://rpc.mainnet.chain.robinhood.com ./script/pons-graduations.sh
+        run: RPC=https://rpc.mainnet.chain.robinhood.com WINDOW=${{ inputs.window || '1000000' }} ./script/pons-graduations.sh
