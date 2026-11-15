@@ -10,6 +10,7 @@ import { txUrlOn, type Net } from "@/lib/networks";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { useQuery } from "@tanstack/react-query";
+import VenueCompare from "./VenueCompare";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
 import { TokenIcon } from "./ui";
@@ -395,6 +396,9 @@ function TradeOn({ net }: { net: Net }) {
               <span>Minimum received</span><span>{fmt(minOut(quote.out, slip), buy.decimals, 6)} {buy.symbol}</span></>}
             {referrer && <><span>Referred by</span><span>{referrer.slice(0, 6)}…{referrer.slice(-4)}</span></>}
           </div>
+        )}
+        {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
+          <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} />
         )}
         {amt && quote && quote.impact >= IMPACT_WARN && (
           <div className={quote.impact >= IMPACT_BLOCK ? "err" : "notice"} style={{ marginTop: 12, marginBottom: 0 }}>
