@@ -12,6 +12,30 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "venue-compare",
+    date: "2026-11-15",
+    title: "See every venue's price on the swap screen",
+    tag: "Both chains",
+    items: [
+      "Under each quote, Trade now lists what every venue Stoa routes would give for your exact amount, marks the route Stoa fills, and shows how much more you get than on the weakest venue, after Stoa's 2 bps fee.",
+      "Venues with almost no liquidity for the pair are left out, so the comparison only counts real alternatives.",
+      "Links to the Stats page now show a live card with volume and swaps.",
+      "The homepage shows $STOA's live bonding-curve progress under the hero, with a button to buy it.",
+    ],
+    link: { href: "/trade?chain=robinhood", label: "Open Trade" },
+  },
+  {
+    id: "security-review-robinhood",
+    date: "2026-11-15",
+    title: "Security review update: Robinhood Chain contracts",
+    tag: "Both chains",
+    items: [
+      "The internal review now covers every contract deployed since 12 November: the Robinhood Chain router, StoaPoolL2, BondRegistry, StoaBuyback and the Aero, Ramses and Pons curve adapters. Not an external audit.",
+      "Slither over every Stoa contract (every High and Medium result triaged), 73 unit tests and 22 fork tests, all passing. New findings: one medium about admin trust (the timelock can hand the fee contract to a new owner), two low, four informational. None lets anyone take user funds.",
+    ],
+    link: { href: "/docs/security-review", label: "Read the review" },
+  },
+  {
     id: "stats-page",
     date: "2026-11-15",
     title: "Stats: volume through Stoa, read from the chain",

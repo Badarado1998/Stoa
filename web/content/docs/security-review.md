@@ -12,9 +12,9 @@ A second round covering everything deployed since the first review, mostly on Ro
 | Code | As deployed on Robinhood Chain; addresses on [Contracts](contracts.md) |
 | Size | All Stoa contracts together: about 2,430 lines of Solidity 0.8.28 |
 
-**Method.** Line-by-line reading of the new and changed paths (buyback, bonds, the L2 pool's block timing, the Pons curve adapter), Slither 0.11 with 102 detectors over every Stoa contract (85 results, each triaged below or in the first review), 73 unit and attack tests, and 22 fork tests against live Robinhood Chain venues and Pons curves. All pass.
+**Method.** Line-by-line reading of the new and changed paths (buyback, bonds, the L2 pool's block timing, the Pons curve adapter), Slither 0.11 with 102 detectors over every Stoa contract (85 results: every High and Medium result is triaged below or in the first review; the rest are gas and style notes), 73 unit and attack tests, and 22 fork tests against live Robinhood Chain venues and Pons curves. All pass.
 
-**Result.** No issue allows anyone to take user funds. One new medium finding about admin trust, two new low findings, three informational. Every Slither result marked High is a false positive explained below or in the first review (I-2, I-3, I-4).
+**Result.** No issue allows anyone to take user funds. One new medium finding about admin trust, two new low findings, four informational. Every Slither result marked High is a false positive explained below or in the first review (I-2, I-3, I-4).
 
 ### M-3 The timelock can hand the fee contract to a new owner
 
@@ -39,6 +39,10 @@ The router, the buyback and the adapters ignore the amounts venues report and me
 ### I-7 Keeper can be set to the zero address (by design)
 
 Setting StoaBuyback's keeper to zero leaves only the owner able to run buybacks. That is the intended way to stop the keeper.
+
+### I-8 Strict equalities and zero-start variables (by design)
+
+Slither flags strict equality checks in the router and the pools. They are the point: a venue must take exactly the input it was given, and a fee-on-transfer token is refused when the received amount differs. It also flags local variables in the V4 and Liquidity Book adapters that start at zero, which is the intended starting value.
 
 ## First review, 12 November 2026 (Elysium)
 
