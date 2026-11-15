@@ -45,6 +45,7 @@ Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same rout
 | UniswapV4Adapter | [`0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8`](https://robinhoodchain.blockscout.com/address/0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8) |
 | AeroAdapter (being added) | [`0xF0904B95D66f565De215cC7dc58B6054F72A9352`](https://robinhoodchain.blockscout.com/address/0xF0904B95D66f565De215cC7dc58B6054F72A9352) |
 | RamsesAdapter (being added) | [`0x87b3B896beAbdC421F9d9B0A3FD3dBbAE1ddd568`](https://robinhoodchain.blockscout.com/address/0x87b3B896beAbdC421F9d9B0A3FD3dBbAE1ddd568) |
+| PonsCurveAdapter (being added) | [`0x58c2C83b66088B57B9dd487Ba1090992Bc9eEbe0`](https://robinhoodchain.blockscout.com/address/0x58c2C83b66088B57B9dd487Ba1090992Bc9eEbe0) |
 | StoaBuyback ($STOA buyback & burn, owns the FeeDistributor) | [`0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244`](https://robinhoodchain.blockscout.com/address/0x2Eb53EBA6f04447d9ce03B4AfB421887239ae244) |
 | BondRegistry ($STOA maker bonds) | [`0x7eD43F104f9317578806De89e9d478D297d468D4`](https://robinhoodchain.blockscout.com/address/0x7eD43F104f9317578806De89e9d478D297d468D4) |
 | $STOA | [`0x13E6993417616De724F2b337D65063f229e96718`](https://robinhoodchain.blockscout.com/address/0x13E6993417616De724F2b337D65063f229e96718) |
@@ -54,5 +55,7 @@ Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same rout
 Outside venues the router uses there: Uniswap V2 factory `0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f`, Uniswap V3 factory `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` and Uniswap V4 PoolManager `0x8366a39CC670B4001A1121B8F6A443A643e40951`. The V4 adapter accepts pools with no hook, Pons V2 pools and the pools of four other hooks that passed a live buy-and-sell test before deployment.
 
 The Aero and Ramses adapters were deployed on 15 November 2026 for Aero Slipstream (factory `0xc63d7338c178e805c544B8f897066bD3BBcBE136`) and Ramses V3 (factory `0xE0c4ceb92d08CA985bB70fe0a22fEb121A9854A8`). They have no owner. The router does not use them until the admin Safe adds them through the 48-hour timelock and the router's 24-hour wait; the venue list on the Trade page says LIVE once it has.
+
+The Pons curve adapter was deployed on 15 November 2026 for tokens still on their Pons bonding curve (Pons factory `0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e`). It trades only curves the Pons factory registered, quoted in ETH, and quotes with the curve's own pricing: Pons' 1% fee plus the token's creator tax, then the curve's x·y=k math, matched to the wei on the live $STOA curve and four other live curves before deployment. It leaves the buy that would graduate a curve to Pons. It has no owner and goes through the same Safe, timelock and 24-hour router wait as the Aero and Ramses adapters.
 
 Every Stoa contract on Robinhood Chain is source-verified on [Sourcify](https://repo.sourcify.dev/4663/0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5) (exact match).

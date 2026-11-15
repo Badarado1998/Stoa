@@ -68,7 +68,8 @@ function CurvePanel({ routable }: { routable?: boolean }) {
     ] as const,
     query: { refetchInterval: 20_000 },
   });
-  const eth = useQuery({ queryKey: ["stoa-curve-eth"], enabled: !!pub, refetchInterval: 20_000, queryFn: () => pub!.getBalance({ address: STOA_CURVE }) });
+  // ETH raised as the curve counts it for graduation (its balance can also hold fees)
+  const eth = useQuery({ queryKey: ["stoa-curve-eth"], enabled: !!pub, refetchInterval: 20_000, queryFn: () => pub!.readContract({ address: STOA_CURVE, abi: curveAbi, functionName: "realQuoteReserve" }) });
   const thr = r.data?.[0]?.result as bigint | undefined, grad = r.data?.[1]?.result as boolean | undefined;
   const inCurve = r.data?.[2]?.result as bigint | undefined, burned = r.data?.[3]?.result as bigint | undefined, supply = r.data?.[4]?.result as bigint | undefined;
   const pct = grad ? 100 : eth.data !== undefined && thr ? Math.min(99.9, (Number(eth.data) / Number(thr)) * 100) : undefined;
@@ -108,7 +109,9 @@ function CurvePanel({ routable }: { routable?: boolean }) {
           ? routable === false
             ? "$STOA has graduated to its Uniswap V4 pool. Stoa's watcher adds that pool to the router on its next run, or anyone can add it now below."
             : "$STOA has graduated to its Uniswap V4 pool and routes on Stoa. The weekly buyback can now buy and burn $STOA."
-          : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router (anyone can add it from this page), and the weekly buyback starts buying $STOA.</>}
+          : routable
+            ? <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. $STOA already trades on Stoa on its curve, so the weekly buyback can buy it now. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity, and Stoa routes that pool instead.</>
+            : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router (anyone can add it from this page), and the weekly buyback starts buying $STOA.</>}
       </p>
       {grad && routable === false && pending.data && (
         <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
@@ -126,7 +129,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
         <span>Circulating</span><span>{big(circ) ?? "…"} STOA</span>
       </div>
       <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        {grad ? <Link className="cta" href={`/trade?chain=robinhood&buy=${STOA}`}>Trade $STOA on Stoa</Link> : <a className="cta" href={PONS_URL} target="_blank" rel="noopener noreferrer">Buy on Pons ↗</a>}
+        {grad || routable ? <Link className="cta" href={`/trade?chain=robinhood&buy=${STOA}`}>Trade $STOA on Stoa</Link> : <a className="cta" href={PONS_URL} target="_blank" rel="noopener noreferrer">Buy on Pons ↗</a>}
         <a className="note" style={{ marginTop: 0 }} href="/api/stoa/supply" target="_blank" rel="noopener noreferrer">Supply API</a>
       </div>
     </div>

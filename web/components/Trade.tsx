@@ -108,6 +108,7 @@ function TradeOn({ net }: { net: Net }) {
     query: { enabled: deployed && net.newVenues.length > 0, refetchInterval: 60_000 },
   });
   const newVenuesLive = net.newVenues.length > 0 && net.newVenues.every((_, i) => newLive.data?.[i]?.result === true);
+  const ponsLive = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "isAdapter", args: [net.pons ?? zeroAddress], chainId: chain.id, query: { enabled: deployed && !!net.pons, refetchInterval: 60_000 } }).data === true;
   const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
 
   const getQuote = useCallback(async (): Promise<Quote> => {
@@ -390,6 +391,7 @@ function TradeOn({ net }: { net: Net }) {
             <div>Uniswap V2 · V3 · V4 <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
             {net.makers && <div>Aero · Ramses <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
             {!net.makers && net.newVenues.length > 0 && <div>{net.newVenues.map((v) => v.name).join(" · ")} <em>{newVenuesLive ? "LIVE" : "BEING ADDED"}</em></div>}
+            {net.pons && <div>Pons launch curves <em>{ponsLive ? "LIVE" : "BEING ADDED"}</em></div>}
             {net.makers && <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
           <p className="note">Every swap compares these venues, directly and through {W}, and takes the best price.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>

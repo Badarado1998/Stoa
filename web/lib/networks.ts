@@ -44,6 +44,8 @@ export interface Net {
   makers: boolean;
   /** deployed venue adapters that may not be in the router yet (the admin page adds them through the timelock) */
   newVenues: NewVenue[];
+  /** Pons bonding-curve adapter: tokens still on their launch curve (listed as live once the router uses it) */
+  pons?: Address;
 }
 
 const addr = (v?: string) => (v && /^0x[0-9a-fA-F]{40}$/.test(v) ? (v as Address) : undefined);
@@ -129,7 +131,7 @@ export const ROBINHOOD: Net = {
   deployed: Boolean(rhContracts.router),
   deployBlock: BigInt(D.block ?? 0),
   venues: Object.fromEntries(
-    ([[D.uniswapV2Adapter, "Uniswap V2"], [D.uniswapV3Adapter, "Uniswap V3"], [D.uniswapV4Adapter, "Uniswap V4"], [D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"]] as const)
+    ([[D.uniswapV2Adapter, "Uniswap V2"], [D.uniswapV3Adapter, "Uniswap V3"], [D.uniswapV4Adapter, "Uniswap V4"], [D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"], [D.ponsAdapter, "Pons curve"]] as const)
       .filter(([a]) => addr(a))
       .map(([a, n]) => [a!.toLowerCase(), n]),
   ),
@@ -142,6 +144,7 @@ export const ROBINHOOD: Net = {
   explorer: "https://robinhoodchain.blockscout.com",
   venueList: "Uniswap V2, V3 and V4",
   makers: false,
+  pons: addr(D.ponsAdapter),
   newVenues: ([
     [D.aeroAdapter, "Aero", "aero", "0xc63d7338c178e805c544b8f897066bd3bbcbe136", [1, 10, 50, 100, 150, 200, 250]],
     [D.ramsesAdapter, "Ramses", "ramses", "0xe0c4ceb92d08ca985bb70fe0a22feb121a9854a8", [1, 5, 10, 50, 100, 200, 300, 500]],

@@ -7,6 +7,7 @@ What a swap costs on Stoa.
 | Maker spread | Set by each maker's quote | The maker / pool |
 | Protocol fee | 2 bps (0.02%) of the swap, on every route | Stoa's FeeDistributor contract |
 | Venue fee | The outside pool's fee, when the swap fills on Uniswap, Aero, Ramses or Liquidity Book | That venue's liquidity providers |
+| Pons curve fee | Pons' 1% fee plus the token's creator tax, when the swap fills on a Pons bonding curve | Pons and the token's creator |
 | Referral share | 10% of the protocol fee | The wallet that referred you |
 | Network gas | Elysium gas | The network |
 

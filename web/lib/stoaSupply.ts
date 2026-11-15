@@ -8,6 +8,7 @@ export const BURN = "0x000000000000000000000000000000000000dEaD" as Address;
 export const curveAbi = parseAbi([
   "function graduationThreshold() view returns (uint256)",
   "function graduated() view returns (bool)",
+  "function realQuoteReserve() view returns (uint256)",
 ]);
 /** the hook Pons gives the Uniswap V4 pool it creates at graduation (ETH pair, locked liquidity) */
 export const PONS_HOOK = "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044" as Address;
@@ -38,7 +39,8 @@ export async function readSupply(): Promise<Supply> {
         c.readContract({ address: CA, abi: erc20Abi, functionName: "totalSupply" }),
         c.readContract({ address: CA, abi: erc20Abi, functionName: "balanceOf", args: [BURN] }),
         c.readContract({ address: CA, abi: erc20Abi, functionName: "balanceOf", args: [STOA_CURVE] }),
-        c.getBalance({ address: STOA_CURVE }),
+        // ETH raised, as the curve counts it for graduation (its balance can also hold fees)
+        c.readContract({ address: STOA_CURVE, abi: curveAbi, functionName: "realQuoteReserve" }),
         c.readContract({ address: STOA_CURVE, abi: curveAbi, functionName: "graduationThreshold" }),
         c.readContract({ address: STOA_CURVE, abi: curveAbi, functionName: "graduated" }),
       ]);

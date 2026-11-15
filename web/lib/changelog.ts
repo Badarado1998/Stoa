@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "pons-curve-adapter",
+    date: "2026-11-15",
+    title: "Pons bonding curves on Stoa",
+    tag: "Robinhood Chain",
+    items: [
+      "PonsCurveAdapter deployed and source-verified: Stoa can trade tokens still on their Pons launch curve, $STOA included, directly with ETH or from any token through WETH.",
+      "Quotes use the curve's own pricing (Pons' 1% fee, the token's creator tax, x·y=k), matched to the wei on the live $STOA curve and four other live curves. The buy that would graduate a curve is left to Pons.",
+      "Adding it to the router goes through the Safe and the 48h timelock (scheduled, expected live 18 Nov). From then the weekly buyback can buy $STOA before it graduates.",
+    ],
+    link: { href: "/docs/trade", label: "How curve trades work" },
+  },
+  {
     id: "stoa-curve-and-supply",
     date: "2026-11-15",
     title: "$STOA curve progress and supply API",
