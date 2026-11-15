@@ -13,7 +13,7 @@ export type Change = {
 export const CHANGES: Change[] = [
   {
     id: "tokens-embed-app",
-    date: "2026-11-18",
+    date: "2026-11-15",
     title: "Token pages, a buy widget for any site, and Stoa as an app",
     tag: "Both chains",
     items: [
@@ -26,7 +26,7 @@ export const CHANGES: Change[] = [
   },
   {
     id: "share-swap",
-    date: "2026-11-18",
+    date: "2026-11-15",
     title: "Share your swap",
     tag: "Both chains",
     items: [
@@ -37,7 +37,7 @@ export const CHANGES: Change[] = [
   },
   {
     id: "faq",
-    date: "2026-11-18",
+    date: "2026-11-15",
     title: "FAQ in the docs",
     tag: "Both chains",
     items: [
@@ -48,7 +48,7 @@ export const CHANGES: Change[] = [
   },
   {
     id: "team-wallet",
-    date: "2026-11-18",
+    date: "2026-11-15",
     title: "Team wallet on the $STOA page",
     tag: "$STOA",
     items: [
@@ -58,7 +58,7 @@ export const CHANGES: Change[] = [
   },
   {
     id: "maker-guide",
-    date: "2026-11-18",
+    date: "2026-11-15",
     title: "Become a maker: the full guide",
     tag: "Both chains",
     items: [
