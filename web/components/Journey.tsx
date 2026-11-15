@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import Header from "./Header";
 import StoaCA from "./StoaCA";
+import StoaPulse from "./StoaPulse";
 
 type Stop = { n: string; l: string; p: number; a: number };
 type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): void; dispose(): void };
@@ -75,6 +76,7 @@ export default function Journey() {
         <section className="hero" style={{ position: "relative" }}>
           <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">Best-price swaps on Elysium and Robinhood Chain.</span>
           <div className="heroca"><StoaCA short /></div>
+          <StoaPulse />
           <div className="btns" style={{ pointerEvents: "auto", marginTop: 20 }}><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div>
         </section>
       ) : (
@@ -82,6 +84,7 @@ export default function Journey() {
           <section className="hero" style={{ opacity: hero, transform: `translateY(${(1 - hero) * -30}px)` }}>
             <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">Best-price swaps on Elysium and Robinhood Chain.</span>
             <div className="heroca"><StoaCA short /></div>
+          <StoaPulse />
           </section>
           <div className="hint" style={{ opacity: Math.max(0, 1 - p / 0.02) }}><span>SCROLL TO DESCEND</span><i /></div>
           {CARDS.map((c, i) => <article key={i} className={`card${p >= c.a && p <= c.b ? " show" : ""}`}>{c.body}</article>)}
