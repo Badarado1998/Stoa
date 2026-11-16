@@ -46,7 +46,9 @@ def rpc(method, params):
     req = urllib.request.Request(RPC, data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode(),
                                  headers={"content-type": "application/json", "user-agent": "curl/8.5.0"})
     err = None
-    for i in range(10):
+    for i in range(30 if RH else 10):
+        if RH:
+            time.sleep(0.15)  # pace requests: the public RPC answers HTTP 429 to bursts from shared CI addresses
         try:
             out = json.load(urllib.request.urlopen(req, timeout=120))
             if "result" in out:
@@ -54,7 +56,7 @@ def rpc(method, params):
             err = out.get("error")
         except Exception as e:  # rate limits and timeouts: back off and retry
             err = e
-        time.sleep(min(2.0 * (i + 1), 20))
+        time.sleep(min(3.0 * (i + 1), 60) if RH else min(2.0 * (i + 1), 20))
     raise RuntimeError(f"{method} failed: {err}")
 
 
@@ -74,6 +76,7 @@ def pool_id(k):
 # Robinhood Chain: how far back Initialize events are scanned. 0 = the whole chain, so a busy pool created long ago
 # (the main pools of older tokens) is found too; a 20M-block window missed over a hundred of them.
 LOOKBACK = int(os.environ.get("LOOKBACK", "0"))
+RECENT = int(os.environ.get("RECENT", "20000000"))  # first look for new pools' keys here (~3 weeks)
 _Z = "0x0000000000000000000000000000000000000000"
 _USDG = "0x5fc5360d0400a0fd4f2af552add042d716f1d168"
 ETH_USDG = [
@@ -90,11 +93,12 @@ def rpc1(method, params):
     """One attempt with retries on rate limits only; RPC errors are raised so the caller can split the range."""
     req = urllib.request.Request(RPC, data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode(),
                                  headers={"content-type": "application/json", "user-agent": "curl/8.5.0"})
-    for i in range(8):
+    for i in range(30):
+        time.sleep(0.15)
         try:
             out = json.load(urllib.request.urlopen(req, timeout=120))
         except Exception:  # rate limits and timeouts
-            time.sleep(2 * (i + 1))
+            time.sleep(min(3 * (i + 1), 60))
             continue
         if "result" in out:
             return out["result"]
@@ -111,7 +115,7 @@ def main():
         return rpc("eth_getLogs", [{"fromBlock": hex(b), "toBlock": hex(min(b + step - 1, head)), "address": PM, "topics": [SWAP]}])
     count, traders = collections.Counter(), collections.defaultdict(set)
     # Robinhood Chain's public RPC rate-limits hard (HTTP 429): fewer parallel log queries there
-    with cf.ThreadPoolExecutor(2 if RH else 4) as ex:
+    with cf.ThreadPoolExecutor(1 if RH else 4) as ex:
         for logs in ex.map(swaps, range(head - SPAN, head, step)):
             for l in logs:
                 count[l["topics"][1]] += 1
@@ -127,7 +131,19 @@ def main():
         for l in found:
             keys[l["topics"][1]] = key_of(l)
     if RH:
-        want = set(active)
+        # Keys of pools seen active before are cached (every launch creates a pool, over a million in all, so the
+        # whole set is never kept). Unknown active pools are looked for in the last RECENT blocks first, and only if
+        # some are still missing in the whole chain (LOOKBACK=0) or the last LOOKBACK blocks.
+        cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "v4-pool-keys-4663.json")
+        try:
+            with open(cache_path) as f:
+                cache = json.load(f)
+        except (OSError, ValueError):
+            cache = {}
+        for pid in active:
+            if pid in cache:
+                keys[pid] = cache[pid]
+        want = {pid for pid in active if pid not in keys}
 
         def inits(a, z):
             try:
@@ -137,12 +153,22 @@ def main():
                     m = (a + z) // 2
                     return inits(a, m) + inits(m + 1, z)
                 raise
-        windows = range(max(0, head - LOOKBACK) if LOOKBACK else 0, head + 1, 1_000_000)
-        with cf.ThreadPoolExecutor(2) as ex:
-            for logs in ex.map(lambda a: inits(a, min(a + 999_999, head)), windows):
-                for l in logs:
-                    if l["topics"][1] in want:
-                        keys[l["topics"][1]] = key_of(l)
+        def scan(start):
+            with cf.ThreadPoolExecutor(1) as ex:
+                for logs in ex.map(lambda a: inits(a, min(a + 999_999, head)), range(start, head + 1, 1_000_000)):
+                    for l in logs:
+                        if l["topics"][1] in want:
+                            keys[l["topics"][1]] = key_of(l)
+            want.difference_update(keys)
+        print("cached", len(active) - len(want), "of", len(active), "active pools")
+        if want:
+            scan(max(0, head - RECENT))
+        if want:
+            print(len(want), "active pools older than the recent window: scanning further back")
+            scan(max(0, head - LOOKBACK) if LOOKBACK else 0)
+        cache.update({pid: keys[pid] for pid in active if pid in keys})
+        with open(cache_path, "w") as f:
+            json.dump(cache, f, indent=0, sort_keys=True)
         for k in ETH_USDG:  # the main ETH/USDG pools, which predate the scan window
             keys[pool_id(k)] = k
             if pool_id(k) not in want:
