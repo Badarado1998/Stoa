@@ -1,0 +1,100 @@
+name: Deploy Metric adapter (Robinhood Chain)
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys MetricAdapter (Metric OMM pools: WETH/USDG and tokenized stocks against USDG) for the live router, owned by
+# the 48h timelock, with the keeper wallet as the pool-list keeper; points it at the best Metric pools of each pair;
+# verifies it on Sourcify; and commits its address to contracts/deployments/4663-metric.json (contracts/ only, so no
+# web build). It routes nothing until the admin Safe adds it to the router through the timelock: the hourly
+# rollout-robinhood-venues.yml does those three steps once that file exists. Gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY
+# (the keeper), about 0.0003 ETH with the pool lists.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test ! -f deployments/4663-metric.json || { echo "::error::already deployed (deployments/4663-metric.json)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          echo "Deployer and keeper: $ME · $(cast balance $ME --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit tests
+        run: forge test --match-contract MetricAdapterTest
+
+      - name: Rank Metric pools
+        working-directory: contracts/script/data
+        run: python3 -I metric_pools.py
+
+      - name: Fork test - live Metric pools, then through the live router
+        run: forge test --match-contract ForkRobinhoodMetric -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployMetricRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-metric.json
+
+      - name: Point the adapter at the pools
+        if: ${{ inputs.broadcast }}
+        run: |
+          RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="$PK" ADAPTER="$(jq -r .metricAdapter deployments/4663-metric.json)" \
+            ./script/metric-set-pools.sh
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          M=$(jq -r .metricAdapter deployments/4663-metric.json)
+          forge verify-contract $M src/adapters/MetricAdapter.sol:MetricAdapter --verifier sourcify --chain 4663 \
+            --constructor-args $(cast abi-encode "c(address,address,address,address,address)" \
+              0x2a53833cc95548cf52c7b159110e22D3a9018f32 0x3B9ea79f482094323d06064E637a7F4528560fcb \
+              0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5 0xAC75133729d6B5d615aA696d0828dC31fcB83ed8 \
+              0xbf666e8D054935170b9f09127247905A975b3B80) || true
+
+      - name: Commit the address (contracts/ only)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add contracts/deployments/4663-metric.json contracts/script/data/metric-pools-4663.json
+          git commit -m "deploy: Metric adapter on Robinhood Chain (not routed until the Safe adds it)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep $((i * 10)); done
+          exit 1
+
+      - name: Start the hourly governance runs (they stop themselves once every package is done)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow enable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY" || true
+          echo "Keep OWNER_PRIVATE_KEY and DEPLOYER_PRIVATE_KEY until the run summary says Metric is DONE." >> "$GITHUB_STEP_SUMMARY"

@@ -6,6 +6,7 @@ name: Robinhood governance steps (Safe rounds)
 #   3) add both adapters once the router's 1-day wait has passed
 # - $STOA buyback (script/RolloutBuybackRobinhood.s.sol): 1) schedule, 2) hand the FeeDistributor to StoaBuyback
 # - Pons curves (script/RolloutPonsRobinhood.s.sol, once deployed): same three steps as Aero + Ramses
+# - Metric (script/RolloutMetricRobinhood.s.sol, once deploy-robinhood-metric.yml ran): same three steps
 # Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
 # one of them set it approves and the other signer can press the same step on stoadex.com/admin (Robinhood).
 # Delete OWNER_PRIVATE_KEY once the run summary says every step is done.
@@ -59,6 +60,10 @@ jobs:
           fi
           if [ -n "$(jq -r '.ponsAdapter // empty' deployments/4663.json)" ]; then
             forge script script/RolloutPonsRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
+            want=$((want + 1))
+          fi
+          if [ -f deployments/4663-metric.json ]; then  # committed by deploy-robinhood-metric.yml
+            forge script script/RolloutMetricRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
             want=$((want + 1))
           fi
           echo "$want" > /tmp/want.txt
