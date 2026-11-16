@@ -2,6 +2,8 @@
 
 A review of the deployed contracts by the Stoa team, published in full. **This is not an external audit.** An independent audit is still planned before caps rise or vaults open.
 
+**Independent security review under way.** Since 16 November 2026, [Hey Research Lab](https://x.com/HeyResearch) is reviewing RugCover, SpotlightMarket, StoaLimit and StoaRouter at commit [`c524b82`](https://github.com/StoaDex/Stoa/tree/c524b82/contracts), the code the live contracts run. It is a review, not an audit. Findings come to Stoa privately first, with a test, and are published here once fixed. The scope, build steps and known issues are in [contracts/AUDIT.md](https://github.com/StoaDex/Stoa/blob/main/contracts/AUDIT.md).
+
 ## Update, 16 November 2026: bug bounty reports
 
 Two reports from outside researchers through the [bug bounty](bug-bounty.md), checked against the code. Neither puts funds at risk.
