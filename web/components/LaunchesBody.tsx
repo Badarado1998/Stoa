@@ -154,7 +154,7 @@ export default function LaunchesBody() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
             {grads.map((l) => <Link key={l.token} href={`/launches/${l.token}`} className="chip" title={l.name}>{l.symbol}{covered.has(l.token.toLowerCase()) && " · Covered"}</Link>)}
           </div>
-          <p className="note">Graduated tokens trade on their Uniswap V4 pool. Stoa&apos;s watcher adds each graduation pool to the router, usually within the hour; if the swap screen still offers to add it, that is one small transaction anyone can send.</p>
+          <p className="note">Graduated tokens trade on their Uniswap V4 pool. Stoa&apos;s keeper adds each graduation pool to the router, usually within the hour.</p>
         </div>
       )}
 

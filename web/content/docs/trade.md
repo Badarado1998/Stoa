@@ -54,7 +54,7 @@ Most launchpad tokens on Elysium and Robinhood Chain trade in Uniswap V4 pools, 
 
 ## Tokens still on a bonding curve
 
-A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 pool ([Trade Pons tokens](trade-pons.md) has the details). Stoa's Pons curve adapter (being added through the timelock; the venue list on the Trade page says LIVE once it is) trades on the curve directly: ETH for the token and back, or any other token through WETH. A curve trade pays Pons' 1% fee and the token's creator tax on top of Stoa's 2 bps, so the swap screen's price already includes them. The one buy it leaves to Pons is the buy that would graduate the curve. After graduation the token's V4 pool takes over: for $STOA a watcher registers that pool on the router, and anyone can add it sooner from the $STOA page or the swap screen.
+A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 pool ([Trade Pons tokens](trade-pons.md) has the details). Stoa's Pons curve adapter (being added through the timelock; the venue list on the Trade page says LIVE once it is) trades on the curve directly: ETH for the token and back, or any other token through WETH. A curve trade pays Pons' 1% fee and the token's creator tax on top of Stoa's 2 bps, so the swap screen's price already includes them. The one buy it leaves to Pons is the buy that would graduate the curve. After graduation the token's V4 pool takes over: Stoa's keeper registers that pool on the router, usually within the hour.
 
 ## Pools on Robinhood Chain
 
