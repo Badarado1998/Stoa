@@ -20,3 +20,8 @@ runs = 512
 # deployed and verified on Sourcify byte for byte, or pinned to a CREATE2 address the app ships: keep the source
 # exactly as compiled (SafetySim's bytecode is embedded in web/lib/safetySimCode.ts)
 ignore = ["src/StoaBuyback.sol", "src/StoaLimit.sol", "src/tools/SafetySim.sol"]
+
+[invariant]
+runs = 64
+depth = 128
+fail_on_revert = false

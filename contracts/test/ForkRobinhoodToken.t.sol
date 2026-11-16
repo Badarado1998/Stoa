@@ -50,8 +50,11 @@ contract ForkRobinhoodTokenTest is RouterHelper, SafeTestHelper, VenuesRobinhood
 
     function test_fork_safeHandsFeesToBuybackThroughTimelock() public {
         if (!on) return vm.skip(true);
+        if (fees.owner() != LIVE_TIMELOCK) {
+            console2.log("the live handover already ran: FeeDistributor owner", fees.owner());
+            return vm.skip(true);
+        }
         StoaBuyback bb = new StoaBuyback(LIVE_TIMELOCK, fees, router, IERC20(STOA), KEEPER);
-        assertEq(fees.owner(), LIVE_TIMELOCK);
         Op memory o = _handoverOp(address(bb));
         uint256 d = tl.getMinDelay();
         _safeExec(
@@ -79,16 +82,17 @@ contract ForkRobinhoodTokenTest is RouterHelper, SafeTestHelper, VenuesRobinhood
         vm.prank(LIVE_TIMELOCK);
         bb.exec(abi.encodeCall(FeeDistributor.setReferralBps, (1_000)));
 
-        // while $STOA is still on its bonding curve the router has no route: the keeper skips, fees stay put
+        // $STOA trades in its Uniswap V4 pool since graduation: the keeper buys it with the fees and burns it
         _makeFees();
         uint256 acc = fees.protocolAccrued(USDG);
         assertGt(acc, 0);
-        assertEq(router.quote(USDG, STOA, acc).amountOut, 0, "no route before graduation");
-        StoaRouter.Leg memory none;
+        StoaRouter.Quote memory q = router.quote(USDG, STOA, acc);
+        assertGt(q.amountOut, 0, "route to $STOA");
+        uint256 b0 = IERC20(STOA).balanceOf(BURN);
         vm.prank(KEEPER);
-        vm.expectRevert();
-        bb.buyback(USDG, acc, address(0), none, none, 1);
-        assertEq(fees.protocolAccrued(USDG), acc);
+        uint256 got = bb.buyback(USDG, acc, q.mid, q.leg1, q.leg2, q.amountOut * 99 / 100);
+        assertEq(IERC20(STOA).balanceOf(BURN) - b0, got, "bought $STOA reaches the burn address");
+        assertEq(fees.protocolAccrued(USDG), 0);
     }
 
     function test_fork_buybackSwapsLiveFeesAndBurns() public {
