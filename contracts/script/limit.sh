@@ -14,7 +14,14 @@ QT='quote(address,address,uint256)((uint256,address,(address,bool),(address,bool
 OT='order(uint256)((address,uint8,uint64,address,address,address,uint256,uint256))'
 clean() { sed -E 's/ \[[^]]*\]//g' | tr -d '(),'; }
 
-IDS=$(cast call $L 'openIds(uint256,uint256)(uint256[])' 0 1000 --rpc-url $RPC | tr -d '[],')
+# StoaLimitV2 has no cap on open orders across makers: read them in pages
+IDS=""; START=0
+while :; do
+  PAGE=$(cast call $L 'openIds(uint256,uint256)(uint256[])' $START 500 --rpc-url $RPC | tr -d '[],')
+  IDS="$IDS $PAGE"; COUNT=$(echo $PAGE | wc -w)
+  [ "$COUNT" -eq 500 ] || break
+  START=$((START + 500))
+done
 # chain time, not this machine's clock: cancel() checks block.timestamp
 NOW=$(cast block latest -f timestamp --rpc-url $RPC); N=0; F=0; C=0
 for ID in $IDS; do

@@ -1,0 +1,105 @@
+name: Deploy fixes for the Hey Research Lab findings (Robinhood Chain)
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys StoaLimitV2 (limit orders without the cap on open orders across makers) and UniswapV4AdapterV2 (only the
+# keeper or owner registers pool keys), both owned by the 48h timelock; registers on the new V4 adapter every key the
+# keeper registered on the old one; verifies both on Sourcify; and commits their addresses to
+# contracts/deployments/4663-fixes.json (contracts/ only, so no web build). StoaLimitV2 is live once the web app and
+# the keeper point at it; the V4 adapter routes nothing until the hourly rollout-robinhood-venues.yml has the timelock
+# add it and remove the old one. Gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY (the keeper), about 0.001 ETH with the keys.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test ! -f deployments/4663-fixes.json || { echo "::error::already deployed (deployments/4663-fixes.json)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          echo "Deployer and keeper: $ME · $(cast balance $ME --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit tests
+        run: forge test --match-contract "StoaLimitV2Test|UniswapV4AdapterV2Test"
+
+      - name: Fork test - the reported eviction against V2 on the live router
+        run: forge test --match-contract ForkRobinhoodV4V2 -vv
+
+      - name: List the old adapter's keys (keeper-registered only)
+        working-directory: contracts/script/data
+        run: python3 -I v4_copy_keys.py
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployFixesRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-fixes.json
+
+      - name: Register the keys on UniswapV4AdapterV2
+        if: ${{ inputs.broadcast }}
+        run: |
+          RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="$PK" ADAPTER="$(jq -r .uniswapV4AdapterV2 deployments/4663-fixes.json)" \
+            SEED=script/data/v4-v2-seed-4663.json ./script/seed-v4.sh
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          L=$(jq -r .limitV2 deployments/4663-fixes.json); V=$(jq -r .uniswapV4AdapterV2 deployments/4663-fixes.json)
+          forge verify-contract $L src/StoaLimitV2.sol:StoaLimitV2 --verifier sourcify --chain 4663 \
+            --constructor-args $(cast abi-encode "c(address,address,address,address)" \
+              0xAC75133729d6B5d615aA696d0828dC31fcB83ed8 0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5 \
+              0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9 0xbf666e8D054935170b9f09127247905A975b3B80) || true
+          forge verify-contract $V src/adapters/UniswapV4AdapterV2.sol:UniswapV4AdapterV2 --verifier sourcify --chain 4663 \
+            --constructor-args $(cast abi-encode "c(address,address,address,address,address[],address)" \
+              0x8366a39CC670B4001A1121B8F6A443A643e40951 0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73 \
+              0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5 0xAC75133729d6B5d615aA696d0828dC31fcB83ed8 \
+              "[0x0000000000000000000000000000000000000000,0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044,0x987E330F00B79864a07FE81dFaC344D0078ABCC0,0x4e3468951D49f2EEa976eD0D6e75fFCb44a9a544,0x0Af57F62982D03066ef917AcAd87F771c06528Ec,0xee588bCF2bd3e658f5160489f4199d1851BBf0Cc]" \
+              0xbf666e8D054935170b9f09127247905A975b3B80) || true
+
+      - name: Commit the address (contracts/ only)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add contracts/deployments/4663-fixes.json contracts/script/data/v4-v2-seed-4663.json
+          git commit -m "deploy: StoaLimitV2 and UniswapV4AdapterV2 on Robinhood Chain (V4 adapter not routed until the timelock swaps it)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep $((i * 10)); done
+          exit 1
+
+      - name: Start the hourly governance runs (they stop themselves once every package is done)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow enable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY" || true
+          echo "Keep OWNER_PRIVATE_KEY and DEPLOYER_PRIVATE_KEY until the run summary says the V4 adapter swap is DONE." >> "$GITHUB_STEP_SUMMARY"

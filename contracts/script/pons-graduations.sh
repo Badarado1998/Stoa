@@ -15,11 +15,14 @@ USDG=0x5fc5360d0400a0fd4f2af552add042d716f1d168
 HOOK=0xe5e702641ea86f4ae6cc3cdaed2b886f976be044
 WINDOW=${WINDOW:-1000000}   # blocks to look back (~30h on Robinhood Chain): runs can be late or skipped
 MAX=${MAX:-10}             # registrations per run (a backfill can raise it)
-ADAPTER=$(jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json)
+# the router's V4 adapter, and UniswapV4AdapterV2 (keeper-only registration) until the timelock swaps them
+ADAPTERS="$(jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json) $(jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null || true)"
 head=$(cast block-number --rpc-url "$RPC")
 tokens=$(cast logs --address $FACTORY $GRADUATED --from-block $((head - WINDOW)) --to-block $head --rpc-url "$RPC" --json \
   | jq -r '.[].topics[1]' | sed 's/^0x000000000000000000000000/0x/' | awk '!seen[tolower($0)]++')
 [ -n "$tokens" ] || { echo "no Pons graduations in the last $WINDOW blocks"; exit 0; }
+for ADAPTER in $(echo $ADAPTERS | tr ' ' '\n' | awk '!seen[tolower($0)]++'); do
+echo "adapter $ADAPTER"
 done_n=0
 for t in $tokens; do
   [ "$done_n" -lt "$MAX" ] || { echo "reached MAX=$MAX for this run"; break; }
@@ -46,3 +49,4 @@ for t in $tokens; do
   done_n=$((done_n + 1))
 done
 echo "registered this run: $done_n"
+done

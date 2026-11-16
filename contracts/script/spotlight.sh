@@ -33,7 +33,9 @@ if python3 -c "import sys; sys.exit(0 if int('$POT') >= int('$MIN_POT') else 1)"
   QT='quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))'
   read -r OUT MID V1 P1 V2 P2 <<<"$(cast call $ROUTER "$QT" $Z $STOA $POT --rpc-url $RPC | sed -E 's/ \[[^]]*\]//g' | tr -d '(),')"
   [ "${OUT:-0}" != "0" ] || { echo "No route from ETH to \$STOA right now; the pot waits"; exit 0; }
-  MIN=$(python3 -c "print(int('$OUT') * (10000 - $SLIP) // 10000)")
+  source script/route-check.sh
+  MIN=$(safe_min $Z $STOA $POT $OUT $MID $V1 $V2 $SLIP)
+  [ -n "$MIN" ] || { echo "The route did not pass the checks; the pot waits"; exit 0; }
   echo "Burning the pot: $POT wei ETH -> ~$OUT STOA (min $MIN)"
   [ -n "${DRY:-}" ] || cast send $M 'burn(address,(address,bool),(address,bool),uint256)' $MID "($V1,$P1)" "($V2,$P2)" $MIN $SEND --rpc-url $RPC | grep -E "^(status|transactionHash) "
 else

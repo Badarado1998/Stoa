@@ -16,6 +16,7 @@ R=$(jq -r '.rugCover // empty' $D); ROUTER=$(jq -r .router $D); STOA=$(jq -r .st
 Z=0x0000000000000000000000000000000000000000
 [ -n "$R" ] || { echo "NOT CONFIGURED: no rugCover in $D"; exit 0; }
 [ "$(cast code $R --rpc-url $RPC)" != "0x" ] || { echo "NOT DEPLOYED yet at $R"; exit 0; }
+source script/route-check.sh
 
 TOKENS=$(cast call $R 'openTokens()(address[])' --rpc-url $RPC | tr -d '[],')
 N=0
@@ -32,12 +33,17 @@ POT=$(cast call $R 'burnPot()(uint256)' --rpc-url $RPC | cut -d' ' -f1)
 if python3 -c "import sys; sys.exit(0 if int('$POT') >= int('$MIN_POT') else 1)"; then
   QT='quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))'
   read -r OUT MID V1 P1 V2 P2 <<<"$(cast call $ROUTER "$QT" $Z $STOA $POT --rpc-url $RPC | sed -E 's/ \[[^]]*\]//g' | tr -d '(),')"
+  MIN=""
   if [ "${OUT:-0}" != "0" ]; then
-    MIN=$(python3 -c "print(int('$OUT') * (10000 - $SLIP) // 10000)")
+    MIN=$(safe_min $Z $STOA $POT $OUT $MID $V1 $V2 $SLIP)
+  fi
+  if [ "${OUT:-0}" = "0" ]; then
+    echo "No route from ETH to \$STOA right now; the pot waits"
+  elif [ -z "$MIN" ]; then
+    echo "The route did not pass the checks; the pot waits"
+  else
     echo "Burning the pot: $POT wei ETH -> ~$OUT STOA (min $MIN)"
     [ -n "${DRY:-}" ] || cast send $R 'burn(address,(address,bool),(address,bool),uint256)' $MID "($V1,$P1)" "($V2,$P2)" $MIN $SEND --rpc-url $RPC | grep -E "^(status|transactionHash) "
-  else
-    echo "No route from ETH to \$STOA right now; the pot waits"
   fi
 else
   echo "Burn pot $POT wei is below $MIN_POT; it waits"

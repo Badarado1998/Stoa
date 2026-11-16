@@ -44,8 +44,13 @@ jobs:
           (cd contracts/script/data && ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com CHAIN=robinhood python3 -I v4_top_pools.py) \
             || echo "::warning::Robinhood Chain pool scan failed; registering the last list"
           test -n "${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" || { echo "::warning::ROBINHOOD_DEPLOYER_PRIVATE_KEY missing; skipping registration"; exit 0; }
-          cd contracts && RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" \
-            ADAPTER="$(jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json)" SEED=script/data/v4-seed-pools-4663.json ./script/seed-v4.sh
+          # the router's V4 adapter, and UniswapV4AdapterV2 (keeper-only registration) until the timelock swaps them
+          cd contracts
+          for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
+            echo "adapter $A"
+            RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" \
+              ADAPTER="$A" SEED=script/data/v4-seed-pools-4663.json ./script/seed-v4.sh
+          done
       - name: Robinhood Chain - Metric pool lists
         if: ${{ hashFiles('contracts/deployments/4663-metric.json') != '' }}
         continue-on-error: true

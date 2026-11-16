@@ -18,6 +18,7 @@ Z=0x0000000000000000000000000000000000000000
 OWNER=$(cast call $FEES 'owner()(address)' --rpc-url $RPC)
 [ "${OWNER,,}" = "${BB,,}" ] || { echo "NOT ACTIVE: the FeeDistributor is still owned by $OWNER (the timelock handover is pending)"; exit 0; }
 
+source script/route-check.sh
 QT='quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))'
 # "(out, mid, (v1, p1), (v2, p2))" -> "out mid v1 p1 v2 p2"
 route() { cast call $ROUTER "$QT" $1 $2 $3 --rpc-url $RPC 2>/dev/null | sed -E 's/ \[[^]]*\]//g' | tr -d '(),' || echo "0"; }
@@ -43,7 +44,8 @@ for T in $TOKENS; do
   fi
   read -r OUT MID V1 P1 V2 P2 <<<"$(route $T $STOA $ACC)"
   [ "${OUT:-0}" != "0" ] || { echo "$SYM: no route to \$STOA yet (still on its bonding curve?), left to accumulate"; continue; }
-  MIN=$(python3 -c "print(int('$OUT') * (10000 - $SLIP) // 10000)")
+  MIN=$(safe_min $T $STOA $ACC $OUT $MID $V1 $V2 $SLIP)
+  [ -n "$MIN" ] || { echo "$SYM: the route did not pass the checks, left for the next run"; continue; }
   echo "$SYM: $ACC -> ~$OUT STOA (min $MIN) via $V1${MID:+ / $V2}"
   [ -n "${DRY:-}" ] && continue
   ARGS=($T $ACC $MID "($V1,$P1)" "($V2,$P2)" $MIN)

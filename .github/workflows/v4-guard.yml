@@ -1,0 +1,23 @@
+name: V4 adapter guard (Robinhood Chain)
+# Every 15 minutes until the timelock removes Stoa's first Uniswap V4 adapter from the router: fails (and GitHub emails
+# the repository owner) if anyone but the keeper has registered or replaced a pool key on it since the checkpoint.
+# The web app, the API and the keeper scripts already avoid such pairs; this tells the team to look.
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the old V4 adapter
+        working-directory: contracts/script
+        env:
+          ROBINHOOD_RPC_URL: https://rpc.mainnet.chain.robinhood.com
+        run: |
+          python3 -I v4_guard.py --fail || {
+            echo "::error::an outsider changed pool keys on the old Uniswap V4 adapter: the guarded routes avoid those pairs; consider StoaRouter.pause or removing the adapter"
+            exit 1; }
