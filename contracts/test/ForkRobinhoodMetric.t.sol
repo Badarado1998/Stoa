@@ -60,6 +60,25 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         return router.quote(a, b, amt);
     }
 
+    /// @dev Swap along the route of `q`, as the web app does: it sends the route it quoted (RouterHelper's `_swapAs`
+    ///      would quote again with a sender, which those oracles refuse, and pick another route).
+    function _swapQuoted(StoaRouter.Quote memory q, address tin, address tout, uint256 amt) internal returns (uint256) {
+        StoaRouter.SwapParams memory p = StoaRouter.SwapParams({
+            tokenIn: tin,
+            tokenOut: tout,
+            mid: q.mid,
+            leg1: q.leg1,
+            leg2: q.leg2,
+            amountIn: amt,
+            minOut: q.amountOut,
+            to: alice,
+            deadline: block.timestamp,
+            referrer: address(0)
+        });
+        vm.prank(alice);
+        return router.swap{value: tin == address(0) ? amt : 0}(p);
+    }
+
     /// @dev Metric's own quoter on one pool: the output if it fills the whole input, else 0.
     function _q(address pool, address a, uint256 amt) internal returns (uint256) {
         (bool ok, bytes memory r) = pool.staticcall(abi.encodeWithSignature("getImmutables()"));
@@ -227,7 +246,7 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         console2.log("leg1 venue:", q.leg1.venue);
         uint256 before = IERC20(USDG).balanceOf(alice);
         uint256 g = gasleft();
-        uint256 out = _swapAs(router, alice, address(0), USDG, amt, q.amountOut, alice, address(0));
+        uint256 out = _swapQuoted(q, address(0), USDG, amt);
         console2.log("swap gas:", g - gasleft());
         assertEq(IERC20(USDG).balanceOf(alice) - before, out, "paid");
         assertGe(out, q.amountOut, "at least the quote");
@@ -242,7 +261,7 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         console2.log("500 USDG -> TSLA, router:", qs.amountOut, " metric alone:", viaMetric);
         console2.log("  venue:", qs.leg1.venue);
         assertGe(qs.amountOut, viaMetric - viaMetric * router.fallbackFeeBps() / 10_000, "never below metric");
-        uint256 tsla = _swapAs(router, alice, USDG, TSLA, 500e6, qs.amountOut, alice, address(0));
+        uint256 tsla = _swapQuoted(qs, USDG, TSLA, 500e6);
         assertGe(tsla, qs.amountOut);
     }
 }
