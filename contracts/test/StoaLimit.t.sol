@@ -21,7 +21,9 @@ contract GreedyMaker {
     }
 
     function place(address tokenOut, uint256 minOut) external payable {
-        id = lim.create{value: msg.value}(address(0), tokenOut, msg.value, minOut, uint64(block.timestamp + 1 days), address(0));
+        id = lim.create{value: msg.value}(
+            address(0), tokenOut, msg.value, minOut, uint64(block.timestamp + 1 days), address(0)
+        );
     }
 
     function cancelIt() external {

@@ -17,5 +17,6 @@ remappings = [
 runs = 512
 
 [fmt]
-# deployed and verified on Sourcify byte for byte: keep the source exactly as compiled
-ignore = ["src/StoaBuyback.sol"]
+# deployed and verified on Sourcify byte for byte, or pinned to a CREATE2 address the app ships: keep the source
+# exactly as compiled (SafetySim's bytecode is embedded in web/lib/safetySimCode.ts)
+ignore = ["src/StoaBuyback.sol", "src/StoaLimit.sol", "src/tools/SafetySim.sol"]

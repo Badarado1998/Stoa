@@ -36,10 +36,14 @@ contract ForkRobinhoodLimitTest is Test, TokenPackageRobinhood {
         StoaRouter.Quote memory q = router.quote(NATIVE, USDG, 0.01 ether);
         uint256 minOut = q.amountOut * 98 / 100;
         vm.prank(maker);
-        uint256 id = lim.create{value: 0.01 ether}(NATIVE, USDG, 0.01 ether, minOut, uint64(block.timestamp + 1 days), address(0));
+        uint256 id = lim.create{value: 0.01 ether}(
+            NATIVE, USDG, 0.01 ether, minOut, uint64(block.timestamp + 1 days), address(0)
+        );
         // an order above the market does not fill
         vm.prank(maker);
-        uint256 high = lim.create{value: 0.01 ether}(NATIVE, USDG, 0.01 ether, q.amountOut * 2, uint64(block.timestamp + 1 days), address(0));
+        uint256 high = lim.create{value: 0.01 ether}(
+            NATIVE, USDG, 0.01 ether, q.amountOut * 2, uint64(block.timestamp + 1 days), address(0)
+        );
         vm.prank(KEEPER);
         vm.expectRevert(StoaRouter.Slippage.selector);
         lim.fill(high, q.mid, q.leg1, q.leg2);
@@ -54,12 +58,17 @@ contract ForkRobinhoodLimitTest is Test, TokenPackageRobinhood {
         // sell: everything the buy got, plus $STOA bought first, for ETH
         StoaRouter.Quote memory sq = router.quote(NATIVE, STOA, 0.005 ether);
         vm.prank(maker);
-        router.swap{value: 0.005 ether}(StoaRouter.SwapParams(NATIVE, STOA, sq.mid, sq.leg1, sq.leg2, 0.005 ether, 1, maker, block.timestamp, address(0)));
+        router.swap{value: 0.005 ether}(
+            StoaRouter.SwapParams(
+                NATIVE, STOA, sq.mid, sq.leg1, sq.leg2, 0.005 ether, 1, maker, block.timestamp, address(0)
+            )
+        );
         uint256 stoaAmt = IERC20(STOA).balanceOf(maker);
         StoaRouter.Quote memory back = router.quote(STOA, NATIVE, stoaAmt);
         vm.startPrank(maker);
         IERC20(STOA).approve(address(lim), stoaAmt);
-        uint256 sid = lim.create(STOA, NATIVE, stoaAmt, back.amountOut * 99 / 100, uint64(block.timestamp + 1 days), address(0));
+        uint256 sid =
+            lim.create(STOA, NATIVE, stoaAmt, back.amountOut * 99 / 100, uint64(block.timestamp + 1 days), address(0));
         vm.stopPrank();
         uint256 e0 = maker.balance;
         vm.prank(KEEPER);
