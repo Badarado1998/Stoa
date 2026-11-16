@@ -6,6 +6,7 @@ import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
 import RefKeeper from "@/components/RefKeeper";
 import TokenShare from "@/components/TokenShare";
+import SafetyPanel from "@/components/SafetyPanel";
 import { findListed, isStoa, listedTokens, priceFmt, readToken, usdFmt } from "@/lib/tokenInfo";
 
 // /tokens/<chain>/<address>: one listed token, its market and Stoa's best route for it right now.
@@ -21,14 +22,14 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   if (!hit) return {};
   const t = await readToken(chain, address).catch(() => null);
   const sym = hit.token.symbol, netName = hit.net.name, url = `/tokens/${hit.net.key}/${hit.token.address}`;
-  const title = `Buy ${sym} on ${netName}`;
+  const title = `Buy ${sym} on ${netName}: price, contract and safety check`;
   const price = t?.priceUsd ? `${sym} trades at ${priceFmt(t.priceUsd)}. ` : "";
   const description = `${price}Swap ${sym} on Stoa: every venue the router uses on ${netName} is compared on every swap. Contract ${hit.token.address}.`;
   return {
     title, description,
     alternates: { canonical: url },
-    openGraph: { title: `${title} · Stoa`, description, type: "website", siteName: "Stoa", url },
-    twitter: { card: "summary_large_image", site: "@StoaDex", title: `${title} · Stoa`, description },
+    openGraph: { title: `Buy ${sym} on ${netName} · Stoa`, description, type: "website", siteName: "Stoa", url },
+    twitter: { card: "summary_large_image", site: "@StoaDex", title: `Buy ${sym} on ${netName} · Stoa`, description },
   };
 }
 
@@ -44,12 +45,23 @@ export default async function TokenPage({ params }: P) {
   const sell = `/trade?chain=${net.key}&sell=${token.address}&buy=${net.gas}`;
   const others = listedTokens().filter((x) => x.net.key === net.key && x.token.address !== token.address && x.token.logo).slice(0, 12);
   const ch = t?.change24h ?? null;
+  const faq: [string, string][] = [
+    [`How do I buy ${sym} on ${net.name}?`, `Connect a wallet on Stoa, pick ${net.gas} or another token to pay with, enter an amount and tap Swap. Stoa quotes every venue it routes on ${net.name} for that amount and shows which one fills, what you get and your minimum before you sign.`],
+    [`What is the ${sym} contract address?`, `${token.address} on ${net.name}. Anyone can create a token with any name, so compare this address with the one the project publishes before you buy.`],
+    [`Is ${sym} safe to buy?`, `Stoa runs a safety check before you swap: a simulated buy and sell of ${sym} through the live router, which shows the tax on each and whether selling works, plus how concentrated its supply is. It is a check, not a guarantee: a token's owner can still change it later.`],
+    [`What does a swap cost on Stoa?`, `A 2 bps (0.02%) protocol fee on the output, the venue's own pool fee and any tax the token charges, plus network gas. The quote already includes the fees.`],
+  ];
+  const faqLd = {
+    "@context": "https://schema.org", "@type": "FAQPage",
+    mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+  };
   const stat = (label: string, v: string) => (
     <div className="panel pad stat"><div className="lbl">{label}</div><span className="v">{v}</span></div>
   );
   return (
     <section className="page">
       <RefKeeper />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <PageHead eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} on Stoa`}
         action={<Link className="cta" href={buy}>Buy {sym}</Link>}>
         Stoa compares every venue it routes on {net.name} on every swap and fills where you get the most, for a 2 bps fee.
@@ -103,6 +115,7 @@ export default async function TokenPage({ params }: P) {
             {stat("24H VOLUME", usdFmt(t?.volume24h ?? null))}
             {stat("FDV", usdFmt(t?.fdvUsd ?? null))}
           </div>
+          {token.tone === "other" && <SafetyPanel chain={net.key} token={token.address} />}
           <TokenShare chain={net.key} address={token.address} symbol={sym} />
           {others.length > 0 && (
             <div className="panel pad">
@@ -113,6 +126,15 @@ export default async function TokenPage({ params }: P) {
               </div>
             </div>
           )}
+          <div className="panel pad">
+            <div className="lbl">QUESTIONS</div>
+            {faq.map(([q, a]) => (
+              <div key={q} style={{ marginTop: 14 }}>
+                <h3 style={{ fontSize: 15, margin: 0 }}>{q}</h3>
+                <p className="note" style={{ marginTop: 4, marginBottom: 0 }}>{a}</p>
+              </div>
+            ))}
+          </div>
           <p className="note" style={{ marginTop: 0 }}>Price, liquidity, volume and FDV from DexScreener. The route on Stoa is read live from the router. Refreshed every minute.</p>
         </div>
       </div>
