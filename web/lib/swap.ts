@@ -44,6 +44,18 @@ export function swapParams(
   };
 }
 
+/** What the trader set in the swap form. A swap is prepared asynchronously (fresh quote, gas estimate), so the
+ *  parameters sent to the wallet are checked against the form as it is right before sending. */
+export type SwapForm = { amount: string; slip: number; sell: string; buy: string };
+
+/** True if the form still holds what the swap was prepared from (addresses compared case-insensitively). */
+export function sameForm(a: SwapForm, b: SwapForm): boolean {
+  return a.amount === b.amount && a.slip === b.slip && a.sell.toLowerCase() === b.sell.toLowerCase() &&
+    a.buy.toLowerCase() === b.buy.toLowerCase();
+}
+
+export const FORM_CHANGED = "The swap form changed while this swap was being prepared. Check the amount and tap Swap again.";
+
 /** Minimum output after slippage, rounded down. slippage in percent, e.g. 0.5 */
 export function minOut(amountOut: bigint, slippagePct: number): bigint {
   const bps = BigInt(Math.round(slippagePct * 100));

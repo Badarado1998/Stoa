@@ -8,7 +8,7 @@ import { BaseError, decodeEventLog, formatUnits, ContractFunctionRevertedError, 
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
 import { ROBINHOOD, txUrlOn, type Net } from "@/lib/networks";
 import { fetchGuard, routeWithoutOldV4, usesPoisoned } from "@/lib/v4guard";
-import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route, fmtAmt } from "@/lib/swap";
+import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route, fmtAmt, sameForm, FORM_CHANGED, type SwapForm } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routedEvent, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { SITE } from "@/lib/chain";
 import { shareOrCopy } from "@/lib/share";
@@ -245,7 +245,7 @@ function TradeOn({ net }: { net: Net }) {
     else { if (t.address === sell.address) setSell(buy); setBuy(t); }
     setMenu(null); setQuote(null); setMsg(null); setAckToken(false); setAckImpact(false);
   };
-  const flip = () => { setSell(buy); setBuy(sell); setQuote(null); };
+  const flip = () => { if (busy) return; setSell(buy); setBuy(sell); setQuote(null); };
 
   // deep link: /trade?chain=robinhood&sell=ETH&buy=0x… (ticker or address); applied once, on the network it names
   const linked = useRef(false);
@@ -297,6 +297,10 @@ function TradeOn({ net }: { net: Net }) {
     }
   }
 
+  // the form as it is now: a swap prepared from an older form is not sent (see sameForm)
+  const live = useRef<SwapForm>({ amount, slip, sell: sell.address, buy: buy.address });
+  live.current = { amount, slip, sell: sell.address, buy: buy.address };
+
   async function run(label: string, fn: () => Promise<Hash>, onOk?: (r: TransactionReceipt, hash: Hash) => void, why: (e: unknown) => string = (e) => explain(e, G)) {
     if (!pub) return;
     setBusy(label); setMsg(null); setDone(null);
@@ -317,6 +321,7 @@ function TradeOn({ net }: { net: Net }) {
   }
 
   async function onAction() {
+    const form: SwapForm = { amount, slip, sell: sell.address, buy: buy.address };
     if (!isConnected) return openWallet();
     if (wrongChain) return switchChain({ chainId: chain.id });
     if (!amt) return;
@@ -342,6 +347,7 @@ function TradeOn({ net }: { net: Net }) {
           const est = await pub!.estimateContractGas({ address: COVER!, abi: coverAbi, functionName: "buyCovered", args: [p], value, account: address! });
           gas = (est * 13n) / 10n + 50_000n;
         } catch { /* the wallet estimates; a revert shows up there */ }
+        if (!sameForm(form, live.current)) throw new Error(FORM_CHANGED);
         return writeContractAsync({ address: COVER!, abi: coverAbi, functionName: "buyCovered", args: [p], value, gas, chainId: chain.id });
       }, (r, hash) => {
         let paid = amt, got: bigint | undefined;
@@ -373,6 +379,7 @@ function TradeOn({ net }: { net: Net }) {
         const est = await pub!.estimateContractGas({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, account: address! });
         gas = (est * 13n) / 10n + 50_000n;
       } catch { /* let the wallet estimate; a revert shows up there */ }
+      if (!sameForm(form, live.current)) throw new Error(FORM_CHANGED);
       return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, gas, chainId: chain.id });
     }, (r, hash) => {
       // what the trader actually paid and got, from the router's Routed event in the receipt
@@ -446,7 +453,7 @@ function TradeOn({ net }: { net: Net }) {
           </button>
           <div className={`panel pop${showSet ? " open" : ""}`}>
             <div className="lbl">MAX SLIPPAGE</div>
-            <div className="seg" style={{ marginTop: 10 }}>{SLIPS.map((s) => <button key={s} type="button" className={s === slip ? "on" : undefined} onClick={() => setSlip(s)}>{s}%</button>)}</div>
+            <div className="seg" style={{ marginTop: 10 }}>{SLIPS.map((s) => <button key={s} type="button" className={s === slip ? "on" : undefined} disabled={!!busy} onClick={() => setSlip(s)}>{s}%</button>)}</div>
             <p className="note">If the price moves past your slippage before your swap lands, it reverts and you keep your funds.</p>
             <div className="lbl" style={{ marginTop: 14 }}>TOKEN APPROVAL</div>
             <label className="chk"><input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} /> Approve unlimited (fewer transactions, more exposure)</label>
@@ -456,12 +463,12 @@ function TradeOn({ net }: { net: Net }) {
 
         <div className="box">
           <div className="row"><label className="lbl" htmlFor="sellv">SELL</label>
-            <button type="button" className="lbl" style={{ border: 0, background: "none", cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
+            <button type="button" className="lbl" style={{ border: 0, background: "none", cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
               BALANCE {sBal !== undefined ? fmt(sBal, sell.decimals, 4) : "—"}
             </button></div>
           <div className="row" style={{ position: "relative" }}>
-            <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} onChange={(e) => { setMsg(null); setDone(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
-            <TokenBtn t={sell} onClick={() => setMenu(menu === "sell" ? null : "sell")} />
+            <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} readOnly={!!busy} onChange={(e) => { setMsg(null); setDone(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
+            <TokenBtn t={sell} onClick={() => !busy && setMenu(menu === "sell" ? null : "sell")} />
             {menu === "sell" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
           {sellUsd > 0 && <div className="usd">≈ {fmtUsd(sellUsd)}</div>}
@@ -473,7 +480,7 @@ function TradeOn({ net }: { net: Net }) {
             <span className="out" style={{ fontSize: outTxt.length > 13 ? 20 : outTxt.length > 10 ? 24 : 28, color: quote ? "var(--ink)" : "#AAB2BE" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
               {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
-            <TokenBtn t={buy} onClick={() => setMenu(menu === "buy" ? null : "buy")} />
+            <TokenBtn t={buy} onClick={() => !busy && setMenu(menu === "buy" ? null : "buy")} />
             {menu === "buy" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}

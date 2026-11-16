@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { minOut, parseAmount, fmt, swapKind, cleanRef, describeRoute, swapParams, hasRoute, type Route } from "../lib/swap";
+import { minOut, parseAmount, fmt, swapKind, cleanRef, describeRoute, swapParams, hasRoute, sameForm, type Route } from "../lib/swap";
 import { TOKENS, WHYPE, NATIVE } from "../lib/tokens";
 import type { Address } from "viem";
 
@@ -63,4 +63,12 @@ test("referral cannot be yourself or garbage", () => {
   assert.equal(cleanRef(a), a);
   assert.equal(cleanRef(a, a.toLowerCase()), undefined);
   assert.equal(cleanRef("0x123"), undefined);
+});
+
+test("sameForm: a swap prepared from an older form is not sent", () => {
+  const a = { amount: "1", slip: 0.5, sell: "0xAbC0000000000000000000000000000000000001", buy: "0x0000000000000000000000000000000000000002" };
+  assert.equal(sameForm(a, { ...a, sell: a.sell.toLowerCase() }), true);
+  assert.equal(sameForm(a, { ...a, amount: "2" }), false); // amount changed while quoting
+  assert.equal(sameForm(a, { ...a, slip: 0.1 }), false); // slippage changed while quoting
+  assert.equal(sameForm(a, { ...a, buy: "0x0000000000000000000000000000000000000003" }), false);
 });
