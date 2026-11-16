@@ -1,6 +1,7 @@
 import "server-only";
-import { createPublicClient, encodeFunctionData, getAddress, http, isAddress, type Address } from "viem";
-import { netByKey, type Net } from "./networks";
+import { createPublicClient, encodeFunctionData, getAddress, http, isAddress, type Address, type PublicClient } from "viem";
+import { ROBINHOOD, netByKey, type Net } from "./networks";
+import { computeGuard, routeWithoutOldV4, usesPoisoned, type Guard } from "./v4guard";
 import { routerAbi } from "./abi";
 import { NATIVE } from "./tokens";
 
@@ -65,6 +66,19 @@ export async function apiQuote(p: QuoteInput) {
     const [a, b] = await Promise.all([q(amountIn), q(small).catch(() => null)]);
     route = a.result as typeof route;
     ref = (b?.result as typeof route | undefined)?.amountOut ?? 0n;
+    if (net.chain.id === ROBINHOOD.chain.id) {
+      // skip Stoa's first V4 adapter on any pair where someone other than the keeper changed its pools (lib/v4guard)
+      const g = await computeGuard().catch((): Guard => ({ oldInRouter: true, poisoned: ["*"] }));
+      const pc = c as unknown as PublicClient;
+      if (usesPoisoned(route, sell, buy, g)) {
+        const alt = await routeWithoutOldV4(pc, net, sell, buy, amountIn);
+        if (!alt) return apiError(422, "No route for this pair and amount right now");
+        route = alt;
+      }
+      if (b && usesPoisoned(b.result as typeof route, sell, buy, g)) {
+        ref = (await routeWithoutOldV4(pc, net, sell, buy, small))?.amountOut ?? 0n;
+      }
+    }
   } catch { return apiError(422, "No route for this pair and amount right now"); }
   if (!route.amountOut || lc(route.leg1.venue) === lc(NATIVE)) return apiError(422, "No route for this pair and amount right now");
   const minOut = (route.amountOut * BigInt(10_000 - slip)) / 10_000n;

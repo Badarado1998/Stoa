@@ -50,7 +50,7 @@ On Elysium, maker pools cap each fill at **$500** while they ramp up. Larger swa
 
 ## Tokens on Uniswap V4
 
-Most launchpad tokens on Elysium and Robinhood Chain trade in Uniswap V4 pools, which the router cannot discover by itself. The most traded ones are registered every day. If the router has no route for a token you imported, the swap screen looks up its V4 pool and offers **Add Uniswap V4 pool**: a one-time transaction anyone can send that lets the router use that pool for everyone. Only pools whose hooks are on Stoa's allowlist can be added.
+Most launchpad tokens on Elysium and Robinhood Chain trade in Uniswap V4 pools, which the router cannot discover by itself. Stoa's keeper registers the most traded ones every day, and Pons graduation pools usually within the hour. Only the keeper adds pools, and only pools whose hooks are on Stoa's allowlist. If the router has no route for a token you imported, the swap screen says whether it trades in a Uniswap V4 pool the router does not use yet.
 
 ## Tokens still on a bonding curve
 

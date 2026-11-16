@@ -52,7 +52,7 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
 }
 
 /** where $STOA stands on its Pons bonding curve; once it graduates the panel says so and links to the trade.
- *  Between graduation and the watcher's next run, anyone can add the graduation pool to the router from here. */
+ *  Between graduation and the keeper's next run, the graduation pool is not in the router yet. */
 function CurvePanel({ routable }: { routable?: boolean }) {
   const pub = usePublicClient({ chainId: net.chain.id });
   const { isConnected } = useAccount();
@@ -87,18 +87,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
       return keys.find((k) => !known.some((x) => sameKey(x, k))) ?? null;
     },
   });
-  async function addPool(k: PoolKey) {
-    if (!pub) return;
-    setBusy(true); setMsg(null);
-    try {
-      const hash = await writeContractAsync({ address: C.v4!, abi: v4AdapterAbi, functionName: "register", args: [k], chainId: net.chain.id });
-      const rc = await pub.waitForTransactionReceipt({ hash });
-      if (rc.status !== "success") throw new Error("Transaction reverted");
-      setMsg({ ok: true, text: "Pool added: $STOA now routes on Stoa", hash }); void pending.refetch();
-    } catch (e) {
-      setMsg({ ok: false, text: e instanceof BaseError ? e.shortMessage : (e as Error).message });
-    } finally { setBusy(false); }
-  }
+
   const ethTxt = (v?: bigint) => (v === undefined ? undefined : (Number(v) / 1e18).toFixed(3).replace(/\.?0+$/, ""));
   return (
     <div className="panel pad">
@@ -109,20 +98,15 @@ function CurvePanel({ routable }: { routable?: boolean }) {
       <p style={{ marginTop: 12 }}>
         {grad
           ? routable === false
-            ? "$STOA has graduated to its Uniswap V4 pool. Stoa's watcher adds that pool to the router on its next run, or anyone can add it now below."
+            ? "$STOA has graduated to its Uniswap V4 pool. Stoa's keeper adds that pool to the router on its next run, usually within the hour."
             : "$STOA has graduated to its Uniswap V4 pool and routes on Stoa, so the weekly buyback buys it there. The pool's Pons hook takes 2.8% of each buy and sell."
           : routable
             ? <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. $STOA already trades on Stoa on its curve, so the weekly buyback can buy it now. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity, and Stoa routes that pool instead.</>
-            : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa adds that pool to its router (anyone can add it from this page), and the weekly buyback starts buying $STOA.</>}
+            : <>{ethTxt(eth.data) ?? "…"} of {ethTxt(thr) ?? "…"} ETH raised. At {ethTxt(thr) ?? "…"} ETH the curve graduates to a Uniswap V4 pool with locked liquidity. Stoa's keeper adds that pool to its router, and the weekly buyback starts buying $STOA.</>}
       </p>
       {grad && routable === false && pending.data && (
         <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
-          The graduation pool is not on Stoa&apos;s router yet. Adding it is one small transaction anyone can send; it only pays gas.
-          <div style={{ marginTop: 10 }}>
-            {isConnected
-              ? <button className="ghost" type="button" disabled={busy} onClick={() => addPool(pending.data!)}>{busy ? "Adding pool…" : "Add $STOA's pool to Stoa"}</button>
-              : <button className="ghost" type="button" onClick={open}>Connect wallet to add the pool</button>}
-          </div>
+          The graduation pool is not on Stoa&apos;s router yet. Stoa&apos;s keeper adds it, usually within the hour.
         </div>
       )}
       {msg && <p className="note" style={{ color: msg.ok ? undefined : "#B4532A" }}>{msg.text}{msg.hash && <> · <a href={txUrlOn(net, msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</p>}

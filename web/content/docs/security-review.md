@@ -4,6 +4,18 @@ A review of the deployed contracts by the Stoa team, published in full. **This i
 
 **Independent security review under way.** Since 16 November 2026, [Hey Research Lab](https://x.com/HeyResearch) is reviewing RugCover, SpotlightMarket, StoaLimit and StoaRouter at commit [`c524b82`](https://github.com/StoaDex/Stoa/tree/c524b82/contracts), the code the live contracts run. It is a review, not an audit. Findings come to Stoa privately first, with a test, and are published here once fixed. The scope, build steps and known issues are in [contracts/AUDIT.md](https://github.com/StoaDex/Stoa/blob/main/contracts/AUDIT.md).
 
+## Update, 16 November 2026: findings from the independent security review
+
+Hey Research Lab reported two Medium findings, each with a test that reproduces it on a fork of Robinhood Chain. Both are fixed. Neither was used on-chain and no funds were lost.
+
+### M-HRL-1 StoaLimit: anyone could block new limit orders with dust
+
+**Status: fixed on 16 November 2026.** StoaLimit capped open orders at 1,000 across all wallets. Since an order can be 1 wei, anyone could open 20 dust orders from each of 50 new wallets, for little more than gas, and every new order would revert until those orders were cancelled. No deposit was at risk. **Fix:** limit orders moved to [StoaLimitV2](https://robinhoodchain.blockscout.com/address/0xE42b3B429417182E8621F0d19A9a1dAdC31D1C12), which has no cap across wallets; each wallet still has up to 20 open orders, and the keeper reads open orders in pages. The first StoaLimit never had an order. A test opens dust orders from many wallets and checks a new order still goes through.
+
+### M-HRL-2 Uniswap V4 pool registry
+
+**Status: fixed on 16 November 2026; the new adapter replaces the current one through the 48-hour timelock.** A finding about which Uniswap V4 pools the router uses. **Fix:** a new [UniswapV4AdapterV2](https://robinhoodchain.blockscout.com/address/0x27958279F95225b2a5517E7DD12b6Fc0317E5c5d) where only Stoa's keeper (or the timelock) can register pools, and the Add pool buttons are gone from the site. Until the swap is done, the site, the API and the keeper check the current adapter's pool list before using it, and the keeper compares router quotes against a second price before any buyback or burn. Full details are published here once the new adapter is live.
+
 ## Update, 16 November 2026: bug bounty reports
 
 Two reports from outside researchers through the [bug bounty](bug-bounty.md), checked against the code. Neither puts funds at risk.

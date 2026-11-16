@@ -90,20 +90,7 @@ export default function LaunchToken({ token }: { token: Address }) {
       return keys.find((k) => !known.some((x) => sameKey(x, k))) ?? null;
     },
   });
-  async function addPool(k: PoolKey) {
-    if (!isConnected) { open(); return; }
-    if (!pub) return;
-    setBusy(true); setMsg(null);
-    try {
-      const hash = await writeContractAsync({ address: V4!, abi: v4AdapterAbi, functionName: "register", args: [k], chainId: ROBINHOOD.chain.id });
-      const rc = await pub.waitForTransactionReceipt({ hash });
-      if (rc.status !== "success") throw new Error("Transaction reverted");
-      setMsg({ ok: true, text: `Pool added: ${sym} now trades on Stoa`, hash });
-      void q.refetch(); void pool.refetch();
-    } catch (e) {
-      setMsg({ ok: false, text: e instanceof BaseError ? e.shortMessage : (e as Error).message });
-    } finally { setBusy(false); }
-  }
+
 
   return (
     <>
@@ -140,10 +127,7 @@ export default function LaunchToken({ token }: { token: Address }) {
         <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           {l?.routable
             ? <Link className="cta" href={trade}>Trade {sym} on Stoa{l.tradeFrom === "USDG" ? " (from USDG)" : ""}</Link>
-            : pool.data
-              ? <button type="button" className="cta" disabled={busy} onClick={() => addPool(pool.data!)}>{busy ? "Adding the pool…" : isConnected ? `Add ${sym}'s pool to Stoa` : "Connect to add the pool"}</button>
-              : <a className="cta" href={PONS(token)} target="_blank" rel="noopener noreferrer">{l?.graduated ? "Open on Pons ↗" : "Buy on Pons ↗"}</a>}
-          {!l?.routable && pool.data && <a className="ghost" href={PONS(token)} target="_blank" rel="noopener noreferrer">Pons page ↗</a>}
+            : <a className="cta" href={PONS(token)} target="_blank" rel="noopener noreferrer">{l?.graduated ? "Open on Pons ↗" : "Buy on Pons ↗"}</a>}
           {l?.routable && <a className="ghost" href={PONS(token)} target="_blank" rel="noopener noreferrer">Pons page ↗</a>}
           {isStoa && <Link className="ghost" href="/token">About $STOA</Link>}
           <Link className="note" style={{ marginTop: 0 }} href="/launches">All launches</Link>
@@ -157,7 +141,7 @@ export default function LaunchToken({ token }: { token: Address }) {
             {l.graduated && l.tradeFrom === null
               ? <>This launch was priced in {pairSym} on Pons, so its Uniswap V4 pool pairs it with {pairSym}. Stoa routes the graduation pools paired with ETH or USDG only; trade it on Pons.</>
               : l.graduated
-              ? <>Its Uniswap V4 pool is not in Stoa&apos;s router yet. {pool.data ? "Add it above in one small transaction (anyone can), or wait: Stoa's watcher usually adds new graduation pools within the hour." : "Stoa's watcher usually adds new graduation pools within the hour."}</>
+              ? <>Its Uniswap V4 pool is not in Stoa&apos;s router yet. Stoa&apos;s keeper adds new graduation pools, usually within the hour.</>
               : !l.native
               ? <>This launch is priced in {pairSym} on Pons. Stoa trades Pons curves priced in ETH; buy this one on Pons until it graduates.</>
               : ponsLive

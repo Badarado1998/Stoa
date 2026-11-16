@@ -4,9 +4,10 @@ import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
 import { useStoaToken } from "@/lib/stoaToken";
 import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, decodeEventLog, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash, type TransactionReceipt } from "viem";
+import { BaseError, decodeEventLog, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash, type PublicClient, type TransactionReceipt } from "viem";
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
-import { txUrlOn, type Net } from "@/lib/networks";
+import { ROBINHOOD, txUrlOn, type Net } from "@/lib/networks";
+import { fetchGuard, routeWithoutOldV4, usesPoisoned } from "@/lib/v4guard";
 import { cleanRef, describeRoute, fmt, hasRoute, minOut, parseAmount, rate, swapKind, swapParams, type Route, fmtAmt } from "@/lib/swap";
 import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routedEvent, routerAbi, v4AdapterAbi, whypeAbi } from "@/lib/abi";
 import { SITE } from "@/lib/chain";
@@ -163,13 +164,26 @@ function TradeOn({ net }: { net: Net }) {
     const small = amt / 1000n > 0n ? amt / 1000n : 1n; // price impact: compare against 1/1000 of the amount
     const q = (a: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quote", args: [sell.address, buy.address, a] });
     const [{ result }, ref] = await Promise.all([q(amt), q(small).catch(() => null)]);
-    const route = result as Route;
+    let route = result as Route;
+    let r0 = ref?.result.amountOut ?? 0n;
+    if (net.chain.id === ROBINHOOD.chain.id) {
+      // skip Stoa's first V4 adapter on any pair where someone other than the keeper changed its pools (lib/v4guard)
+      const g = await fetchGuard();
+      const p = pub as unknown as PublicClient;
+      if (usesPoisoned(route, sell.address, buy.address, g)) {
+        const alt = await routeWithoutOldV4(p, net, sell.address, buy.address, amt);
+        if (!alt) return null;
+        route = alt;
+      }
+      if (ref && usesPoisoned(ref.result as Route, sell.address, buy.address, g)) {
+        r0 = (await routeWithoutOldV4(p, net, sell.address, buy.address, small))?.amountOut ?? 0n;
+      }
+    }
     if (!hasRoute(route)) return null;
     let impact = 0;
-    const r0 = ref?.result.amountOut ?? 0n;
     if (r0 > 0n) impact = Math.max(0, (1 - (Number(route.amountOut) / Number(amt)) / (Number(r0) / Number(small))) * 100);
     return { out: route.amountOut, route, at: Date.now(), impact };
-  }, [amt, kind, pub, sell, buy]);
+  }, [amt, kind, pub, sell, buy, net]);
 
   // debounce + refresh every 4s (maker quotes expire after 2 blocks)
   const seq = useRef(0);
@@ -194,8 +208,8 @@ function TradeOn({ net }: { net: Net }) {
     return () => clearTimeout(timer);
   }, [getQuote, amt, kind]);
 
-  // No route for an imported token: look for its Uniswap V4 pool, which anyone can add to the router once.
-  // $STOA counts too: between its graduation and the watcher's next run, anyone can add its pool from here
+  // No route for an imported token: look for a Uniswap V4 pool the router does not use yet, to say so (only Stoa's
+  // keeper adds pools)
   const longTail = [sell, buy].find((t) => t.tone === "other" || (!!stoa && t.address === stoa.address));
   useEffect(() => {
     setV4Key(null);
@@ -490,11 +504,7 @@ function TradeOn({ net }: { net: Net }) {
         )}
         {v4Key && longTail && (
           <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
-            {longTail.symbol} trades on a Uniswap V4 pool that Stoa&apos;s router does not use yet. Add it once (a small transaction anyone can send), then swap.
-            <button className="ghost" type="button" style={{ marginTop: 10 }} disabled={!!busy || !isConnected || wrongChain}
-              onClick={() => run("Add pool", () => writeContractAsync({ address: CONTRACTS.v4!, abi: v4AdapterAbi, functionName: "register", args: [{ ...v4Key, fee: v4Key.fee, tickSpacing: v4Key.tickSpacing }], chainId: chain.id })).then((ok) => ok && setV4Key(null))}>
-              Add Uniswap V4 pool
-            </button>
+            {longTail.symbol} trades on a Uniswap V4 pool that Stoa&apos;s router does not use yet. Stoa&apos;s keeper adds the most traded Uniswap V4 pools every day, and Pons graduation pools usually within the hour.
           </div>
         )}
         {noRoute && !v4Key && stoa && [sell.address, buy.address].includes(stoa.address) && (

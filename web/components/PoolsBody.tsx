@@ -204,7 +204,7 @@ function RobinhoodPools({ net }: { net: Net }) {
       </div>
       <p className="note">
         Liquidity and volume come from DexScreener and are for display. Every swap uses the on-chain quote at the moment you trade.
-        V4 pools are listed once they are registered in Stoa&apos;s adapter: anyone can register a pool from the Trade page when it uses an allowed hook.
+        V4 pools are listed once Stoa&apos;s keeper registers them in its adapter: it adds the most traded pools every day and Pons graduation pools within the hour.
         Maker-quoted pools are on Elysium only for now.
       </p>
     </>

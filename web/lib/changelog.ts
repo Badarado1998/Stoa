@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "hey-review-fixes",
+    date: "2026-11-16",
+    title: "Fixes from the independent security review: limit orders on a new contract, V4 pools added by the keeper only",
+    tag: "Robinhood Chain",
+    items: [
+      "Hey Research Lab, reviewing Stoa independently, reported two Medium findings, each with a test. Both are fixed; no funds were lost and neither was used on-chain.",
+      "Limit orders: the first contract capped open orders at 1,000 across all wallets, so anyone could fill it with dust orders from new wallets and block new orders. Limit orders now use StoaLimitV2, which has no such cap; each wallet still has up to 20 open orders. The first contract had no orders, so nothing moves.",
+      "Uniswap V4: from now on only Stoa's keeper adds V4 pools to the router (the most traded every day, Pons graduation pools within the hour), and the Add pool buttons are gone. A new V4 adapter where only the keeper can register pools is scheduled to replace the current one through the 48-hour timelock; until it does, quotes on the site, the API and the keeper check the current adapter's pool list before using it.",
+    ],
+    link: { href: "/docs/limit-orders", label: "Limit orders" },
+  },
+  {
     id: "robinhood-default-visit-counts",
     date: "2026-11-16",
     title: "Robinhood Chain first, plainer claims, visit counts",

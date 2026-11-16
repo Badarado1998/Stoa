@@ -45,6 +45,7 @@ Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same rout
 | UniswapV2Adapter | [`0x5C8537e7d755884326dE0969Ce7BDb14195f56Be`](https://robinhoodchain.blockscout.com/address/0x5C8537e7d755884326dE0969Ce7BDb14195f56Be) |
 | UniswapV3Adapter | [`0x28802Ad6F9859d14dfC6226eA9A8b60686D3A2E6`](https://robinhoodchain.blockscout.com/address/0x28802Ad6F9859d14dfC6226eA9A8b60686D3A2E6) |
 | UniswapV4Adapter | [`0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8`](https://robinhoodchain.blockscout.com/address/0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8) |
+| UniswapV4AdapterV2 (only the keeper or the owner registers pools; scheduled to replace UniswapV4Adapter through the 48-hour timelock) | [`0x27958279F95225b2a5517E7DD12b6Fc0317E5c5d`](https://robinhoodchain.blockscout.com/address/0x27958279F95225b2a5517E7DD12b6Fc0317E5c5d) |
 | AeroAdapter (being added) | [`0xF0904B95D66f565De215cC7dc58B6054F72A9352`](https://robinhoodchain.blockscout.com/address/0xF0904B95D66f565De215cC7dc58B6054F72A9352) |
 | RamsesAdapter (being added) | [`0x87b3B896beAbdC421F9d9B0A3FD3dBbAE1ddd568`](https://robinhoodchain.blockscout.com/address/0x87b3B896beAbdC421F9d9B0A3FD3dBbAE1ddd568) |
 | PonsCurveAdapter (being added) | [`0x58c2C83b66088B57B9dd487Ba1090992Bc9eEbe0`](https://robinhoodchain.blockscout.com/address/0x58c2C83b66088B57B9dd487Ba1090992Bc9eEbe0) |
@@ -52,7 +53,8 @@ Stoa on Robinhood Chain (chain ID 4663), live since block 114,244,443. Same rout
 | BondRegistry ($STOA maker bonds) | [`0x7eD43F104f9317578806De89e9d478D297d468D4`](https://robinhoodchain.blockscout.com/address/0x7eD43F104f9317578806De89e9d478D297d468D4) |
 | SpotlightMarket (weekly sponsored slots, paid to $STOA voters; deployed 15 Nov 2026 with CREATE2, [Sourcify](https://repo.sourcify.dev/4663/0xf3A995D4240c0F36da697E5292B294052a1706B5); week 1 opens 23 Nov 2026) | [`0xf3A995D4240c0F36da697E5292B294052a1706B5`](https://robinhoodchain.blockscout.com/address/0xf3A995D4240c0F36da697E5292B294052a1706B5) |
 | RugCover (creator-bonded cover for Pons tokens, paid to covered buyers; address fixed by CREATE2, live once its code is there) | [`0x64498e94fEaC6750885818e5EE7921042395B301`](https://robinhoodchain.blockscout.com/address/0x64498e94fEaC6750885818e5EE7921042395B301) |
-| StoaLimit (limit orders filled through the router; address fixed by CREATE2, live once its code is there) | [`0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3`](https://robinhoodchain.blockscout.com/address/0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3) |
+| StoaLimitV2 (limit orders filled through the router; live since 16 Nov 2026) | [`0xE42b3B429417182E8621F0d19A9a1dAdC31D1C12`](https://robinhoodchain.blockscout.com/address/0xE42b3B429417182E8621F0d19A9a1dAdC31D1C12) |
+| StoaLimit (the first limit order contract, never used, replaced by StoaLimitV2) | [`0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3`](https://robinhoodchain.blockscout.com/address/0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3) |
 | $STOA | [`0x13E6993417616De724F2b337D65063f229e96718`](https://robinhoodchain.blockscout.com/address/0x13E6993417616De724F2b337D65063f229e96718) |
 | Admin Safe (2 of 3) | [`0xa1a495484536c52046d07209C60059cf9613D386`](https://robinhoodchain.blockscout.com/address/0xa1a495484536c52046d07209C60059cf9613D386) |
 | Timelock (48h) | [`0xAC75133729d6B5d615aA696d0828dC31fcB83ed8`](https://robinhoodchain.blockscout.com/address/0xAC75133729d6B5d615aA696d0828dC31fcB83ed8) |
