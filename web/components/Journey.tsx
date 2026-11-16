@@ -46,7 +46,7 @@ export default function Journey() {
         });
         api.current = s;
         setStops(s.stops);
-        const read = () => { const m = trackEnd(); s.setTarget(m > 0 ? Math.min(1, scrollY / m) : 0); setPast(scrollY > m + innerHeight * 0.25); };
+        const read = () => { const m = trackEnd(); s.setTarget(m > 0 ? Math.min(1, scrollY / m) : 0); const pw = scrollY > m + innerHeight * 0.25; setPast(pw); document.body.classList.toggle("past-walk", pw); };
         addEventListener("scroll", read, { passive: true });
         read();
         (s as SceneApi & { _off?: () => void })._off = () => removeEventListener("scroll", read);
@@ -58,6 +58,7 @@ export default function Journey() {
       alive = false;
       const s = api.current as (SceneApi & { _off?: () => void }) | null;
       s?._off?.(); s?.dispose();
+      document.body.classList.remove("past-walk");
     };
   }, []);
 
