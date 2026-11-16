@@ -9,12 +9,12 @@ const rpc = (u: string) => http(u, { batch: /drpc\./.test(u) ? { batchSize: 3 } 
 const rhRpcs = robinhood.rpcUrls.default.http;
 
 export const wagmiConfig = createConfig({
-  chains: [elysium, robinhood],
+  chains: [robinhood, elysium], // the first is the default a WalletConnect session asks for
   multiInjectedProviderDiscovery: true, // MetaMask, Rabby, OKX ... announce themselves (EIP-6963)
   connectors: [
     injected({ shimDisconnect: true }),
     ...(wc
-      ? [walletConnect({ projectId: wc, showQrModal: true, metadata: { name: "Stoa", description: "The best-price swap router on Elysium and Robinhood Chain", url: "https://stoadex.com", icons: ["https://stoadex.com/logo.png"] } })]
+      ? [walletConnect({ projectId: wc, showQrModal: true, metadata: { name: "Stoa", description: "Swap router on Robinhood Chain and Elysium", url: "https://stoadex.com", icons: ["https://stoadex.com/logo.png"] } })]
       : []),
   ],
   transports: {

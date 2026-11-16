@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="foot">
       <div>
         <Link className="brand" href="/"><img src="/logo.png" alt="" /><span>STOA</span></Link>
-        <p className="note" style={{ maxWidth: 260 }}>The best-price swap router on Elysium and Robinhood Chain. Every venue, checked on every swap.</p>
+        <p className="note" style={{ maxWidth: 260 }}>A swap router on Robinhood Chain and Elysium. Every venue it uses, compared on every swap.</p>
         <StoaCA />
         {/* HEY Research Lab badge (HEY looks for it on our site; one-line pill variant of their snippet) */}
         <a href="https://heyresearch.xyz/project/stoadex-stoa?utm_source=badge&utm_medium=html" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: 14 }}>

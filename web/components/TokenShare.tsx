@@ -20,7 +20,7 @@ export default function TokenShare({ chain, address, symbol }: { chain: string; 
       </p>
       <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
         <button type="button" className="ghost" style={{ borderColor: "var(--line)", background: "#fff" }}
-          onClick={async () => { if ((await shareOrCopy(link, `Buy ${symbol} at the best price on @StoaDEX`)) === "copied") flash("link"); }}>
+          onClick={async () => { if ((await shareOrCopy(link, `Buy ${symbol} on @StoaDEX`)) === "copied") flash("link"); }}>
           {copied === "link" ? "Link copied" : "Share this page"}
         </button>
         <button type="button" className="ghost" style={{ borderColor: "var(--line)", background: "#fff" }}
@@ -28,7 +28,7 @@ export default function TokenShare({ chain, address, symbol }: { chain: string; 
           {copied === "embed" ? "Embed code copied" : "Copy embed code"}
         </button>
       </div>
-      <p className="note">The embed shows {symbol}&apos;s best price on Stoa with a Buy button for any website. <a href="/docs/embed">How it works</a></p>
+      <p className="note">The embed shows {symbol}&apos;s live quote on Stoa with a Buy button for any website. <a href="/docs/embed">How it works</a></p>
     </div>
   );
 }

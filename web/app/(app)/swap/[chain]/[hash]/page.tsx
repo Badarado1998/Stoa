@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const s = await readSwap(chain, hash).catch(() => null);
   if (!s) return { title: "Swap", robots: { index: false } };
   const title = `${s.amountIn} ${s.symIn} → ${s.amountOut} ${s.symOut}`;
-  const description = `Swapped on Stoa on ${s.netName}${s.venues.length ? `, filled on ${s.venues.join(" and ")}` : ""}. Every swap checks every venue on the network and fills on the best one.`;
+  const description = `Swapped on Stoa on ${s.netName}${s.venues.length ? `, filled on ${s.venues.join(" and ")}` : ""}. Every swap compares every venue the router uses on the network and fills on the best one.`;
   return {
     title, description,
     robots: { index: false },

@@ -1,10 +1,10 @@
 # Trade
 
-Swap tokens at the best price on Elysium or Robinhood Chain.
+Swap tokens on Robinhood Chain or Elysium, on the best route Stoa finds across the venues it uses.
 
-1. Open [Trade](https://stoadex.com/trade) and pick a network with the button at the top right: **Elysium** (chain 99901) or **Robinhood Chain** (chain 4663). If your wallet is already on one of them, the app follows it. A direct link to Robinhood Chain: [stoadex.com/trade?chain=robinhood](https://stoadex.com/trade?chain=robinhood).
+1. Open [Trade](https://stoadex.com/trade) and pick a network with the button at the top right: **Elysium** (chain 99901) or **Robinhood Chain** (chain 4663). A first visit opens on Robinhood Chain; if your wallet is already on one of them, the app follows it. A direct link to Robinhood Chain: [stoadex.com/trade?chain=robinhood](https://stoadex.com/trade?chain=robinhood).
 2. Pick the token to sell and the token to buy. The native coin works directly (HYPE on Elysium, ETH on Robinhood Chain); the router wraps and unwraps it for you.
-3. Enter an amount. The router compares every venue on that network, directly and through the wrapped native token (WHYPE or WETH), and shows the route it found.
+3. Enter an amount. The router compares every venue it uses on that network, directly and through the wrapped native token (WHYPE or WETH), and shows the route it found.
 4. Check the rate, route and slippage, then confirm in your wallet.
 
 | Network | Venues checked on every swap |

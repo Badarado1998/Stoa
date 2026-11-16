@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://stoadex.com"><img src=".github/assets/banner.png" alt="Stoa: best-price swaps on Elysium and Robinhood Chain" width="100%"></a>
+  <a href="https://stoadex.com"><img src=".github/assets/banner.png" alt="Stoa: every route, compared. Swaps on Robinhood Chain and Elysium" width="100%"></a>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 # Stoa
 
-Stoa is a best-price swap router with maker-quoted pools (PropAMM). Every swap is quoted against every venue the router knows on the network: Stoa maker pools, Uniswap V2, V3 and V4, Aero, Ramses and Liquidity Book. It fills where the trader gets the most, directly or through the wrapped native token. Stoa charges a flat 2 bps protocol fee, once per swap (a route through two Stoa maker pools pays each pool's fee; see [Fees](web/content/docs/fees.md)).
+Stoa is a swap router with maker-quoted pools (PropAMM). Every swap is quoted against every venue the router knows on the network: Stoa maker pools, Uniswap V2, V3 and V4, Aero, Ramses and Liquidity Book. It fills where the trader gets the most, directly or through the wrapped native token. Stoa charges a flat 2 bps protocol fee, once per swap (a route through two Stoa maker pools pays each pool's fee; see [Fees](web/content/docs/fees.md)).
 
 It is live on **Elysium** (chain 99901) and **Robinhood Chain** (chain 4663).
 

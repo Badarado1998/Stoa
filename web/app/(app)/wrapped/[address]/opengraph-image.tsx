@@ -42,8 +42,8 @@ export default async function Image({ params }: { params: Promise<{ address: str
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontFamily: "Mono", fontSize: 16, letterSpacing: 4, color: BLUE }}>STOA WRAPPED · 2026</span>
-            <span style={{ fontFamily: "Marcellus", fontSize: 66, lineHeight: 1.05, marginTop: 12 }}>Every swap at</span>
-            <span style={{ fontFamily: "Marcellus", fontSize: 66, lineHeight: 1.05, color: BLUE }}>the best price.</span>
+            <span style={{ fontFamily: "Marcellus", fontSize: 66, lineHeight: 1.05, marginTop: 12 }}>Every route,</span>
+            <span style={{ fontFamily: "Marcellus", fontSize: 66, lineHeight: 1.05, color: BLUE }}>compared.</span>
           </div>
           <span style={{ display: "flex", alignSelf: "flex-start", padding: "11px 20px", borderRadius: 999, background: "linear-gradient(135deg,#1F5FB0,#4C97F0)", color: "#fff", fontFamily: "Mono", fontSize: 17 }}>stoadex.com/wrapped</span>
         </div>

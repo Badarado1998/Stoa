@@ -86,7 +86,9 @@ The only official $STOA is `0x13E6993417616De724F2b337D65063f229e96718` on Robin
 
 ### How do I know I get the best price?
 
-Under every quote, the Trade page shows what the venues on that network would give you for the same amount, read live from the chain. The router checks the same venues when you sign, fills on the best one, and reverts if you would get less than your minimum.
+Under every quote, the Trade page shows what each venue Stoa routes would give you for the same amount, read live from the chain. The router checks the same venues when you sign, fills on the best one, and reverts if you would get less than your minimum.
+
+Stoa compares only the venues it routes (listed in the [Introduction](introduction.md)), sends each swap along one route, and adds its 2 bps fee. An aggregator that splits an order across more venues can give you more, mostly on large orders, so compare when the size matters.
 
 ### Which networks and venues?
 

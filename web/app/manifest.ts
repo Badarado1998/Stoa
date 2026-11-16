@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 /** Lets phones and desktop browsers install Stoa as an app ("Add to Home Screen"): opens on Trade, full screen. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Stoa: best-price swaps",
+    name: "Stoa: every route, compared",
     short_name: "Stoa",
-    description: "Swap at the best price on Robinhood Chain and Elysium. Every venue checked on every swap.",
+    description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.",
     id: "/",
     start_url: "/trade",
     scope: "/",

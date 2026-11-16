@@ -1,25 +1,5 @@
 [
  {
-  "symbol": "BULW",
-  "address": "0xe20b9151d2d2521e2fe1aa1ef043698da22df513",
-  "decimals": 18
- },
- {
-  "symbol": "SCRAP",
-  "address": "0xf77629d6ebd7dfbae2f0f62fa18e891a2da94441",
-  "decimals": 18
- },
- {
-  "symbol": "WATER",
-  "address": "0x79cff4c92a2297e0ede9c1132f71a52e4b1d2dea",
-  "decimals": 18
- },
- {
-  "symbol": "GTA$",
-  "address": "0x8277bb46aaa83ebfd7019ffc6f8064e2c5da7f03",
-  "decimals": 18
- },
- {
   "symbol": "MRDN",
   "address": "0x6437614ea1efba0eb4b43bc1af53808722b1cf13",
   "decimals": 18,
@@ -38,11 +18,6 @@
   "decimals": 18,
   "launchpad": "Pons",
   "logo": "/tokens/0x6dbe95076584f869dd09a44131e9a3c13f34d7d6.webp"
- },
- {
-  "symbol": "C",
-  "address": "0x30f21ecf4ea33d49e23c572a3f8ba27ab0599b0a",
-  "decimals": 18
  },
  {
   "symbol": "GLINT",
@@ -66,21 +41,11 @@
   "logo": "/tokens/0x0f8110b99bc4c5c0b22aa7dcf17a06935f7b8f4a.webp"
  },
  {
-  "symbol": "SHARK",
-  "address": "0x5b30f52df7fd0c180bf360446af244148a431749",
-  "decimals": 18
- },
- {
   "symbol": "OAK",
   "address": "0x6511c233790ec10f7d673c64dc82c3f941d57828",
   "decimals": 18,
   "launchpad": "Pons",
   "logo": "/tokens/0x6511c233790ec10f7d673c64dc82c3f941d57828.webp"
- },
- {
-  "symbol": "VI",
-  "address": "0x9abcef0f6fc21b67431875c921b606d174060ae2",
-  "decimals": 18
  },
  {
   "symbol": "PONS",
@@ -89,20 +54,10 @@
   "logo": "/tokens/0x39dbed3a2bd333467115de45665cc57f813c4571.webp"
  },
  {
-  "symbol": "UP",
-  "address": "0xd4e7c0e2920ee707336c063019da7327ede44e8a",
-  "decimals": 18
- },
- {
   "symbol": "FOREVER",
   "address": "0xacc8de336f5d2366fa7334383d8fab73499f582a",
   "decimals": 18,
   "logo": "/tokens/0xacc8de336f5d2366fa7334383d8fab73499f582a.webp"
- },
- {
-  "symbol": "ATC",
-  "address": "0x9bd05126f0b5516cb8ec6f4831763c3cd6d5a7a0",
-  "decimals": 18
  },
  {
   "symbol": "FHERUM",
@@ -140,20 +95,10 @@
   "logo": "/tokens/0x30768b5482e5dd8a2487ce0be61e01fa03af37ff.webp"
  },
  {
-  "symbol": "mihao",
-  "address": "0x719fbae4bdb14a279d11d094ab27361d0233fd51",
-  "decimals": 18
- },
- {
   "symbol": "FRONG",
   "address": "0x6245e67affa44a23077f0ea7f981a8dc743a0c47",
   "decimals": 18,
   "logo": "/tokens/0x6245e67affa44a23077f0ea7f981a8dc743a0c47.webp"
- },
- {
-  "symbol": "FUND",
-  "address": "0x51518546a46f361b2a423e29f52cf48ae44e1bb4",
-  "decimals": 18
  },
  {
   "symbol": "AI",
@@ -241,11 +186,6 @@
   "decimals": 18,
   "launchpad": "Pons",
   "logo": "/tokens/0x5dd89189769deb28e1e24fb8623e28856b6b5300.webp"
- },
- {
-  "symbol": "DYC",
-  "address": "0x703ce163044b86dd3797cae68fc5ad99501c926a",
-  "decimals": 9
  },
  {
   "symbol": "LETRO",

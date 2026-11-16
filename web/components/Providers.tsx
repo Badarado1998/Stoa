@@ -3,19 +3,20 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { WagmiProvider, useAccount, useSwitchChain } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "@/lib/wagmi";
-import { ELYSIUM, netById, netByKey, type Net } from "@/lib/networks";
+import { ROBINHOOD, netById, netByKey, type Net } from "@/lib/networks";
 import WalletModal from "./WalletModal";
 
 const WalletCtx = createContext<{ open: () => void }>({ open: () => {} });
 export const useWalletModal = () => useContext(WalletCtx);
 
-const NetCtx = createContext<{ net: Net; setNet: (n: Net) => void }>({ net: ELYSIUM, setNet: () => {} });
-/** The network the app is showing. It follows the wallet's chain when the wallet is on a supported one. */
+const NetCtx = createContext<{ net: Net; setNet: (n: Net) => void }>({ net: ROBINHOOD, setNet: () => {} });
+/** The network the app is showing: Robinhood Chain for a first visit, then the one picked last (or named in ?chain=),
+ *  and the wallet's chain whenever the wallet is on a supported one. */
 export const useNet = () => useContext(NetCtx).net;
 export const useSetNet = () => useContext(NetCtx).setNet;
 
 function NetProvider({ children }: { children: ReactNode }) {
-  const [net, setNetState] = useState<Net>(ELYSIUM);
+  const [net, setNetState] = useState<Net>(ROBINHOOD);
   const { chainId, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
   useEffect(() => {

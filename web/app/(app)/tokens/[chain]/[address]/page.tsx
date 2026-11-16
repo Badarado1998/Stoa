@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const sym = hit.token.symbol, netName = hit.net.name, url = `/tokens/${hit.net.key}/${hit.token.address}`;
   const title = `Buy ${sym} on ${netName}`;
   const price = t?.priceUsd ? `${sym} trades at ${priceFmt(t.priceUsd)}. ` : "";
-  const description = `${price}Swap ${sym} on Stoa at the best price: every venue on ${netName} is checked on every swap. Contract ${hit.token.address}.`;
+  const description = `${price}Swap ${sym} on Stoa: every venue the router uses on ${netName} is compared on every swap. Contract ${hit.token.address}.`;
   return {
     title, description,
     alternates: { canonical: url },
@@ -50,9 +50,9 @@ export default async function TokenPage({ params }: P) {
   return (
     <section className="page">
       <RefKeeper />
-      <PageHead eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} at the best price`}
+      <PageHead eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} on Stoa`}
         action={<Link className="cta" href={buy}>Buy {sym}</Link>}>
-        Stoa checks every venue on {net.name} on every swap and fills where you get the most, for a 2 bps fee.
+        Stoa compares every venue it routes on {net.name} on every swap and fills where you get the most, for a 2 bps fee.
       </PageHead>
 
       <div className="grid2">

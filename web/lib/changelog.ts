@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "robinhood-default-visit-counts",
+    date: "2026-11-16",
+    title: "Robinhood Chain first, plainer claims, visit counts",
+    tag: "Both chains",
+    items: [
+      "A first visit now opens on Robinhood Chain. A network you picked before, a ?chain= link and your wallet's chain still come first.",
+      "The site no longer says \"best price\". Stoa compares every venue its router uses, for your exact amount, and fills on the best one; it does not split an order across venues, and an aggregator that does can give more on large orders. The FAQ says so.",
+      "Tokens that have no route on Stoa are off the Robinhood Chain token list. /swap now opens Trade.",
+      "Stoa now counts visits with Vercel Web Analytics: no cookies, a visitor is a hash discarded after 24 hours, and wallet addresses, transaction hashes and referral addresses are removed before anything is sent. The privacy section says exactly what is recorded.",
+    ],
+    link: { href: "/docs/terms-privacy", label: "Read the privacy section" },
+  },
+  {
     id: "bounty-low-credit",
     date: "2026-11-16",
     title: "Bug bounty: from 18 November, Low findings are credited, not paid",

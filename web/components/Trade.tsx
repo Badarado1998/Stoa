@@ -375,7 +375,7 @@ function TradeOn({ net }: { net: Net }) {
   else if (!deployed && kind !== "wrap" && kind !== "unwrap") { label = "Opens at launch"; disabled = true; }
   else if (isPaused && kind !== "wrap" && kind !== "unwrap") { label = "Swaps paused"; disabled = true; }
   else if (sBal !== undefined && amt + (cover.on ? cover.premium : 0n) > sBal) { label = `Not enough ${sell.symbol}`; disabled = true; }
-  else if (quoting && !quote) { label = "Finding the best price…"; disabled = true; }
+  else if (quoting && !quote) { label = "Finding the best route…"; disabled = true; }
   else if (noRoute || !quote) { label = "No route for this pair"; disabled = true; }
   else if (risky && !ackToken) { label = "Confirm the token warning"; disabled = true; }
   else if (quote.impact >= IMPACT_BLOCK && !ackImpact) { label = "Confirm high price impact"; disabled = true; }
@@ -520,7 +520,7 @@ function TradeOn({ net }: { net: Net }) {
         {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
         {done && (() => {
           const link = `${SITE}/swap/${done.net}/${done.hash}${address ? `?ref=${address}` : ""}`;
-          const text = `Swapped ${done.inTxt} ${done.symIn} for ${done.outTxt} ${done.symOut} on @StoaDEX. Every venue checked, filled at the best one.`;
+          const text = `Swapped ${done.inTxt} ${done.symIn} for ${done.outTxt} ${done.symOut} on @StoaDEX. Every route compared, filled on the best one.`;
           const post = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`;
           return (
             <div className="sharecard">

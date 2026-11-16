@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import Providers from "@/components/Providers";
+import SiteAnalytics from "@/components/SiteAnalytics";
 import { SITE } from "@/lib/chain";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: { default: "Stoa — Best-price swaps on Robinhood Chain and Elysium", template: "%s · Stoa" },
-  description: "The best-price swap router on Elysium and Robinhood Chain. Every swap is checked against every major venue and filled where the price is best.",
+  title: { default: "Stoa — Every route, compared. Swaps on Robinhood Chain and Elysium", template: "%s · Stoa" },
+  description: "A swap router on Robinhood Chain and Elysium. Every swap is compared across every venue the router uses, for your exact amount, and filled on the best one.",
   // no fixed title or url here, so each page's own title is used when a link is shared
-  openGraph: { description: "Swap at the best price on Elysium and Robinhood Chain. Every pool checked on every trade.", siteName: "Stoa", type: "website", images: [{ url: "/og-v3.png", width: 1200, height: 630, alt: "Stoa: swap at the best price on Elysium and Robinhood Chain" }] },
-  twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap at the best price on Elysium and Robinhood Chain. Every pool checked on every trade.", images: ["/og-v3.png"] },
+  openGraph: { description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", siteName: "Stoa", type: "website", images: [{ url: "/og-v4.png", width: 1200, height: 630, alt: "Stoa: every route, compared. Swaps on Robinhood Chain and Elysium" }] },
+  twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", images: ["/og-v4.png"] },
   // installed as an app (manifest.ts): name and status bar on iPhone home screens
   appleWebApp: { capable: true, title: "Stoa", statusBarStyle: "default" },
 };
@@ -19,7 +20,7 @@ const LD = [
   { "@context": "https://schema.org", "@type": "WebSite", name: "Stoa", url: SITE },
   {
     "@context": "https://schema.org", "@type": "WebApplication", name: "Stoa", url: `${SITE}/trade`, applicationCategory: "FinanceApplication", operatingSystem: "Web",
-    description: "Best-price swap router on Robinhood Chain and Elysium: every swap is checked across every venue and filled where the price is best.",
+    description: "Swap router on Robinhood Chain and Elysium: every swap is compared across every venue the router uses and filled on the best one.",
   },
 ];
 export const viewport: Viewport = { themeColor: "#EEF2F6", width: "device-width", initialScale: 1 };
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LD) }} />
         <Providers>{children}</Providers>
+        <SiteAnalytics />
       </body>
     </html>
   );

@@ -27,6 +27,13 @@ const nextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
+  // the swap screen lives at /trade; /swap/<chain>/<tx> are shared swap pages, so only these two shorter forms move
+  async redirects() {
+    return [
+      { source: "/swap", destination: "/trade", permanent: false },
+      { source: "/swap/:chain(robinhood|elysium)", destination: "/trade?chain=:chain", permanent: false },
+    ];
+  },
   async headers() {
     const common = [
       { key: "X-Content-Type-Options", value: "nosniff" },

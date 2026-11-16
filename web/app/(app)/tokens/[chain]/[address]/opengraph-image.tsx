@@ -35,14 +35,14 @@ export default async function Image({ params }: { params: Promise<{ chain: strin
   );
   return new ImageResponse(
     (
-      <OgFrame url={`stoadex.com/tokens`} network={hit?.net.key === "elysium" ? "elysium" : "robinhood"} foot="BEST PRICE ACROSS EVERY VENUE · LIVE">
+      <OgFrame url={`stoadex.com/tokens`} network={hit?.net.key === "elysium" ? "elysium" : "robinhood"} foot="EVERY ROUTE COMPARED · LIVE">
         <div style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
             {img
               ? <img src={img} width={112} height={112} style={{ borderRadius: 999, objectFit: "cover", boxShadow: "0 14px 30px rgba(24,32,44,.14)" }} />
               : <div style={{ width: 112, height: 112, borderRadius: 999, background: "#EAF1FB", color: BLUE, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52, fontWeight: 700 }}>{sym.slice(0, 1)}</div>}
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontFamily: "Marcellus", fontSize: 30, color: MUTED }}>Buy at the best price</span>
+              <span style={{ fontFamily: "Marcellus", fontSize: 30, color: MUTED }}>Every route, compared</span>
               <span style={{ fontFamily: "Marcellus", fontSize: 76, lineHeight: 1.05 }}>{sym.slice(0, 14)}</span>
             </div>
           </div>
