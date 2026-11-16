@@ -1,15 +1,16 @@
 # Bug bounty
 
-Find a vulnerability in Stoa, report it privately, and get paid in stablecoins. Stoa has not had an external audit yet, so reports from security researchers matter.
+Find a vulnerability in Stoa, report it privately with a working test, and get paid in stablecoins for Critical and High issues. Stoa has not had an external audit yet, so reports from security researchers matter.
+
+**Updated 16 November 2026.** For reports sent from 17 November 2026: reports go through GitHub only, with a Foundry test; Critical and High are paid, Medium and Low are credited; payouts are capped at $1,000 a month. Reports sent before 17 November keep the rules they were sent under.
 
 ## How to report
 
-Report privately, through either channel:
+Report privately through **GitHub only**: [report a vulnerability](https://github.com/StoaDex/Stoa/security/advisories/new) on the StoaDex/Stoa repository. The report stays private between you and the team.
 
-- **GitHub:** [report a vulnerability](https://github.com/StoaDex/Stoa/security/advisories/new) on the StoaDex/Stoa repository. The report stays private between you and the team.
-- **X:** a direct message to [@StoaDEX](https://x.com/StoaDEX). For anything above Low, send a short message first and the full details through GitHub.
+A report needs the affected contract and function, the impact, and a **Foundry test that reproduces it**, on a fork of the live network where it matters. The repository's `contracts/test` folder has fork tests for both networks to start from. Reports without a working test are not assessed for a reward.
 
-A good report has the affected contract and function, the impact, and a proof of concept. A Foundry test on a fork is best: the repository's `contracts/test` folder has fork tests for both networks to start from.
+Direct messages on X, Telegram or anywhere else are not reports and are not answered. The team never asks for payment, a deposit or a wallet signature to look at a report, and never pays before an issue is confirmed: anyone who does is not Stoa.
 
 Please do not disclose the issue publicly, or to anyone else, until it is fixed and the team has agreed to disclosure.
 
@@ -21,14 +22,17 @@ Rewards are paid in stablecoins: USDG on Robinhood Chain or USDC on Elysium, or 
 | --- | --- | --- |
 | Critical | Theft or permanent freezing of user funds, maker liquidity, protocol fees, bonds, bids or locked $STOA; getting around the 48-hour timelock | $2,500 |
 | High | Temporary freezing of funds that the pause rules do not allow; theft of unclaimed fees, rewards, refunds or claims; a swap paying out less than the user's minimum | $1,000 |
-| Medium | A contract failing to deliver what it promises without loss of funds; blocking swaps or a feature for others without a pause; griefing that costs users gas or time | $300 |
+| Medium | A contract failing to deliver what it promises without loss of funds; blocking swaps or a feature for others without a pause; griefing that costs users gas or time | Credit in the security review |
 | Low | A contract or the app behaving differently from the docs with no funds at risk; the app showing a wrong address, amount or warning before you sign | Credit in the security review |
 
 - The team decides the severity from the impact on funds on the live contracts, using these examples.
 - One reward per root cause. If two people report the same issue, the first complete report is paid.
-- Rewards are paid within 14 days of the team confirming the issue, to an address you give. No KYC.
-- Low findings are credited in the [security review](security-review.md), with your name or anonymously, and are not paid in cash. Low reports sent before 18 November 2026 keep the $100 reward.
-- The program's budget may change as the protocol grows. Changes are announced on this page and do not affect reports already sent.
+- One reporter, one reward: several accounts reporting the same root cause count as one report, paid once to the first complete report.
+- Issues already listed in the [security review](security-review.md) or in [contracts/AUDIT.md](https://github.com/StoaDex/Stoa/blob/main/contracts/AUDIT.md) are known and not rewarded.
+- Rewards are paid to an address you give, within 14 days of the team confirming the issue. No KYC.
+- **Budget:** payouts are capped at $1,000 per calendar month in total. A reward above what is left that month is paid in instalments over the following months, in the order issues were confirmed, until it is paid in full.
+- Medium and Low findings are credited in the [security review](security-review.md), with your name or anonymously, and are not paid in cash. Medium reports sent before 17 November 2026 keep the $300 reward, and Low reports sent before 18 November 2026 keep the $100 reward.
+- The program's rules and budget may change as the protocol grows. Changes are announced on this page and in the changelog and do not affect reports already sent.
 
 ## Scope
 

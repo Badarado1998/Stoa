@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "bounty-github-only",
+    date: "2026-11-16",
+    title: "Bug bounty: GitHub reports with a test, Critical and High paid, $1,000 a month",
+    tag: "Both chains",
+    items: [
+      "From 17 November 2026, security reports go through GitHub private vulnerability reporting only, with a Foundry test that reproduces the issue. Direct messages are not reports and are not answered.",
+      "Critical ($2,500) and High ($1,000) findings are still paid in stablecoins. Medium and Low findings are credited in the security review. Payouts are capped at $1,000 a month; a larger reward is paid in full over the following months.",
+      "Reports sent before 17 November keep the rules they were sent under.",
+    ],
+    link: { href: "/docs/bug-bounty", label: "Read the rules" },
+  },
+  {
     id: "hey-review-fixes",
     date: "2026-11-16",
     title: "Fixes from the independent security review: limit orders on a new contract, V4 pools added by the keeper only",
