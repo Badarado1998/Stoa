@@ -1,7 +1,10 @@
 name: V4 adapter guard (Robinhood Chain)
-# Every 15 minutes until the timelock removes Stoa's first Uniswap V4 adapter from the router: fails (and GitHub emails
-# the repository owner) if anyone but the keeper has registered or replaced a pool key on it since the checkpoint.
-# The web app, the API and the keeper scripts already avoid such pairs; this tells the team to look.
+# Every 15 minutes. Fails (and GitHub emails the repository owner) if:
+# - while the router still lists Stoa's first Uniswap V4 adapter, anyone but the keeper registered or replaced a key on
+#   it since the checkpoint (the web app, the API and the keeper scripts already avoid such pairs);
+# - UniswapV4AdapterV2 emitted an Unregistered event not listed in contracts/script/data/v4v2-reviewed.json;
+# - the canonical $STOA pool is no longer among keysFor(WETH, STOA) on V2 (or on the first adapter while listed).
+# (GHSA-cv5f-wmmh-wcrv and its re-test by Hey Research Lab.)
 on:
   schedule:
     - cron: "7,22,37,52 * * * *"
@@ -13,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check the old V4 adapter
+      - name: Check the V4 adapters
         working-directory: contracts/script
         env:
           ROBINHOOD_RPC_URL: https://rpc.mainnet.chain.robinhood.com
         run: |
           python3 -I v4_guard.py --fail || {
-            echo "::error::an outsider changed pool keys on the old Uniswap V4 adapter: the guarded routes avoid those pairs; consider StoaRouter.pause or removing the adapter"
+            echo "::error::V4 adapter check failed (see the JSON above): an outsider changed keys on the first adapter, V2 removed a key nobody reviewed, or the canonical STOA pool is missing; consider StoaRouter.pause (guardian) and re-register the pool by hand"
             exit 1; }

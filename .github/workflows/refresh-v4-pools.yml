@@ -48,9 +48,11 @@ jobs:
           cd contracts
           for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
             echo "adapter $A"
-            # never evicts (full pairs are skipped) and never touches the STOA pair (GHSA-cv5f-wmmh-wcrv)
+            # never evicts (full pairs are skipped) and never touches STOA pools or ETH/USDG, the pairs Stoa's own flows use
+            # (GHSA-cv5f-wmmh-wcrv)
             RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" \
               PROTECT="$(jq -r '.stoa // empty' ../web/lib/deployments-4663.json)" \
+              PROTECT_PAIRS="0x0000000000000000000000000000000000000000-0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" \
               ADAPTER="$A" SEED=script/data/v4-seed-pools-4663.json ./script/seed-v4.sh
           done
       - name: Robinhood Chain - Metric pool lists

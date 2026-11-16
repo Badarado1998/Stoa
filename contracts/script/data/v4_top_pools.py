@@ -4,6 +4,16 @@ A pool qualifies when its hooks contract is on the adapter's allowlist (script/V
 with HYPE, WHYPE or USDC (Robinhood Chain: ETH, WETH or USDG), it had swaps from at least MIN_TRADERS different
 addresses in the last SPAN blocks, and its fee is at most MAX_FEE (or dynamic).
 Run from this folder:  python3 -I v4_top_pools.py   (uses Kinetiq's public RPC, no key needed)
+
+Robinhood Chain is ranked so that wash trading alone cannot get a pool in (Hey Research Lab, GHSA-cv5f-wmmh-wcrv
+re-test): a Swap log's sender is the swap contract, not the trader, so pools are ranked by distinct transaction
+origins (sampled from each pool's latest swaps), and a pool must also
+  - be deep: a 0.05 ETH (or 100 USDG) quote through Uniswap's own V4Quoter loses at most MAX_IMPACT against a tiny one,
+    which a thin or narrow position cannot pass however much raw in-range liquidity it shows;
+  - be of attributable origin, or old: pools whose hook gates pool creation (launchpad graduations such as Pons, whose
+    hook reverts initialize from any other sender) qualify at once; hook-less pools, which anyone can create, only once
+    their Initialize event is MIN_AGE_BLOCKS old (about three days).
+The keeper never registers into a full pair and never touches STOA pools or ETH/USDG (script/seed-v4.sh).
 """
 import collections
 import concurrent.futures as cf
@@ -24,6 +34,13 @@ TOP = int(os.environ.get("TOP", "200" if RH else "80"))
 MAX_FEE = 100_000  # 10%: static fees above it are traps (some pools charge 60%); 0x800000 marks a dynamic fee
 DYNAMIC = 0x800000
 MIN_TRADERS = 5
+# Robinhood Chain only (see the docstring)
+QUOTER = "0x8dc178efb8111bb0973dd9d722ebeff267c98f94"  # Uniswap V4Quoter, Robinhood Chain (Uniswap's deployments page)
+QUOTE_SEL = "aa9d21cb"  # quoteExactInputSingle(((address,address,uint24,int24,address),bool,uint128,bytes))
+MIN_ORIGINS = int(os.environ.get("MIN_ORIGINS", "5"))
+SAMPLE = int(os.environ.get("SAMPLE", "25"))  # latest swap transactions per pool whose origin is looked up
+MAX_IMPACT = float(os.environ.get("MAX_IMPACT", "0.10"))
+MIN_AGE_BLOCKS = int(os.environ.get("MIN_AGE_BLOCKS", "2700000"))  # ~3 days of Robinhood Chain blocks
 ALLOW = {
     "0x0000000000000000000000000000000000000000", "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
     "0xe0def4221b9840a610d4e7d55812a79a6431a8ec", "0x3ab88ddc3cf2a012af88b60828edb4553697e5dc",
@@ -66,7 +83,55 @@ def key_of(l):
     return {
         "currency0": "0x" + l["topics"][2][-40:], "currency1": "0x" + l["topics"][3][-40:],
         "fee": int(d[0:64], 16), "tickSpacing": ts - (1 << 256) if ts >= 1 << 255 else ts, "hooks": "0x" + d[152:192],
+        "block": int(l["blockNumber"], 16),  # pools cached before 17 Nov 2026 have no block: they predate the re-test
     }
+
+
+def _w(x):
+    return format(x if x >= 0 else x + (1 << 256), "064x")
+
+
+def v4_quote(k, zero_for_one, amount):
+    """Exact-input quote of one pool through Uniswap's V4Quoter; 0 if it reverts."""
+    data = "0x" + QUOTE_SEL + _w(32) + "".join(_w(int(k[f], 16)) for f in ("currency0", "currency1")) + _w(k["fee"]) + \
+        _w(k["tickSpacing"]) + _w(int(k["hooks"], 16)) + _w(1 if zero_for_one else 0) + _w(amount) + _w(256) + _w(0)
+    try:
+        return int(rpc1("eth_call", [{"to": QUOTER, "data": data}, "latest"])[2:66], 16)
+    except RuntimeError:
+        return 0
+
+
+def deep(k):
+    """Does a 0.05 ETH (100 USDG) sell into the pool keep within MAX_IMPACT of a tiny one's price?"""
+    base0 = k["currency0"] in BASE and not (k["currency1"] == _USDG and k["currency0"] == _USDG)
+    base = k["currency0"] if base0 else k["currency1"]
+    small, big = (10**6, 10**8) if base == _USDG else (5 * 10**14, 5 * 10**16)
+    a, b = v4_quote(k, base0, small), v4_quote(k, base0, big)
+    return a > 0 and b * small >= a * big * (1 - MAX_IMPACT)
+
+
+def origins(hashes):
+    """Distinct transaction senders among the given swap transactions (batched lookups)."""
+    seen = set()
+    hashes = list(hashes)
+    for i in range(0, len(hashes), 50):
+        batch = [{"jsonrpc": "2.0", "id": j, "method": "eth_getTransactionByHash", "params": [h]}
+                 for j, h in enumerate(hashes[i:i + 50])]
+        req = urllib.request.Request(RPC, data=json.dumps(batch).encode(),
+                                     headers={"content-type": "application/json", "user-agent": "curl/8.5.0"})
+        res = None
+        for t in range(10):
+            time.sleep(0.15)
+            try:
+                res = json.load(urllib.request.urlopen(req, timeout=120))
+                break
+            except Exception:
+                time.sleep(min(3 * (t + 1), 30))
+        for r in res if isinstance(res, list) else []:
+            tx = r.get("result") or {}
+            if tx.get("from"):
+                seen.add(tx["from"].lower())
+    return len(seen)
 
 
 def pool_id(k):
@@ -114,12 +179,15 @@ def main():
     def swaps(b):
         return rpc("eth_getLogs", [{"fromBlock": hex(b), "toBlock": hex(min(b + step - 1, head)), "address": PM, "topics": [SWAP]}])
     count, traders = collections.Counter(), collections.defaultdict(set)
+    txs = collections.defaultdict(lambda: collections.deque(maxlen=SAMPLE * 3))  # latest swap transactions per pool
     # Robinhood Chain's public RPC rate-limits hard (HTTP 429): fewer parallel log queries there
     with cf.ThreadPoolExecutor(1 if RH else 4) as ex:
         for logs in ex.map(swaps, range(head - SPAN, head, step)):
             for l in logs:
                 count[l["topics"][1]] += 1
                 traders[l["topics"][1]].add(l["topics"][2])
+                if not txs[l["topics"][1]] or txs[l["topics"][1]][-1] != l["transactionHash"]:
+                    txs[l["topics"][1]].append(l["transactionHash"])
     active = [pid for pid, _ in count.most_common() if len(traders[pid]) >= MIN_TRADERS]
     print("swaps", sum(count.values()), "pools", len(count), "active", len(active))
     # 2) pool keys from Initialize events, looked up by pool id in batches (full range, topic-filtered)
@@ -185,9 +253,38 @@ def main():
             continue
         if k["fee"] != DYNAMIC and k["fee"] > MAX_FEE:
             continue
+        if RH:
+            out.append({**k, "pid": pid, "swaps": count[pid], "traders": len(traders[pid])})
+            continue
         out.append({**k, "swaps": count[pid], "traders": len(traders[pid])})
         if len(out) >= TOP:
             break
+    if RH:  # wash-trading resistant selection (see the docstring)
+        fixed = {pool_id(k) for k in ETH_USDG}
+        kept, why, done = [], collections.Counter(), set()
+        for c in out[:4 * TOP]:  # most swaps first; bounded so the daily run stays within the RPC's rate limits
+            pid = c.pop("pid")
+            if pid in done:  # the main ETH/USDG pools can be listed twice
+                continue
+            done.add(pid)
+            if pid in fixed:  # the main ETH/USDG pools are set by hand; seed-v4.sh skips that pair anyway
+                kept.append({**c, "origins": None})
+                continue
+            gated = c["hooks"] != _Z
+            if not gated and c.get("block") is not None and head - c["block"] < MIN_AGE_BLOCKS:
+                why["too new"] += 1
+                continue
+            o = origins(list(txs[pid])[-SAMPLE:])
+            if o < MIN_ORIGINS:
+                why["few origins"] += 1
+                continue
+            if not deep(c):
+                why["too shallow"] += 1
+                continue
+            kept.append({**c, "origins": o})
+        kept.sort(key=lambda c: (c["origins"] is None, c["origins"] or 0, c["swaps"]), reverse=True)
+        out = [{k: v for k, v in c.items() if k != "block"} for c in kept[:TOP]]
+        print("checked", len(kept) + sum(why.values()), "kept", len(kept), "dropped", dict(why))
     here = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(here, "v4-seed-pools-4663.json" if RH else "v4-seed-pools.json"), "w") as f:
         json.dump(out, f, indent=1)

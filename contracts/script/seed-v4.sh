@@ -8,6 +8,7 @@
 # GHSA-cv5f-wmmh-wcrv re-test). Full pairs are changed only by hand (unregister, then register), after checking quotes.
 #
 # PROTECT=0xToken,0xToken skips every pool that trades one of these tokens: their pairs are set by hand only.
+# PROTECT_PAIRS=0xA-0xB,... skips these pairs (0x0 for native ETH): the pairs Stoa's own flows use, set by hand only.
 # DRY=1 lists what it would register without sending.
 # Usage: RPC=... PRIVATE_KEY=... ADAPTER=0x... [SEED=script/data/v4-seed-pools-4663.json] ./script/seed-v4.sh
 set -uo pipefail
@@ -17,6 +18,15 @@ max=$(cast call "$ADAPTER" "MAX_KEYS()(uint256)" --rpc-url "$RPC" 2>/dev/null | 
 max=${max:-6}
 whype=$(cast call "$ADAPTER" "whype()(address)" --rpc-url "$RPC" 2>/dev/null)
 canon() { if [ "$(echo "$1" | tr 'A-F' 'a-f')" = "0x0000000000000000000000000000000000000000" ]; then echo "$whype"; else echo "$1"; fi; }
+in_pairs() { # is the canonical pair (a, b) in PROTECT_PAIRS?
+  local x y p q
+  x=$(echo "$1" | tr 'A-F' 'a-f'); y=$(echo "$2" | tr 'A-F' 'a-f')
+  for e in $(echo "$PROTECT_PAIRS" | tr ',' ' '); do
+    p=$(canon "${e%%-*}" | tr 'A-F' 'a-f'); q=$(canon "${e##*-}" | tr 'A-F' 'a-f')
+    { [ "$p" = "$x" ] && [ "$q" = "$y" ]; } || { [ "$p" = "$y" ] && [ "$q" = "$x" ]; } && return 0
+  done
+  return 1
+}
 declare -A count
 while IFS=' ' read -r c0 c1 fee ts hooks; do
   k="($c0,$c1,$fee,$ts,$hooks)"
@@ -25,6 +35,7 @@ while IFS=' ' read -r c0 c1 fee ts hooks; do
   fi
   a=$(canon "$c0"); b=$(canon "$c1")
   pair="$(echo "$a$b" | tr 'A-F' 'a-f')"
+  if [ -n "${PROTECT_PAIRS:-}" ] && in_pairs "$a" "$b"; then prot=$((prot+1)); continue; fi
   if [ -z "${count[$pair]:-}" ]; then
     keys=$(cast call "$ADAPTER" "keysFor(address,address)((address,address,uint24,int24,address)[])" "$a" "$b" --rpc-url "$RPC" 2>/dev/null) \
       || { fail=$((fail+1)); echo "skip (cannot read keys) $k"; continue; }
