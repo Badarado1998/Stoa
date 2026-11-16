@@ -45,6 +45,18 @@ forge test --match-contract Fork             # 36 fork tests against live state 
 forge coverage --no-match-coverage "(test|script|mocks)" --report summary
 ```
 
+Line and branch coverage with all three kinds of tests (16 November 2026):
+
+| Contract | Lines | Branches |
+| --- | --- | --- |
+| SpotlightMarket | 98.9% | 84.1% |
+| StoaLimit | 97.7% | 84.0% |
+| RugCover | 96.2% | 81.7% |
+| StoaRouter | 89.5% | 71.2% |
+| All of `src/` except `tools/` | 91.7% | 63.3% |
+
+The weakest spots are `StoaPoolL2` (65% of lines; not deployed yet) and the `MakerRegistry` revert branches.
+
 Fork tests are skipped when their RPC URL is not set. `ForkRobinhoodPons` picks the newest ETH-quoted Pons launch still on its bonding curve; set `PONS_TOKEN=0x...` to pin one. Settings: solc 0.8.28, optimizer 20,000 runs, EVM `cancun`, no via-IR; fuzz 512 runs; invariants 64 runs of 128 calls.
 
 ## How it works
