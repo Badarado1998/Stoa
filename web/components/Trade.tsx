@@ -552,7 +552,7 @@ function TradeOn({ net }: { net: Net }) {
             {net.pons && <div>Pons launch curves <em>{ponsLive ? "LIVE" : "BEING ADDED"}</em></div>}
             {net.makers && <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
-          <p className="note">Every swap compares these venues, directly and through {W}, and takes the best price.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
+          <p className="note">Every swap compares these venues, directly and through {W}, and fills on the best one.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
       </div>
     </div>
