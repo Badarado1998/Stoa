@@ -14,6 +14,13 @@
   "hyperevm": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5"
  },
  {
+  "symbol": "UBTC",
+  "name": "Unit Bitcoin",
+  "address": "0xE9C29585EAe4B9a55b02a9605AEa892B40d972E8",
+  "decimals": 8,
+  "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
+ },
+ {
   "symbol": "UETH",
   "name": "Unit Ethereum",
   "address": "0x7A66A75fe41Bc26867C17fe1bc7D1C076EBd4eCd",
@@ -33,13 +40,6 @@
   "address": "0x248888D396A546A69A188f3Deb476964e581E9d0",
   "decimals": 18,
   "hyperevm": "0xfD739d4e423301CE9385c1fb8850539D657C296D"
- },
- {
-  "symbol": "UBTC",
-  "name": "Unit Bitcoin",
-  "address": "0xE9C29585EAe4B9a55b02a9605AEa892B40d972E8",
-  "decimals": 8,
-  "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
  },
  {
   "symbol": "wSPYx",
