@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "security-status",
+    date: "2026-11-17",
+    title: "Security status page",
+    tag: "Robinhood Chain",
+    items: [
+      "A live page shows who controls each Stoa contract, whether anything is paused, the timelock and router delays, which venues the router uses and which are still waiting in the timelock, the keeper's gas balance and the Uniswap V4 guard, read from the chain every minute.",
+      "It also lists every security finding and what happened to it: fixed, rolling out through the timelock, or known with no live exposure.",
+    ],
+    link: { href: "/security", label: "Open Security status" },
+  },
+  {
     id: "buyback-live",
     date: "2026-11-17",
     title: "$STOA buyback and burn is live",
@@ -21,8 +32,6 @@ export const CHANGES: Change[] = [
       "A keeper runs it every Monday for each fee token worth at least $1. Every run is on the $STOA page with its transaction.",
     ],
     link: { href: "/token", label: "Open the $STOA page" },
-  },
-  {
   },
   {
     id: "bounty-ended",
