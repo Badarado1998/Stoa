@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "bounty-low-credit",
+    date: "2026-11-16",
+    title: "Bug bounty: from 18 November, Low findings are credited, not paid",
+    tag: "Both chains",
+    items: [
+      "Critical, High and Medium findings are still paid in stablecoins: $2,500, $1,000 and $300. From 18 November 2026, Low findings (the docs or the app disagreeing with a contract, with no funds at risk) are credited in the security review instead of paid.",
+      "Low reports sent before 18 November keep their $100.",
+    ],
+    link: { href: "/docs/bug-bounty", label: "Read the rules" },
+  },
+  {
     id: "rug-cover",
     date: "2026-11-16",
     title: "Rug Cover: buy Pons tokens with their creator's ETH behind them",

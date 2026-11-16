@@ -15,18 +15,19 @@ Please do not disclose the issue publicly, or to anyone else, until it is fixed 
 
 ## What we pay
 
-Rewards are paid in stablecoins: USDG on Robinhood Chain or USDC on Elysium.
+Rewards are paid in stablecoins: USDG on Robinhood Chain or USDC on Elysium, or USDC on another major chain if you ask.
 
 | Severity | Examples | Reward |
 | --- | --- | --- |
 | Critical | Theft or permanent freezing of user funds, maker liquidity, protocol fees, bonds, bids or locked $STOA; getting around the 48-hour timelock | $2,500 |
 | High | Temporary freezing of funds that the pause rules do not allow; theft of unclaimed fees, rewards, refunds or claims; a swap paying out less than the user's minimum | $1,000 |
 | Medium | A contract failing to deliver what it promises without loss of funds; blocking swaps or a feature for others without a pause; griefing that costs users gas or time | $300 |
-| Low | A contract or the app behaving differently from the docs with no funds at risk; the app showing a wrong address, amount or warning before you sign | $100 |
+| Low | A contract or the app behaving differently from the docs with no funds at risk; the app showing a wrong address, amount or warning before you sign | Credit in the security review |
 
 - The team decides the severity from the impact on funds on the live contracts, using these examples.
 - One reward per root cause. If two people report the same issue, the first complete report is paid.
 - Rewards are paid within 14 days of the team confirming the issue, to an address you give. No KYC.
+- Low findings are credited in the [security review](security-review.md), with your name or anonymously, and are not paid in cash. Low reports sent before 18 November 2026 keep the $100 reward.
 - The program's budget may change as the protocol grows. Changes are announced on this page and do not affect reports already sent.
 
 ## Scope
