@@ -262,4 +262,4 @@ The V4 adapter's pool list is a mapping filled by `register`. Slither's warning 
 1. ~~Move ownership to a multisig~~ Done: 2-of-3 admin Safe.
 1. ~~Add a delay to admin actions~~ Done: 48-hour timelock in front of every contract; maker bonds take 3 days to withdraw.
 2. External audit before raising the $500 per-swap cap or opening vaults.
-3. ~~Paid bug bounty~~ Live since 18 November 2026: up to $2,500 in stablecoins, see [Bug bounty](bug-bounty.md).
+3. Paid bug bounty: ran on 16 and 17 November 2026 and has ended. Security reports are still welcome privately and credited, see [Security reports](bug-bounty.md).

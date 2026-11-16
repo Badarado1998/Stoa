@@ -25,7 +25,7 @@ No contract is upgradeable. Every admin action goes through a 2-of-3 Safe and th
 
 ### What happens if something goes wrong?
 
-The router's guardian can pause swaps at once. It cannot unpause, move funds or change settings. Report a vulnerability privately as described on [Bug bounty](bug-bounty.md).
+The router's guardian can pause swaps at once. It cannot unpause, move funds or change settings. Report a vulnerability privately as described on [Security reports](bug-bounty.md).
 
 ## Volume
 

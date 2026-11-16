@@ -8,7 +8,7 @@ Stoa's contracts hold user funds only for the duration of a swap, but a bug in t
 - Please do **not** open a public GitHub issue, post on social media or exploit the issue on mainnet.
 - Include the contract and chain, the steps or a Foundry test that reproduces it, and the impact you expect.
 
-We aim to acknowledge reports within 48 hours. A paid bug bounty opens together with the external audit; until then we credit reporters publicly if they wish.
+We aim to acknowledge reports within 48 hours. Stoa does not run a paid bug bounty (the program ended on 17 November 2026); valid findings are credited in the security review if the reporter wishes.
 
 ## Scope
 

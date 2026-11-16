@@ -23,7 +23,7 @@ const TRUST = [
   { h: "/docs/security-review", b: "Independent security review", s: "by Hey Research Lab. Findings are published once fixed." },
   { h: "/docs/admin", b: "48-hour timelock", s: "on every admin change, signed by a 2-of-3 Safe and public before it runs." },
   { h: "https://github.com/StoaDex/Stoa", b: "Open source", s: "Every contract and this site, on GitHub." },
-  { h: "/docs/bug-bounty", b: "Bug bounty", s: "Up to $2,500 for a critical bug, reported on GitHub." },
+  { h: "/docs/bug-bounty", b: "Security reports", s: "Found a bug? Report it privately on GitHub and get credited." },
 ];
 
 export default function HomeLive() {

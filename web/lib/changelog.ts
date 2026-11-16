@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "bounty-ended",
+    date: "2026-11-17",
+    title: "The paid bug bounty has ended",
+    tag: "Both chains",
+    items: [
+      "Stoa no longer pays cash rewards for security reports. Reports are still welcome privately through GitHub, and valid findings are credited in the security review.",
+      "Every finding from the independent security review by Hey Research Lab is fixed. Reports sent while the bounty ran are answered individually.",
+    ],
+    link: { href: "/docs/bug-bounty", label: "How to report" },
+  },
+  {
     id: "stoa-coingecko",
     date: "2026-11-17",
     title: "$STOA is listed on CoinGecko",
