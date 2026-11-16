@@ -1,7 +1,8 @@
 """Rank the most traded Uniswap V4 pools on Elysium (or Robinhood Chain with CHAIN=robinhood) that Stoa's V4 adapter can use, and write v4-seed-pools.json.
 
 A pool qualifies when its hooks contract is on the adapter's allowlist (script/VenuesElysium.sol), it pairs a token
-with HYPE, WHYPE or USDC, and it had swaps from at least MIN_TRADERS different addresses in the last SPAN blocks.
+with HYPE, WHYPE or USDC (Robinhood Chain: ETH, WETH or USDG), it had swaps from at least MIN_TRADERS different
+addresses in the last SPAN blocks, and its fee is at most MAX_FEE (or dynamic).
 Run from this folder:  python3 -I v4_top_pools.py   (uses Kinetiq's public RPC, no key needed)
 """
 import collections
@@ -19,7 +20,9 @@ PM = "0x8366a39cc670b4001a1121b8f6a443a643e40951" if RH else "0xe2e105d3f7209a9d
 SWAP = "0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f"
 INIT = "0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438"
 SPAN = int(os.environ.get("SPAN", "300000"))  # ~8-10 hours of Elysium blocks (~8 hours on Robinhood Chain)
-TOP = int(os.environ.get("TOP", "80"))
+TOP = int(os.environ.get("TOP", "200" if RH else "80"))
+MAX_FEE = 100_000  # 10%: static fees above it are traps (some pools charge 60%); 0x800000 marks a dynamic fee
+DYNAMIC = 0x800000
 MIN_TRADERS = 5
 ALLOW = {
     "0x0000000000000000000000000000000000000000", "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
@@ -31,11 +34,12 @@ ALLOW = {
 }
 BASE = {"0x0000000000000000000000000000000000000000", "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
         "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65"}
-if RH:  # script/VenuesRobinhood.sol v4Hooks(); pools paired with ETH or WETH (ETH/USDG included)
+if RH:  # script/VenuesRobinhood.sol v4Hooks(); pools paired with ETH, WETH or USDG (ETH/USDG included)
     ALLOW = {"0x0000000000000000000000000000000000000000", "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044",
              "0x987e330f00b79864a07fe81dfac344d0078abcc0", "0x4e3468951d49f2eea976ed0d6e75ffcb44a9a544",
              "0x0af57f62982d03066ef917acad87f771c06528ec", "0xee588bcf2bd3e658f5160489f4199d1851bbf0cc"}
-    BASE = {"0x0000000000000000000000000000000000000000", "0x0bd7d308f8e1639fab988df18a8011f41eacad73"}
+    BASE = {"0x0000000000000000000000000000000000000000", "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+            "0x5fc5360d0400a0fd4f2af552add042d716f1d168"}
 
 
 def rpc(method, params):
@@ -67,7 +71,9 @@ def pool_id(k):
     return ETH_USDG_IDS[(k["fee"], k["hooks"])]
 
 
-LOOKBACK = int(os.environ.get("LOOKBACK", "20000000"))  # Robinhood Chain: Initialize events scanned (~3 weeks)
+# Robinhood Chain: how far back Initialize events are scanned. 0 = the whole chain, so a busy pool created long ago
+# (the main pools of older tokens) is found too; a 20M-block window missed over a hundred of them.
+LOOKBACK = int(os.environ.get("LOOKBACK", "0"))
 _Z = "0x0000000000000000000000000000000000000000"
 _USDG = "0x5fc5360d0400a0fd4f2af552add042d716f1d168"
 ETH_USDG = [
@@ -131,7 +137,7 @@ def main():
                     m = (a + z) // 2
                     return inits(a, m) + inits(m + 1, z)
                 raise
-        windows = range(max(0, head - LOOKBACK), head + 1, 1_000_000)
+        windows = range(max(0, head - LOOKBACK) if LOOKBACK else 0, head + 1, 1_000_000)
         with cf.ThreadPoolExecutor(2) as ex:
             for logs in ex.map(lambda a: inits(a, min(a + 999_999, head)), windows):
                 for l in logs:
@@ -147,7 +153,11 @@ def main():
         if not k or k["hooks"] not in ALLOW:
             continue
         c0, c1 = k["currency0"], k["currency1"]
-        if (c0 not in BASE and c1 not in BASE) or (c0 in BASE and c1 in BASE):
+        if c0 not in BASE and c1 not in BASE:
+            continue
+        if c0 in BASE and c1 in BASE and not (RH and _USDG in (c0, c1) and c0 != c1):  # ETH/USDG stays in
+            continue
+        if k["fee"] != DYNAMIC and k["fee"] > MAX_FEE:
             continue
         out.append({**k, "swaps": count[pid], "traders": len(traders[pid])})
         if len(out) >= TOP:
