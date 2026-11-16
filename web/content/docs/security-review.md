@@ -2,6 +2,18 @@
 
 A review of the deployed contracts by the Stoa team, published in full. **This is not an external audit.** An independent audit is still planned before caps rise or vaults open.
 
+## Update, 16 November 2026: bug bounty reports
+
+Two reports from outside researchers through the [bug bounty](bug-bounty.md), checked against the code. Neither puts funds at risk.
+
+### L-11 A route through two Stoa pools pays the pool fee twice
+
+Each Stoa pool takes its 2 bps on its own leg, and the router only skips its own fee when a route uses a pool; it cannot waive a pool's fee. A two-leg route through two Stoa pools (for example MEME → WHYPE in one pool, WHYPE → USDC in another) therefore pays the fee on each leg, while the docs said once per swap. Reproduced by the reporter in a local test (`test_twoStoaPoolsChargeProtocolFeeTwiceOnOneHop`) and confirmed in the code. The quote includes both fees, so nobody receives less than their minimum, and the router only picks that route when it still pays the most. Today it cannot happen: there is one Stoa pool, WHYPE/USDC on Elysium. Status: the fee docs now describe it; the team will weigh it before any second pool is added. Rated Low under the bounty.
+
+### I-18 The Spotlight entry cap counts canceled tokens (by design)
+
+`cancel` frees one of the 100 places in the race but not one of the 255 entries a week, so a week that has seen 255 entries takes no new tokens even after cancels. The cap is what keeps `finalize` cheap, and it is covered by `test_listedCapBoundsFinalize`. Filling a week this way costs 1,755 times the base entry fee (1.755 ETH today), all of it burned as $STOA; the bids themselves are refunded. Status: the Spotlight page now says canceled entries count toward the 255.
+
 ## Update, 16 November 2026: StoaLimit
 
 A review of the limit order contract before its deployment.

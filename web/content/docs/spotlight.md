@@ -22,7 +22,7 @@ Every week projects bid ETH for three sponsored slots on Stoa, and $STOA holders
 | Most one token can have in a week | 0.5 ETH (beta cap) |
 | Burn share | 10% of each winning bid |
 | Voting power | 1 locked $STOA = 1 vote, up to 10 tokens per holder per week |
-| Tokens per week | Up to 100 in the race at once (a canceled token frees its place), 255 in total |
+| Tokens per week | Up to 100 in the race at once (a canceled token frees one of those places) and 255 entries in total, canceled ones included: once 255 tokens have entered, the week takes no new ones |
 
 Parameter changes go through the 48-hour timelock and apply from the following week. The contract caps them: at most 5 slots, at most a 20% burn share, a base entry fee of at most 0.01 ETH and a minimum bid of at most 1 ETH.
 

@@ -12,9 +12,8 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
-    // ship date: set to the day the web goes live, right after the RugCover deploy
     id: "rug-cover",
-    date: "2026-11-19",
+    date: "2026-11-16",
     title: "Rug Cover: buy Pons tokens with their creator's ETH behind them",
     tag: "Robinhood Chain",
     items: [
@@ -26,9 +25,8 @@ export const CHANGES: Change[] = [
     link: { href: "/cover", label: "Open Rug Cover" },
   },
   {
-    // ship date: set together with the Rug Cover entry
     id: "trader-tools",
-    date: "2026-11-19",
+    date: "2026-11-16",
     title: "Limit orders, a token safety check, profit and loss, an API for bots, and Stoa as an app",
     tag: "Both chains",
     items: [

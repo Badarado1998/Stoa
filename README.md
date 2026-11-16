@@ -26,7 +26,7 @@
 
 # Stoa
 
-Stoa is a best-price swap router with maker-quoted pools (PropAMM). Every swap is quoted against every venue the router knows on the network: Stoa maker pools, Uniswap V2, V3 and V4, Aero, Ramses and Liquidity Book. It fills where the trader gets the most, directly or through the wrapped native token. Stoa charges a flat 2 bps protocol fee, once per swap.
+Stoa is a best-price swap router with maker-quoted pools (PropAMM). Every swap is quoted against every venue the router knows on the network: Stoa maker pools, Uniswap V2, V3 and V4, Aero, Ramses and Liquidity Book. It fills where the trader gets the most, directly or through the wrapped native token. Stoa charges a flat 2 bps protocol fee, once per swap (a route through two Stoa maker pools pays each pool's fee; see [Fees](web/content/docs/fees.md)).
 
 It is live on **Elysium** (chain 99901) and **Robinhood Chain** (chain 4663).
 
