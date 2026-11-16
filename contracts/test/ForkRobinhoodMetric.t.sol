@@ -214,7 +214,7 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
             uint256 used = g - gasleft();
             console2.log("adapter.swap WETH -> USDG", sizes[i], "gas", used);
             assertEq(got, q, "fills at the quote");
-            assertLt(used, 300_000, "one pool swap");
+            assertLt(used, 450_000, "one pool swap, or one more after a paused first pool");
             vm.revertToState(snap);
         }
         uint256 usd = 2_000e6;
