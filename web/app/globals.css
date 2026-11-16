@@ -440,3 +440,33 @@ html,body{overflow-x:clip}
 .safety.compact{padding:12px 14px;border-radius:12px;background:#F7F9FC;border:1px solid var(--line);font-size:13.5px}
 .safety-notes{margin:10px 0 0 18px;font-size:13px;color:#7A4A12}
 .safety-notes li{margin-top:4px}
+
+/* header: the menu opens on every screen size; Docs leaves the bar on mid widths */
+.menu-btn{display:inline-flex}
+.tabs a{padding:8px 12px}
+@media (max-width:1240px){.hide-l{display:none !important}}
+@media (max-width:1080px){.tabs a{padding:8px 9px;font-size:12.5px}}
+/* phones: the Swap/Limit switch meets the 44px touch size */
+@media (max-width:860px){.seg button{min-height:44px;padding:10px 16px;font-size:14px}}
+
+/* home: hero actions, a shorter walk on phones, and the plain section under it */
+.herobtns{pointer-events:auto;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.herobtns .cta{min-height:46px;padding:0 22px;font-size:15px}
+.herobtns .ghost{min-height:46px;padding:0 18px;font-size:14px;background:rgba(255,255,255,.72)}
+@media (max-width:860px){#track{height:850vh}}
+.homelive{position:relative;z-index:8;background:#F4F6FA;border-top:1px solid rgba(30,38,51,.06);padding:72px clamp(16px,4vw,48px) 56px;scroll-margin-top:64px}
+.hl-in{max-width:1080px;margin:0 auto}
+.hl-k{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent)}
+.homelive h2{margin:10px 0 22px;font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);letter-spacing:.02em;color:var(--ink);line-height:1.1}
+.hl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hl-card{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:14px;background:#fff;border:1px solid var(--line);color:var(--txt);transition:border-color .15s,box-shadow .15s}
+.hl-card:hover{border-color:#BFD3F2;box-shadow:0 8px 22px rgba(30,52,90,.08)}
+.hl-t{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:16px;font-weight:600;color:var(--ink)}
+.hl-t small{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.hl-d{font-size:14px;line-height:1.45}
+.hl-trust{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
+.hl-trust a{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;background:#EEF4FD;border:1px solid #D6E5FA;color:var(--txt);font-size:13.5px;line-height:1.45}
+.hl-trust b{font-size:15px;font-weight:600;color:var(--ink)}
+.homefoot{position:relative;z-index:8;background:#F4F6FA}
+@media (max-width:960px){.hl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hl-trust{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.hl-grid,.hl-trust{grid-template-columns:minmax(0,1fr)}.homelive{padding-top:56px}}

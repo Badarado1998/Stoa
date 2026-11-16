@@ -25,7 +25,7 @@ import LimitPanel from "./LimitPanel";
 import { useLimitLive } from "@/lib/limit";
 import { COVER, coverAbi, explainCover, useCoverLive, useOpenTokens } from "@/lib/cover";
 
-type Quote = { out: bigint; route: Route | null; at: number; impact: number } | null;
+type Quote = { out: bigint; route: Route | null; at: number; impact: number; block?: bigint } | null;
 const IMPACT_WARN = 3; // %
 const IMPACT_BLOCK = 15; // % — needs an explicit confirmation
 const SLIPS = [0.1, 0.5, 1];
@@ -76,8 +76,9 @@ function TradeOn({ net }: { net: Net }) {
     // $STOA goes right after the core tokens; a token with the same ticker from any other address is dropped
     if (stoa) setTokens((ts) => [...ts.slice(0, net.core), stoa, ...ts.slice(net.core).filter((t) => t.address.toLowerCase() !== stoa.address.toLowerCase() && t.symbol.toUpperCase() !== stoa.symbol.toUpperCase())]);
   }, [stoa, net.core]);
-  const [sell, setSell] = useState<Token>(net.tokens[2]);
-  const [buy, setBuy] = useState<Token>(net.tokens[0]);
+  // default: sell the native gas token (what a new wallet holds) for the network's stablecoin
+  const [sell, setSell] = useState<Token>(net.tokens[0]);
+  const [buy, setBuy] = useState<Token>(net.tokens[2]);
   const [amount, setAmount] = useState("");
   const [slip, setSlip] = useState(0.5);
   const [showSet, setShowSet] = useState(false);
@@ -162,8 +163,14 @@ function TradeOn({ net }: { net: Net }) {
     if (!deployed || !pub) return null;
     // the router finds the best route (direct or through the wrapped native token, best venue per leg); the swap then follows it
     const small = amt / 1000n > 0n ? amt / 1000n : 1n; // price impact: compare against 1/1000 of the amount
-    const q = (a: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quote", args: [sell.address, buy.address, a] });
-    const [{ result }, ref] = await Promise.all([q(amt), q(small).catch(() => null)]);
+    // pinned to one block, so the venue table under the swap box (VenueCompare) can read every venue in that same block
+    // and its ✓ always matches "Filled by"; if the RPC node has not seen that block yet, quote the latest instead
+    let block: bigint | undefined = await pub.getBlockNumber().catch(() => undefined);
+    const q = (a: bigint, at?: bigint) => pub.simulateContract({ address: CONTRACTS.router!, abi: routerAbi, functionName: "quote", args: [sell.address, buy.address, a], ...(at ? { blockNumber: at } : {}) });
+    let res;
+    try { res = await Promise.all([q(amt, block), q(small, block).catch(() => null)]); }
+    catch { block = undefined; res = await Promise.all([q(amt), q(small).catch(() => null)]); }
+    const [{ result }, ref] = res;
     let route = result as Route;
     let r0 = ref?.result.amountOut ?? 0n;
     if (net.chain.id === ROBINHOOD.chain.id) {
@@ -173,7 +180,7 @@ function TradeOn({ net }: { net: Net }) {
       if (usesPoisoned(route, sell.address, buy.address, g)) {
         const alt = await routeWithoutOldV4(p, net, sell.address, buy.address, amt);
         if (!alt) return null;
-        route = alt;
+        route = alt; block = undefined; // read at the latest block
       }
       if (ref && usesPoisoned(ref.result as Route, sell.address, buy.address, g)) {
         r0 = (await routeWithoutOldV4(p, net, sell.address, buy.address, small))?.amountOut ?? 0n;
@@ -182,7 +189,7 @@ function TradeOn({ net }: { net: Net }) {
     if (!hasRoute(route)) return null;
     let impact = 0;
     if (r0 > 0n) impact = Math.max(0, (1 - (Number(route.amountOut) / Number(amt)) / (Number(r0) / Number(small))) * 100);
-    return { out: route.amountOut, route, at: Date.now(), impact };
+    return { out: route.amountOut, route, at: Date.now(), impact, block };
   }, [amt, kind, pub, sell, buy, net]);
 
   // debounce + refresh every 4s (maker quotes expire after 2 blocks)
@@ -494,7 +501,7 @@ function TradeOn({ net }: { net: Net }) {
         {cover.block}
         {buy.tone === "other" && !isNative(buy) && <SafetyPanel chain={net.key} token={buy.address} compact />}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
-          <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} />
+          <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
         )}
         {amt && quote && quote.impact >= IMPACT_WARN && (
           <div className={quote.impact >= IMPACT_BLOCK ? "err" : "notice"} style={{ marginTop: 12, marginBottom: 0 }}>

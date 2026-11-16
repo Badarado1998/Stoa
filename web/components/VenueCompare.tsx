@@ -5,6 +5,7 @@ import type { Net } from "@/lib/networks";
 import type { Token } from "@/lib/tokens";
 import { NATIVE } from "@/lib/tokens";
 import { fmtAmt, isHop, describeRoute, type Route } from "@/lib/swap";
+import { OLD_V4 } from "@/lib/v4guard";
 
 // adapters' quote is not marked view (some venues simulate the swap), but it is only ever eth_call'ed here
 const adapterAbi = parseAbi(["function quote(address tokenIn, address tokenOut, uint256 amountIn) view returns (uint256)"]);
@@ -17,8 +18,8 @@ const lc = (a: string) => a.toLowerCase();
 /** The swap screen's proof of "best price": what each venue the router uses would give for this exact amount, direct,
  *  next to what Stoa fills. Venue quotes are the venues' own (before Stoa's 2 bps); Stoa's is what you receive.
  *  Shown only when at least two venues quote the pair directly, so there is something to compare. */
-export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
-  net: Net; pub?: PublicClient; sell: Token; buy: Token; amt: bigint; route: Route; out: bigint;
+export default function VenueCompare({ net, pub, sell, buy, amt, route, out, block }: {
+  net: Net; pub?: PublicClient; sell: Token; buy: Token; amt: bigint; route: Route; out: bigint; block?: bigint;
 }) {
   const router = net.contracts.router;
   const live = useQuery({
@@ -34,11 +35,12 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
   const a = lc(sell.address) === lc(NATIVE) ? net.wrapped : sell.address;
   const b = lc(buy.address) === lc(NATIVE) ? net.wrapped : buy.address;
   const quotes = useQuery({
-    // Stoa's own quote is read in the same multicall, so the venues and Stoa's fill below come from the same block
-    queryKey: ["venue-quotes", net.key, sell.address, buy.address, amt.toString(), live.data?.join()],
+    // read in the block the swap box quoted (Trade's getQuote), so ✓ and the fill below are exactly the swap box's route
+    // and amount; without a block (the swap box's fallback), the router's own pick in the same multicall is used
+    queryKey: ["venue-quotes", net.key, sell.address, buy.address, amt.toString(), live.data?.join(), block?.toString()],
     enabled: !!pub && !!router && !!live.data?.length && lc(a) !== lc(b),
     staleTime: 3_000,
-    refetchInterval: 4_000,
+    refetchInterval: block ? false : 4_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
       const vs = live.data!;
@@ -48,9 +50,10 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
           ...vs.map((v) => ({ address: v, abi: adapterAbi, functionName: "quote" as const, args: [a, b, amt] as const })),
         ] as never,
         allowFailure: true,
+        ...(block ? { blockNumber: block } : {}),
       }) as { result?: unknown }[];
-      const stoa = (res[0]?.result as { amountOut: bigint } | undefined)?.amountOut ?? 0n;
-      return { stoa, rows: vs.map((v, i) => ({ venue: v, name: net.venues[lc(v)] ?? "Venue", out: (res[i + 1]?.result as bigint | undefined) ?? 0n })) };
+      const best = res[0]?.result as Route | undefined;
+      return { stoa: best?.amountOut ?? 0n, best, rows: vs.map((v, i) => ({ venue: v, name: net.venues[lc(v)] ?? "Venue", out: (res[i + 1]?.result as bigint | undefined) ?? 0n })) };
     },
   });
 
@@ -60,17 +63,24 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out }: {
   const rows = all.filter((r) => r.out * 2n >= all[0]?.out);
   if (rows.length < 2) return null;
   const thin = all.length - rows.length;
-  const used = !isHop(route) && !route.leg1.isPool ? lc(route.leg1.venue) : null;
+  // ✓ marks the swap box's route when the rows were read in its block (the usual case), so ✓ and "Filled by" always agree.
+  // Without that block, ✓ is the router's own pick in the rows' multicall, except when the swap box skipped Stoa's first
+  // V4 adapter for this pair (lib/v4guard) and the router's raw pick still uses it, or the read failed.
+  const legs = (r: Route) => [r.leg1.venue, r.leg2.venue].map(lc);
+  const best = quotes.data?.best;
+  const guarded = !!best && legs(best).includes(OLD_V4) && !legs(route).includes(OLD_V4);
+  const shown = block || !best || best.amountOut === 0n || guarded ? route : best;
+  const used = !isHop(shown) && !shown.leg1.isPool ? lc(shown.leg1.venue) : null;
   const worst = rows[rows.length - 1];
-  const fill = quotes.data?.stoa || out; // same block as the venue quotes; the swap box's figure if the read failed
+  const fill = shown === route ? out : shown.amountOut;
   const gain = fill - worst.out;
   const d = buy.decimals, sym = buy.symbol;
   return (
     <div className="cmp">
       <div className="lbl">EVERY VENUE, THIS AMOUNT</div>
       <div className="det" style={{ marginTop: 6 }}>
-        {(isHop(route) || route.leg1.isPool) && <>
-          <span style={{ color: "var(--ink)", fontWeight: 600 }}>✓ {describeRoute(route, net.venues, net.tokens[1].symbol)}</span>
+        {(isHop(shown) || shown.leg1.isPool) && <>
+          <span style={{ color: "var(--ink)", fontWeight: 600 }}>✓ {describeRoute(shown, net.venues, net.tokens[1].symbol)}</span>
           <span style={{ color: "var(--accent)", fontWeight: 600 }}>{fmtAmt(fill, d)} {sym}</span></>}
         {rows.map((r) => {
           const on = lc(r.venue) === used;

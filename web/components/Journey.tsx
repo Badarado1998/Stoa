@@ -4,20 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import Header from "./Header";
 import StoaCA from "./StoaCA";
 import StoaPulse from "./StoaPulse";
+import HomeLive from "./HomeLive";
+import Footer from "./Footer";
 
 type Stop = { n: string; l: string; p: number; a: number };
 type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): void; dispose(): void };
 
 const CARDS: { a: number; b: number; body: React.ReactNode }[] = [
-  { a: 0.15, b: 0.215, body: <><div className="k">THE STOA <b>ELYSIUM · L2</b></div><h2>A market built like a stoa</h2><p>Every pool is a column. Professional makers quote it on-chain, every block, and the price you see is the price you get.</p></> },
-  { a: 0.245, b: 0.315, body: <><div className="k">I · TRADE <b>POOL</b></div><h2>WHYPE / USDC</h2><p>The light inside the column is live depth. Bids on one side, asks on the other.</p>
+  { a: 0.12, b: 0.225, body: <><div className="k">THE STOA <b>ROBINHOOD CHAIN · ELYSIUM</b></div><h2>A market built like a stoa</h2><p>Every pool is a column. Stoa reads each one on-chain, every block, and shows you what every venue would pay before you sign.</p></> },
+  { a: 0.235, b: 0.335, body: <><div className="k">I · TRADE <b>POOL</b></div><h2>WHYPE / USDC</h2><p>The light inside the column is live depth. Bids on one side, asks on the other.</p>
       <div className="rows"><span>Pricing</span><span>Maker-quoted</span><span>Quote refresh</span><span>Every block</span><span>Fee</span><span>2 bps</span><span>Status</span><span className="live">Live · awaiting makers</span></div>
       <Link className="go" href="/trade">Trade</Link></> },
-  { a: 0.365, b: 0.435, body: <><div className="k">II · EARN <b>LP VAULTS</b></div><h2>Own a piece of the pool</h2><p>Vault shares that grow with every fee. Each ring that lights up is fees flowing to every share.</p><Link className="go" href="/earn">Earn</Link></> },
-  { a: 0.485, b: 0.555, body: <><div className="k">III · RUN A POOL <b>CURATORS</b></div><h2>Makers hold the center</h2><p>Bring a price feed or a strategy, post a bond, and quote. Each orbiting light is a maker refreshing its price.</p><Link className="go" href="/curators">Become a curator</Link></> },
-  { a: 0.605, b: 0.675, body: <><div className="k">IV · BUILD <b>SDK</b></div><h2>Every pool is a building block</h2><p>Router, SDK and hooks. Stack Stoa pools into vaults, aggregators and apps across Elysium and Robinhood Chain.</p><Link className="go" href="/docs/router-sdk">Read the docs</Link></> },
-  { a: 0.74, b: 0.82, body: <><div className="k">THE ROUTER <b>BEST FILL</b></div><h2>Every column, checked</h2><p>Before you sign, the router compares every venue: maker quotes, Uniswap, Aero, Ramses and Liquidity Book on Elysium, and Uniswap V2, V3 and V4 on Robinhood Chain. Then it takes the best fill.</p></> },
-  { a: 0.94, b: 1.01, body: <><div className="k">V · THE AGORA <b>STOA</b></div><h2>Enter the market</h2><p>Trade, earn, run a pool or build on it. The doors are open.</p>
+  { a: 0.345, b: 0.455, body: <><div className="k">II · EARN <b>LP VAULTS</b></div><h2>Own a piece of the pool</h2><p>Vault shares that grow with every fee. Each ring that lights up is fees flowing to every share.</p><Link className="go" href="/earn">Earn</Link></> },
+  { a: 0.465, b: 0.575, body: <><div className="k">III · RUN A POOL <b>CURATORS</b></div><h2>Makers hold the center</h2><p>Bring a price feed or a strategy, post a bond, and quote. Each orbiting light is a maker refreshing its price.</p><Link className="go" href="/curators">Become a curator</Link></> },
+  { a: 0.585, b: 0.695, body: <><div className="k">IV · BUILD <b>SDK</b></div><h2>Every pool is a building block</h2><p>Router, SDK and hooks. Stack Stoa pools into vaults, aggregators and apps across Elysium and Robinhood Chain.</p><Link className="go" href="/docs/router-sdk">Read the docs</Link></> },
+  { a: 0.71, b: 0.86, body: <><div className="k">THE ROUTER <b>BEST FILL</b></div><h2>Every column, checked</h2><p>Before you sign, the router compares every venue: maker quotes, Uniswap, Aero, Ramses and Liquidity Book on Elysium, and Uniswap V2, V3 and V4 on Robinhood Chain. Then it takes the best fill.</p></> },
+  { a: 0.9, b: 1.01, body: <><div className="k">V · THE AGORA <b>STOA</b></div><h2>Enter the market</h2><p>Trade, earn, run a pool or build on it. The doors are open.</p>
       <StoaCA />
       <div className="btns"><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div></> },
 ];
@@ -29,6 +31,7 @@ export default function Journey() {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [stops, setStops] = useState<Stop[]>([]);
+  const [past, setPast] = useState(false); // scrolled into the plain section under the 3D walk
 
   useEffect(() => {
     let alive = true;
@@ -43,7 +46,7 @@ export default function Journey() {
         });
         api.current = s;
         setStops(s.stops);
-        const read = () => { const m = document.documentElement.scrollHeight - innerHeight; s.setTarget(m > 0 ? scrollY / m : 0); };
+        const read = () => { const m = trackEnd(); s.setTarget(m > 0 ? Math.min(1, scrollY / m) : 0); setPast(scrollY > m + innerHeight * 0.25); };
         addEventListener("scroll", read, { passive: true });
         read();
         (s as SceneApi & { _off?: () => void })._off = () => removeEventListener("scroll", read);
@@ -59,7 +62,7 @@ export default function Journey() {
   }, []);
 
   const go = (target: number) => {
-    const m = document.documentElement.scrollHeight - innerHeight;
+    const m = trackEnd();
     window.scrollTo({ top: target * m, behavior: "smooth" });
   };
   const hero = Math.max(0, 1 - p / 0.05);
@@ -77,7 +80,7 @@ export default function Journey() {
           <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">Every route compared, on Robinhood Chain and Elysium.</span>
           <div className="heroca"><StoaCA short /></div>
           <StoaPulse />
-          <div className="btns" style={{ pointerEvents: "auto", marginTop: 20 }}><Link className="cta" href="/trade">Launch app</Link><Link className="ghost" href="/docs">Read the docs</Link></div>
+          <HeroButtons />
         </section>
       ) : (
         <>
@@ -85,10 +88,11 @@ export default function Journey() {
             <h1>STOA</h1><p>THE MARKET, QUOTED LIVE.</p><span className="sub">Every route compared, on Robinhood Chain and Elysium.</span>
             <div className="heroca"><StoaCA short /></div>
           <StoaPulse />
+            <HeroButtons />
           </section>
           <div className="hint" style={{ opacity: Math.max(0, 1 - p / 0.02) }}><span>SCROLL TO DESCEND</span><i /></div>
-          {CARDS.map((c, i) => <article key={i} className={`card${p >= c.a && p <= c.b ? " show" : ""}`}>{c.body}</article>)}
-          <nav className="rail" aria-label="Journey">
+          {CARDS.map((c, i) => <article key={i} className={`card${!past && p >= c.a && p <= c.b ? " show" : ""}`}>{c.body}</article>)}
+          <nav className="rail" aria-label="Journey" style={past ? { opacity: 0, pointerEvents: "none" } : undefined}>
             {stops.map((s, i) => (
               <span key={s.n} style={{ display: "contents" }}>
                 <button type="button" className={i === active ? "on" : undefined} aria-label={`${s.n} ${s.l}`} onClick={() => go(s.p)}>
@@ -101,7 +105,25 @@ export default function Journey() {
           <div id="track" />
         </>
       )}
+      <HomeLive />
+      <div className="homefoot"><Footer /></div>
     </>
+  );
+}
+
+/** Where the 3D walk ends: the bottom of #track, as a scroll offset. */
+function trackEnd() {
+  const t = document.getElementById("track");
+  return t ? t.offsetTop + t.offsetHeight - innerHeight : document.documentElement.scrollHeight - innerHeight;
+}
+
+/** The hero's actions: trade first, then a jump to everything that is live. */
+function HeroButtons() {
+  return (
+    <div className="herobtns">
+      <Link className="cta" href="/trade">Trade now</Link>
+      <a className="ghost" href="#live">What&apos;s on Stoa ↓</a>
+    </div>
   );
 }
 
