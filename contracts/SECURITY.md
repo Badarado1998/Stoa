@@ -6,7 +6,7 @@ Status: **not audited**. Per-swap caps stay at $500 on maker pools until an exte
 
 | Guarantee | How |
 |---|---|
-| The router never trusts a venue | It measures what the recipient actually received and reverts below `minOut`; it reverts if a venue did not take exactly `amountIn` (`InputNotSpent`). Tested with lying and skimming pools. |
+| The router never trusts a venue | It measures the output and reverts below `minOut` (for a token that taxes transfers, see K-1 under Known limits); it reverts if a venue did not take exactly `amountIn` (`InputNotSpent`). Tested with lying and skimming pools. |
 | Routes use allowlisted venues only | `swap` takes a route from the caller but rejects any venue that is not a registered adapter, or a registered pool for exactly that pair (`UnknownVenue`); the hop token cannot be either end. |
 | One fee per swap | A two-leg route pays the protocol fee once: inside the Stoa pool if one is used, otherwise on the router's final leg. |
 | No surprise venues | After `lockSetup()`, new pools/adapters must be `propose`d and wait `delay` (default 1 day, allowed 1 h–14 d) before `execute`. Removals are instant. |
@@ -34,7 +34,7 @@ Status: **not audited**. Per-swap caps stay at $500 on maker pools until an exte
 - Adapters pick their pool again at execution time, so a two-leg route costs up to about 1.1M gas.
 
 - A maker can update its quote ahead of a pending swap in the same block, within the trader's slippage. Keep slippage low; slash abusive makers.
-- Fee-on-transfer and rebasing tokens are not supported (swaps revert, funds are not lost).
+- Fee-on-transfer and rebasing tokens are not supported. Input: refused. Output (K-1, reported through the bug bounty on 16 November 2026): on a route whose last leg is a venue adapter, `minOut` is checked against what the router sends, before the final transfer. A token that taxes that transfer then delivers below `minOut` if the route charges no router fee on that leg (a route through a Stoa pool, or a router fee of 0); with the router fee, the swap reverts. No Stoa pool quotes today on either chain and the router fee is 2 bps, so no live route can deliver below the minimum. The fix (measure the recipient on the final leg, as pool legs already do) ships before any Stoa pool quotes.
 - The Uniswap V2 adapter assumes the standard 0.3% pair fee; a fork with a different fee makes swaps revert, not lose funds.
 
 ## Static analysis (Slither)

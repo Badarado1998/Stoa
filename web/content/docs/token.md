@@ -35,6 +35,10 @@ From 23 November 2026, projects bid ETH every week for three sponsored slots on 
 
 In [Rug Cover](rug-cover.md), a Pons token's creator bonds ETH behind a promise not to sell or move the tokens in their wallet, and pays a fee. Holders who lock $STOA in **RugCover** as backers receive 90% of those creator fees and of bonds forfeited in a breach, in ETH, paid out over 7 days. Locked $STOA is never used to pay a claim. Buyer premiums are not shared: every premium buys $STOA and burns it, together with 10% of the creator income.
 
+## Where to track it
+
+$STOA is listed on [CoinGecko](https://www.coingecko.com/en/coins/stoa) (since 17 November 2026) and [GeckoTerminal](https://www.geckoterminal.com/robinhood/tokens/0x13e6993417616de724f2b337d65063f229e96718), and its pool is on [DexScreener](https://dexscreener.com/robinhood/0x3cf63de2530870232ec7075aec62ca539031c3c5a17dba5e016771238bf64180). Their supply figures come from the endpoints below.
+
 ## Supply
 
 $STOA has a fixed supply of 1,000,000,000, all minted at launch on Pons. Nothing can mint more.

@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-coingecko",
+    date: "2026-11-17",
+    title: "$STOA is listed on CoinGecko",
+    tag: "$STOA",
+    items: [
+      "$STOA is listed on CoinGecko, and its token info is on GeckoTerminal. Both read supply from Stoa's public supply endpoints.",
+      "Links to CoinGecko, GeckoTerminal and DexScreener are on the $STOA page, the $STOA docs and the footer.",
+      "Known issue K-1 from the bug bounty is now in the security review: a token that taxes transfers could be delivered below your minimum on a route through a Stoa pool. No Stoa pool quotes today, and the fix ships before one does.",
+    ],
+    link: { href: "https://www.coingecko.com/en/coins/stoa", label: "$STOA on CoinGecko" },
+  },
+  {
     id: "bounty-github-only",
     date: "2026-11-16",
     title: "Bug bounty: GitHub reports with a test, Critical and High paid, $1,000 a month",

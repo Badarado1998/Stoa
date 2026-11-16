@@ -4,6 +4,16 @@ A review of the deployed contracts by the Stoa team, published in full. **This i
 
 **Independent security review under way.** Since 16 November 2026, [Hey Research Lab](https://x.com/HeyResearch) is reviewing RugCover, SpotlightMarket, StoaLimit and StoaRouter at commit [`c524b82`](https://github.com/StoaDex/Stoa/tree/c524b82/contracts), the code the live contracts run. It is a review, not an audit. Findings come to Stoa privately first, with a test, and are published here once fixed. The scope, build steps and known issues are in [contracts/AUDIT.md](https://github.com/StoaDex/Stoa/blob/main/contracts/AUDIT.md).
 
+## Update, 17 November 2026: known issue from the bug bounty
+
+### K-1 A token that taxes transfers can be delivered below the trader's minimum
+
+**Status: open, no live exposure; fixed before any Stoa pool quotes.** Severity: Medium. Reported through the [bug bounty](bug-bounty.md) on 16 November 2026, with a Foundry test that reproduces it.
+
+On a route whose last leg is a venue adapter, the router checks `minOut` against the amount it sends, then transfers it to the recipient. If the output token takes a tax on that transfer, the recipient receives less than the router measured, and can end up below `minOut` while the swap succeeds. The shortfall is the token's own tax; nobody else receives it. Pool legs are not affected: they measure the recipient's balance.
+
+It needs a route that charges no router fee on that last leg: a route through a Stoa maker pool, or a router fee set to 0. Today no Stoa pool quotes on either chain and the router fee is 2 bps, so a swap to such a token through an adapter reverts (the fee check in the FeeDistributor fails) rather than delivering less. **Fix:** measure the recipient's balance on the final leg, as pool legs already do, in the router version that ships before the first Stoa pool quotes. Until then the router fee stays above 0 and no Stoa pool is given a maker. Tokens that tax transfers are not supported; the safety check on Trade shows a token's taxes before you buy. Further reports of this root cause are duplicates.
+
 ## Update, 16 November 2026: findings from the independent security review
 
 Hey Research Lab reported two Medium findings, each with a test that reproduces it on a fork of Robinhood Chain. Both are fixed. Neither was used on-chain and no funds were lost.
@@ -238,7 +248,7 @@ The V4 adapter's pool list is a mapping filled by `register`. Slither's warning 
 
 ## What was checked and held up
 
-- **Input and output are measured, not trusted.** Each leg checks that the venue took exactly the input, and the final output is measured against the trader's minimum.
+- **Input and output are measured, not trusted.** Each leg checks that the venue took exactly the input, and the final output is measured against the trader's minimum (except a token that taxes the final transfer from an adapter leg, K-1 above).
 - **Only allowlisted venues.** Unknown venues, wrong pairs and removed venues revert. Fork tests confirm adapters reject strangers and fake callbacks.
 - **Approvals.** The router pulls only the swap amount from the caller and clears any approval it gives a pool.
 - **Fee accounting.** Fees must be backed by tokens the distributor actually holds, and referral earnings can only be claimed by the referrer.

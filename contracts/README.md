@@ -51,5 +51,5 @@ All deployments run from GitHub Actions with a dry run first, then a broadcast, 
 ## Not in v1
 
 - Public LP vaults (ERC-4626): they open after an external audit.
-- Fee-on-transfer and rebasing tokens (swaps revert; funds are not lost).
+- Fee-on-transfer and rebasing tokens. As input they are refused. As output, a route whose last leg is a venue adapter checks `minOut` before the final transfer to the recipient, so a token that taxes that transfer can deliver below `minOut` when the route charges no router fee on that leg (a route through a Stoa pool, or a router fee of 0). Routes that charge the router fee in that token revert. Tracked as K-1 in the [security review](https://stoadex.com/docs/security-review); fixed before any Stoa pool quotes.
 - An external audit. Per-swap caps stay low until there is one.

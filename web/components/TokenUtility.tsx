@@ -119,6 +119,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
         <Link className="note" style={{ marginTop: 0 }} href="/docs/buy-stoa">How to buy</Link>
         <a className="note" style={{ marginTop: 0 }} href="/api/stoa/supply" target="_blank" rel="noopener noreferrer">Supply API</a>
       </div>
+      <p className="note" style={{ marginTop: 10 }}>Track $STOA on <a href="https://www.coingecko.com/en/coins/stoa" target="_blank" rel="noopener noreferrer">CoinGecko</a> · <a href="https://www.geckoterminal.com/robinhood/tokens/0x13e6993417616de724f2b337d65063f229e96718" target="_blank" rel="noopener noreferrer">GeckoTerminal</a> · <a href="https://dexscreener.com/robinhood/0x3cf63de2530870232ec7075aec62ca539031c3c5a17dba5e016771238bf64180" target="_blank" rel="noopener noreferrer">DexScreener</a></p>
     </div>
   );
 }

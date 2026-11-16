@@ -16,7 +16,7 @@ Each `StoaPool` holds the tokens that fill swaps and only accepts quotes that ar
 
 When you enter an amount, `StoaRouter` asks every Stoa pool for a price and compares it with the other venues on Elysium that hold real liquidity: Uniswap V2, V3 and V4, Aero, Ramses and a Liquidity Book (DLMM) exchange. It also checks a two-step route through WHYPE and picks the best venue for each step, so a launchpad token that only trades against HYPE on Uniswap V4 can still finish in the deepest HYPE/USDC pool. Your swap then follows that route in one transaction.
 
-The router only sends funds to venues on its allowlist, measures what you actually receive, and reverts below your minimum. If no maker quote is valid, the swap fills on the best outside venue. More venues can be added as adapters after a public 24-hour wait.
+The router only sends funds to venues on its allowlist, measures what you actually receive, and reverts below your minimum (for standard tokens; a token that taxes transfers is covered in [Risks](risks.md)). If no maker quote is valid, the swap fills on the best outside venue. More venues can be added as adapters after a public 24-hour wait.
 
 ## 4. You sign once
 

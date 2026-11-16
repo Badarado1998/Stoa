@@ -46,7 +46,7 @@ flowchart LR
     B -->|buy and burn| S(("$STOA"))
 ```
 
-- **The router never trusts a venue.** It measures what the trader actually receives and reverts below `minOut`. Venues are allowlisted adapters; new ones wait in public before they go live.
+- **The router never trusts a venue.** It measures what the trader actually receives and reverts below `minOut` (standard tokens; see K-1 in the security review for tokens that tax transfers). Venues are allowlisted adapters; new ones wait in public before they go live.
 - **Maker pools** are quoted every block by bonded makers. When no maker quotes, swaps still fill on the best outside venue.
 - **Uniswap V4 pools** are registered permissionlessly in Stoa's adapter, limited to hooks on an allowlist fixed at deployment.
 
