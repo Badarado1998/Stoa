@@ -38,13 +38,16 @@ interface IMetricQuoter {
 
 /// @title MetricAdapter
 /// @notice Fills swaps for StoaRouter on Metric OMM pools (PropAMM pools priced by an oracle, on Robinhood Chain:
-///         WETH/USDG and tokenized stocks against USDG). For each pair it keeps up to MAX_POOLS pools, set by the
-///         keeper (or the owner) from Metric's factory, and fills each swap on the one that quotes the most.
+///         WETH/USDG and tokenized stocks against USDG). For each direction of a pair it keeps an ordered list of up to
+///         MAX_POOLS pools, set by the keeper (or the owner) from Metric's factory, and fills each swap on the first
+///         pool of the list that takes the whole input. The keeper ranks each list off-chain (pools that pay the most on
+///         small orders first, deeper pools after), so a swap needs no on-chain comparison: it costs one pool swap, not
+///         one quote per pool. `quote` follows the same rule, so it shows what `swap` will do.
 ///         Two-step routes are handled by the router, not here.
-/// @dev The pool list can only point swaps at real Metric pools for that exact pair; a bad list costs price, never
+/// @dev The pool lists can only point swaps at real Metric pools for that exact pair; a bad list costs price, never
 ///      funds, because the router checks the user's minimum and this adapter checks every fill. Only the router may
-///      call `swap`. The callback only pays the pool this adapter is swapping on, at most the amount it was given, and
-///      a fill that takes less than the whole input reverts (no input is ever left behind here).
+///      call `swap`. The callback only pays the pool this adapter is swapping on, exactly the input it was given, once:
+///      a pool that would fill only part of the input has its swap reverted, and the next pool is tried.
 contract MetricAdapter is IVenueAdapter, Ownable2Step {
     using SafeERC20 for IERC20;
 
@@ -55,18 +58,20 @@ contract MetricAdapter is IVenueAdapter, Ownable2Step {
     address public immutable stoaRouter;
     address public keeper;
 
-    /// @dev Metric pools keep their own token order (token0 is not always the lower address), so each is stored with it.
+    /// @dev One storage slot per pool. Metric pools keep their own token order (token0 is not always the lower
+    ///      address), so each entry stores the direction it is swapped in for its list.
     struct Venue {
         address pool;
-        address token0;
+        bool zeroForOne;
     }
 
-    mapping(bytes32 pair => Venue[]) internal _venues;
-    // the pool being swapped on and the input it may ask for; set only for the length of one `swap`
-    address private _active;
-    uint256 private _activeIn;
+    mapping(bytes32 route => Venue[]) internal _routes;
+    // the pool being swapped on, the input it may ask for and its token; set only for the length of one pool swap
+    address private transient _active;
+    uint256 private transient _activeIn;
+    address private transient _activeToken;
 
-    event PoolsSet(address indexed token0, address indexed token1, address[] pools);
+    event PoolsSet(address indexed tokenIn, address indexed tokenOut, address[] pools);
     event KeeperSet(address keeper);
 
     error OnlyRouter();
@@ -97,37 +102,38 @@ contract MetricAdapter is IVenueAdapter, Ownable2Step {
 
     // ================================================================ pools
 
-    /// @notice The keeper role: may set the pool list of a pair. Zero turns it off (the owner can still set lists).
+    /// @notice The keeper role: may set pool lists. Zero turns it off (the owner can still set lists).
     function setKeeper(address k) external onlyOwner {
         keeper = k;
         emit KeeperSet(k);
     }
 
-    /// @notice Replace the pools used for a pair (either token order). Each must be a Metric pool of exactly that pair.
-    ///         An empty list stops this adapter quoting the pair.
-    function setPools(address a, address b, address[] calldata pools) external {
+    /// @notice Replace the ordered pool list for swaps from `tokenIn` to `tokenOut` (one direction). Each must be a
+    ///         Metric pool of exactly that pair; swaps try them in this order. An empty list stops this direction.
+    function setPools(address tokenIn, address tokenOut, address[] calldata pools) external {
         if (msg.sender != keeper && msg.sender != owner()) revert NotKeeper();
         if (pools.length > MAX_POOLS) revert TooMany();
-        (address t0, address t1) = a < b ? (a, b) : (b, a);
-        if (t0 == t1 || t0 == address(0)) revert BadPair();
-        Venue[] storage list = _venues[_pair(t0, t1)];
-        delete _venues[_pair(t0, t1)];
+        if (tokenIn == tokenOut || tokenIn == address(0) || tokenOut == address(0)) revert BadPair();
+        bytes32 k = _route(tokenIn, tokenOut);
+        delete _routes[k];
+        Venue[] storage list = _routes[k];
         for (uint256 i; i < pools.length; ++i) {
             address p = pools[i];
             if (!factory.isPool(p)) revert NotMetricPool(p);
             (address x0, address x1) = _tokens(p);
-            if (!((x0 == t0 && x1 == t1) || (x0 == t1 && x1 == t0))) revert WrongPair(p);
+            bool z = x0 == tokenIn;
+            if (z ? x1 != tokenOut : (x0 != tokenOut || x1 != tokenIn)) revert WrongPair(p);
             for (uint256 j; j < i; ++j) {
                 if (pools[j] == p) revert Duplicate(p);
             }
-            list.push(Venue(p, x0));
+            list.push(Venue(p, z));
         }
-        emit PoolsSet(t0, t1, pools);
+        emit PoolsSet(tokenIn, tokenOut, pools);
     }
 
-    /// @notice The pools used for a pair (either token order).
-    function poolsFor(address a, address b) external view returns (address[] memory pools) {
-        Venue[] storage list = _venues[_pair(a, b)];
+    /// @notice The pools tried, in order, for swaps from `tokenIn` to `tokenOut`.
+    function poolsFor(address tokenIn, address tokenOut) external view returns (address[] memory pools) {
+        Venue[] storage list = _routes[_route(tokenIn, tokenOut)];
         pools = new address[](list.length);
         for (uint256 i; i < list.length; ++i) {
             pools[i] = list[i].pool;
@@ -136,9 +142,21 @@ contract MetricAdapter is IVenueAdapter, Ownable2Step {
 
     // ================================================================ adapter
 
+    /// @notice What `swap` would pay now: the output of the first listed pool that quotes the whole input.
     /// @dev Not view: quotes simulate swaps. Call it with eth_call.
     function quote(address tokenIn, address tokenOut, uint256 amountIn) external returns (uint256 amountOut) {
-        (,, amountOut) = _best(tokenIn, tokenOut, amountIn);
+        if (amountIn == 0 || amountIn > MAX_IN) return 0;
+        Venue[] storage list = _routes[_route(tokenIn, tokenOut)];
+        for (uint256 i; i < list.length; ++i) {
+            Venue memory v = list[i];
+            try quoter.quoteLiveExactInSingle(
+                v.pool, address(this), v.zeroForOne, uint128(amountIn), _limit(v.zeroForOne)
+            ) returns (
+                uint256 qIn, uint256 qOut
+            ) {
+                if (qIn == amountIn && qOut > 0) return qOut;
+            } catch {}
+        }
     }
 
     function swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 minOut, address to)
@@ -146,58 +164,48 @@ contract MetricAdapter is IVenueAdapter, Ownable2Step {
         returns (uint256 amountOut)
     {
         if (msg.sender != stoaRouter) revert OnlyRouter();
-        (address pool, bool zeroForOne, uint256 out) = _best(tokenIn, tokenOut, amountIn);
-        if (out == 0) revert NoPath();
-        (int128 paid, int128 got) = _fill(pool, tokenIn, zeroForOne, amountIn, to);
-        if (paid <= 0 || uint256(int256(paid)) != amountIn) revert Partial();
-        if (got >= 0) revert NoPath();
-        amountOut = uint256(-int256(got));
+        if (amountIn == 0 || amountIn > MAX_IN) revert NoPath();
+        Venue[] storage list = _routes[_route(tokenIn, tokenOut)];
+        uint256 n = list.length;
+        _activeIn = amountIn;
+        _activeToken = tokenIn;
+        for (uint256 i; i < n; ++i) {
+            Venue memory v = list[i];
+            _active = v.pool;
+            try IMetricPool(v.pool)
+                .swap(to, v.zeroForOne, int128(int256(amountIn)), _limit(v.zeroForOne), "", "") returns (
+                int128 d0, int128 d1
+            ) {
+                (int128 paid, int128 got) = v.zeroForOne ? (d0, d1) : (d1, d0);
+                if (paid <= 0 || uint256(int256(paid)) != amountIn || got >= 0) revert Partial();
+                amountOut = uint256(-int256(got));
+                break;
+            } catch {} // paused, or would fill only part of the input: try the next pool
+        }
+        _active = address(0);
+        _activeIn = 0;
+        _activeToken = address(0);
+        if (amountOut == 0) revert NoPath();
         if (amountOut < minOut) revert Slippage();
     }
 
-    /// @dev The pool has already sent the output to the recipient; pay it the input it asks for.
-    function metricOmmSwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata callbackData) external {
+    /// @dev The pool has already sent the output to the recipient; pay it the input, if it asks for exactly all of it.
+    function metricOmmSwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata) external {
         if (msg.sender != _active || msg.sender == address(0)) revert BadCallback();
         if (amount0Delta > 0 && amount1Delta > 0) revert BadCallback();
         int256 owed = amount0Delta > 0 ? amount0Delta : amount1Delta;
-        if (owed <= 0 || uint256(owed) > _activeIn) revert BadCallback();
-        IERC20(abi.decode(callbackData, (address))).safeTransfer(msg.sender, uint256(owed));
+        // a partial fill reverts the pool's swap; `swap` then tries the next pool
+        if (owed <= 0 || uint256(owed) != _activeIn) revert Partial();
+        _active = address(0); // one payment per pool swap
+        IERC20(_activeToken).safeTransfer(msg.sender, uint256(owed));
     }
 
     // ================================================================ internal
 
-    /// @dev Swap on `pool` with the callback armed for it; returns (input the pool took, output it sent), signed.
-    function _fill(address pool, address tokenIn, bool zeroForOne, uint256 amountIn, address to)
-        private
-        returns (int128 paid, int128 got)
-    {
-        _active = pool;
-        _activeIn = amountIn;
-        (int128 d0, int128 d1) = IMetricPool(pool)
-            .swap(to, zeroForOne, int128(int256(amountIn)), zeroForOne ? 0 : type(uint128).max, abi.encode(tokenIn), "");
-        _active = address(0);
-        _activeIn = 0;
-        (paid, got) = zeroForOne ? (d0, d1) : (d1, d0);
-    }
+    uint256 private constant MAX_IN = uint256(uint128(type(int128).max));
 
-    function _best(address a, address b, uint256 amountIn)
-        private
-        returns (address pool, bool zeroForOne, uint256 out)
-    {
-        if (a == b || amountIn == 0 || amountIn > uint256(uint128(type(int128).max))) return (address(0), false, 0);
-        Venue[] storage list = _venues[_pair(a, b)];
-        for (uint256 i; i < list.length; ++i) {
-            Venue memory v = list[i];
-            bool z = a == v.token0;
-            try quoter.quoteLiveExactInSingle(
-                v.pool, address(this), z, uint128(amountIn), z ? 0 : type(uint128).max
-            ) returns (
-                uint256 qIn, uint256 qOut
-            ) {
-                // a partial fill would leave input here: only full fills count
-                if (qIn == amountIn && qOut > out) (pool, zeroForOne, out) = (v.pool, z, qOut);
-            } catch {}
-        }
+    function _limit(bool zeroForOne) private pure returns (uint128) {
+        return zeroForOne ? 0 : type(uint128).max;
     }
 
     /// @dev `getImmutables()` returns a static struct that starts (factory, token0, token1, ...).
@@ -207,7 +215,7 @@ contract MetricAdapter is IVenueAdapter, Ownable2Step {
         (, t0, t1) = abi.decode(r, (address, address, address));
     }
 
-    function _pair(address a, address b) private pure returns (bytes32) {
-        return a < b ? keccak256(abi.encode(a, b)) : keccak256(abi.encode(b, a));
+    function _route(address tokenIn, address tokenOut) private pure returns (bytes32) {
+        return keccak256(abi.encode(tokenIn, tokenOut));
     }
 }

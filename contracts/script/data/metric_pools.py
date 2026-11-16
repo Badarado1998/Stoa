@@ -1,10 +1,15 @@
 """Rank Metric OMM pools on Robinhood Chain for Stoa's MetricAdapter and write metric-pools-4663.json.
 
-Lists every pool from the Metric factory's PoolCreated events, keeps pairs with WETH or USDG on one side, quotes each
-pool both ways through Metric's quoter (live oracle prices, paused pools refused) with a probe of PROBE_USD, and keeps
-the MAX_POOLS pools per pair that fill the probe fully and give the most. Run from this folder:
+Lists every pool from the Metric factory's PoolCreated events and keeps pairs with WETH or USDG on one side. For each
+direction of a pair it runs every pool's real swap path at a few order sizes (PROBES_USD), with eth_call and a code
+override of ../MetricSwapProbe.sol, which stops at the payment callback and reports what the pool would take and give.
+(Metric's quoter is not enough here: some tokenized-stock oracles answer a simulated quote but refuse the pool when it
+really swaps.) Then it picks the order of up to MAX_POOLS pools that loses the least against the best pool at each
+size. The adapter swaps on the first pool of the list that fills the whole order, so pools that pay the most on
+small orders come first and deeper pools after them. Run from this folder:
   python3 -I metric_pools.py        (public RPC, no key)
 """
+import itertools
 import json
 import os
 import time
@@ -12,14 +17,21 @@ import urllib.request
 
 RPC = os.environ.get("ROBINHOOD_RPC_URL") or "https://rpc.mainnet.chain.robinhood.com"
 FACTORY = "0x2a53833cc95548cf52c7b159110e22d3a9018f32"
-QUOTER = "0x3b9ea79f482094323d06064e637a7f4528560fcb"
 WETH = "0x0bd7d308f8e1639fab988df18a8011f41eacad73"
 USDG = "0x5fc5360d0400a0fd4f2af552add042d716f1d168"
 POOL_CREATED = "0x4b36a0ddce54edb36597ee7d496df06c53fe875aba9d7257534a38d5177899aa"
 MAX_POOLS = 4
-PROBE_USD = float(os.environ.get("PROBE_USD", "500"))
-MIN_DEPTH_USD = float(os.environ.get("MIN_DEPTH_USD", "200"))  # a pool must fill this much both ways to be listed
-QUOTE_SEL = "7a6efbfd"  # quoteLiveExactInSingle(address,address,bool,uint128,uint128)
+PROBES_USD = [float(x) for x in os.environ.get("PROBES_USD", "50,300,1500,5000").split(",")]
+SHORTLIST = 6  # pools considered for the order of a list (the best at some size, then the best at the middle size)
+SKIP_BPS = 0.05  # cost charged for each pool a swap tries before the one that fills (one reverted pool swap)
+KEEP_BPS = 0.5  # keep the adapter's current list unless the new order loses this much less (saves keeper gas)
+POOLS_FOR_SEL = "b7949fc4"  # poolsFor(address,address)
+# runtime code of ../MetricSwapProbe.sol (forge build; out/MetricSwapProbe.sol/MetricSwapProbe.json, deployedBytecode)
+PROBE_CODE = "0x608060405234801561000f575f5ffd5b5060043610610034575f3560e01c8063b0ea12f914610038578063c32510751461004d575b5f5ffd5b61004b6100463660046101b2565b610060565b005b61004b61005b366004610216565b610161565b8273ffffffffffffffffffffffffffffffffffffffff1663e24f08843084848661009a576fffffffffffffffffffffffffffffffff61009c565b5f5b6040518563ffffffff1660e01b815260040161011b949392919073ffffffffffffffffffffffffffffffffffffffff9490941684529115156020840152600f0b60408301526fffffffffffffffffffffffffffffffff16606082015260c0608082018190525f90820181905260e060a083018190528201526101000190565b60408051808303815f875af1158015610136573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061015a9190610292565b5050505050565b6040517fe47aa50e000000000000000000000000000000000000000000000000000000008152600481018590526024810184905260440160405180910390fd5b80600f0b81146101af575f5ffd5b50565b5f5f5f606084860312156101c4575f5ffd5b833573ffffffffffffffffffffffffffffffffffffffff811681146101e7575f5ffd5b9250602084013580151581146101fb575f5ffd5b9150604084013561020b816101a1565b809150509250925092565b5f5f5f5f60608587031215610229575f5ffd5b8435935060208501359250604085013567ffffffffffffffff81111561024d575f5ffd5b8501601f8101871361025d575f5ffd5b803567ffffffffffffffff811115610273575f5ffd5b876020828401011115610284575f5ffd5b949793965060200194505050565b5f5f604083850312156102a3575f5ffd5b82516102ae816101a1565b60208401519092506102bf816101a1565b80915050925092905056fea2646970667358221220bdb178c5b0b0e72439c649654bd236acf495a21f35db1422abec7dc81fd74b2564736f6c634300081c0033"
+PROBE_AT = "0x00000000000000000000000000000000005700b3"  # any empty address: the code is only put there for the call
+PROBE_FROM = "0x000000000000000000000000000000000000dead"  # a sender, as in a real transaction (not a zero-origin quote)
+PROBE_SEL = "b0ea12f9"  # probe(address,bool,int128)
+DELTAS_SEL = "e47aa50e"  # Deltas(int256,int256)
 
 
 def rpc(method, params):
@@ -59,19 +71,126 @@ def addr(a):
     return a[2:].lower().rjust(64, "0")
 
 
+def revert_data(call, overrides):
+    """eth_call that is expected to revert: returns the revert data ("" if none), retrying rate limits."""
+    req = urllib.request.Request(RPC, data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": "eth_call",
+                                                       "params": [call, "latest", overrides]}).encode(),
+                                 headers={"content-type": "application/json", "user-agent": "curl/8.5.0"})
+    err = None
+    for i in range(30):
+        time.sleep(0.1)
+        try:
+            out = json.load(urllib.request.urlopen(req, timeout=60))
+            if "result" in out:
+                return ""
+            e = out.get("error") or {}
+            if e.get("code") == 3 or "revert" in str(e.get("message", "")):
+                return e.get("data") or ""
+            err = e
+        except Exception as e:
+            err = e
+        time.sleep(min(3 * (i + 1), 60))
+    raise RuntimeError(f"eth_call failed: {err}")
+
+
+def signed(word_hex):
+    v = int(word_hex, 16)
+    return v - (1 << 256) if v >> 255 else v
+
+
 def quote(pool, zero_for_one, amount):
-    limit = 0 if zero_for_one else (1 << 128) - 1
-    data = "0x" + QUOTE_SEL + addr(pool) + word(0) + word(1 if zero_for_one else 0) + word(amount) + word(limit)
-    r = rpc("eth_call", [{"to": QUOTER, "data": data}, "latest"])
-    if not r or len(r) < 130:
+    """What `pool` pays for `amount` in a real swap now, if it takes all of it; else 0."""
+    data = "0x" + PROBE_SEL + addr(pool) + word(1 if zero_for_one else 0) + word(amount)
+    d = revert_data({"from": PROBE_FROM, "to": PROBE_AT, "data": data}, {PROBE_AT: {"code": PROBE_CODE}})
+    k = d.find(DELTAS_SEL)
+    if k < 0:
+        return 0  # refused before asking to be paid: paused, empty, or its oracle will not serve it
+    w = d[k + 8:k + 136]
+    if len(w) < 128:
         return 0
-    used, out = int(r[2:66], 16), int(r[66:130], 16)
-    return out if used == amount else 0
+    d0, d1 = signed(w[:64]), signed(w[64:])
+    paid, got = (d0, d1) if zero_for_one else (d1, d0)
+    return -got if paid == amount and got < 0 else 0
 
 
 def decimals(t):
     r = rpc("eth_call", [{"to": t, "data": "0x313ce567"}, "latest"])
     return int(r, 16) if r else 18
+
+
+def adapter_address():
+    """The deployed MetricAdapter, if there is one (its lists are kept when they are still about as good)."""
+    if os.environ.get("METRIC_ADAPTER"):
+        return os.environ["METRIC_ADAPTER"].lower()
+    here = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(here, "..", "..", "deployments", "4663-metric.json")
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)["metricAdapter"].lower()
+    return None
+
+
+def current_list(adapter, tin, tout):
+    if not adapter:
+        return []
+    r = rpc("eth_call", [{"to": adapter, "data": "0x" + POOLS_FOR_SEL + addr(tin) + addr(tout)}, "latest"])
+    if not r or len(r) < 130:
+        return []
+    n = int(r[66:130], 16)
+    return ["0x" + r[130 + 64 * i + 24: 130 + 64 * (i + 1)] for i in range(n)]
+
+
+def rank(ps, tin, tout, sizes, current=()):
+    """The ordered pool list for tin -> tout, or None if no pool fills the smallest size."""
+    outs = {}
+    for p, p0 in ps:
+        row = []
+        for a in sizes:  # a pool that cannot fill a size cannot fill a larger one either
+            row.append(quote(p, p0 == tin, a) if not row or row[-1] else 0)
+        if row[0]:
+            outs[p] = row
+    if not outs:
+        return None
+    best = [max(r[k] for r in outs.values()) for k in range(len(sizes))]
+    short = []
+    for k in range(len(sizes)):  # the best pool at each size, then the rest by the middle size
+        for p, r in outs.items():
+            if best[k] and r[k] == best[k] and p not in short:
+                short.append(p)
+    mid = len(sizes) // 2
+    for p in sorted(outs, key=lambda p: -outs[p][mid]):
+        if p not in short:
+            short.append(p)
+    short = short[:SHORTLIST]
+
+    def loss(order):
+        total = 0.0
+        for k in range(len(sizes)):
+            if not best[k]:
+                continue
+            for n, p in enumerate(order):
+                if outs[p][k]:
+                    total += (best[k] - outs[p][k]) * 1e4 / best[k] + n * SKIP_BPS
+                    break
+            else:
+                total += 1e4  # the list cannot fill a size some pool fills
+        return total + 1e-3 * len(order)  # same loss: the shorter list (fallbacks are added after)
+
+    orders = (o for n in range(1, min(MAX_POOLS, len(short)) + 1) for o in itertools.permutations(short, n))
+    order = min(orders, key=loss)
+    # fallbacks: a swap only reaches them when every pool before them fails (paused, emptied), so they cost nothing
+    # otherwise; most useful first
+    rest = sorted((p for p in short if p not in order), key=lambda p: [-x for x in reversed(outs[p])])
+    order = tuple(order) + tuple(rest[:MAX_POOLS - len(order)])
+    current = tuple(current)
+    if current and len(current) <= MAX_POOLS and all(p in outs for p in current):
+        if loss(current) <= loss(order) + KEEP_BPS and len(current) >= min(len(order), 2):
+            order = current
+    got = []
+    for k in range(len(sizes)):
+        got.append(next((outs[p][k] for p in order if outs[p][k]), 0))
+    return {"tokenIn": tin, "tokenOut": tout, "pools": list(order), "sizes": sizes, "best": best, "listed": got,
+            "lossBps": round(loss(order), 3)}
 
 
 def main():
@@ -85,36 +204,37 @@ def main():
         if WETH in (t0, t1) or USDG in (t0, t1):
             pairs.setdefault(tuple(sorted((t0, t1))), []).append((p, t0))
     print("pools", len(pools), "pairs with WETH or USDG", len(pairs))
-    # the probe: PROBE_USD of the WETH or USDG side, priced from the best WETH/USDG pool
+    # the sizes: PROBES_USD of the WETH or USDG side, priced from the best WETH/USDG pool
     usd_per_weth = 0
     for p, t0 in pairs.get(tuple(sorted((WETH, USDG))), []):
         usd_per_weth = max(usd_per_weth, quote(p, t0 == WETH, 10**18) / 1e6)
     print("ETH price", round(usd_per_weth, 2))
+    adapter = adapter_address()
+    print("adapter", adapter)
     out = []
     for (t0, t1), ps in sorted(pairs.items(), key=lambda kv: -len(kv[1])):
         base = USDG if USDG in (t0, t1) else WETH  # WETH/USDG: probe with USDG
+        other = t1 if base == t0 else t0
         unit_usd = 1e6 if base == USDG else 1e18 / usd_per_weth
-        probe = int(PROBE_USD * unit_usd)
-        need = int(MIN_DEPTH_USD * unit_usd)
-        ranked = []
-        for p, p0 in ps:
-            base_is_0 = base == p0
-            got = quote(p, base_is_0, probe)  # base -> other token
-            if not got:
-                continue
-            back = quote(p, not base_is_0, got * need // probe)  # the other way, about MIN_DEPTH_USD
-            if not back:
-                continue
-            ranked.append((got, p))
-        ranked.sort(reverse=True)
-        if ranked:
-            keep = [p for _, p in ranked[:MAX_POOLS]]
-            out.append({"token0": t0, "token1": t1, "pools": keep, "probe": probe, "best": ranked[0][0]})
-            print(t0[:10], t1[:10], "pools", len(ps), "quoting", len(ranked), "kept", len(keep))
+        sizes = [int(usd * unit_usd) for usd in PROBES_USD]
+        fwd = rank(ps, base, other, sizes, current_list(adapter, base, other))
+        if not fwd:
+            continue
+        out.append(fwd)
+        # the other way: the sizes in the other token are what the best pool gave for the base sizes
+        back_sizes = [max(fwd["best"][k], 1) for k in range(len(sizes))]
+        if 0 in fwd["best"]:  # a size no pool filled: size the reverse from the smallest filled one
+            done = [(s, b) for s, b in zip(sizes, fwd["best"]) if b]
+            s0, b0 = done[0]
+            back_sizes = [b0 * s // s0 for s in sizes]
+        back = rank(ps, other, base, back_sizes, current_list(adapter, other, base))
+        if back:
+            out.append(back)
+        print(t0[:10], t1[:10], "pools", len(ps), "->", len(fwd["pools"]), "<-", len(back["pools"]) if back else 0)
     here = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(here, "metric-pools-4663.json"), "w") as f:
         json.dump(out, f, indent=1)
-    print("wrote", len(out), "pairs")
+    print("wrote", len(out), "directions")
 
 
 if __name__ == "__main__":

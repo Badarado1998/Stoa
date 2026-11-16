@@ -11,8 +11,8 @@ import {VenuesRobinhood} from "../script/VenuesRobinhood.sol";
 import {VenuePackageRobinhood} from "../script/VenuePackageRobinhood.sol";
 
 /// @notice MetricAdapter against the LIVE Metric OMM pools on Robinhood Chain (WETH/USDG and tokenized stocks), with
-///         the pool lists the keeper script ranks (script/data/metric-pools-4663.json), then through the live router
-///         once the timelock has added the adapter.
+///         the ordered pool lists the keeper script ranks per direction (script/data/metric-pools-4663.json), then
+///         through the live router once the timelock has added the adapter.
 /// Skipped unless ROBINHOOD_RPC_URL is set:  ROBINHOOD_RPC_URL=... forge test --match-contract ForkRobinhoodMetric -vv
 contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageRobinhood {
     address constant METRIC_FACTORY = 0x2a53833cc95548cf52c7b159110e22D3a9018f32;
@@ -39,49 +39,76 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         while (vm.keyExistsJson(json, string.concat("$[", vm.toString(n), "]"))) ++n;
         for (uint256 i; i < n; ++i) {
             string memory k = string.concat("$[", vm.toString(i), "]");
-            address t0 = vm.parseJsonAddress(json, string.concat(k, ".token0"));
-            address t1 = vm.parseJsonAddress(json, string.concat(k, ".token1"));
+            address tin = vm.parseJsonAddress(json, string.concat(k, ".tokenIn"));
+            address tout = vm.parseJsonAddress(json, string.concat(k, ".tokenOut"));
             address[] memory ps = vm.parseJsonAddressArray(json, string.concat(k, ".pools"));
             vm.prank(keeper);
-            metric.setPools(t0, t1, ps);
+            metric.setPools(tin, tout, ps);
         }
         vm.deal(alice, 100 ether);
     }
 
-    function _quoterBest(address a, address b, uint256 amt) internal returns (uint256 best) {
+    /// @dev Quotes run as the web and the API run them: eth_call with no sender, so tx.origin is zero. Some Metric
+    ///      oracles answer only such simulations or a pool that is mid-swap.
+    function _quote(address a, address b, uint256 amt) internal returns (uint256) {
+        vm.prank(alice, address(0));
+        return metric.quote(a, b, amt);
+    }
+
+    function _routerQuote(address a, address b, uint256 amt) internal returns (StoaRouter.Quote memory) {
+        vm.prank(alice, address(0));
+        return router.quote(a, b, amt);
+    }
+
+    /// @dev Metric's own quoter on one pool: the output if it fills the whole input, else 0.
+    function _q(address pool, address a, uint256 amt) internal returns (uint256) {
+        (bool ok, bytes memory r) = pool.staticcall(abi.encodeWithSignature("getImmutables()"));
+        require(ok, "pool");
+        (, address p0) = abi.decode(r, (address, address));
+        bool z = a == p0;
+        vm.prank(alice, address(0));
+        try IMetricQuoter(METRIC_QUOTER)
+            .quoteLiveExactInSingle(pool, address(metric), z, uint128(amt), z ? 0 : type(uint128).max) returns (
+            uint256 qi, uint256 qo
+        ) {
+            return qi == amt ? qo : 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    /// @dev (first listed pool that fills, best listed pool)
+    function _listed(address a, address b, uint256 amt) internal returns (uint256 first, uint256 best) {
         address[] memory ps = metric.poolsFor(a, b);
-        bool z = a < b;
         for (uint256 i; i < ps.length; ++i) {
-            try IMetricQuoter(METRIC_QUOTER)
-                .quoteLiveExactInSingle(ps[i], address(metric), z, uint128(amt), z ? 0 : type(uint128).max) returns (
-                uint256 qi, uint256 qo
-            ) {
-                if (qi == amt && qo > best) best = qo;
-            } catch {}
+            uint256 o = _q(ps[i], a, amt);
+            if (first == 0) first = o;
+            if (o > best) best = o;
         }
     }
 
     function test_fork_quotesMatchMetricsQuoter() public {
         if (!on) return vm.skip(true);
-        uint256[3] memory sizes = [uint256(0.1 ether), 1 ether, 5 ether];
+        uint256[3] memory sizes = [uint256(0.01 ether), 0.1 ether, 1 ether];
         for (uint256 i; i < 3; ++i) {
-            uint256 q = metric.quote(WETH, USDG, sizes[i]);
-            assertEq(q, _quoterBest(WETH, USDG, sizes[i]), "adapter = best pool");
-            uint256 today = router.quote(address(0), USDG, sizes[i]).amountOut;
+            uint256 q = _quote(WETH, USDG, sizes[i]);
+            (uint256 first, uint256 best) = _listed(WETH, USDG, sizes[i]);
+            assertEq(q, first, "adapter = first listed pool that fills");
+            if (best > 0) console2.log("  best listed pool pays more by (bps x100):", (best - q) * 1e6 / best);
+            uint256 today = _routerQuote(address(0), USDG, sizes[i]).amountOut;
             console2.log("WETH in (wei):", sizes[i]);
             console2.log("  metric USDG (before the router fee):", q, " live router today:", today);
             assertGt(q, 0, "metric quotes WETH/USDG");
         }
-        assertGt(metric.quote(USDG, WETH, 1000e6), 0, "metric quotes USDG -> WETH");
-        // tokenized stocks quote while their oracle is live (US market hours); otherwise the pools refuse
-        console2.log("500 USDG -> TSLA on metric (0 outside market hours):", metric.quote(USDG, TSLA, 500e6));
-        assertEq(metric.quote(USDG, makeAddr("nothing"), 1e6), 0, "no pools, no quote");
+        assertGt(_quote(USDG, WETH, 1000e6), 0, "metric quotes USDG -> WETH");
+        console2.log("500 USDG -> TSLA on metric (0 while its oracle is closed):", _quote(USDG, TSLA, 500e6));
+        assertEq(_quote(USDG, makeAddr("nothing"), 1e6), 0, "no pools, no quote");
     }
 
     function test_fork_swapPaysTheQuoteAndKeepsNothing() public {
         if (!on) return vm.skip(true);
         uint256 amt = 1 ether;
-        uint256 q = metric.quote(WETH, USDG, amt);
+        uint256 q = _quote(WETH, USDG, amt);
         deal(WETH, address(metric), amt); // the router sends the input before calling swap
         vm.prank(LIVE_ROUTER);
         uint256 got = metric.swap(WETH, USDG, amt, q, alice);
@@ -91,8 +118,8 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         assertEq(IERC20(USDG).balanceOf(address(metric)), 0, "no output left behind");
 
         uint256 usd = 500e6;
-        uint256 qt = metric.quote(USDG, TSLA, usd);
-        if (qt == 0) return; // stock oracle closed (outside US market hours): nothing to fill
+        uint256 qt = _quote(USDG, TSLA, usd);
+        if (qt == 0) return; // stock oracle closed or pool empty: nothing to fill
         deal(USDG, address(metric), usd);
         vm.prank(LIVE_ROUTER);
         metric.swap(USDG, TSLA, usd, qt, alice);
@@ -107,7 +134,7 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         address pool = metric.poolsFor(WETH, USDG)[0];
         vm.prank(pool); // a real pool, but not mid-swap
         vm.expectRevert(MetricAdapter.BadCallback.selector);
-        metric.metricOmmSwapCallback(1, -1, abi.encode(WETH));
+        metric.metricOmmSwapCallback(1, -1, "");
     }
 
     function test_fork_rejectsOtherPairsAndForeignPools() public {
@@ -127,19 +154,75 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         metric.setPools(WETH, USDG, ps);
     }
 
+    /// Tokenized-stock pools read an oracle that only answers a pool mid-swap or a simulation with no sender
+    /// (tx.origin zero), which is how the web and the API quote (eth_call without `from`). So: quote as a
+    /// simulation, then swap as the router does in a real transaction.
+    function test_fork_stockPoolsQuoteInSimulationAndSwapForAnyone() public {
+        if (!on) return vm.skip(true);
+        string memory json = vm.readFile("script/data/metric-pools-4663.json");
+        uint256 filled;
+        for (uint256 i; vm.keyExistsJson(json, string.concat("$[", vm.toString(i), "]")); ++i) {
+            string memory k = string.concat("$[", vm.toString(i), "]");
+            address tin = vm.parseJsonAddress(json, string.concat(k, ".tokenIn"));
+            address tout = vm.parseJsonAddress(json, string.concat(k, ".tokenOut"));
+            if (tin != USDG || tout == WETH) continue;
+            uint256 amt = 100e6;
+            uint256 q = _quote(USDG, tout, amt);
+            if (q == 0) continue; // closed or empty right now
+            uint256 snap = vm.snapshotState();
+            deal(USDG, address(metric), amt);
+            vm.prank(LIVE_ROUTER);
+            uint256 got = metric.swap(USDG, tout, amt, q, alice);
+            assertEq(got, q, "stock bought at the simulated quote");
+            assertEq(IERC20(USDG).balanceOf(address(metric)), 0, "no USDG left behind");
+            vm.revertToState(snap);
+            ++filled;
+        }
+        console2.log("USDG -> tokenized stock directions filled:", filled);
+    }
+
+    /// One pool swap per fill: no on-chain quotes (the first version quoted every listed pool first: ~578k gas).
+    function test_fork_swapGas() public {
+        if (!on) return vm.skip(true);
+        uint256[3] memory sizes = [uint256(0.01 ether), 0.1 ether, 1 ether];
+        for (uint256 i; i < 3; ++i) {
+            uint256 snap = vm.snapshotState();
+            uint256 q = _quote(WETH, USDG, sizes[i]);
+            deal(WETH, address(metric), sizes[i]);
+            vm.prank(LIVE_ROUTER);
+            uint256 g = gasleft();
+            uint256 got = metric.swap(WETH, USDG, sizes[i], q, alice);
+            uint256 used = g - gasleft();
+            console2.log("adapter.swap WETH -> USDG", sizes[i], "gas", used);
+            assertEq(got, q, "fills at the quote");
+            assertLt(used, 300_000, "one pool swap");
+            vm.revertToState(snap);
+        }
+        uint256 usd = 2_000e6;
+        uint256 qu = _quote(USDG, WETH, usd);
+        if (qu == 0) return; // every listed pool paused right now
+        deal(USDG, address(metric), usd);
+        vm.prank(LIVE_ROUTER);
+        uint256 g2 = gasleft();
+        assertEq(metric.swap(USDG, WETH, usd, qu, alice), qu);
+        console2.log("adapter.swap 2000 USDG -> WETH gas", g2 - gasleft());
+    }
+
     /// The timelock adds the adapter to the live router (propose, wait, execute); then a real ETH swap uses Metric
     /// whenever it quotes more than every other venue.
     function test_fork_liveRouterSwapsThroughMetric() public {
         if (!on) return vm.skip(true);
+        uint256 now_ = block.timestamp;
         vm.prank(LIVE_TIMELOCK);
         router.propose(false, address(metric));
-        vm.warp(block.timestamp + router.delay() + 1);
+        vm.warp(now_ + router.delay() + 1);
         vm.prank(LIVE_TIMELOCK);
         router.execute(false, address(metric));
+        vm.warp(now_); // back to the fork's time, so oracle prices are fresh again
         assertTrue(router.isAdapter(address(metric)), "metric is a router venue");
 
         uint256 amt = 1 ether;
-        StoaRouter.Quote memory q = router.quote(address(0), USDG, amt);
+        StoaRouter.Quote memory q = _routerQuote(address(0), USDG, amt);
         console2.log("router quote 1 ETH -> USDG:", q.amountOut);
         console2.log("leg1 venue:", q.leg1.venue);
         uint256 before = IERC20(USDG).balanceOf(alice);
@@ -154,8 +237,8 @@ contract ForkRobinhoodMetricTest is RouterHelper, VenuesRobinhood, VenuePackageR
         deal(USDG, alice, 500e6);
         vm.prank(alice);
         IERC20(USDG).approve(LIVE_ROUTER, 500e6);
-        StoaRouter.Quote memory qs = router.quote(USDG, TSLA, 500e6);
-        uint256 viaMetric = metric.quote(USDG, TSLA, 500e6);
+        StoaRouter.Quote memory qs = _routerQuote(USDG, TSLA, 500e6);
+        uint256 viaMetric = _quote(USDG, TSLA, 500e6);
         console2.log("500 USDG -> TSLA, router:", qs.amountOut, " metric alone:", viaMetric);
         console2.log("  venue:", qs.leg1.venue);
         assertGe(qs.amountOut, viaMetric - viaMetric * router.fallbackFeeBps() / 10_000, "never below metric");

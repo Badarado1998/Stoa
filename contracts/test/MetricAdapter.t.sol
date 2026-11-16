@@ -25,6 +25,9 @@ contract MockMetricPool {
     uint256 public fillBps = 10_000;
     uint256 public overAsk;
     uint256 public swapFillBps = 10_000; // what a real swap fills, which can differ from the quote
+    bool public dead; // paused: quotes and swaps revert
+    bool public lie; // asks for the whole input, then reports a smaller one
+    bool public twice; // asks to be paid twice
 
     constructor(address f, address t0, address t1) {
         (factory, token0, token1) = (f, t0, t1);
@@ -46,11 +49,24 @@ contract MockMetricPool {
         swapFillBps = bps;
     }
 
+    function setDead(bool v) external {
+        dead = v;
+    }
+
+    function setLie(bool v) external {
+        lie = v;
+    }
+
+    function setTwice(bool v) external {
+        twice = v;
+    }
+
     function getImmutables() external view returns (address, address, address, uint256) {
         return (factory, token0, token1, 0);
     }
 
     function preview(uint256 amountIn) public view returns (uint256 used, uint256 out) {
+        require(!dead, "Paused");
         used = amountIn * fillBps / 10_000;
         out = used * num / den;
     }
@@ -68,6 +84,8 @@ contract MockMetricPool {
         int256 ask = int256(used + overAsk);
         (int256 a0, int256 a1) = zeroForOne ? (ask, -int256(out)) : (-int256(out), ask);
         _collect(zeroForOne ? token0 : token1, a0, a1, uint256(ask), cb);
+        if (twice) MetricAdapter(msg.sender).metricOmmSwapCallback(a0, a1, cb);
+        if (lie) (a0, a1) = zeroForOne ? (a0 - 1, a1) : (a0, a1 - 1);
         return (int128(a0), int128(a1));
     }
 
@@ -126,9 +144,14 @@ contract MetricAdapterTest is Test {
         (l[0], l[1]) = (x, y);
     }
 
-    function _set() internal {
+    function _one(address x) internal pure returns (address[] memory l) {
+        l = new address[](1);
+        l[0] = x;
+    }
+
+    function _setAB(address[] memory pools) internal {
         vm.prank(keeper);
-        metric.setPools(address(a), address(b), _list(address(p1), address(p2)));
+        metric.setPools(address(a), address(b), pools);
     }
 
     function _swap(address tin, address tout, uint256 amt, uint256 minOut) internal returns (uint256) {
@@ -137,29 +160,36 @@ contract MetricAdapterTest is Test {
         return metric.swap(tin, tout, amt, minOut, user);
     }
 
-    function test_quotePicksTheBestPoolBothWays() public {
-        _set();
-        assertEq(metric.quote(address(a), address(b), 100), 300, "p2 pays more");
-        assertEq(metric.quote(address(b), address(a), 100), 300, "either token order");
-        p2.setRate(1, 1);
-        assertEq(metric.quote(address(a), address(b), 100), 200, "now p1");
+    function test_quoteAndSwapUseTheFirstPoolThatFills() public {
+        _setAB(_list(address(p1), address(p2)));
+        assertEq(metric.quote(address(a), address(b), 100), 200, "list order decides, not the rate");
+        _setAB(_list(address(p2), address(p1)));
+        assertEq(metric.quote(address(a), address(b), 100), 300, "p2 first");
+        assertEq(_swap(address(a), address(b), 100, 300), 300, "swap follows the quote");
+        assertEq(metric.quote(address(b), address(a), 100), 0, "each direction has its own list");
+        assertEq(metric.poolsFor(address(b), address(a)).length, 0);
+        assertEq(metric.poolsFor(address(a), address(b))[0], address(p2));
     }
 
     function test_swapPaysTheRecipientAndKeepsNothing() public {
-        _set();
+        _setAB(_one(address(p2)));
+        vm.prank(keeper); // the other direction, on a pool with the other token order
+        metric.setPools(address(b), address(a), _one(address(p1)));
         uint256 out = _swap(address(a), address(b), 1e18, 3e18);
         assertEq(out, 3e18);
         assertEq(b.balanceOf(user), 3e18);
         assertEq(a.balanceOf(address(metric)), 0, "input fully paid to the pool");
-        out = _swap(address(b), address(a), 5e6, 15e6); // the other direction, on a pool with the other token order
-        assertEq(a.balanceOf(user), 15e6);
+        out = _swap(address(b), address(a), 5e6, 10e6);
+        assertEq(a.balanceOf(user), 10e6);
         assertEq(b.balanceOf(address(metric)), 0);
     }
 
-    function test_partialFillsNeverQuoteNorSwap() public {
-        _set();
-        p1.setFill(5000);
+    function test_partialPoolsAreSkipped() public {
+        _setAB(_list(address(p2), address(p1)));
         p2.setFill(5000);
+        assertEq(metric.quote(address(a), address(b), 100), 200, "p2 fills half: p1 quotes");
+        assertEq(_swap(address(a), address(b), 100, 200), 200, "and p1 fills");
+        p1.setFill(5000);
         assertEq(metric.quote(address(a), address(b), 100), 0, "partial fills are not quotes");
         a.mint(address(metric), 100);
         vm.prank(router);
@@ -167,43 +197,81 @@ contract MetricAdapterTest is Test {
         metric.swap(address(a), address(b), 100, 0, user);
     }
 
-    function test_fillBelowTheQuotedInputReverts() public {
-        _set();
+    function test_poolThatFillsLessWhenItRunsIsSkipped() public {
         p2.setSwapFill(9000); // quoted in full, fills 90% when it runs
+        uint256 p2a = a.balanceOf(address(p2));
+        _setAB(_list(address(p2), address(p1)));
+        assertEq(metric.quote(address(a), address(b), 100), 300);
+        a.mint(address(metric), 100);
+        vm.prank(router);
+        vm.expectRevert(MetricAdapter.Slippage.selector); // p1 pays 200: the quote's minimum stops it
+        metric.swap(address(a), address(b), 100, 300, user);
+        assertEq(_swap(address(a), address(b), 100, 0), 200, "without a minimum, p1 fills");
+        assertEq(a.balanceOf(address(p2)), p2a, "p2 was never paid");
+        _setAB(_one(address(p2)));
+        a.mint(address(metric), 100);
+        vm.prank(router);
+        vm.expectRevert(MetricAdapter.NoPath.selector);
+        metric.swap(address(a), address(b), 100, 0, user);
+    }
+
+    function test_pausedPoolsAreSkipped() public {
+        _setAB(_list(address(p2), address(p1)));
+        p2.setDead(true);
+        assertEq(metric.quote(address(a), address(b), 100), 200);
+        assertEq(_swap(address(a), address(b), 100, 200), 200);
+    }
+
+    function test_poolsThatAskForMoreOrTwiceAreNeverPaid() public {
+        a.mint(address(metric), 1000); // a stray balance here must not be handed over
+        p2.setOverAsk(1);
+        _setAB(_one(address(p2)));
+        a.mint(address(metric), 100);
+        vm.prank(router);
+        vm.expectRevert(MetricAdapter.NoPath.selector);
+        metric.swap(address(a), address(b), 100, 0, user);
+        p2.setOverAsk(0);
+        p2.setTwice(true);
+        vm.prank(router);
+        vm.expectRevert(MetricAdapter.NoPath.selector);
+        metric.swap(address(a), address(b), 100, 0, user);
+        _setAB(_list(address(p2), address(p1)));
+        vm.prank(router);
+        assertEq(metric.swap(address(a), address(b), 100, 0, user), 200, "skipped for p1");
+        assertEq(a.balanceOf(address(metric)), 1000, "only the input was paid, once");
+    }
+
+    function test_poolThatMisreportsItsFillReverts() public {
+        _setAB(_list(address(p2), address(p1)));
+        p2.setLie(true);
         a.mint(address(metric), 100);
         vm.prank(router);
         vm.expectRevert(MetricAdapter.Partial.selector);
         metric.swap(address(a), address(b), 100, 0, user);
     }
 
-    function test_poolThatAsksForMoreThanItWasGivenReverts() public {
-        _set();
-        p2.setOverAsk(1);
-        a.mint(address(metric), 1000); // a stray balance here must not be handed over
-        a.mint(address(metric), 100);
-        vm.prank(router);
-        vm.expectRevert(MetricAdapter.BadCallback.selector);
-        metric.swap(address(a), address(b), 100, 0, user);
-    }
-
     function test_slippageAndRouterOnly() public {
-        _set();
+        _setAB(_one(address(p2)));
         a.mint(address(metric), 100);
         vm.expectRevert(MetricAdapter.OnlyRouter.selector);
         metric.swap(address(a), address(b), 100, 0, user);
         vm.prank(router);
         vm.expectRevert(MetricAdapter.Slippage.selector);
         metric.swap(address(a), address(b), 100, 301, user);
+        vm.prank(router);
+        vm.expectRevert(MetricAdapter.NoPath.selector);
+        metric.swap(address(a), address(b), 0, 0, user);
     }
 
     function test_callbackOnlyFromThePoolBeingSwapped() public {
-        _set();
+        _setAB(_one(address(p2)));
         a.mint(address(metric), 100);
         vm.prank(address(p2)); // a listed pool, but no swap in progress
         vm.expectRevert(MetricAdapter.BadCallback.selector);
-        metric.metricOmmSwapCallback(100, -1, abi.encode(address(a)));
+        metric.metricOmmSwapCallback(100, -1, "");
         vm.expectRevert(MetricAdapter.BadCallback.selector);
-        metric.metricOmmSwapCallback(100, -1, abi.encode(address(a)));
+        metric.metricOmmSwapCallback(100, -1, "");
+        assertEq(a.balanceOf(address(metric)), 100);
     }
 
     function test_setPoolsChecks() public {
@@ -221,6 +289,16 @@ contract MetricAdapterTest is Test {
         vm.prank(keeper);
         vm.expectRevert(abi.encodeWithSelector(MetricAdapter.WrongPair.selector, address(p1)));
         metric.setPools(address(a), address(c), _list(address(p1), address(p2)));
+        vm.prank(keeper);
+        vm.expectRevert(abi.encodeWithSelector(MetricAdapter.WrongPair.selector, address(p1)));
+        metric.setPools(address(c), address(b), _one(address(p1)));
+
+        vm.prank(keeper);
+        vm.expectRevert(MetricAdapter.BadPair.selector);
+        metric.setPools(address(a), address(a), _one(address(p1)));
+        vm.prank(keeper);
+        vm.expectRevert(MetricAdapter.BadPair.selector);
+        metric.setPools(address(0), address(b), _one(address(p1)));
 
         vm.prank(keeper);
         vm.expectRevert(abi.encodeWithSelector(MetricAdapter.Duplicate.selector, address(p1)));
@@ -231,7 +309,8 @@ contract MetricAdapterTest is Test {
         vm.expectRevert(MetricAdapter.TooMany.selector);
         metric.setPools(address(a), address(b), five);
 
-        vm.prank(owner); // the owner may set lists too, and an empty list turns the pair off
+        _setAB(_list(address(p1), address(p2)));
+        vm.prank(owner); // the owner may set lists too, and an empty list turns the direction off
         metric.setPools(address(a), address(b), new address[](0));
         assertEq(metric.quote(address(a), address(b), 100), 0);
     }

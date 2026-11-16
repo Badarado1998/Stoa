@@ -7,7 +7,7 @@ import {VenuePackageRobinhood} from "./VenuePackageRobinhood.sol";
 
 /// @notice Deploys the Metric OMM adapter for the live Robinhood Chain router and writes its address to
 ///         deployments/4663-metric.json (committed under contracts/, so publishing it starts no web build).
-///         Owner: the 48h timelock. Keeper: the keeper wallet, which keeps each pair's pool list current
+///         Owner: the 48h timelock. Keeper: the keeper wallet, which keeps each swap direction's ranked pool list current
 ///         (script/metric-set-pools.sh). The adapter does nothing until the Safe adds it to the router through the
 ///         timelock (script/RolloutMetricRobinhood.s.sol, run by rollout-robinhood-venues.yml).
 contract DeployMetricRobinhood is Script, VenuePackageRobinhood {

@@ -1,7 +1,7 @@
 name: Deploy Metric adapter (Robinhood Chain)
 # Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
 # Deploys MetricAdapter (Metric OMM pools: WETH/USDG and tokenized stocks against USDG) for the live router, owned by
-# the 48h timelock, with the keeper wallet as the pool-list keeper; points it at the best Metric pools of each pair;
+# the 48h timelock, with the keeper wallet as the pool-list keeper; sets the ranked Metric pool list of each swap direction;
 # verifies it on Sourcify; and commits its address to contracts/deployments/4663-metric.json (contracts/ only, so no
 # web build). It routes nothing until the admin Safe adds it to the router through the timelock: the hourly
 # rollout-robinhood-venues.yml does those three steps once that file exists. Gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY
