@@ -7,6 +7,11 @@
 * [FAQ](faq.md)
 * [Contact](contact.md)
 
+## Guides
+
+* [How to swap on Robinhood Chain](swap-robinhood-chain.md)
+* [How to buy stock tokens](buy-stock-tokens.md)
+
 ## How pools work
 
 * [Active pools](active-pools.md)
