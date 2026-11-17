@@ -21,3 +21,4 @@ maker/midfile
 .DS_Store
 contracts/script/data/v4-gas-report.json
 contracts/script/data/v4-gas-report.md
+__pycache__/
