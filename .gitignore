@@ -19,3 +19,5 @@ maker/e2e.log
 maker/KILL
 maker/midfile
 .DS_Store
+contracts/script/data/v4-gas-report.json
+contracts/script/data/v4-gas-report.md

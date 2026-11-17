@@ -87,6 +87,32 @@ jobs:
       - name: List routable bridged tokens
         working-directory: contracts/script/data
         run: python3 -I bridged_tokens.py || echo "::warning::bridged token scan failed; keeping yesterday's list"
+      - name: Robinhood Chain - gas report of the listed V4 keys
+        # Every listed key's swap simulation, once, read-only (script/data/v4_gas_report.py). A key whose pool cannot
+        # fill the trade walks the tick range and makes every quote and swap of its pair expensive (Hey Research Lab,
+        # UniswapV4AdapterV3 review, L-1): list those keys in the run summary and in a GitHub issue (label v4-gas),
+        # updated only when a key shows up that the last report did not list. Nothing is removed automatically.
+        if: ${{ always() }}
+        continue-on-error: true
+        timeout-minutes: 40
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd contracts/script/data
+          python3 -I v4_gas_report.py || { echo "::warning::V4 gas report failed"; exit 0; }
+          cat v4-gas-report.md >> "$GITHUB_STEP_SUMMARY"
+          heavy=$(jq -r '. as $r | [.keys[] | select(.gas == null or .gas > $r.heavy) | .key | "(\(.currency0),\(.currency1),\(.fee),\(.tickSpacing),\(.hooks))"] | unique | .[]' v4-gas-report.json)
+          test -n "$heavy" || { echo "no heavy keys"; exit 0; }
+          echo "::warning::$(echo "$heavy" | wc -l) V4 keys cost more than $(jq .heavy v4-gas-report.json) gas per simulation (see the summary)"
+          body=$(printf '%s\n\nRun: %s' "$(cat v4-gas-report.md)" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}")
+          n=$(gh issue list --state open --label v4-gas --json number --jq '.[0].number')
+          if [ -z "$n" ]; then gh label create v4-gas --color FBCA04 2>/dev/null; gh issue create --title "Expensive V4 pool keys" --label v4-gas --body "$body"; exit 0; fi
+          c=$(gh api "repos/${{ github.repository }}/issues/$n" --jq .comments)
+          if [ "$c" -gt 0 ]; then last=$(gh api "repos/${{ github.repository }}/issues/$n/comments?per_page=100&page=$(( (c + 99) / 100 ))" --jq 'last | .body')
+          else last=$(gh api "repos/${{ github.repository }}/issues/$n" --jq .body); fi
+          new=$(echo "$heavy" | while read -r k; do echo "$last" | grep -qF "$k" || echo "$k"; done)
+          test -n "$new" || { echo "no key the last report did not list"; exit 0; }
+          gh issue comment "$n" --body "$body"
       - name: Alert on full pairs
         # A pool kept out of a full pair may be a pair's real pool held out by planted ones (Hey Research Lab,
         # UniswapV4AdapterV3 review, Low 2): open an issue (emails the repo owner), comment only when a pool shows up that the last report did not list.
