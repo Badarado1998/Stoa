@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import WalletButton from "./WalletButton";
 import NetSwitch from "./NetSwitch";
 
@@ -14,6 +14,24 @@ export default function Header({ extra }: { extra?: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
+  const menuRef = useRef<HTMLElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // the open menu covers the page, so it closes as soon as the page scrolls, on a tap outside it and on Escape
+  useEffect(() => {
+    if (!open) return;
+    const start = scrollY;
+    const close = () => setOpen(false);
+    const onScroll = () => { if (Math.abs(scrollY - start) > 12) close(); };
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!menuRef.current?.contains(t) && !btnRef.current?.contains(t)) close();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("pointerdown", onDown);
+    addEventListener("keydown", onKey);
+    return () => { removeEventListener("scroll", onScroll); removeEventListener("pointerdown", onDown); removeEventListener("keydown", onKey); };
+  }, [open]);
   const [solid, setSolid] = useState(false);
   useEffect(() => {
     const f = () => setSolid(scrollY > 8);
@@ -37,12 +55,12 @@ export default function Header({ extra }: { extra?: ReactNode }) {
           {extra}
           <NetSwitch />
           <WalletButton />
-          <button className="ghost menu-btn" type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <button ref={btnRef} className="ghost menu-btn" type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
           </button>
         </div>
       </header>
-      <nav className={`menu${open ? " open" : ""}`} aria-label="Menu">
+      <nav ref={menuRef} className={`menu${open ? " open" : ""}`} aria-label="Menu" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
         {MENU.map(([h, l, n]) => <Link key={h} href={h} className={on(h) ? "on" : undefined}>{l} {n && <small>{n}</small>}</Link>)}
         <a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a>
       </nav>
