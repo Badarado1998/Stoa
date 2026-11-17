@@ -15,8 +15,9 @@ Env: ROBINHOOD_RPC_URL (default: the public RPC).
 
 The --fail mode also watches UniswapV4AdapterV2 (keeper/owner-only registration), for as long as it runs, after Hey
 Research Lab's re-test showed a full pair could still lose its real pool through the keeper's daily registrations:
-  - any Unregistered event on V2 whose transaction is not listed in data/v4v2-reviewed.json fails the check (the keeper
-    never removes keys on its own any more; a hand change is reviewed, then its transaction hash is added there);
+  - any Unregistered event on V2 whose transaction or pool id is not listed in data/v4v2-reviewed.json fails the check
+    (the keeper never removes keys on its own any more; a hand change is reviewed and its pool ids are added there
+    before it is sent, or its transaction hash after);
   - keysFor(WETH, STOA) must still hold the canonical $STOA pool (Pons graduation pool) on V2, and on the first adapter
     while the router still lists it.
 """
@@ -141,7 +142,9 @@ def v2_status(old_listed):
             reviewed = {h.lower() for h in json.load(f)}
     except (OSError, ValueError):
         reviewed = set()
-    unreviewed = sorted({l["transactionHash"].lower() for l in logs_of(V2, UNREGISTERED, V2_FROM)} - reviewed)
+    # an entry is either a reviewed transaction hash or the pool id of a key whose removal was reviewed beforehand
+    unreviewed = sorted({l["transactionHash"].lower() for l in logs_of(V2, UNREGISTERED, V2_FROM)
+                         if l["transactionHash"].lower() not in reviewed and l["topics"][1].lower() not in reviewed})
     stoa = {"v2": STOA_KEY in keys_for(V2, WETH, STOA)}
     if old_listed:
         stoa["old"] = STOA_KEY in keys_for(OLD, WETH, STOA)
