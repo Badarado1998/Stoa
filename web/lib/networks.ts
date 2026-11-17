@@ -132,7 +132,7 @@ export const ROBINHOOD: Net = {
   deployed: Boolean(rhContracts.router),
   deployBlock: BigInt(D.block ?? 0),
   venues: Object.fromEntries(
-    ([[D.uniswapV2Adapter, "Uniswap V2"], [D.uniswapV3Adapter, "Uniswap V3"], [D.uniswapV4Adapter, "Uniswap V4"], [D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"], [D.ponsAdapter, "Pons curve"], [D.metricAdapter, "Metric"], [D.uniswapV4AdapterV2, "Uniswap V4"]] as const)
+    ([[D.uniswapV2Adapter, "Uniswap V2"], [D.uniswapV3Adapter, "Uniswap V3"], [D.uniswapV4Adapter, "Uniswap V4"], [D.aeroAdapter, "Aero"], [D.ramsesAdapter, "Ramses"], [D.ponsAdapter, "Pons curve"], [D.metricAdapter, "Metric"], [D.uniswapV4AdapterV2, "Uniswap V4"], [D.upAdapter, "up."]] as const)
       .filter(([a]) => addr(a))
       .map(([a, n]) => [a!.toLowerCase(), n]),
   ),
