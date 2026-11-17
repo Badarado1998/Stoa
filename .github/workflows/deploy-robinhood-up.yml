@@ -1,0 +1,88 @@
+name: Deploy up. adapter (Robinhood Chain)
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys one CLTickSpacingAdapter (the same reviewed code as the Aero and Ramses adapters) for up.'s concentrated
+# liquidity pools, for the live router, and commits its address (web/lib/deployments-4663.json and
+# contracts/deployments/4663-up.json). The adapter has no owner. It is not used until the router adds it through the
+# 48h timelock: rollout-robinhood-venues.yml then runs its three Safe steps (schedule, propose, execute).
+# Pays gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY (well under 0.001 ETH).
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transaction (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test -z "$(jq -r '.upAdapter // empty' ../web/lib/deployments-4663.json)" || { echo "::error::already deployed (see web/lib/deployments-4663.json)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          echo "Deployer: $ME"
+          echo "Balance:  $(cast balance $ME --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit tests
+        run: forge test --no-match-contract Fork
+
+      - name: Fork test - the router adds up. and swaps through it
+        run: forge test --match-contract ForkRobinhoodUp -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployUpRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-up.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          A=$(jq -r .upAdapter deployments/4663-up.json)
+          forge verify-contract $A src/adapters/CLTickSpacingAdapter.sol:CLTickSpacingAdapter --verifier sourcify --chain 4663 \
+            --constructor-args $(cast abi-encode "c(address,address,int24[])" 0x1ac9dB4a2608ba45D6127B1737949b51Bb54B7F3 0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5 "[1,10,50,60,100,200,2000]") || true
+
+      - name: Publish the address (web app and rollout)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          jq -s '.[0] * .[1]' web/lib/deployments-4663.json contracts/deployments/4663-up.json > /tmp/d.json
+          mv /tmp/d.json web/lib/deployments-4663.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add -f web/lib/deployments-4663.json contracts/deployments/4663-up.json
+          git commit -m "deploy: up. adapter on Robinhood Chain (not routed until the Safe adds it)"
+          git pull --rebase && git push
+
+      - name: Make sure the hourly governance rollout runs (it disables itself when everything else is done)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY"
