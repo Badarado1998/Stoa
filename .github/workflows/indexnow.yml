@@ -1,0 +1,42 @@
+name: IndexNow (stoadex.com)
+
+# Tells the IndexNow search engines (Bing, Yandex, Seznam, Naver and others) which stoadex.com pages exist, so new pages
+# such as the 203 /stocks/<ticker> pages are crawled within days instead of weeks. Runs after a push that changes the web
+# app (once Vercel has had time to deploy it) and weekly. Sends only the sitemap's URLs; the key file that proves the
+# site is ours is web/public/<KEY>.txt. Google does not use IndexNow (it reads the sitemap from robots.txt).
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", "!web/lib/bridged-tokens.json"]
+  schedule:
+    - cron: "41 4 * * 1" # Mondays 11:41 WIB
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for the deploy
+        if: github.event_name == 'push'
+        run: sleep 360
+      - name: Submit the sitemap's URLs
+        env:
+          KEY: 5636f69a5914ba1534e7363d0c616849
+          HOST: stoadex.com
+        run: |
+          curl -fsS "https://$HOST/$KEY.txt" | grep -qx "$KEY" || { echo "::warning::key file not live yet; nothing sent"; exit 0; }
+          curl -fsS "https://$HOST/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | sed 's#</\?loc>##g' | sort -u > urls.txt
+          echo "$(wc -l < urls.txt) URLs"
+          jq -R -s --arg h "$HOST" --arg k "$KEY" \
+            '{host: $h, key: $k, keyLocation: ("https://" + $h + "/" + $k + ".txt"), urlList: (split("\n") | map(select(length > 0)) | .[:10000])}' \
+            urls.txt > body.json
+          code=$(curl -s -o resp.txt -w '%{http_code}' -H 'content-type: application/json; charset=utf-8' --data @body.json https://api.indexnow.org/indexnow)
+          echo "IndexNow answered $code"; cat resp.txt; echo
+          case "$code" in 200|202) ;; *) echo "::warning::IndexNow answered $code" ;; esac

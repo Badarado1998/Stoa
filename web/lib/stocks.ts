@@ -119,3 +119,22 @@ export async function stockBySymbol(symbol: string): Promise<{ stock: Stock; all
   const stock = d.stocks.find((s) => s.symbol.toLowerCase() === symbol.toLowerCase());
   return stock ? { stock, all: d.stocks, updated: d.updated } : null;
 }
+
+/** A company name without share-class and legal suffixes, for page titles: "Space Exploration Technologies Corp. Class
+ *  A Common Stock" becomes "Space Exploration Technologies". */
+export function shortName(name: string): string {
+  let n = name.trim();
+  const tails = [
+    /\s+American Depositary Shares?$/i, /\s+ADRs?$/i, /\s+Class [A-C]( Common Stock| Ordinary Shares| Shares)?$/i,
+    /\s+(Common Stock|Ordinary Shares|Common Shares)$/i, /,?\s+(Inc\.?|Corp\.?|Corporation|Co\.?|Ltd\.?|plc|N\.V\.|S\.A\.|Holdings?)$/i,
+  ];
+  for (let again = true; again; ) {
+    again = false;
+    for (const t of tails) {
+      const m = n.replace(t, "");
+      if (m !== n && m.length >= 2) { n = m; again = true; }
+    }
+  }
+  return n;
+}
+

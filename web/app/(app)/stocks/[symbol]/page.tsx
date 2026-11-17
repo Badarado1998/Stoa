@@ -5,7 +5,7 @@ import { PageHead, Ticker } from "@/components/ui";
 import { MarketStatus } from "@/components/Stocks";
 import { WatchStar } from "@/components/Watch";
 import CopyButton from "@/components/CopyButton";
-import { mid, stockBySymbol } from "@/lib/stocks";
+import { mid, shortName, stockBySymbol } from "@/lib/stocks";
 import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
 
 export const revalidate = 120;
@@ -18,8 +18,9 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const hit = await stockBySymbol(symbol).catch(() => null);
   if (!hit) return { title: "Stock token" };
   const { stock: s } = hit;
-  const title = `${s.symbol} stock token on Robinhood Chain`;
-  const description = `${s.name} (${s.symbol}) as a Robinhood Stock Token: Robinhood's price next to the on-chain price, pool liquidity${s.route ? ", and a swap on Stoa" : ""}. Contract ${s.address}.`;
+  const name = shortName(s.name);
+  const title = `${name} (${s.symbol}) stock token price on Robinhood Chain`;
+  const description = `${name} (${s.symbol}) tokenized stock on Robinhood Chain: Robinhood's ${s.symbol} price next to the on-chain price, 24h volume and pool liquidity, updated every few minutes. ${s.route ? `Swap ${s.symbol} with USDG on Stoa.` : "See where it trades on-chain."}`;
   return {
     title, description,
     alternates: { canonical: `/stocks/${s.symbol.toLowerCase()}` },
