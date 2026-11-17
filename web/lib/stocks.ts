@@ -2,6 +2,11 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { ROBINHOOD } from "./networks";
+import logoList from "./stock-logos.json";
+
+// company logos, stored on Stoa's own site (public/stocks/<address>.webp): Robinhood's logo CDN serves the same
+// placeholder for every token and does not load on some networks. Tokens without one get a ticker badge.
+const LOGOS = new Set(logoList as string[]);
 
 /** Robinhood Stock Tokens on Robinhood Chain: the list and reference prices come from Robinhood's public Stock Token
  *  API (api.robinhood.com/rhj, read-only, no key), the on-chain market from DexScreener's public token API. Reference
@@ -93,9 +98,7 @@ async function load(): Promise<{ stocks: Stock[]; updated: number }> {
     return {
       symbol: x.tokenSymbol,
       name: (x.tokenName ?? x.tokenSymbol).replace(/\s*•\s*Robinhood Token$/, ""),
-      // Robinhood's logo CDN serves the same placeholder for every token (and is blocked on some networks): the page
-      // draws a ticker badge instead
-      address, logo: null,
+      address, logo: LOGOS.has(lc(address)) ? `/stocks/${lc(address)}.webp` : null,
       bid: num(q?.tokenBid), ask: num(q?.tokenAsk), halted: !!q?.isTradingHalt,
       dex: dex.get(lc(address)) ?? null,
       route: routes.has(lc(address)),

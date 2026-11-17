@@ -47,7 +47,8 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
             return (
               <div key={r.address} className="stock">
                 <div className="sname">
-                  <Ticker symbol={r.symbol} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {r.logo ? <img src={r.logo} alt="" width={30} height={30} loading="lazy" /> : <Ticker symbol={r.symbol} />}
                   <div><b>{r.symbol}</b><small>{r.name}</small></div>
                 </div>
                 <div className="sval"><small>Robinhood</small>{r.halted ? <span className="dn">Halted</span> : r.ref ? fmtUsd(r.ref) : "—"}</div>
