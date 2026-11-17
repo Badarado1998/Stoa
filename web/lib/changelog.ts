@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stock-pages",
+    date: "2026-11-17",
+    title: "A page for every stock token",
+    tag: "Robinhood Chain",
+    items: [
+      "Each of the 203 Robinhood Stock Tokens now has its own page (for example stoadex.com/stocks/tsla): Robinhood's price next to the on-chain price, pool liquidity and volume, the contract address, ☆ and Swap where Stoa routes it.",
+      "Shared on X or Telegram, the link shows a card with the ticker and both prices. Trade also says when the US market is closed, since stock token pools can drift from Robinhood's last price then.",
+    ],
+    link: { href: "/stocks/tsla", label: "Open TSLA" },
+  },
+  {
     id: "stock-pools",
     date: "2026-11-17",
     title: "98 stock tokens now swap on Stoa",

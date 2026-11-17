@@ -638,3 +638,5 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .v-stocks .bar{height:6px;border-radius:6px;background:#D9E3F2}
 .v-stocks .bar.on{background:#9EC1F2}
 @media (max-width:640px){.foot .cols{display:grid;grid-template-columns:1fr 1fr;gap:26px 20px;width:100%}}
+.sname .slink{display:flex;flex-direction:column;min-width:0;color:var(--ink)}
+.sname .slink:hover b{color:var(--accent)}

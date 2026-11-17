@@ -112,3 +112,10 @@ async function load(): Promise<{ stocks: Stock[]; updated: number }> {
 export const stockTokens = unstable_cache(load, ["stock-tokens-v2"], { revalidate: 120 });
 
 export const mid = (s: Pick<Stock, "bid" | "ask">) => (s.bid && s.ask ? (s.bid + s.ask) / 2 : s.bid ?? s.ask ?? null);
+
+/** one stock token by ticker (case-insensitive), from the same cached list */
+export async function stockBySymbol(symbol: string): Promise<{ stock: Stock; all: Stock[]; updated: number } | null> {
+  const d = await stockTokens();
+  const stock = d.stocks.find((s) => s.symbol.toLowerCase() === symbol.toLowerCase());
+  return stock ? { stock, all: d.stocks, updated: d.updated } : null;
+}
