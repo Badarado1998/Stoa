@@ -16,9 +16,10 @@ export default function Footer() {
         </a>
       </div>
       <div className="cols">
-        <div><h4>PRODUCT</h4><Link href="/trade">Trade</Link><Link href="/pools">Pools</Link><Link href="/earn">Earn</Link><Link href="/token">$STOA</Link><Link href="/spotlight">Spotlight</Link><Link href="/cover">Rug Cover</Link><Link href="/stocks">Stocks</Link><Link href="/tokens">Tokens</Link><Link href="/portfolio">Portfolio</Link><Link href="/wrapped">Wrapped</Link></div>
-        <div><h4>BUILDERS</h4><Link href="/curators">Curators</Link><Link href="/build">Build</Link><Link href="/referrals">Referrals</Link><Link href="/docs">Docs</Link><Link href="/stats">Stats</Link><Link href="/changelog">Changelog</Link></div>
-        <div><h4>COMMUNITY</h4><a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a><a href="https://github.com/StoaDex/Stoa" target="_blank" rel="noopener noreferrer">GitHub · source code</a><a href="https://www.coingecko.com/en/coins/stoa" target="_blank" rel="noopener noreferrer">CoinGecko · $STOA</a><Link href="/">Walk the Stoa</Link><Link href="/security">Security status</Link><Link href="/docs/admin">Admin &amp; security</Link><Link href="/docs/bug-bounty">Security reports</Link><Link href="/docs/terms-privacy">Terms &amp; privacy</Link><AppInstall /></div>
+        <div><h4>TRADE</h4><Link href="/trade">Trade</Link><Link href="/stocks">Stocks</Link><Link href="/tokens">Tokens</Link><Link href="/launches">Launches</Link><Link href="/pools">Pools</Link><Link href="/cover">Rug Cover</Link></div>
+        <div><h4>$STOA &amp; YOU</h4><Link href="/token">$STOA</Link><Link href="/spotlight">Spotlight</Link><Link href="/earn">Earn</Link><Link href="/portfolio">Portfolio</Link><Link href="/wrapped">Wrapped</Link><Link href="/referrals">Referrals</Link></div>
+        <div><h4>LEARN</h4><Link href="/docs">Docs</Link><Link href="/stats">Stats</Link><Link href="/changelog">Changelog</Link><Link href="/">Walk the Stoa</Link><Link href="/build">Build</Link><Link href="/curators">Curators</Link></div>
+        <div><h4>TRUST &amp; COMMUNITY</h4><Link href="/security">Security status</Link><Link href="/docs/admin">Admin &amp; security</Link><Link href="/docs/bug-bounty">Security reports</Link><Link href="/docs/terms-privacy">Terms &amp; privacy</Link><a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a><a href="https://github.com/StoaDex/Stoa" target="_blank" rel="noopener noreferrer">GitHub · source code</a><a href="https://www.coingecko.com/en/coins/stoa" target="_blank" rel="noopener noreferrer">CoinGecko · $STOA</a><AppInstall /></div>
       </div>
     </footer>
   );

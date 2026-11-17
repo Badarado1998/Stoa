@@ -634,3 +634,4 @@ body.past-walk .hdr{background:rgba(244,246,250,.9);backdrop-filter:blur(14px);-
 .v-stocks .vs-r i{font-style:normal;color:#E2A400}
 .v-stocks .bar{height:6px;border-radius:6px;background:#D9E3F2}
 .v-stocks .bar.on{background:#9EC1F2}
+@media (max-width:640px){.foot .cols{display:grid;grid-template-columns:1fr 1fr;gap:26px 20px;width:100%}}
