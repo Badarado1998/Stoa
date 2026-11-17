@@ -218,6 +218,9 @@ function PricePanel() {
 // there; the team bought 6.8M $STOA on the Pons curve for it on 15 Nov 2026 and keeps at least 0.5% while the tag is active.
 const TEAM_WALLET = "0xfe6f7c6e2ad2c3594fe7fb61c28c4499bbb83bf0" as Address;
 const TEAM_BUY_TX = "0xbf4ca2f6bff0c6124ebafe82eaca82faf873248e3d027322182efb60f49d7bf3";
+// the dev wallet that launched $STOA on Pons (the creator Pons records); it sent all 22.0M $STOA it received to 0x…dEaD
+// in 12 transfers between 14 and 17 Nov 2026. Its live balance is shown next to the team wallet's.
+const LAUNCH_WALLET = "0x8dac20c0fe1c59d337808f234921a89ee0c1346a" as Address;
 
 export default function TokenUtility() {
   const pub = usePublicClient({ chainId: net.chain.id });
@@ -235,6 +238,7 @@ export default function TokenUtility() {
       { address: C.bonds!, abi: bondAbi, functionName: "totalSlashed", chainId: net.chain.id },
       { address: STOA, abi: erc20Abi, functionName: "totalSupply", chainId: net.chain.id },
       { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [TEAM_WALLET], chainId: net.chain.id },
+      { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [LAUNCH_WALLET], chainId: net.chain.id },
     ] as const : [],
     query: { enabled: live, refetchInterval: 30_000 },
   });
@@ -244,7 +248,7 @@ export default function TokenUtility() {
   const burnedBuyback = v(1) as bigint | undefined, burnedAll = v(2) as bigint | undefined;
   const accU = v(3) as bigint | undefined, accW = v(4) as bigint | undefined, ts = v(5) as bigint | undefined;
   const bonded = v(6) as bigint | undefined, slashed = v(7) as bigint | undefined, supply = v(8) as bigint | undefined;
-  const team = v(9) as bigint | undefined;
+  const team = v(9) as bigint | undefined, launchBal = v(10) as bigint | undefined;
   const px = usePrices(net, [net.tokens[1], net.tokens[2]]);
   const waitingUsd = accU !== undefined && accW !== undefined ? Number(accU) / 1e6 + (Number(accW) / 1e18) * (px(net.tokens[1])?.usd ?? 0) : undefined;
 
@@ -338,11 +342,18 @@ export default function TokenUtility() {
       </div>
 
       <div className="panel pad">
-        <div className="rowx"><div className="lbl">TEAM WALLET · FOMO</div>{team !== undefined && supply ? <span className="chip live">{((Number(team) / Number(supply)) * 100).toFixed(2)}% of supply</span> : null}</div>
+        <div className="rowx"><div className="lbl">WHO HOLDS $STOA</div>{team !== undefined && supply ? <span className="chip live">Team {((Number(team) / Number(supply)) * 100).toFixed(2)}% of supply</span> : null}</div>
         <p style={{ marginTop: 10 }}>
-          Stoa&apos;s team account on <a href="https://fomo.family" target="_blank" rel="noopener noreferrer">fomo</a>, @StoaDex, holds {team === undefined ? "…" : `${big(team)} $STOA`}. fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer">transaction</a>) and keeps at least 0.5% there while the tag is active.
+          No presale and no team allocation: all 1B $STOA started on the Pons bonding curve.
         </p>
-        <p className="note">Wallet: <a href={addressUrlOn(net, TEAM_WALLET)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{TEAM_WALLET}</a></p>
+        <ul className="list" style={{ marginTop: 8 }}>
+          <li>Team wallet (fomo, @StoaDex) <b>{team === undefined ? "…" : `${big(team)} $STOA`}, bought on the curve</b></li>
+          <li>Launch wallet (the dev wallet that launched $STOA on Pons) <b>{launchBal === undefined ? "…" : `${big(launchBal)} $STOA`} today; it burned the 22.0M it received</b></li>
+        </ul>
+        <p style={{ marginTop: 10 }}>
+          fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer">transaction</a>) and keeps at least 0.5% there while the tag is active.
+        </p>
+        <p className="note">Team: <a href={addressUrlOn(net, TEAM_WALLET)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{TEAM_WALLET}</a><br />Launch: <a href={addressUrlOn(net, LAUNCH_WALLET)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{LAUNCH_WALLET}</a></p>
       </div>
 
       <div className="panel pad">
@@ -350,9 +361,9 @@ export default function TokenUtility() {
         <ul className="list">
           <li>A share of fees <b>Fees burn $STOA; holders are not paid from fees</b></li>
           <li>A promised yield <b>Spotlight pays voters only from projects&apos; bids; Rug Cover backers only from creators</b></li>
-          <li>Audited <b>Contracts are verified, not yet audited</b></li>
+          <li>Audited <b>Contracts are verified and had an independent security review (HEY Research Lab), not an audit</b></li>
         </ul>
-        <p className="note">Contracts: <a href={addressUrlOn(net, C.buyback ?? zeroAddress)} target="_blank" rel="noopener noreferrer">StoaBuyback</a> · <a href={addressUrlOn(net, C.bonds ?? zeroAddress)} target="_blank" rel="noopener noreferrer">BondRegistry</a> · <a href={addressUrlOn(net, STOA)} target="_blank" rel="noopener noreferrer">$STOA</a>. How it works in detail: <Link href="/docs/token">docs</Link>.</p>
+        <p className="note">Contracts: <a href={addressUrlOn(net, C.buyback ?? zeroAddress)} target="_blank" rel="noopener noreferrer">StoaBuyback</a> · <a href={addressUrlOn(net, C.bonds ?? zeroAddress)} target="_blank" rel="noopener noreferrer">BondRegistry</a> · <a href={addressUrlOn(net, STOA)} target="_blank" rel="noopener noreferrer">$STOA</a>. How it works in detail: <Link href="/docs/token">docs</Link>. Who controls each contract and what waits in the 48-hour timelock: <Link href="/security">security status</Link>.</p>
       </div>
     </div>
   );
