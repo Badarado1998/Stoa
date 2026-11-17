@@ -16,7 +16,8 @@ HOOK=0xe5e702641ea86f4ae6cc3cdaed2b886f976be044
 WINDOW=${WINDOW:-1000000}   # blocks to look back (~30h on Robinhood Chain): runs can be late or skipped
 MAX=${MAX:-10}             # registrations per run (a backfill can raise it)
 # the router's V4 adapter, and UniswapV4AdapterV2 (keeper-only registration) until the timelock swaps them
-ADAPTERS="$(jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json) $(jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null || true)"
+ADAPTERS="$(jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json) $(jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null || true) $(jq -r '.uniswapV4AdapterV3 // empty' deployments/4663-v4v3.json 2>/dev/null || true)"
+refused=0
 head=$(cast block-number --rpc-url "$RPC")
 tokens=$(cast logs --address $FACTORY $GRADUATED --from-block $((head - WINDOW)) --to-block $head --rpc-url "$RPC" --json \
   | jq -r '.[].topics[1]' | sed 's/^0x000000000000000000000000/0x/' | awk '!seen[tolower($0)]++')
@@ -30,7 +31,9 @@ for t in $tokens; do
   # skip tokens whose Pons pool is already listed (only Pons can create pools on its hook). A pair that already holds
   # other keys but not the Pons pool is still tried, and a failed registration is reported loudly below: planted pools
   # listed first could otherwise keep the real pool out (Hey Research Lab, UniswapV4AdapterV3 review, L-2)
-  kw=$(cast call $ADAPTER "$K" $WETH $t --rpc-url "$RPC"); ku=$(cast call $ADAPTER "$K" $USDG $t --rpc-url "$RPC")
+  # a failed read skips this token for this run, as before (HEY Research Lab follow-up, F-7)
+  kw=$(cast call $ADAPTER "$K" $WETH $t --rpc-url "$RPC") || continue
+  ku=$(cast call $ADAPTER "$K" $USDG $t --rpc-url "$RPC") || continue
   echo "$kw $ku" | tr 'A-F' 'a-f' | grep -q "${HOOK}" && continue
   T=0x000000000000000000000000${t:2}
   logs=$( (cast logs --address $PM $INIT "" "" $T --from-block $((head - WINDOW)) --to-block $head --rpc-url "$RPC" --json; \
@@ -49,9 +52,11 @@ for t in $tokens; do
     cast send $ADAPTER "register((address,address,uint24,int24,address))" "$k" --private-key "$PRIVATE_KEY" --rpc-url "$RPC" \
       | grep -E "^(status|transactionHash) " || {
         echo "::warning::Pons graduation pool of $sym not registered on $ADAPTER (pair full or registered by someone else first): $k"
-        [ -n "${FULL_LOG:-}" ] && echo "$ADAPTER $k" >>"$FULL_LOG"; true; }
+        [ -n "${FULL_LOG:-}" ] && echo "$ADAPTER $k" >>"$FULL_LOG"; refused=$((refused + 1)); true; }
   fi
   done_n=$((done_n + 1))
 done
 echo "registered this run: $done_n"
 done
+# a graduation pool that could not be registered fails the run, so the scheduled job e-mails the owner (F-7)
+[ "$refused" -eq 0 ] || { echo "::error::$refused Pons graduation pool(s) could not be registered (see the warnings)"; exit 3; }

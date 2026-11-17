@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {Script, console2} from "forge-std/Script.sol";
 import {UniswapV4AdapterV3} from "../src/adapters/UniswapV4AdapterV3.sol";
 import {IPoolManager} from "../src/adapters/UniswapV4Adapter.sol";
+import {StoaRouter} from "../src/StoaRouter.sol";
 import {TokenPackageRobinhood} from "./TokenPackageRobinhood.sol";
 import {V4AdapterV3Robinhood} from "./V4AdapterV3Robinhood.sol";
 
@@ -23,9 +24,8 @@ import {V4AdapterV3Robinhood} from "./V4AdapterV3Robinhood.sol";
 contract DeployV4AdapterV3Robinhood is Script, TokenPackageRobinhood, V4AdapterV3Robinhood {
     function run() external {
         require(block.chainid == 4663, "Robinhood Chain only");
-        require(
-            vm.parseJsonAddress(vm.readFile("deployments/4663.json"), ".guardian") == V3_GUARDIAN, "guardian mismatch"
-        );
+        // the guardian is read from the live router, not from a file (HEY Research Lab follow-up, F-3)
+        require(StoaRouter(payable(LIVE_ROUTER)).guardian() == V3_GUARDIAN, "guardian mismatch");
         address[] memory hooks = hooksV3();
         vm.startBroadcast();
         UniswapV4AdapterV3 v4 = new UniswapV4AdapterV3(

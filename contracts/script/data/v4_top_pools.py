@@ -40,6 +40,9 @@ QUOTE_SEL = "aa9d21cb"  # quoteExactInputSingle(((address,address,uint24,int24,a
 MIN_ORIGINS = int(os.environ.get("MIN_ORIGINS", "5"))
 SAMPLE = int(os.environ.get("SAMPLE", "25"))  # latest swap transactions per pool whose origin is looked up
 MAX_IMPACT = float(os.environ.get("MAX_IMPACT", "0.10"))
+# swap gas a reference trade (1 ETH or 3,000 USDG) may cost: real pools here stay under ~0.8M (HEY Research Lab measured
+# 191 ranked pools on 17 Nov 2026), slow ones cost millions
+MAX_REF_GAS = int(os.environ.get("MAX_REF_GAS", "1000000"))
 MIN_AGE_BLOCKS = int(os.environ.get("MIN_AGE_BLOCKS", "2700000"))  # ~3 days of Robinhood Chain blocks
 ALLOW = {
     "0x0000000000000000000000000000000000000000", "0x6b1216a40b65c83e9c9e18a562c446697b8cf8ec",
@@ -94,23 +97,30 @@ def _w(x):
     return format(x if x >= 0 else x + (1 << 256), "064x")
 
 
-def v4_quote(k, zero_for_one, amount):
-    """Exact-input quote of one pool through Uniswap's V4Quoter; 0 if it reverts."""
+def v4_quote(k, zero_for_one, amount, with_gas=False):
+    """Exact-input quote of one pool through Uniswap's V4Quoter; 0 if it reverts. With with_gas, (out, swap gas)."""
     data = "0x" + QUOTE_SEL + _w(32) + "".join(_w(int(k[f], 16)) for f in ("currency0", "currency1")) + _w(k["fee"]) + \
         _w(k["tickSpacing"]) + _w(int(k["hooks"], 16)) + _w(1 if zero_for_one else 0) + _w(amount) + _w(256) + _w(0)
     try:
-        return int(rpc1("eth_call", [{"to": QUOTER, "data": data}, "latest"])[2:66], 16)
+        r = rpc1("eth_call", [{"to": QUOTER, "data": data, "gas": hex(40_000_000)}, "latest"])
+        return (int(r[2:66], 16), int(r[66:130], 16)) if with_gas else int(r[2:66], 16)
     except RuntimeError:
-        return 0
+        return (0, None) if with_gas else 0
 
 
 def deep(k):
-    """Does a 0.05 ETH (100 USDG) sell into the pool keep within MAX_IMPACT of a tiny one's price?"""
+    """Does a 0.05 ETH (100 USDG) sell into the pool keep within MAX_IMPACT of a tiny one's price, and does a reference
+    trade (1 ETH or 3,000 USDG) cost at most MAX_REF_GAS to simulate? A pool that cannot fill the reference trade walks
+    the tick range and makes every quote of its pair expensive; this keeps such pools out whatever their tick spacing
+    (HEY Research Lab, UniswapV4AdapterV3 follow-up, F-4; it replaces the old "hook-less spacing under 10" rule)."""
     base0 = k["currency0"] in BASE and not (k["currency1"] == _USDG and k["currency0"] == _USDG)
     base = k["currency0"] if base0 else k["currency1"]
-    small, big = (10**6, 10**8) if base == _USDG else (5 * 10**14, 5 * 10**16)
+    small, big, ref = (10**6, 10**8, 3000 * 10**6) if base == _USDG else (5 * 10**14, 5 * 10**16, 10**18)
     a, b = v4_quote(k, base0, small), v4_quote(k, base0, big)
-    return a > 0 and b * small >= a * big * (1 - MAX_IMPACT)
+    if not (a > 0 and b * small >= a * big * (1 - MAX_IMPACT)):
+        return False
+    _, gas = v4_quote(k, base0, ref, with_gas=True)
+    return gas is not None and gas <= MAX_REF_GAS
 
 
 def origins(hashes):

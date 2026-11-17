@@ -5,6 +5,14 @@ import {PoolKey} from "../src/adapters/UniswapV4Adapter.sol";
 import {VenuesRobinhood} from "./VenuesRobinhood.sol";
 
 /// @notice What the UniswapV4AdapterV3 deploy, its rollout and its fork rehearsal share on Robinhood Chain.
+/// @dev Runbook notes from HEY Research Lab's follow-up (17 Nov 2026):
+///      - SIM_GAS stays 2M, knowingly (F-1): a pool whose simulation needs more is skipped even if it can fill the
+///        trade (today: 3M USDG on the deepest ETH/USDG pool; dust positions can lower that size on narrow pools). The
+///        daily gas report alerts when a pinned pool's reference trade passes 1.2M.
+///      - The guardian's disableHook also works on address(0), which stops every hook-less pool (F-6): the same reach
+///        as pausing the router. The guardian is an EOA; if its key is lost, the timelock batch that re-allows a hook
+///        must first call setGuardian(new). If the guardian switches off a hook while the timelock has a queued
+///        setHookAllowed(hook, true), cancel that operation (the Safe holds the canceller role).
 abstract contract V4AdapterV3Robinhood is VenuesRobinhood {
     address internal constant V3_GUARDIAN = 0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9; // the router's guardian
     address internal constant V4_OLD = 0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8; // first V4 adapter

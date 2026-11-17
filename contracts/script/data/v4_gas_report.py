@@ -102,9 +102,13 @@ def pairs_of(adapter):
 
 
 def probe(k, base, amounts=AMOUNT):
-    zero_for_one = canon(k["currency0"]) == base
+    r = probe_raw(k, canon(k["currency0"]) == base, amounts[base])
+    return {"gas": r["gas"], "filled": r["filled"], **({"error": r["error"]} if "error" in r else {})}
+
+
+def probe_raw(k, zero_for_one, amount):
     data = ("0x" + PROBE_SEL + addr(PM) + addr(k["currency0"]) + addr(k["currency1"]) + word(k["fee"])
-            + word(k["tickSpacing"]) + addr(k["hooks"]) + word(1 if zero_for_one else 0) + word(amounts[base]) + word(CAP))
+            + word(k["tickSpacing"]) + addr(k["hooks"]) + word(1 if zero_for_one else 0) + word(amount) + word(CAP))
     r = post({"jsonrpc": "2.0", "id": 1, "method": "eth_call",
               "params": [{"from": PROBE_FROM, "to": PROBE_AT, "data": data, "gas": hex(CAP + 2_000_000)}, "latest",
                          {PROBE_AT: {"code": PROBE_CODE}}]})
@@ -113,10 +117,42 @@ def probe(k, base, amounts=AMOUNT):
     if isinstance(d, dict):
         d = d.get("data", "")
     if not d.startswith("0x" + RESULT_SEL):
-        return {"gas": None, "filled": False, "error": str(err.get("message", "no result"))[:120]}
+        return {"gas": None, "filled": False, "out": 0, "error": str(err.get("message", "no result"))[:120]}
     d = d[10:]
     gas, used, out, sim = (int(d[i * 64:(i + 1) * 64], 16) for i in range(4))
-    return {"gas": gas, "filled": bool(sim) and used == amounts[base] and out > 0}
+    return {"gas": gas, "filled": bool(sim) and used == amount and out > 0, "out": out}
+
+
+# The pools the V3 rollout pins (script/V4AdapterV3Robinhood.sol). UniswapV4AdapterV3 gives each simulation 2M gas
+# (SIM_GAS) and skips a pool whose simulation needs more, even one that can fill the trade; dust positions can lower
+# that size on a narrow pool (HEY Research Lab follow-up, F-1). Large reference trades on these pools are watched.
+PIN_ALERT = int(os.environ.get("PIN_ALERT", "1200000"))
+STOA = "0x13e6993417616de724f2b337d65063f229e96718"
+PINNED = [
+    ({"currency0": ZERO, "currency1": USDG, "fee": 500, "tickSpacing": 10, "hooks": ZERO}, "ETH/USDG 0.05%"),
+    ({"currency0": ZERO, "currency1": USDG, "fee": 8388608, "tickSpacing": 1,
+      "hooks": "0x987e330f00b79864a07fe81dfac344d0078abcc0"}, "ETH/USDG dynamic"),
+    ({"currency0": ZERO, "currency1": STOA, "fee": 0, "tickSpacing": 200,
+      "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"}, "$STOA"),
+]
+
+
+def pinned_watch():
+    rows = []
+    for k, name in PINNED:
+        if k["currency1"] == USDG:
+            trades = [("100 ETH -> USDG", True, 100 * 10**18), ("300,000 USDG -> ETH", False, 300_000 * 10**6)]
+        else:
+            trades = [("5 ETH -> STOA", True, 5 * 10**18)]
+        for label, zfo, amt in trades:
+            r = probe_raw(k, zfo, amt)
+            rows.append({"pool": name, "trade": label, "gas": r["gas"], "filled": r["filled"],
+                         "alert": r["gas"] is None or r["gas"] > PIN_ALERT})
+            if k["currency1"] == STOA and r["out"]:  # and the sell back
+                b = probe_raw(k, False, r["out"])
+                rows.append({"pool": name, "trade": "STOA from 5 ETH -> ETH", "gas": b["gas"], "filled": b["filled"],
+                             "alert": b["gas"] is None or b["gas"] > PIN_ALERT})
+    return rows
 
 
 def main():
@@ -150,8 +186,10 @@ def main():
     heavy_pairs = [{"adapter": a, "pair": list(p), "gas": sum(x["gas"] or CAP for x in xs), "keys": len(xs)}
                    for (a, p), xs in pairs.items() if sum(x["gas"] or CAP for x in xs) > PAIR_HEAVY]
     here = os.path.dirname(os.path.abspath(__file__))
+    pins = pinned_watch()
     with open(os.path.join(here, "v4-gas-report.json"), "w") as f:
-        json.dump({"heavy": HEAVY, "pairHeavy": PAIR_HEAVY, "keys": rows, "heavyPairs": heavy_pairs}, f, indent=1)
+        json.dump({"heavy": HEAVY, "pairHeavy": PAIR_HEAVY, "keys": rows, "heavyPairs": heavy_pairs, "pinned": pins,
+                   "pinAlert": PIN_ALERT}, f, indent=1)
     nheavy = len({json.dumps(r["key"], sort_keys=True) for r in heavy})
     lines = [f"Checked {len(rows)} keys on {len(pairs)} adapter pairs. Keys over {HEAVY:,} gas for one simulation: {nheavy}. "
              f"Pairs over {PAIR_HEAVY:,} gas in total: {len(heavy_pairs)}.", ""]
@@ -174,6 +212,12 @@ def main():
         lines += ["", "| adapter | pair | keys | total gas |", "|---|---|---|---|"]
         for x in sorted(heavy_pairs, key=lambda x: -x["gas"]):
             lines.append(f"| {ADAPTERS[x['adapter']]} | {x['pair'][0]} / {x['pair'][1]} | {x['keys']} | {x['gas']:,} |")
+    lines += ["", f"Pools the V3 rollout pins: reference trades (alert over {PIN_ALERT:,} gas; V3 skips a pool over about "
+              "1.92M):", "", "| pool | trade | gas | fills | |", "|---|---|---|---|---|"]
+    for r in pins:
+        lines.append(f"| {r['pool']} | {r['trade']} | {'failed' if r['gas'] is None else format(r['gas'], ',')} "
+                     f"| {'yes' if r['filled'] else 'no'} "
+                     f"| {('PINNED ' + r['pool'] + ': ' + r['trade'] + ' over the alert level') if r['alert'] else 'ok'} |")
     with open(os.path.join(here, "v4-gas-report.md"), "w") as f:
         f.write("\n".join(lines) + "\n")
     print(lines[0])

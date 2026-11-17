@@ -2,9 +2,11 @@
 v4-v3-seed-4663.json). The daily job registers it on V3 with the keeper, at most MAX_NEW keys a run and never more than
 4 keys a pair (seed-v4.sh), so the list is worked through over a few days.
 
-Left out: the $STOA and ETH/USDG pairs (registered by hand right after the deploy and pinned by the timelock), hook-less
-pools with a tick spacing under 10 (Hey Research Lab, L-1), and keys over the gas report's HEAVY in today's
-v4-gas-report.json if it exists. Pons graduation pools come first, then other hooked pools, then hook-less ones.
+Left out: the $STOA and ETH/USDG pairs (registered by hand right after the deploy and pinned by the timelock), and keys
+whose reference trade (1 ETH or 3,000 USDG) cost more than MAX_REF_GAS (default 1,000,000) or failed in today's gas
+report, v4-gas-report.json (the daily job runs it first). Without that report nothing is copied. Narrow tick spacing
+alone is no reason to leave a pool out (HEY Research Lab follow-up, F-4). Pons graduation pools come first, then other
+hooked pools, then hook-less ones.
 Run from this folder:  python3 -I v4_v3_seed.py   (public RPC, no key)
 """
 import importlib.util
@@ -23,20 +25,19 @@ ZERO = "0x" + "0" * 40
 
 
 def main():
-    heavy = set()
+    limit = int(os.environ.get("MAX_REF_GAS", "1000000"))
     try:
         r = json.load(open(os.path.join(HERE, "v4-gas-report.json")))
-        heavy = {json.dumps(x["key"], sort_keys=True) for x in r["keys"] if x["gas"] is None or x["gas"] > r["heavy"]}
-    except (OSError, ValueError, KeyError):
-        pass
+    except (OSError, ValueError):
+        print("no gas report: nothing copied")
+        return
+    fast = {json.dumps(x["key"], sort_keys=True) for x in r["keys"] if x["gas"] is not None and x["gas"] <= limit}
     out = []
     for p in gas.pairs_of(V2):
         if STOA in p or set(p) == {gas.WETH, gas.USDG}:
             continue
         for k in gas.keys_for(V2, *p):
-            if k["hooks"] == ZERO and k["tickSpacing"] < 10:
-                continue
-            if json.dumps(k, sort_keys=True) in heavy:
+            if json.dumps(k, sort_keys=True) not in fast:
                 continue
             out.append(k)
     out.sort(key=lambda k: (k["hooks"] != PONS, k["hooks"] == ZERO))
