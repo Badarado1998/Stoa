@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { NETS, netByKey } from "@/lib/networks";
 import { fetchPrices, fmtUsd, usePrices } from "@/lib/prices";
 import type { Token } from "@/lib/tokens";
+import { Ticker } from "./ui";
 import { addAlert, crossed, isWatched, markFired, removeAlert, toggleWatch, useWatch, type PriceAlert, type Watch } from "@/lib/watchlist";
 
 const tradeHref = (w: { chain: string; address: string; via?: string }) => `/trade?chain=${w.chain}${w.via ? `&sell=${w.via}` : ""}&buy=${w.address}`;
@@ -83,7 +84,7 @@ export function WatchlistPanel({ chain, empty }: { chain?: string; empty?: React
               <div className="wlhead">
                 <Link href={tradeHref(w)} className="wlsym">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {w.logo ? <img src={w.logo} alt="" width={26} height={26} loading="lazy" /> : <span className="wlglyph">{w.symbol.slice(0, 1)}</span>}
+                  {w.logo && !w.logo.includes("cdn.robinhood.com") ? <img src={w.logo} alt="" width={26} height={26} loading="lazy" /> : <Ticker symbol={w.symbol} size={26} />}
                   <b>{w.symbol}</b>{!chain && <small>{netByKey(w.chain)?.short}</small>}
                 </Link>
                 <span className="wlprice">{price ? fmtUsd(price.usd) : "—"}{price?.ch24 != null && <small className={price.ch24 >= 0 ? "up" : "dn"}>{price.ch24 >= 0 ? "+" : ""}{price.ch24.toFixed(1)}%</small>}</span>

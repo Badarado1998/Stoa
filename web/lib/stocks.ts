@@ -93,7 +93,9 @@ async function load(): Promise<{ stocks: Stock[]; updated: number }> {
     return {
       symbol: x.tokenSymbol,
       name: (x.tokenName ?? x.tokenSymbol).replace(/\s*•\s*Robinhood Token$/, ""),
-      address, logo: x.logoUrl?.startsWith("https://") ? x.logoUrl : null,
+      // Robinhood's logo CDN serves the same placeholder for every token (and is blocked on some networks): the page
+      // draws a ticker badge instead
+      address, logo: null,
       bid: num(q?.tokenBid), ask: num(q?.tokenAsk), halted: !!q?.isTradingHalt,
       dex: dex.get(lc(address)) ?? null,
       route: routes.has(lc(address)),

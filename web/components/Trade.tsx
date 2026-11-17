@@ -613,7 +613,7 @@ function WatchChips({ net, onPick }: { net: Net; onPick: (address: string, via?:
       {mine.map((w) => (
         <button key={w.address} type="button" className="wchip" onClick={() => onPick(w.address, w.via)} title={`Buy ${w.symbol}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {w.logo && <img src={w.logo} alt="" width={18} height={18} />}{w.symbol}
+          {w.logo && !w.logo.includes("cdn.robinhood.com") && <img src={w.logo} alt="" width={18} height={18} />}{w.symbol}
         </button>
       ))}
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fmtUsd } from "@/lib/prices";
 import { SESSION_LABEL, session, type Session } from "@/lib/marketHours";
 import { WatchStar, WatchlistPanel } from "./Watch";
+import { Ticker } from "./ui";
 
 export interface StockRow {
   symbol: string; name: string; address: string; logo: string | null;
@@ -46,8 +47,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
             return (
               <div key={r.address} className="stock">
                 <div className="sname">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {r.logo ? <img src={r.logo} alt="" width={30} height={30} loading="lazy" /> : <span className="wlglyph">{r.symbol.slice(0, 1)}</span>}
+                  <Ticker symbol={r.symbol} />
                   <div><b>{r.symbol}</b><small>{r.name}</small></div>
                 </div>
                 <div className="sval"><small>Robinhood</small>{r.halted ? <span className="dn">Halted</span> : r.ref ? fmtUsd(r.ref) : "—"}</div>

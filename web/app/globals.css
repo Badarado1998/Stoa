@@ -625,3 +625,4 @@ body.past-walk .hdr{background:rgba(244,246,250,.9);backdrop-filter:blur(14px);-
 .wchip img{border-radius:999px;object-fit:cover}
 .star{flex:none}
 .noroute{display:inline-flex;align-items:center;min-height:36px;padding:0 10px;font-size:12px;color:var(--muted);white-space:nowrap}
+.ticker{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:999px;font-family:var(--mono);font-weight:600;letter-spacing:-.02em;line-height:1}
