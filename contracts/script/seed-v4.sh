@@ -16,6 +16,7 @@
 # Never registers a hook-less pool with a tick spacing under MIN_HOOKLESS_SPACING (default 10): a near-empty pool with
 # spacing 1 makes every quote and swap of its pair walk the whole tick range, about 18.6M gas a key (same review, Low 1).
 # Hooked pools are configured by their hook's owner and are not limited here.
+# MAX_NEW=N stops after N registrations (0 or unset: no limit), so a long list is worked through over several runs.
 # DRY=1 lists what it would register without sending.
 # Usage: RPC=... PRIVATE_KEY=... ADAPTER=0x... [SEED=script/data/v4-seed-pools-4663.json] ./script/seed-v4.sh
 set -uo pipefail
@@ -61,6 +62,8 @@ while IFS=' ' read -r c0 c1 fee ts hooks; do
     [ -n "${FULL_LOG:-}" ] && echo "$ADAPTER $k" >>"$FULL_LOG"
     continue
   fi
+  if [ "${MAX_NEW:-0}" -gt 0 ] && [ "$ok" -ge "${MAX_NEW}" ]; then echo "reached MAX_NEW=$MAX_NEW for this run"; break; fi
+  if [ "${MAX_NEW:-0}" -gt 0 ] && [ "$ok" -ge "${MAX_NEW}" ]; then echo "reached MAX_NEW=$MAX_NEW for this run"; break; fi
   if [ -n "${DRY:-}" ]; then echo "would register $k"; ok=$((ok+1)); count[$pair]=$(( ${count[$pair]} + 1 )); continue; fi
   if cast send "$ADAPTER" "register((address,address,uint24,int24,address))" "$k" --private-key "$PRIVATE_KEY" --rpc-url "$RPC" >/dev/null 2>&1; then
     ok=$((ok+1)); count[$pair]=$(( ${count[$pair]} + 1 ))

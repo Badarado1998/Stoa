@@ -25,6 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: foundry-rs/foundry-toolchain@v1
+      - name: Which V4 adapters are deployed
+        # once UniswapV4AdapterV3 is deployed, the rankings also take pools on the three Fables hooks it allows (V2
+        # refuses them at no gas cost)
+        run: if [ -f contracts/deployments/4663-v4v3.json ]; then echo "FABLES=1" >> "$GITHUB_ENV"; fi
       - name: Rank active pools
         working-directory: contracts/script/data
         run: python3 -I v4_top_pools.py
@@ -43,12 +47,12 @@ jobs:
           test -n "$(jq -r '.uniswapV4Adapter // empty' web/lib/deployments-4663.json)" || { echo "not deployed on Robinhood Chain yet"; exit 0; }
           # the log scan needs the public RPC (keyed plans cap eth_getLogs); registration uses ROBINHOOD_RPC_URL
           # a failed scan (rate limits) still registers the last committed list
-          (cd contracts/script/data && ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com CHAIN=robinhood python3 -I v4_top_pools.py) \
+          (cd contracts/script/data && ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com CHAIN=robinhood V4_FABLES="$FABLES" python3 -I v4_top_pools.py) \
             || echo "::warning::Robinhood Chain pool scan failed; registering the last list"
           test -n "${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" || { echo "::warning::ROBINHOOD_DEPLOYER_PRIVATE_KEY missing; skipping registration"; exit 0; }
           # the router's V4 adapter, and UniswapV4AdapterV2 (keeper-only registration) until the timelock swaps them
           cd contracts
-          for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
+          for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null; jq -r '.uniswapV4AdapterV3 // empty' deployments/4663-v4v3.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
             echo "adapter $A"
             # never evicts (full pairs are skipped) and never touches STOA pools or ETH/USDG, the pairs Stoa's own flows use
             # (GHSA-cv5f-wmmh-wcrv)
@@ -65,16 +69,32 @@ jobs:
           test -n "$(jq -r '.uniswapV4Adapter // empty' web/lib/deployments-4663.json)" || exit 0
           # stock tokens trade too little for the ranking above: their pools qualify by Robinhood's own token list,
           # depth and age instead (script/data/v4_stock_pools.py). A failed scan registers the last committed list.
-          (cd contracts/script/data && python3 -I v4_stock_pools.py) || echo "::warning::stock pool scan failed; registering the last list"
+          (cd contracts/script/data && V4_FABLES="$FABLES" python3 -I v4_stock_pools.py) || echo "::warning::stock pool scan failed; registering the last list"
           test -n "${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" || exit 0
           cd contracts
-          for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
+          for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null; jq -r '.uniswapV4AdapterV3 // empty' deployments/4663-v4v3.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
             echo "adapter $A"
             RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" \
               PROTECT="$(jq -r '.stoa // empty' ../web/lib/deployments-4663.json)" \
               PROTECT_PAIRS="0x0000000000000000000000000000000000000000-0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" \
               ADAPTER="$A" SEED=script/data/v4-stock-seed-4663.json ./script/seed-v4.sh
           done
+      - name: Robinhood Chain - copy UniswapV4AdapterV2's keys to UniswapV4AdapterV3
+        # Only once deploy-robinhood-v4v3.yml committed contracts/deployments/4663-v4v3.json. At most 100 new keys a
+        # run and 4 a pair; the STOA and ETH/USDG pairs are registered by hand and pinned by the timelock.
+        if: ${{ hashFiles('contracts/deployments/4663-v4v3.json') != '' }}
+        continue-on-error: true
+        env:
+          ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+        run: |
+          (cd contracts/script/data && ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com python3 -I v4_v3_seed.py) \
+            || echo "::warning::V3 seed list failed; registering the last list"
+          test -n "${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" || exit 0
+          cd contracts
+          RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" MAX_NEW=100 \
+            PROTECT="$(jq -r '.stoa // empty' ../web/lib/deployments-4663.json)" \
+            PROTECT_PAIRS="0x0000000000000000000000000000000000000000-0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" \
+            ADAPTER="$(jq -r .uniswapV4AdapterV3 deployments/4663-v4v3.json)" SEED=script/data/v4-v3-seed-4663.json ./script/seed-v4.sh
       - name: Robinhood Chain - Metric pool lists
         if: ${{ hashFiles('contracts/deployments/4663-metric.json') != '' }}
         continue-on-error: true
@@ -135,7 +155,7 @@ jobs:
           gh issue comment "$n" --body "$body"
       - name: Save the lists
         run: |
-          L="contracts/script/data/v4-seed-pools.json contracts/script/data/v4-seed-pools-4663.json contracts/script/data/v4-stock-seed-4663.json contracts/script/data/v4-stock-pools-keys-4663.json contracts/script/data/v4-pool-keys-4663.json contracts/script/data/metric-pools-4663.json web/lib/bridged-tokens.json"
+          L="contracts/script/data/v4-seed-pools.json contracts/script/data/v4-seed-pools-4663.json contracts/script/data/v4-stock-seed-4663.json contracts/script/data/v4-stock-pools-keys-4663.json contracts/script/data/v4-pool-keys-4663.json contracts/script/data/metric-pools-4663.json contracts/script/data/v4-v3-seed-4663.json web/lib/bridged-tokens.json"
           git diff --quiet $L && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

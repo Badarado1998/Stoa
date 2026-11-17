@@ -10,6 +10,9 @@ name: Robinhood governance steps (Safe rounds)
 # - up. (script/RolloutUpRobinhood.s.sol, once deploy-robinhood-up.yml ran): same three steps
 # - V4 adapter swap (script/RolloutV4FixRobinhood.s.sol, once deploy-robinhood-fixes.yml ran): adds UniswapV4AdapterV2
 #   and removes the old V4 adapter in the same final step
+# - UniswapV4AdapterV3 (script/RolloutV4AdapterV3Robinhood.s.sol, once deploy-robinhood-v4v3.yml ran; starts after the
+#   V4 adapter swap is DONE): schedules the router change and one timelock operation per pin, executes each pin once its
+#   key is registered, then adds V3 and removes UniswapV4AdapterV2 in the same final step
 # Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
 # one of them set it approves and the other signer can press the same step on stoadex.com/admin (Robinhood).
 # Delete OWNER_PRIVATE_KEY once the run summary says every step is done.
@@ -75,6 +78,10 @@ jobs:
           fi
           if [ -f deployments/4663-fixes.json ]; then  # committed by deploy-robinhood-fixes.yml
             forge script script/RolloutV4FixRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
+            want=$((want + 1))
+          fi
+          if [ -f deployments/4663-v4v3.json ]; then  # committed by deploy-robinhood-v4v3.yml
+            forge script script/RolloutV4AdapterV3Robinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
             want=$((want + 1))
           fi
           echo "$want" > /tmp/want.txt

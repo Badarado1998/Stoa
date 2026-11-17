@@ -1,0 +1,118 @@
+name: Deploy UniswapV4AdapterV3 (Robinhood Chain)
+
+# Manual only, and only after HEY Research Lab's go on the fixes (1111e9a, 109b08b) and the owner's yes. Unticked
+# "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# 1) unit tests, HEY Research Lab's fork tests and the rollout rehearsal on a fork
+# 2) deploys UniswapV4AdapterV3 (owner the 48h timelock, keeper, the router's guardian, V2's allowlist + the three
+#    Fables hooks), checks its roles and that the deployment emitted exactly one HookSet per allowlisted hook (HEY
+#    Research Lab, I-4), verifies it on Sourcify
+# 3) the keeper registers the pools Stoa's own flows use ($STOA and the two main ETH/USDG pools), which the rollout
+#    then pins, one timelock operation each
+# 4) commits contracts/deployments/4663-v4v3.json: from then on the daily job copies V2's keys to V3 (100 a run),
+#    v4-guard watches V3, and rollout-robinhood-venues.yml swaps V2 for V3 once the V4 fix is DONE
+# Pays gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY (the keeper): the deploy is cheap; copying ~380 keys over a few days
+# costs more, so top the keeper up first.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test ! -f deployments/4663-v4v3.json || { echo "::error::already deployed (contracts/deployments/4663-v4v3.json)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          [ "$(echo $ME | tr A-F a-f)" = "0xbf666e8d054935170b9f09127247905a975b3b80" ] || { echo "::error::the key is not the keeper"; exit 1; }
+          BAL=$(cast balance $ME --rpc-url "$ROBINHOOD_RPC_URL")
+          echo "Keeper balance: $(cast from-wei $BAL) ETH"
+          [ "$BAL" -ge 3000000000000000 ] || echo "::warning::keeper holds less than 0.003 ETH: top it up before the daily job copies ~380 keys to V3"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Unit tests
+        run: forge test --no-match-contract Fork
+
+      - name: Fork tests - HEY Research Lab's V3 tests and the rollout rehearsal
+        env:
+          ROBINHOOD_RPC_URL: https://rpc.mainnet.chain.robinhood.com
+        run: forge test --match-contract "HeyV3Fork|ForkRobinhoodV4V3Rollout" -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployV4AdapterV3Robinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-v4v3.json
+
+      - name: Check the allowlist events of the deployment
+        if: ${{ inputs.broadcast }}
+        run: |
+          TX=$(jq -r '.transactions[] | select(.transactionType == "CREATE") | .hash' broadcast/DeployV4AdapterV3Robinhood.s.sol/4663/run-latest.json)
+          A=$(jq -r .uniswapV4AdapterV3 deployments/4663-v4v3.json)
+          N=$(cast receipt $TX --json --rpc-url "$ROBINHOOD_RPC_URL" | jq --arg a "$(echo $A | tr A-F a-f)" \
+            '[.logs[] | select((.address | ascii_downcase) == $a and .topics[0] == "0xd151ae3ca74502c0fcb484d76443e786331ae2d705cafec25b5b61610588f723")] | length')
+          echo "HookSet events: $N (expected $(jq .hooks deployments/4663-v4v3.json))"
+          [ "$N" = "$(jq .hooks deployments/4663-v4v3.json)" ] || { echo "::error::allowlist events do not match the script's list"; exit 1; }
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          A=$(jq -r .uniswapV4AdapterV3 deployments/4663-v4v3.json)
+          forge verify-contract $A src/adapters/UniswapV4AdapterV3.sol:UniswapV4AdapterV3 --verifier sourcify --chain 4663 \
+            --guess-constructor-args --rpc-url "$ROBINHOOD_RPC_URL" || true
+
+      - name: Register the pools Stoa's own flows use (keeper)
+        if: ${{ inputs.broadcast }}
+        run: |
+          A=$(jq -r .uniswapV4AdapterV3 deployments/4663-v4v3.json)
+          for k in \
+            "(0x0000000000000000000000000000000000000000,0x13E6993417616De724F2b337D65063f229e96718,0,200,0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044)" \
+            "(0x0000000000000000000000000000000000000000,0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168,500,10,0x0000000000000000000000000000000000000000)" \
+            "(0x0000000000000000000000000000000000000000,0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168,8388608,1,0x987E330F00B79864a07FE81dFaC344D0078ABCC0)"; do
+            cast send $A "register((address,address,uint24,int24,address))" "$k" --private-key "$PK" --rpc-url "$ROBINHOOD_RPC_URL" \
+              | grep -E "^(status|transactionHash) "
+          done
+
+      - name: Publish the address (rollout, daily job, guard)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add -f contracts/deployments/4663-v4v3.json
+          git commit -m "deploy: UniswapV4AdapterV3 on Robinhood Chain (not routed until the Safe swaps it in)"
+          git pull --rebase && git push
+
+      - name: Make sure the hourly governance rollout runs
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY"

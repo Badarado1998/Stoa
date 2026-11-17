@@ -57,6 +57,9 @@ if RH:  # script/VenuesRobinhood.sol v4Hooks(); pools paired with ETH, WETH or U
              "0x0af57f62982d03066ef917acad87f771c06528ec", "0xee588bcf2bd3e658f5160489f4199d1851bbf0cc"}
     BASE = {"0x0000000000000000000000000000000000000000", "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
             "0x5fc5360d0400a0fd4f2af552add042d716f1d168"}
+    if os.environ.get("V4_FABLES"):  # UniswapV4AdapterV3 is deployed: it also allows the three Fables hooks
+        ALLOW |= {"0x08e52564bad99e05a694b4809f397edca417a080", "0x594e8e6281edf2d363a0293a50004cf868e7a080",
+                  "0x5eb87f69be00df39981622fd60a8de4b7837e080"}
 
 
 def rpc(method, params):

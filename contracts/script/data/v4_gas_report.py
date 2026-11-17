@@ -23,6 +23,11 @@ CAP = 30_000_000  # gas given to one simulation (Robinhood Chain's transaction l
 ROUTER = "0x2f2804fad735a38015650f32f95ad5e08d6b3ee5"
 ADAPTERS = {"0x8965140fb51b2e99a0cd31a0e99eae01d36517b8": "first adapter",
             "0x27958279f95225b2a5517e7dd12b6fc0317e5c5d": "UniswapV4AdapterV2"}
+try:  # UniswapV4AdapterV3, once deploy-robinhood-v4v3.yml committed its address
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "deployments", "4663-v4v3.json")) as _f:
+        ADAPTERS[json.load(_f)["uniswapV4AdapterV3"].lower()] = "UniswapV4AdapterV3"
+except (OSError, ValueError, KeyError):
+    pass
 PM = "0x8366a39cc670b4001a1121b8f6a443a643e40951"
 WETH = "0x0bd7d308f8e1639fab988df18a8011f41eacad73"
 USDG = "0x5fc5360d0400a0fd4f2af552add042d716f1d168"
