@@ -22,6 +22,8 @@ import PoolDepth from "./PoolDepth";
 import { useCoverOffer } from "./CoverTrade";
 import SafetyPanel from "./SafetyPanel";
 import LimitPanel from "./LimitPanel";
+import { WatchStar } from "./Watch";
+import { useWatch } from "@/lib/watchlist";
 import { useLimitLive } from "@/lib/limit";
 import { COVER, coverAbi, explainCover, useCoverLive, useOpenTokens } from "@/lib/cover";
 
@@ -289,7 +291,13 @@ function TradeOn({ net }: { net: Net }) {
           if (curve !== zeroAddress) name = "Pons curve · unverified";
         } catch { /* adapter not deployed on this build */ }
       }
-      const t: Token = { symbol: sym, name, address: addr, decimals: Number(decimals), glyph: sym[0] ?? "?", tone: "other" };
+      // a Robinhood Stock Token gets its name and logo from Robinhood's own list (matched by address)
+      let logo: string | undefined;
+      if (net.key === "robinhood") {
+        const st = (await stockList()).find((x) => x.address.toLowerCase() === addr.toLowerCase());
+        if (st) { name = `${st.name} · Robinhood Stock Token`; logo = st.logo ?? undefined; }
+      }
+      const t: Token = { symbol: sym, name, address: addr, decimals: Number(decimals), glyph: sym[0] ?? "?", tone: "other", logo };
       setTokens((ts) => [...ts, t]);
       pick(side, t);
     } catch {
@@ -461,6 +469,7 @@ function TradeOn({ net }: { net: Net }) {
           </div>
         </div>
 
+        <WatchChips net={net} onPick={(a, via) => { if (busy) return; const st = via && tokens.find((t) => t.symbol === via); if (st && st.address !== sell.address) pick("sell", st); addCustom(a, "buy"); }} />
         <div className="box">
           <div className="row"><label className="lbl" htmlFor="sellv">SELL</label>
             <button type="button" className="lbl" style={{ border: 0, background: "none", cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
@@ -475,7 +484,7 @@ function TradeOn({ net }: { net: Net }) {
         </div>
         <div className="flip"><button type="button" aria-label="Switch tokens" onClick={flip}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" /></svg></button></div>
         <div className="box">
-          <div className="row"><span className="lbl">BUY</span><span className="lbl">BALANCE {bBal !== undefined ? fmt(bBal, buy.decimals, 4) : "—"}</span></div>
+          <div className="row"><span className="lbl" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>BUY{buy.tone === "other" && <WatchStar chain={net.key} address={buy.address} symbol={buy.symbol} logo={buy.logo} via={buy.name.endsWith("Robinhood Stock Token") ? "USDG" : undefined} small />}</span><span className="lbl">BALANCE {bBal !== undefined ? fmt(bBal, buy.decimals, 4) : "—"}</span></div>
           <div className="row" style={{ position: "relative" }}>
             <span className="out" style={{ fontSize: outTxt.length > 13 ? 20 : outTxt.length > 10 ? 24 : 28, color: quote ? "var(--ink)" : "#AAB2BE" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
               {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
@@ -488,7 +497,9 @@ function TradeOn({ net }: { net: Net }) {
 
         {limitMode ? (
           <>
-            {buy.tone === "other" && !isNative(buy) && <SafetyPanel chain={net.key} token={buy.address} compact />}
+            {buy.tone === "other" && !isNative(buy) && (buy.name.endsWith("Robinhood Stock Token")
+              ? <p className="note">{buy.symbol} is a Robinhood Stock Token, issued by Robinhood Assets (Jersey) Limited. Its pools trade against USDG, so sell USDG for the most direct route. <a href="/stocks">All stock tokens</a></p>
+              : <SafetyPanel chain={net.key} token={buy.address} compact />)}
             <LimitPanel net={net} sell={sell} buy={buy} amt={amt} marketOut={quote?.out} sBal={sBal} referrer={referrer} tokens={tokens} warning={tokenWarning} gate={risky && !ackToken ? "Confirm the token warning" : undefined} />
           </>
         ) : (
@@ -506,7 +517,9 @@ function TradeOn({ net }: { net: Net }) {
           </div>
         )}
         {cover.block}
-        {buy.tone === "other" && !isNative(buy) && <SafetyPanel chain={net.key} token={buy.address} compact />}
+        {buy.tone === "other" && !isNative(buy) && (buy.name.endsWith("Robinhood Stock Token")
+              ? <p className="note">{buy.symbol} is a Robinhood Stock Token, issued by Robinhood Assets (Jersey) Limited. Its pools trade against USDG, so sell USDG for the most direct route. <a href="/stocks">All stock tokens</a></p>
+              : <SafetyPanel chain={net.key} token={buy.address} compact />)}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
           <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
         )}
@@ -579,6 +592,30 @@ function TradeOn({ net }: { net: Net }) {
           <p className="note">Every swap compares these venues, directly and through {W}, and fills on the best one.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+let stocksP: Promise<{ address: string; name: string; logo: string | null }[]> | null = null;
+/** Robinhood's Stock Token list, from Stoa's own API (fetched once per visit, only when an unknown token is opened) */
+const stockList = () => (stocksP ??= fetch("/api/v1/stocks").then((r) => (r.ok ? r.json() : { stocks: [] })).then((j: { stocks?: { address: string; name: string; logo: string | null }[] }) => (Array.isArray(j.stocks) ? j.stocks : [])).catch(() => []));
+
+/** the tokens in this browser's watchlist on this network, one tap to buy */
+function WatchChips({ net, onPick }: { net: Net; onPick: (address: string, via?: string) => void }) {
+  const s = useWatch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const mine = s.watch.filter((w) => w.chain === net.key).slice(0, 12);
+  if (!mounted || !mine.length) return null;
+  return (
+    <div className="wchips" aria-label="Your watchlist">
+      <span className="lbl">WATCHLIST</span>
+      {mine.map((w) => (
+        <button key={w.address} type="button" className="wchip" onClick={() => onPick(w.address, w.via)} title={`Buy ${w.symbol}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {w.logo && <img src={w.logo} alt="" width={18} height={18} />}{w.symbol}
+        </button>
+      ))}
     </div>
   );
 }

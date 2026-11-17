@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CoverChip } from "@/components/CoverPanel";
 import { notFound, redirect } from "next/navigation";
 import { PageHead } from "@/components/ui";
+import { WatchStar } from "@/components/Watch";
 import CopyButton from "@/components/CopyButton";
 import RefKeeper from "@/components/RefKeeper";
 import TokenShare from "@/components/TokenShare";
@@ -63,7 +64,7 @@ export default async function TokenPage({ params }: P) {
       <RefKeeper />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <PageHead eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} on Stoa`}
-        action={<Link className="cta" href={buy}>Buy {sym}</Link>}>
+        action={<div style={{ display: "flex", gap: 8 }}><WatchStar chain={net.key} address={token.address} symbol={sym} logo={token.logo} label /><Link className="cta" href={buy}>Buy {sym}</Link></div>}>
         Stoa compares every venue it routes on {net.name} on every swap and fills where you get the most, for a 2 bps fee.
       </PageHead>
 

@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stocks-watchlist",
+    date: "2026-11-17",
+    title: "Stock tokens page, watchlist and price alerts",
+    tag: "Robinhood Chain",
+    items: [
+      "/stocks lists every Robinhood Stock Token on Robinhood Chain with Robinhood's own price next to the on-chain price, pool liquidity and whether the US market is open. Swap opens Trade with the token picked.",
+      "Follow any token with ☆ on Stocks, a token page or Trade. Your watchlist shows on Portfolio and as one-tap chips on Trade.",
+      "Set a price alert on any watched token. Alerts are checked every minute while Stoa is open in a tab or as the installed app, and can show a notification. The watchlist and alerts stay in your browser: no account, nothing sent to Stoa.",
+    ],
+    link: { href: "/stocks", label: "Open Stocks" },
+  },
+  {
     id: "security-status",
     date: "2026-11-17",
     title: "Security status page",

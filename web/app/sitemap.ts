@@ -5,7 +5,7 @@ import { CA } from "@/lib/stoaAddress";
 import type { Launch } from "@/lib/ponsLaunch";
 import { listedTokens } from "@/lib/tokenInfo";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/spotlight", "/cover", "/wrapped", "/security"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/spotlight", "/cover", "/wrapped", "/security"];
 /** rebuilt every hour: the token pages of the launches closest to graduation and the latest graduations */
 export const revalidate = 3600;
 

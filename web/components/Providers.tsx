@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "@/lib/wagmi";
 import { ROBINHOOD, netById, netByKey, type Net } from "@/lib/networks";
 import WalletModal from "./WalletModal";
+import { AlertWatcher } from "./Watch";
 
 const WalletCtx = createContext<{ open: () => void }>({ open: () => {} });
 export const useWalletModal = () => useContext(WalletCtx);
@@ -49,6 +50,7 @@ export default function Providers({ children }: { children: ReactNode }) {
           <WalletCtx.Provider value={{ open: () => setOpen(true) }}>
             {children}
             <WalletModal open={open} onClose={() => setOpen(false)} />
+            <AlertWatcher />
           </WalletCtx.Provider>
         </NetProvider>
       </QueryClientProvider>

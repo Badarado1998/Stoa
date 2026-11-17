@@ -67,3 +67,16 @@ self.addEventListener("fetch", (e) => {
     })());
   }
 });
+
+// a price alert notification opens (or focuses) Stoa on the token's trade page
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin);
+  if (url.origin !== self.location.origin) return;
+  e.waitUntil((async () => {
+    for (const c of await self.clients.matchAll({ type: "window", includeUncontrolled: true })) {
+      if (new URL(c.url).origin === url.origin && "focus" in c) { await c.focus(); if ("navigate" in c) await c.navigate(url.href); return; }
+    }
+    await self.clients.openWindow(url.href);
+  })());
+});

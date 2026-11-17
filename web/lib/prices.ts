@@ -8,7 +8,7 @@ import type { Net } from "./networks";
 export interface Price { usd: number; ch24?: number }
 const keyOf = (net: Net, a: string) => (a.toLowerCase() === NATIVE.toLowerCase() ? net.wrapped.toLowerCase() : a.toLowerCase());
 
-async function fetchPrices(net: Net, addrs: string[]): Promise<Record<string, Price>> {
+export async function fetchPrices(net: Net, addrs: string[]): Promise<Record<string, Price>> {
   const out: Record<string, Price> = {};
   const uniq = [...new Set(addrs.map((a) => keyOf(net, a)))];
   for (let i = 0; i < uniq.length; i += 30) {
