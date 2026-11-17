@@ -36,6 +36,8 @@ Anyone can launch a token on Robinhood Chain, including fakes that copy a real n
 - **Read the safety check.** When you buy an unverified token, Trade first simulates buying a little and selling it straight back. It tells you whether you could sell, any hidden tax on the buy or the sell, the round-trip cost, and how much of the supply the creator and the ten largest wallets hold. A pass only describes the token today: its owner can still change the rules.
 - **Look for the Covered badge.** Some token creators lock ETH in [Rug Cover](rug-cover.md) as a promise not to sell their launch tokens. If they do sell, buyers who bought with cover are paid from that bond.
 
+More on each step: [How to check a token before you buy](check-token-robinhood-chain.md).
+
 ## 5. Beyond a simple swap
 
 - **Limit orders**: sell at a price you set, filled by Stoa's keeper when the market gets there. See [Limit orders](limit-orders.md).

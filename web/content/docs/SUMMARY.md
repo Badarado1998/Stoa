@@ -10,7 +10,8 @@
 ## Guides
 
 * [How to swap on Robinhood Chain](swap-robinhood-chain.md)
-* [How to buy stock tokens](buy-stock-tokens.md)
+* [How to buy stock tokens on Robinhood Chain](buy-stock-tokens.md)
+* [How to check a token on Robinhood Chain](check-token-robinhood-chain.md)
 
 ## How pools work
 
