@@ -43,7 +43,9 @@ contract DeployV4AdapterV3Robinhood is Script, TokenPackageRobinhood, V4AdapterV
             require(v4.hookAllowed(hooks[i]), "allowlist");
         }
         console2.log("UniswapV4AdapterV3", address(v4));
-        vm.serializeUint("v", "block", block.number);
+        // Robinhood Chain is an Arbitrum chain: block.number is the parent chain's; the L2 block comes from ArbSys
+        (, bytes memory bn) = address(0x64).staticcall(abi.encodeWithSignature("arbBlockNumber()"));
+        vm.serializeUint("v", "block", bn.length == 32 ? abi.decode(bn, (uint256)) : block.number);
         vm.serializeUint("v", "hooks", hooks.length);
         vm.writeJson(vm.serializeAddress("v", "uniswapV4AdapterV3", address(v4)), "deployments/4663-v4v3.json");
     }

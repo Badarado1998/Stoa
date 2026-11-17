@@ -1,5 +1,6 @@
 {
-  "block": 26434248,
+  "block": 116516911,
   "hooks": 9,
-  "uniswapV4AdapterV3": "0xe0b9109ff2BafB145078522A9630acCbe84ce644"
+  "uniswapV4AdapterV3": "0xe0b9109ff2BafB145078522A9630acCbe84ce644",
+  "deployTx": "0x1a919691e0acdae78e3a8cd525c761a68917094d5a344e46ab8badd354c5fcab"
 }
