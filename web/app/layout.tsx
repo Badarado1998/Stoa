@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 // structured data for search engines: who Stoa is and what the site does
 const LD = [
-  { "@context": "https://schema.org", "@type": "Organization", name: "Stoa", url: SITE, logo: `${SITE}/logo.png`, sameAs: ["https://x.com/StoaDEX", "https://t.me/StoaDex", "https://github.com/StoaDex/Stoa"] },
+  { "@context": "https://schema.org", "@type": "Organization", name: "Stoa", url: SITE, logo: `${SITE}/logo.png`, sameAs: ["https://x.com/StoaDEX", "https://t.me/StoaDex", "https://t.me/StoaDexChat", "https://github.com/StoaDex/Stoa"] },
   { "@context": "https://schema.org", "@type": "WebSite", name: "Stoa", url: SITE },
   {
     "@context": "https://schema.org", "@type": "WebApplication", name: "Stoa", url: `${SITE}/trade`, applicationCategory: "FinanceApplication", operatingSystem: "Web",
