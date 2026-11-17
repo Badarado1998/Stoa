@@ -19,6 +19,7 @@
 
 * [Trade](trade.md)
 * [Trade Pons tokens](trade-pons.md)
+* [Stock tokens](stocks.md)
 * [Limit orders](limit-orders.md)
 * [Provide liquidity](provide-liquidity.md)
 * [LP tokens](lp-tokens.md)

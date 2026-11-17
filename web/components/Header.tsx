@@ -7,7 +7,7 @@ import NetSwitch from "./NetSwitch";
 
 // the top bar shows what is live on both networks today; everything else (Earn, Curators, Build, Referrals, Wrapped,
 // Docs) is one tap away in the menu, which opens on every screen size
-const TABS = [["/trade", "Trade"], ["/launches", "Launches"], ["/cover", "Rug Cover"], ["/spotlight", "Spotlight"], ["/pools", "Pools"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
+const TABS = [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/cover", "Rug Cover"], ["/spotlight", "Spotlight"], ["/pools", "Pools"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
 const MENU = [["/", "Walk the Stoa", ""], ["/trade", "Trade", "I"], ["/pools", "Pools", ""], ["/stocks", "Stocks", ""], ["/launches", "Launches", ""], ["/earn", "Earn", "II"], ["/curators", "Curators", "III"], ["/build", "Build", "IV"], ["/token", "$STOA", ""], ["/spotlight", "Spotlight", ""], ["/cover", "Rug Cover", ""], ["/referrals", "Referrals", ""], ["/portfolio", "Portfolio", ""], ["/wrapped", "Wrapped", ""], ["/docs", "Docs", ""]] as const;
 
 export default function Header({ extra }: { extra?: ReactNode }) {

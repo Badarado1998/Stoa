@@ -9,6 +9,7 @@ type F = { h: string; t: string; k: string; d: string; tag?: string; v: React.Re
 
 const FEATURES: F[] = [
   { h: "/trade", t: "Swap", k: "TRADE", d: "Every venue Stoa routes, compared for your exact amount, in one block. Your swap fills where you get the most.", v: <VSwap /> },
+  { h: "/stocks", t: "Stock tokens", k: "TSLA · NVDA · SPY", tag: "Robinhood", d: "Every Robinhood Stock Token with Robinhood's price next to the on-chain price, a swap where Stoa routes it, a watchlist and price alerts.", v: <VStocks /> },
   { h: "/docs/limit-orders", t: "Limit orders", k: "SET A PRICE", tag: "Robinhood", d: "Sell at a price you set. Stoa's keeper fills it through the router when the market gets there, never below your minimum.", v: <VLimit /> },
   { h: "/docs/trade", t: "Safety check", k: "BEFORE YOU BUY", d: "Before you buy an unverified token, Trade simulates the buy and the sell back on the live chain: hidden taxes, whether it sells, who holds it.", v: <VSafety /> },
   { h: "/cover", t: "Rug Cover", k: "PONS TOKENS", tag: "Robinhood", d: "Buy a Pons token with its creator's ETH bonded behind a 7-day promise not to sell. If the creator breaks it, buyers claim from the bond.", v: <VCover /> },
@@ -102,6 +103,20 @@ function VLimit() {
       <circle cx="245" cy="47" r="7" className="hit" />
       <text x="245" y="74" textAnchor="middle" className="vl vok">filled</text>
     </svg>
+  );
+}
+
+function VStocks() {
+  // illustration only: no live prices
+  return (
+    <div className="v-stocks">
+      <div className="vs-h"><span>TOKEN</span><span>ROBINHOOD</span><span>ON-CHAIN</span></div>
+      {["TSLA", "NVDA", "SPY", "AAPL"].map((t, i) => (
+        <div key={t} className="vs-r" style={d(200 + i * 220)}>
+          <b>{i === 0 && <i aria-hidden="true">★</i>}{t}</b><span className="bar" /><span className="bar on" />
+        </div>
+      ))}
+    </div>
   );
 }
 

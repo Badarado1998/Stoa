@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stock-pools",
+    date: "2026-11-17",
+    title: "98 stock tokens now swap on Stoa",
+    tag: "Robinhood Chain",
+    items: [
+      "Stoa's keeper now adds Uniswap V4 pools of Robinhood Stock Tokens to the V4 adapter every day: only tokens on Robinhood's own list, only pools that pass the same depth test as every other pool, and a pool without a hook only once it is about three days old. It never replaces a pool already there.",
+      "The first run took the stock tokens Stoa can swap from 78 to 98 of 203. The Stocks page also has a guide now, and Stocks is in the top bar.",
+    ],
+    link: { href: "/docs/stocks", label: "How Stocks works" },
+  },
+  {
     id: "stocks-watchlist",
     date: "2026-11-17",
     title: "Stock tokens page, watchlist and price alerts",

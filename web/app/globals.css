@@ -626,3 +626,11 @@ body.past-walk .hdr{background:rgba(244,246,250,.9);backdrop-filter:blur(14px);-
 .star{flex:none}
 .noroute{display:inline-flex;align-items:center;min-height:36px;padding:0 10px;font-size:12px;color:var(--muted);white-space:nowrap}
 .ticker{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:999px;font-family:var(--mono);font-weight:600;letter-spacing:-.02em;line-height:1}
+.v-stocks{width:86%;display:flex;flex-direction:column;gap:7px}
+.v-stocks .vs-h,.v-stocks .vs-r{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:10px;align-items:center}
+.v-stocks .vs-h{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);padding:0 10px}
+.v-stocks .vs-r{font-size:13px;color:var(--ink);padding:7px 10px;border-radius:9px;background:#fff;border:1px solid #E1E9F5;animation:vfade 4s ease var(--d) infinite}
+.v-stocks .vs-r b{font-family:var(--mono);font-weight:600;display:flex;align-items:center;gap:4px}
+.v-stocks .vs-r i{font-style:normal;color:#E2A400}
+.v-stocks .bar{height:6px;border-radius:6px;background:#D9E3F2}
+.v-stocks .bar.on{background:#9EC1F2}
