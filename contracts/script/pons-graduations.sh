@@ -27,8 +27,11 @@ done_n=0
 for t in $tokens; do
   [ "$done_n" -lt "$MAX" ] || { echo "reached MAX=$MAX for this run"; break; }
   K="keysFor(address,address)((address,address,uint24,int24,address)[])"
-  [ "$(cast call $ADAPTER "$K" $WETH $t --rpc-url "$RPC")" = "[]" ] || continue
-  [ "$(cast call $ADAPTER "$K" $USDG $t --rpc-url "$RPC")" = "[]" ] || continue
+  # skip tokens whose Pons pool is already listed (only Pons can create pools on its hook). A pair that already holds
+  # other keys but not the Pons pool is still tried, and a failed registration is reported loudly below: planted pools
+  # listed first could otherwise keep the real pool out (Hey Research Lab, UniswapV4AdapterV3 review, L-2)
+  kw=$(cast call $ADAPTER "$K" $WETH $t --rpc-url "$RPC"); ku=$(cast call $ADAPTER "$K" $USDG $t --rpc-url "$RPC")
+  echo "$kw $ku" | tr 'A-F' 'a-f' | grep -q "${HOOK}" && continue
   T=0x000000000000000000000000${t:2}
   logs=$( (cast logs --address $PM $INIT "" "" $T --from-block $((head - WINDOW)) --to-block $head --rpc-url "$RPC" --json; \
            cast logs --address $PM $INIT "" $T --from-block $((head - WINDOW)) --to-block $head --rpc-url "$RPC" --json) | jq -s 'add')
@@ -44,7 +47,9 @@ for t in $tokens; do
   echo "registering $sym $k"
   if [ -z "${DRY:-}" ]; then
     cast send $ADAPTER "register((address,address,uint24,int24,address))" "$k" --private-key "$PRIVATE_KEY" --rpc-url "$RPC" \
-      | grep -E "^(status|transactionHash) " || echo "  failed (another caller may have registered it first)"
+      | grep -E "^(status|transactionHash) " || {
+        echo "::warning::Pons graduation pool of $sym not registered on $ADAPTER (pair full or registered by someone else first): $k"
+        [ -n "${FULL_LOG:-}" ] && echo "$ADAPTER $k" >>"$FULL_LOG"; true; }
   fi
   done_n=$((done_n + 1))
 done

@@ -15,6 +15,10 @@ import {VenuesRobinhood} from "./VenuesRobinhood.sol";
 ///         Rollout (Hey Research Lab's notes): register the canonical $STOA pool first and schedule its pin as a
 ///         separate timelock operation, since setPinned reverts unless the key is registered when it runs. V3 is bound
 ///         to the live router (v1); StoaRouterV2 needs its own V3 copy with its own pins.
+///         Before the Safe schedules the router change (Hey Research Lab review, I-4): check the deployment's nine
+///         HookSet events against hooksV3() and owner/keeper/guardian/stoaRouter/poolManager/whype; add the Fables
+///         hooks to ALLOW in script/data/v4_top_pools.py; point v4_guard.py and route-check.sh at V3 and watch PinSet,
+///         HookSet, KeeperSet and GuardianSet.
 contract DeployV4AdapterV3Robinhood is Script, TokenPackageRobinhood, VenuesRobinhood {
     address internal constant GUARDIAN = 0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9;
 

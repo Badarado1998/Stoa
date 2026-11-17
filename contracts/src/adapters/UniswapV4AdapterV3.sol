@@ -20,10 +20,12 @@ import {PoolKey, V4SwapParams, IPoolManager, IWETH} from "./UniswapV4Adapter.sol
 ///        timelock) can change it, so a reviewed hook (for example the Fables ramps) can be added without a new
 ///        adapter. A key whose hook is taken off the list is skipped at once by quote and swap.
 ///      Changes after Hey Research Lab's review of this contract (commit b0fd23b):
-///      - Gas cap per simulation (Low 1). Each pool's quote simulation gets at most SIM_GAS; one that runs out is
+///      - Gas cap per simulation (L-1). Each pool's quote simulation gets exactly SIM_GAS; one that runs out is
 ///        skipped like any failed simulation. A near-empty pool with tick spacing 1 can make a simulation walk the
 ///        whole tick range (about 18.6M gas), and a few such keys used to push every quote and swap of the pair past
 ///        Robinhood Chain's 32M transaction gas limit. Now a full pair costs at most MAX_KEYS * SIM_GAS to quote.
+///        A call that cannot give the next simulation its full SIM_GAS reverts (LowGas) instead of starving it, so
+///        the pool chosen never depends on the gas the caller sent.
 ///      - Guardian off switch. The guardian (or the owner) can take a hook off the allowlist at once; putting one on
 ///        the list stays with the owner (the 48h timelock).
 ///      Swapping is otherwise unchanged from V2.
@@ -34,10 +36,14 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     uint160 internal constant MAX_SQRT_PRICE = 1461446703485210103287233400603844494775084017;
     bytes32 internal constant POOLS_SLOT = bytes32(uint256(6)); // v4-core PoolManager `_pools` mapping
     uint256 public constant MAX_KEYS = 6;
-    /// @notice Gas given to each pool's quote simulation. Measured on Robinhood Chain (Nov 2026): the deepest ETH/USDG
-    ///         pools simulate a 1,000,000 USDG or a 100 ETH trade in under 1.2M gas; MAX_KEYS simulations plus the
-    ///         real swap stay under 30M.
-    uint256 public constant SIM_GAS = 4_000_000;
+    /// @notice Gas given to each pool's quote simulation. Measured on Robinhood Chain (17 Nov 2026): a normal
+    ///         simulation costs about 0.1M; the deepest ETH/USDG pool simulates a 1,000,000 USDG or a 100 ETH trade in
+    ///         under 1.2M. A full pair of runaway keys costs MAX_KEYS * SIM_GAS = 12M, well under the 32M limit.
+    ///         Because of the LowGas check a quote or swap needs a gas limit of about SIM_GAS more than it uses;
+    ///         wallets find it by estimating, and the chain charges only the gas used.
+    uint256 public constant SIM_GAS = 2_000_000;
+    /// @dev Gas a simulation needs left before it starts: SIM_GAS reaches the call only if 64/63 of it is available.
+    uint256 internal constant SIM_GAS_NEEDED = SIM_GAS + SIM_GAS / 16;
     address internal constant NATIVE = address(0);
 
     IPoolManager public immutable poolManager;
@@ -70,6 +76,7 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     error NotFound();
     error NotKeeper();
     error NotGuardian();
+    error LowGas();
     error PinnedKey();
     error Simulated(uint256 inUsed, uint256 out);
 
@@ -254,7 +261,9 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
         for (uint256 i; i < list.length; ++i) {
             PoolKey memory key = list[i];
             if (!hookAllowed[key.hooks]) continue; // a hook taken off the list stops routing at once
-            // capped: a simulation that runs out of gas reverts with no data and is skipped below
+            // capped: a simulation that runs out of gas reverts with no data and is skipped below; never starved, so
+            // which pool wins does not depend on the gas the caller sent
+            if (gasleft() < SIM_GAS_NEEDED) revert LowGas();
             try poolManager.unlock{gas: SIM_GAS}(abi.encode(true, key, _zeroForOne(key, a), amountIn)) {
             // a simulation always reverts
             }

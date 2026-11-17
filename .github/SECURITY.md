@@ -4,7 +4,8 @@ Stoa's contracts hold user funds only for the duration of a swap, but a bug in t
 
 ## Reporting a vulnerability
 
-- Send a direct message to [@StoaDEX on X](https://x.com/StoaDEX) with a short description and say it is a security report. We reply with a private channel for the details.
+- [Report a vulnerability](https://github.com/StoaDex/Stoa/security/advisories/new) privately on this repository (preferred), or
+- send a direct message to [@StoaDEX on X](https://x.com/StoaDEX) with a short description and say it is a security report. We reply with a private channel for the details.
 - Please do **not** open a public GitHub issue, post on social media or exploit the issue on mainnet.
 - Include the contract and chain, the steps or a Foundry test that reproduces it, and the impact you expect.
 

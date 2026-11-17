@@ -196,6 +196,9 @@ contract UniswapV4AdapterV3Test is Test {
         v4.disableHook(fables);
         assertFalse(v4.hookAllowed(fables));
         assertEq(v4.quote(weth, tok, 1e18), 2e18, "the hook stops routing in the same block");
+        vm.prank(keeper);
+        vm.expectRevert(UniswapV4AdapterV3.HookNotAllowed.selector);
+        v4.register(_hooked(6000)); // and new keys with it are refused
 
         vm.prank(guardian);
         vm.expectRevert(); // putting a hook on the list stays with the owner
@@ -236,5 +239,34 @@ contract UniswapV4AdapterV3Test is Test {
         assertEq(v4.quote{gas: 32_000_000}(weth, tok, 100), 0);
         g -= gasleft();
         assertLe(g, v4.MAX_KEYS() * v4.SIM_GAS() + 500_000, "at most MAX_KEYS capped simulations");
+    }
+
+    /// The switch also holds on the swap path, pinned key included: the swap finds no route before the PoolManager is
+    /// touched (Hey Research Lab's note on the off switch).
+    function test_guardianOff_stopsSwapsToo_evenOnAPinnedKey() public {
+        vm.prank(owner);
+        v4.setHookAllowed(fables, true);
+        vm.prank(keeper);
+        v4.register(_hooked(5000));
+        vm.prank(owner);
+        v4.setPinned(_hooked(5000), true);
+        vm.prank(guardian);
+        v4.disableHook(fables);
+        vm.prank(makeAddr("router"));
+        vm.expectRevert(UniswapV4AdapterV3.NoPath.selector);
+        v4.swap(weth, tok, 1e18, 0, address(this));
+        vm.prank(makeAddr("router"));
+        vm.expectRevert(UniswapV4AdapterV3.NoPath.selector);
+        v4.swap(tok, weth, 1e18, 0, address(this));
+        assertTrue(v4.pinned(v4.poolId(_hooked(5000))), "the key keeps its slot and pin");
+    }
+
+    /// A call that cannot give a simulation its full SIM_GAS reverts instead of skipping that pool.
+    function test_gasCap_tooLittleGasReverts_insteadOfStarvingAPool() public {
+        vm.prank(keeper);
+        v4.register(_key(300));
+        vm.expectRevert(UniswapV4AdapterV3.LowGas.selector);
+        v4.quote{gas: 1_500_000}(weth, tok, 100);
+        assertEq(v4.quote{gas: 2_500_000}(weth, tok, 100), 300);
     }
 }
