@@ -4,6 +4,8 @@ import { PageHead } from "@/components/ui";
 import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
 import { OLD_V4 } from "@/lib/v4guard";
 import { fmtEth, KEEPER, securityStatus } from "@/lib/securityStatus";
+import { securityActivity } from "@/lib/securityActivity";
+import { txUrlOn } from "@/lib/networks";
 
 const description = "Who controls each Stoa contract, what is paused, which venues the router uses, what is waiting in the timelock and which security findings are fixed. Read live from Robinhood Chain.";
 export const metadata: Metadata = {
@@ -32,7 +34,13 @@ const FINDINGS: { title: string; who: string; status: "fixed" | "rolling" | "kno
 ];
 
 export default async function SecurityPage() {
-  const s = await securityStatus().catch(() => null);
+  const [s, act] = await Promise.all([securityStatus().catch(() => null), securityActivity().catch(() => null)]);
+  const when = (t: number | null) => {
+    if (!t) return "—";
+    const h = (t * 1000 - Date.now()) / 3_600_000;
+    const at = new Date(t * 1000).toUTCString().slice(5, 22) + " UTC";
+    return h <= 0 ? `ready since ${at}` : `ready ${at} (in ${h < 1 ? `${Math.ceil(h * 60)} min` : `${Math.round(h)}h`})`;
+  };
   const net = ROBINHOOD;
   return (
     <section className="page">
@@ -93,6 +101,56 @@ export default async function SecurityPage() {
             </div>
           </div>
         </>
+      )}
+
+      {act && (
+        <div className="grid2" style={{ marginBottom: 16 }}>
+          <div className="panel pad">
+            <div className="lbl">WAITING IN THE TIMELOCK</div>
+            {act.pending.length === 0 ? <p className="note" style={{ marginBottom: 0 }}>Nothing is scheduled right now.</p> : (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 12 }}>
+                {act.pending.map((o) => (
+                  <div key={o.id} style={{ fontSize: 14 }}>
+                    {o.calls.map((c, i) => <div key={i}><b>{c.target}</b>: {c.action}</div>)}
+                    <div className="note" style={{ marginTop: 2 }}>{when(o.readyAt)} · <a href={txUrlOn(net, o.tx)} target="_blank" rel="noopener noreferrer">scheduled tx</a></div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {act.recent.length > 0 && (
+              <>
+                <div className="lbl" style={{ marginTop: 16 }}>RECENTLY EXECUTED</div>
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {act.recent.map((o) => (
+                    <div key={o.id} className="note" style={{ margin: 0 }}>
+                      {o.calls.map((c) => `${c.target}: ${c.action}`).join(" · ")} · <a href={txUrlOn(net, o.tx)} target="_blank" rel="noopener noreferrer">tx</a>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="panel pad">
+            <div className="lbl">UNISWAP V4 POOLS · NEW ADAPTER</div>
+            <div className="det" style={{ marginTop: 8 }}>
+              <span>Pool keys registered</span><span>{act.totalRegistered}</span>
+              <span>Removed</span><span>{act.unregistered === 0 ? <Badge tone="ok">0</Badge> : <Badge tone="bad">{act.unregistered}</Badge>}</span>
+            </div>
+            {act.registrations.length > 0 && (
+              <>
+                <div className="lbl" style={{ marginTop: 14 }}>LATEST REGISTERED</div>
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {act.registrations.map((r) => (
+                    <div key={r.tx + r.pair} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                      <span>{r.pair}</span><a href={txUrlOn(net, r.tx)} target="_blank" rel="noopener noreferrer" className="note">tx</a>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            <p className="note" style={{ marginTop: 12, marginBottom: 0 }}>Only Stoa&apos;s keeper or the timelock can register a pool key on this adapter. The keeper never removes one and never touches $STOA pools or ETH/USDG.</p>
+          </div>
+        </div>
       )}
 
       <div className="panel pad" style={{ marginBottom: 16 }}>
