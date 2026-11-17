@@ -55,6 +55,24 @@ jobs:
               PROTECT_PAIRS="0x0000000000000000000000000000000000000000-0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" \
               ADAPTER="$A" SEED=script/data/v4-seed-pools-4663.json ./script/seed-v4.sh
           done
+      - name: Robinhood Chain - Robinhood Stock Token pools
+        continue-on-error: true
+        env:
+          ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+        run: |
+          test -n "$(jq -r '.uniswapV4Adapter // empty' web/lib/deployments-4663.json)" || exit 0
+          # stock tokens trade too little for the ranking above: their pools qualify by Robinhood's own token list,
+          # depth and age instead (script/data/v4_stock_pools.py). A failed scan registers the last committed list.
+          (cd contracts/script/data && python3 -I v4_stock_pools.py) || echo "::warning::stock pool scan failed; registering the last list"
+          test -n "${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" || exit 0
+          cd contracts
+          for A in $( (jq -r .uniswapV4Adapter ../web/lib/deployments-4663.json; jq -r '.uniswapV4AdapterV2 // empty' deployments/4663-fixes.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
+            echo "adapter $A"
+            RPC="$ROBINHOOD_RPC_URL" PRIVATE_KEY="${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}" \
+              PROTECT="$(jq -r '.stoa // empty' ../web/lib/deployments-4663.json)" \
+              PROTECT_PAIRS="0x0000000000000000000000000000000000000000-0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" \
+              ADAPTER="$A" SEED=script/data/v4-stock-seed-4663.json ./script/seed-v4.sh
+          done
       - name: Robinhood Chain - Metric pool lists
         if: ${{ hashFiles('contracts/deployments/4663-metric.json') != '' }}
         continue-on-error: true
@@ -69,7 +87,7 @@ jobs:
         run: python3 -I bridged_tokens.py || echo "::warning::bridged token scan failed; keeping yesterday's list"
       - name: Save the lists
         run: |
-          L="contracts/script/data/v4-seed-pools.json contracts/script/data/v4-seed-pools-4663.json contracts/script/data/v4-pool-keys-4663.json contracts/script/data/metric-pools-4663.json web/lib/bridged-tokens.json"
+          L="contracts/script/data/v4-seed-pools.json contracts/script/data/v4-seed-pools-4663.json contracts/script/data/v4-stock-seed-4663.json contracts/script/data/v4-stock-pools-keys-4663.json contracts/script/data/v4-pool-keys-4663.json contracts/script/data/metric-pools-4663.json web/lib/bridged-tokens.json"
           git diff --quiet $L && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
