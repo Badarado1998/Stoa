@@ -23,6 +23,7 @@ import { useCoverOffer } from "./CoverTrade";
 import SafetyPanel from "./SafetyPanel";
 import LimitPanel from "./LimitPanel";
 import { WatchStar } from "./Watch";
+import { session as usSession } from "@/lib/marketHours";
 import { useWatch } from "@/lib/watchlist";
 import { useLimitLive } from "@/lib/limit";
 import { COVER, coverAbi, explainCover, useCoverLive, useOpenTokens } from "@/lib/cover";
@@ -494,6 +495,7 @@ function TradeOn({ net }: { net: Net }) {
           </div>
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
         </div>
+        <MarketNote tokens={[sell, buy]} />
 
         {limitMode ? (
           <>
@@ -594,6 +596,16 @@ function TradeOn({ net }: { net: Net }) {
       </div>
     </div>
   );
+}
+
+/** While the US market is closed, a stock token's pools have no live reference price (Robinhood prices the tokens from
+ *  the underlying shares), so they can drift: say so next to the form. Shown only for Robinhood Stock Tokens. */
+function MarketNote({ tokens }: { tokens: Token[] }) {
+  const [closed, setClosed] = useState(false);
+  useEffect(() => { const f = () => setClosed(usSession() === "closed"); f(); const t = setInterval(f, 60_000); return () => clearInterval(t); }, []);
+  const st = tokens.find((t) => t.name.endsWith("Robinhood Stock Token"));
+  if (!st || !closed) return null;
+  return <div className="notice" style={{ marginTop: 10 }}>The US market is closed, so Robinhood is not pricing {st.symbol} until it reopens and its on-chain pools can drift from the last price. Check the rate before you swap.</div>;
 }
 
 let stocksP: Promise<{ address: string; name: string; logo: string | null }[]> | null = null;
