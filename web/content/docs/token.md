@@ -41,7 +41,7 @@ $STOA is listed on [CoinGecko](https://www.coingecko.com/en/coins/stoa) (since 1
 
 ## Supply
 
-$STOA has a fixed supply of 1,000,000,000, all minted at launch on Pons. Nothing can mint more.
+$STOA has a fixed supply of 1,000,000,000, all minted at launch on Pons. Nothing can mint more. There was no presale and no team allocation: every token started on the Pons bonding curve, and the team bought its 0.68% there like everyone else (see [Team wallet](#team-wallet)).
 
 - **Total supply** is everything minted minus what sits at the burn address `0x…dEaD`.
 - **Circulating supply** is the total supply minus the unsold $STOA still on the Pons bonding curve. When the curve graduates, that $STOA moves into the Uniswap V4 pool and counts as circulating.
@@ -57,6 +57,8 @@ The numbers are read from Robinhood Chain every 5 minutes and served for tracker
 ## Team wallet
 
 Stoa's team account on [fomo](https://fomo.family), @StoaDex, holds $STOA at `0xfe6f7c6e2ad2c3594fe7fb61c28c4499bbb83bf0`. fomo gives a token's team a team tag, so holders on fomo see updates straight from the team, only if the team's fomo account holds at least 0.5% of supply. Stoa's team tag was granted on 15 November 2026. The team bought 6.8M $STOA (0.68%) on the Pons curve with 0.1 ETH on 15 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xbf4ca2f6bff0c6124ebafe82eaca82faf873248e3d027322182efb60f49d7bf3)) and keeps at least 0.5% there while the tag is active. The live balance is on the [$STOA page](https://stoadex.com/token).
+
+The dev wallet that launched $STOA on Pons, `0x8dac20c0fe1c59d337808f234921a89ee0c1346a`, burned every $STOA it received: 22.0M (2.2% of supply) sent to the burn address `0x…dEaD` in 12 transfers between 14 and 17 November 2026. It holds none today.
 
 ## What $STOA is not
 
