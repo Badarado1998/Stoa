@@ -29,6 +29,11 @@ const factoryAbi = parseAbi(["function getLaunchedToken(address) view returns (a
 const PONS_FACTORY = "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e" as Address;
 const lc = (a: string) => a.toLowerCase();
 const NO_ROUTE = "Stoa has no route to this token right now";
+const NOT_TESTED = "the test sell ran out of gas for the quote, so it says nothing about the token";
+/** reverts that mean the simulation was short of gas or lost a route, not that the token refuses a sale: the V4
+ *  adapter's LowGas (0x4a48966d), and the router's UnknownVenue (0x360f0e2b) when the sell quote lost its V4 leg
+ *  (HEY Research Lab, UniswapV4AdapterV3 follow-up, F-5) */
+const UNTESTED = new Set(["0x4a48966d", "0x360f0e2b"]);
 const pct = (part: bigint, whole: bigint) => (whole > 0n ? Number((part * 1_000_000n) / whole) / 10_000 : 0);
 
 /** what a revert from the router or the token means, in plain words */
@@ -54,7 +59,8 @@ async function simulate(net: Net, token: Address): Promise<Safety["test"]> {
     account: FROM, to: SIM,
     data: encodeFunctionData({ abi: simAbi, functionName: "check", args: [net.contracts.router, token, amountIn] }),
     stateOverride: [{ address: SIM, code: SAFETY_SIM_CODE, balance: parseEther("10") }],
-    gas: 15_000_000n,
+    // four simulations of up to six V4 pools each (quote and swap, buy and sell), at up to 2M gas each, plus the swaps
+    gas: 60_000_000n,
   });
   const r = decodeFunctionResult({ abi: simAbi, functionName: "check", data: res.data! });
   if (r.buyQuoted === 0n) return { amountIn: amountIn.toString(), gas: net.gas, buyOk: false, sellOk: false, buyTaxPct: null, sellTaxPct: null, roundTripPct: null, why: NO_ROUTE };
@@ -64,7 +70,7 @@ async function simulate(net: Net, token: Address): Promise<Safety["test"]> {
     amountIn: amountIn.toString(), gas: net.gas, buyOk: r.buyOk, sellOk: r.sellOk,
     buyTaxPct: buyTax === null ? null : Number(buyTax.toFixed(2)), sellTaxPct: sellTax === null ? null : Number(sellTax.toFixed(2)),
     roundTripPct: r.sellOk ? Number(((Number(r.sellGot) / Number(amountIn)) * 100 - 100).toFixed(2)) : null,
-    why: !r.buyOk ? why(r.buyError) : !r.sellOk ? why(r.sellError) : null,
+    why: !r.buyOk ? why(r.buyError) : !r.sellOk ? (UNTESTED.has(r.sellError.slice(0, 10)) ? NOT_TESTED : why(r.sellError)) : null,
   };
 }
 
@@ -101,6 +107,7 @@ export async function readSafety(net: Net, token: Address): Promise<Safety> {
   const bad = (v: Safety["verdict"]) => { if (v === "danger" || (v === "caution" && verdict !== "danger")) verdict = v; };
   if (test && test.why === NO_ROUTE) { verdict = "unknown"; notes.push(`${NO_ROUTE}, so it could not be test-traded.`); }
   else if (test && !test.buyOk) { bad("caution"); notes.push(`A test buy through Stoa failed: ${test.why}.`); }
+  else if (test && !test.sellOk && test.why === NOT_TESTED) { verdict = "unknown"; notes.push(`A test buy worked, but ${NOT_TESTED}.`); }
   else if (test && !test.sellOk) { bad("danger"); notes.push(`A test sell failed right after a test buy: ${test.why}. You may not be able to sell this token through Stoa.`); }
   for (const [label, v] of [["buy", test?.buyTaxPct], ["sell", test?.sellTaxPct]] as const) {
     if (v !== null && v !== undefined && v >= 10) { bad("danger"); notes.push(`The ${label} pays ${v.toFixed(1)}% less than its quote: a hidden tax.`); }
