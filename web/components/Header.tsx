@@ -8,7 +8,12 @@ import NetSwitch from "./NetSwitch";
 // the top bar shows what is live on both networks today; everything else (Earn, Curators, Build, Referrals, Wrapped,
 // Docs) is one tap away in the menu, which opens on every screen size
 const TABS = [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/cover", "Rug Cover"], ["/spotlight", "Spotlight"], ["/pools", "Pools"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
-const MENU = [["/", "Walk the Stoa", ""], ["/trade", "Trade", "I"], ["/pools", "Pools", ""], ["/stocks", "Stocks", ""], ["/launches", "Launches", ""], ["/earn", "Earn", "II"], ["/curators", "Curators", "III"], ["/build", "Build", "IV"], ["/token", "$STOA", ""], ["/spotlight", "Spotlight", ""], ["/cover", "Rug Cover", ""], ["/referrals", "Referrals", ""], ["/portfolio", "Portfolio", ""], ["/wrapped", "Wrapped", ""], ["/docs", "Docs", ""]] as const;
+// the menu in four short groups (the same grouping as the footer), two columns, so it fits one phone screen
+const MENU: { h: string; items: [string, string][] }[] = [
+  { h: "Trade", items: [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/pools", "Pools"], ["/cover", "Rug Cover"], ["/tokens", "Tokens"]] },
+  { h: "$STOA & you", items: [["/token", "$STOA"], ["/spotlight", "Spotlight"], ["/earn", "Earn"], ["/portfolio", "Portfolio"], ["/wrapped", "Wrapped"], ["/referrals", "Referrals"]] },
+  { h: "Learn", items: [["/docs", "Docs"], ["/", "Walk the Stoa"], ["/build", "Build"], ["/curators", "Curators"], ["/security", "Security"], ["/changelog", "Changelog"]] },
+];
 
 export default function Header({ extra }: { extra?: ReactNode }) {
   const path = usePathname();
@@ -61,8 +66,13 @@ export default function Header({ extra }: { extra?: ReactNode }) {
         </div>
       </header>
       <nav ref={menuRef} className={`menu${open ? " open" : ""}`} aria-label="Menu" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
-        {MENU.map(([h, l, n]) => <Link key={h} href={h} className={on(h) ? "on" : undefined}>{l} {n && <small>{n}</small>}</Link>)}
-        <a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a>
+        {MENU.map((g) => (
+          <div key={g.h} className="mgroup">
+            <div className="mh">{g.h}</div>
+            <div className="mgrid">{g.items.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : undefined}>{l}</Link>)}</div>
+          </div>
+        ))}
+        <a className="mx" href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a>
       </nav>
     </>
   );
