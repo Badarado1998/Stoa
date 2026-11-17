@@ -22,6 +22,12 @@ const CSP = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // the docs are read from disk at request time (the sitemap is regenerated hourly): ship them with those functions,
+  // or a regeneration fails with ENOENT and search engines get a 500 for /sitemap.xml
+  outputFileTracingIncludes: {
+    "/sitemap.xml": ["./content/docs/**/*"],
+    "/docs/[slug]": ["./content/docs/**/*"],
+  },
   // WalletConnect's logger optionally requires these; they are not needed in the browser
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
