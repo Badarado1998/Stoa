@@ -357,5 +357,12 @@
   "decimals": 18,
   "launchpad": "Pons",
   "logo": "/tokens/0x0bd8190edff57bb502eb2facd61fe7e991da08d6.webp"
+ },
+ {
+  "symbol": "NOUNY",
+  "address": "0xcaeed5281bd1eeb26d5f8bd550bf5c3727ba6514",
+  "decimals": 18,
+  "launchpad": "Pons",
+  "logo": "/tokens/0xcaeed5281bd1eeb26d5f8bd550bf5c3727ba6514.webp"
  }
 ]
