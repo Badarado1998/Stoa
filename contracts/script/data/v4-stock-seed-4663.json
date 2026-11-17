@@ -6,7 +6,7 @@
   "tickSpacing": 10,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "AMC",
-  "liquidityUsd": 391626
+  "liquidityUsd": 391633
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -15,7 +15,7 @@
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "SNDK",
-  "liquidityUsd": 183286
+  "liquidityUsd": 182927
  },
  {
   "currency0": "0x5f10a1c971b69e47e059e1dc91901b59b3fb49c3",
@@ -42,7 +42,7 @@
   "tickSpacing": 99,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "NBIS",
-  "liquidityUsd": 107068
+  "liquidityUsd": 107014
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -96,7 +96,7 @@
   "tickSpacing": 20,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "INDA",
-  "liquidityUsd": 20764
+  "liquidityUsd": 20763
  },
  {
   "currency0": "0x329fcaceb9ad6f9580dd5f643fed0646900d043c",
@@ -123,7 +123,7 @@
   "tickSpacing": 205,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "GDX",
-  "liquidityUsd": 12231
+  "liquidityUsd": 12228
  },
  {
   "currency0": "0x0f17206447090e464c277571124dd2688e48aea9",
@@ -132,16 +132,7 @@
   "tickSpacing": 71,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "QCOM",
-  "liquidityUsd": 10743
- },
- {
-  "currency0": "0x59dd09d4900c2e4b5f75b7c0d4e6796fcc234cb1",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 30000,
-  "tickSpacing": 1,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "HPE",
-  "liquidityUsd": 8688
+  "liquidityUsd": 10734
  },
  {
   "currency0": "0x27c99fbde9d0d2aa4f4bfb4943f237843ddf6958",
@@ -187,6 +178,15 @@
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "GE",
   "liquidityUsd": 4965
+ },
+ {
+  "currency0": "0x501b1b3b79750313ad2c4cccd08586c4c17d7283",
+  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "fee": 8900,
+  "tickSpacing": 89,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "DIS",
+  "liquidityUsd": 4493
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
