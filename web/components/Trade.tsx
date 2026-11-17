@@ -593,6 +593,12 @@ function TradeOn({ net }: { net: Net }) {
           </div>
           <p className="note">Every swap compares these venues, directly and through {W}, and fills on the best one.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
+        {net.key === "robinhood" && (
+          <a className="panel pad" href="/check" style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+            <div className="lbl">NOT SURE ABOUT A TOKEN?</div>
+            <p style={{ marginTop: 8 }}>Check it free before you buy: a simulated buy and sell-back, hidden taxes and who holds it. Nothing to sign. <b style={{ color: "var(--accent)" }}>stoadex.com/check →</b></p>
+          </a>
+        )}
       </div>
     </div>
   );
