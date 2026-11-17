@@ -73,6 +73,7 @@ export default function Header({ extra }: { extra?: ReactNode }) {
           </div>
         ))}
         <a className="mx" href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X · @StoaDEX</a>
+        <a className="mx" href="https://t.me/StoaDex" target="_blank" rel="noopener noreferrer">Telegram · announcements</a>
       </nav>
     </>
   );
