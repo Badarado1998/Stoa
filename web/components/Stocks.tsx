@@ -22,6 +22,39 @@ export function MarketStatus() {
   return <span className={`mstatus ${s}`}><i aria-hidden="true" />{SESSION_LABEL[s]}</span>;
 }
 
+const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(Math.abs(v) < 10 ? 2 : 1)}%`;
+
+/** Today's movers among stock tokens with a real on-chain market (at least MIN_LIQ of liquidity): the most traded,
+ *  the biggest 24h moves on-chain, and the widest gaps from Robinhood's price. Read from the same data as the list. */
+const MIN_LIQ = 10_000;
+function Movers({ rows }: { rows: StockRow[] }) {
+  const liquid = rows.filter((r) => r.dex && r.dex.liquidityUsd >= MIN_LIQ);
+  if (liquid.length < 3) return null;
+  const gap = (r: StockRow) => (r.ref && r.dex ? ((r.dex.priceUsd - r.ref) / r.ref) * 100 : null);
+  const lists: { h: string; sub: string; items: { r: StockRow; v: string; tone?: string }[] }[] = [
+    { h: "Most traded", sub: "24h on-chain volume", items: [...liquid].sort((a, b) => b.dex!.volume24h - a.dex!.volume24h).slice(0, 5).map((r) => ({ r, v: usd0(r.dex!.volume24h) })) },
+    { h: "Biggest moves", sub: "24h on-chain change", items: liquid.filter((r) => r.dex!.change24h != null).sort((a, b) => Math.abs(b.dex!.change24h!) - Math.abs(a.dex!.change24h!)).slice(0, 5).map((r) => ({ r, v: pct(r.dex!.change24h!), tone: r.dex!.change24h! >= 0 ? "up" : "dn" })) },
+    { h: "Widest gaps", sub: "on-chain vs Robinhood", items: liquid.filter((r) => gap(r) != null).sort((a, b) => Math.abs(gap(b)!) - Math.abs(gap(a)!)).slice(0, 5).map((r) => ({ r, v: pct(gap(r)!) })) },
+  ];
+  return (
+    <div className="movers">
+      {lists.filter((l) => l.items.length).map((l) => (
+        <div key={l.h} className="panel pad">
+          <div className="lbl">{l.h.toUpperCase()}</div>
+          <div className="note" style={{ margin: "2px 0 8px" }}>{l.sub}</div>
+          {l.items.map(({ r, v, tone }) => (
+            <Link key={r.address} href={`/stocks/${r.symbol.toLowerCase()}`} className="mrow">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {r.logo ? <img src={r.logo} alt="" width={22} height={22} /> : <Ticker symbol={r.symbol} size={22} />}
+              <b>{r.symbol}</b><span className={tone}>{v}</span>
+            </Link>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: number }) {
   const [q, setQ] = useState("");
   const [all, setAll] = useState(false);
@@ -33,6 +66,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
   return (
     <>
       <WatchlistPanel chain="robinhood" />
+      <Movers rows={rows} />
       <div className="panel pad">
         <div className="stockbar">
           <input type="search" placeholder="Search ticker or name" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search stock tokens" />

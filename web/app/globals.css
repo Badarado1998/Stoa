@@ -640,3 +640,9 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 @media (max-width:640px){.foot .cols{display:grid;grid-template-columns:1fr 1fr;gap:26px 20px;width:100%}}
 .sname .slink{display:flex;flex-direction:column;min-width:0;color:var(--ink)}
 .sname .slink:hover b{color:var(--accent)}
+.movers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.mrow{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:8px 4px;border-top:1px solid #EEF1F5;color:var(--ink)}
+.mrow img{border-radius:999px;object-fit:cover}
+.mrow span{font-family:var(--mono);font-size:13.5px}
+.mrow:hover b{color:var(--accent)}
+@media (max-width:760px){.movers{grid-template-columns:minmax(0,1fr)}}
