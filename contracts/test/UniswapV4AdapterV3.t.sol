@@ -16,17 +16,25 @@ contract MockQuotingPoolManager {
 
     function unlock(bytes calldata data) external pure returns (bytes memory) {
         (, PoolKey memory key,, uint256 amountIn) = abi.decode(data, (bool, PoolKey, bool, uint256));
+        if (key.fee == 999) {
+            // a pool whose simulation walks the whole tick range: burns all the gas it is given
+            uint256 x;
+            while (true) {
+                x = uint256(keccak256(abi.encode(x)));
+            }
+        }
         revert Simulated(amountIn, amountIn * key.fee / 100);
     }
 }
 
-/// @notice UniswapV4AdapterV3: no eviction, pinned keys, owner-kept hook allowlist.
+/// @notice UniswapV4AdapterV3: no eviction, pinned keys, owner-kept hook allowlist, guardian off switch, gas cap.
 contract UniswapV4AdapterV3Test is Test {
     MockQuotingPoolManager pm;
     UniswapV4AdapterV3 v4;
     address owner = makeAddr("owner");
     address keeper = makeAddr("keeper");
     address stranger = makeAddr("stranger");
+    address guardian = makeAddr("guardian");
     address tok = makeAddr("tok");
     address weth = makeAddr("weth");
     address fables = makeAddr("fablesHook");
@@ -34,7 +42,7 @@ contract UniswapV4AdapterV3Test is Test {
     function setUp() public {
         pm = new MockQuotingPoolManager();
         address[] memory hooks = new address[](1); // hook-less pools only
-        v4 = new UniswapV4AdapterV3(IPoolManager(address(pm)), weth, makeAddr("router"), owner, hooks, keeper);
+        v4 = new UniswapV4AdapterV3(IPoolManager(address(pm)), weth, makeAddr("router"), owner, hooks, keeper, guardian);
     }
 
     function _key(uint24 fee) internal view returns (PoolKey memory) {
@@ -166,5 +174,67 @@ contract UniswapV4AdapterV3Test is Test {
         v4.register(_key(100));
         vm.prank(owner);
         v4.register(_key(100)); // the owner still can
+    }
+
+    function test_guardianDisablesAHookAtOnce_butCannotAllowOne() public {
+        vm.prank(owner);
+        v4.setHookAllowed(fables, true);
+        vm.startPrank(keeper);
+        v4.register(_hooked(5000)); // pays 50x
+        v4.register(_key(200)); // pays 2x
+        vm.stopPrank();
+        assertEq(v4.quote(weth, tok, 1e18), 50e18);
+
+        vm.prank(keeper);
+        vm.expectRevert(UniswapV4AdapterV3.NotGuardian.selector);
+        v4.disableHook(fables);
+        vm.prank(stranger);
+        vm.expectRevert(UniswapV4AdapterV3.NotGuardian.selector);
+        v4.disableHook(fables);
+
+        vm.prank(guardian);
+        v4.disableHook(fables);
+        assertFalse(v4.hookAllowed(fables));
+        assertEq(v4.quote(weth, tok, 1e18), 2e18, "the hook stops routing in the same block");
+
+        vm.prank(guardian);
+        vm.expectRevert(); // putting a hook on the list stays with the owner
+        v4.setHookAllowed(fables, true);
+        vm.prank(owner);
+        v4.disableHook(address(0)); // the owner can use the switch too
+        assertEq(v4.quote(weth, tok, 1e18), 0);
+    }
+
+    function test_guardianIsSetByTheOwnerOnly() public {
+        assertEq(v4.guardian(), guardian);
+        vm.prank(guardian);
+        vm.expectRevert();
+        v4.setGuardian(stranger);
+        vm.prank(owner);
+        v4.setGuardian(address(0));
+        vm.prank(guardian);
+        vm.expectRevert(UniswapV4AdapterV3.NotGuardian.selector);
+        v4.disableHook(fables);
+    }
+
+    function test_gasCap_aRunawaySimulationIsSkipped() public {
+        vm.startPrank(keeper);
+        v4.register(_key(999)); // burns every gas unit it gets
+        v4.register(_key(300));
+        vm.stopPrank();
+        assertEq(v4.quote(weth, tok, 100), 300, "the runaway key is skipped, the other one quotes");
+    }
+
+    function test_gasCap_aFullPairOfRunawayKeysStaysUnderTheBlockLimit() public {
+        vm.startPrank(keeper);
+        v4.register(_key(999));
+        for (uint24 i = 1; i < 6; ++i) {
+            v4.register(PoolKey(address(0), tok, 999, int24(60 + int24(i)), address(0)));
+        }
+        vm.stopPrank();
+        uint256 g = gasleft();
+        assertEq(v4.quote{gas: 32_000_000}(weth, tok, 100), 0);
+        g -= gasleft();
+        assertLe(g, v4.MAX_KEYS() * v4.SIM_GAS() + 500_000, "at most MAX_KEYS capped simulations");
     }
 }

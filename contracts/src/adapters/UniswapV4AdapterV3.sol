@@ -19,7 +19,14 @@ import {PoolKey, V4SwapParams, IPoolManager, IWETH} from "./UniswapV4Adapter.sol
 ///      - Hook allowlist kept by the owner. It starts with the hooks given at deployment and only the owner (the
 ///        timelock) can change it, so a reviewed hook (for example the Fables ramps) can be added without a new
 ///        adapter. A key whose hook is taken off the list is skipped at once by quote and swap.
-///      Swapping is unchanged from V2.
+///      Changes after Hey Research Lab's review of this contract (commit b0fd23b):
+///      - Gas cap per simulation (Low 1). Each pool's quote simulation gets at most SIM_GAS; one that runs out is
+///        skipped like any failed simulation. A near-empty pool with tick spacing 1 can make a simulation walk the
+///        whole tick range (about 18.6M gas), and a few such keys used to push every quote and swap of the pair past
+///        Robinhood Chain's 32M transaction gas limit. Now a full pair costs at most MAX_KEYS * SIM_GAS to quote.
+///      - Guardian off switch. The guardian (or the owner) can take a hook off the allowlist at once; putting one on
+///        the list stays with the owner (the 48h timelock).
+///      Swapping is otherwise unchanged from V2.
 contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     using SafeERC20 for IERC20;
 
@@ -27,6 +34,10 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     uint160 internal constant MAX_SQRT_PRICE = 1461446703485210103287233400603844494775084017;
     bytes32 internal constant POOLS_SLOT = bytes32(uint256(6)); // v4-core PoolManager `_pools` mapping
     uint256 public constant MAX_KEYS = 6;
+    /// @notice Gas given to each pool's quote simulation. Measured on Robinhood Chain (Nov 2026): the deepest ETH/USDG
+    ///         pools simulate a 1,000,000 USDG or a 100 ETH trade in under 1.2M gas; MAX_KEYS simulations plus the
+    ///         real swap stay under 30M.
+    uint256 public constant SIM_GAS = 4_000_000;
     address internal constant NATIVE = address(0);
 
     IPoolManager public immutable poolManager;
@@ -36,12 +47,14 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     mapping(bytes32 pair => PoolKey[]) internal _keys;
     mapping(bytes32 poolId => bool) public pinned;
     address public keeper;
+    address public guardian;
 
     event Registered(bytes32 indexed poolId, address currency0, address currency1, address hooks);
     event Unregistered(bytes32 indexed poolId);
     event PinSet(bytes32 indexed poolId, bool pinned);
     event HookSet(address indexed hooks, bool allowed);
     event KeeperSet(address keeper);
+    event GuardianSet(address guardian);
 
     error OnlyRouter();
     error OnlyPoolManager();
@@ -56,6 +69,7 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     error Full();
     error NotFound();
     error NotKeeper();
+    error NotGuardian();
     error PinnedKey();
     error Simulated(uint256 inUsed, uint256 out);
 
@@ -65,7 +79,8 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
         address stoaRouter_,
         address owner_,
         address[] memory hooks_,
-        address keeper_
+        address keeper_,
+        address guardian_
     ) Ownable(owner_) {
         if (address(pm_) == address(0) || whype_ == address(0) || stoaRouter_ == address(0)) {
             revert BadConfig();
@@ -75,6 +90,8 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
         stoaRouter = stoaRouter_;
         keeper = keeper_;
         emit KeeperSet(keeper_);
+        guardian = guardian_;
+        emit GuardianSet(guardian_);
         for (uint256 i; i < hooks_.length; ++i) {
             hookAllowed[hooks_[i]] = true;
             emit HookSet(hooks_[i], true);
@@ -112,6 +129,20 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
     function setHookAllowed(address hooks, bool allowed) external onlyOwner {
         hookAllowed[hooks] = allowed;
         emit HookSet(hooks, allowed);
+    }
+
+    /// @notice The guardian role: may take hooks off the allowlist at once. Zero turns it off (the owner still can).
+    function setGuardian(address g) external onlyOwner {
+        guardian = g;
+        emit GuardianSet(g);
+    }
+
+    /// @notice Take a hooks contract off the allowlist now (guardian or owner). Keys with that hook stop routing in
+    ///         the same block. Only disallows: putting a hook (back) on the list is setHookAllowed, owner only.
+    function disableHook(address hooks) external {
+        if (msg.sender != guardian && msg.sender != owner()) revert NotGuardian();
+        hookAllowed[hooks] = false;
+        emit HookSet(hooks, false);
     }
 
     /// @notice Register an initialized V4 pool so the router can use it. Never replaces a key: a full pair reverts.
@@ -223,7 +254,8 @@ contract UniswapV4AdapterV3 is IVenueAdapter, Ownable2Step {
         for (uint256 i; i < list.length; ++i) {
             PoolKey memory key = list[i];
             if (!hookAllowed[key.hooks]) continue; // a hook taken off the list stops routing at once
-            try poolManager.unlock(abi.encode(true, key, _zeroForOne(key, a), amountIn)) {
+            // capped: a simulation that runs out of gas reverts with no data and is skipped below
+            try poolManager.unlock{gas: SIM_GAS}(abi.encode(true, key, _zeroForOne(key, a), amountIn)) {
             // a simulation always reverts
             }
             catch (bytes memory reason) {

@@ -35,7 +35,7 @@ CACHE = os.path.join(HERE, "v4-stock-pools-keys-4663.json")
 OUT = os.path.join(HERE, "v4-stock-seed-4663.json")
 SPAN = 9_000_000  # the public RPC answers single-topic log queries over at most 10M blocks
 MIN_LIQ_USD = float(os.environ.get("MIN_LIQ_USD", "2000"))
-PER_PAIR = int(os.environ.get("PER_PAIR", "3"))  # the deepest pools per pair; the adapter holds at most 6 keys a pair
+PER_PAIR = int(os.environ.get("PER_PAIR", "3"))  # the deepest pools per pair; seed-v4.sh stops at 4 keys a pair
 
 
 def get(url):
