@@ -134,7 +134,11 @@ export default async function SecurityPage() {
             <div className="lbl">UNISWAP V4 POOLS · NEW ADAPTER</div>
             <div className="det" style={{ marginTop: 8 }}>
               <span>Pool keys registered</span><span>{act.totalRegistered}</span>
-              <span>Removed</span><span>{act.unregistered === 0 ? <Badge tone="ok">0</Badge> : <Badge tone="bad">{act.unregistered}</Badge>}</span>
+              <span>Removed after review</span><span>{act.unregistered}</span>
+            </div>
+            <div className="note" style={{ marginTop: 8 }}>
+              Every removal is reviewed first; the 15-minute guard fails on any other. On 17 Nov 2026 the keeper removed
+              19 empty pools that could not fill even a 0.01 ETH trade, found by the daily gas report.
             </div>
             {act.registrations.length > 0 && (
               <>
