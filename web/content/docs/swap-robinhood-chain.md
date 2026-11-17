@@ -40,7 +40,7 @@ More on each step: [How to check a token before you buy](check-token-robinhood-c
 
 ## 5. Beyond a simple swap
 
-- **Limit orders**: sell at a price you set, filled by Stoa's keeper when the market gets there. See [Limit orders](limit-orders.md).
+- **Limit orders**: sell at a price you set, filled by Stoa's keeper when the market gets there. See [How to set a limit order on Robinhood Chain](limit-order-robinhood-chain.md).
 - **Stock tokens**: tokens that follow US shares, with Robinhood's price next to the on-chain price. See [How to buy stock tokens](buy-stock-tokens.md).
 - **New launches**: Pons tokens, on their bonding curve or after graduation. See [Trade Pons tokens](trade-pons.md).
 - **Portfolio**: your balances and watchlist in one place. See [Portfolio](portfolio.md).

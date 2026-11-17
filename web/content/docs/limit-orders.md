@@ -2,6 +2,8 @@
 
 Sell a token at the price you choose instead of the price right now. On Robinhood Chain, open [Trade](https://stoadex.com/trade), pick the **Limit** tab, and set the least you accept.
 
+First time? [How to set a limit order on Robinhood Chain](limit-order-robinhood-chain.md) walks through it step by step, with examples.
+
 ## How it works
 
 1. Pick what you sell and what you buy, and the amount, as for a swap.
