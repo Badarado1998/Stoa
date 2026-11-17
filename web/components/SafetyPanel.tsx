@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import type { Safety } from "@/lib/safety";
+import SafetyShare from "@/components/SafetyShare";
 
 const VERDICT: Record<Safety["verdict"], { label: string; style: React.CSSProperties }> = {
   ok: { label: "Passed", style: { background: "#E7F4EC", color: "#1F7A4D" } },
@@ -46,6 +47,7 @@ export default function SafetyPanel({ chain, token, compact = false }: { chain: 
           <p className="note">
             A test trade of {t ? `${Number(t.amountIn) / 1e18} ${t.gas}` : "a small amount"} through Stoa&apos;s router, simulated on the live chain: nothing is sent. Buying and selling back includes pool fees and price impact. It checks today&apos;s behavior; a token&apos;s owner can still change it later.
           </p>
+          <SafetyShare s={s} />
         </>
       )}
     </div>

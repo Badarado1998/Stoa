@@ -12,7 +12,7 @@ Fake tokens often copy a real name and ticker. The ticker proves nothing; only t
 
 ## 2. Run the safety check
 
-When you buy an unverified token on [Trade](https://stoadex.com/trade?chain=robinhood), Stoa runs a safety check first. Every Pons token's page on [Launches](https://stoadex.com/launches) shows the same check. It **simulates** buying a small amount through the live router and selling it straight back, on the chain as it is now. Nothing is sent and it costs nothing.
+Paste any address on [stoadex.com/check](https://stoadex.com/check), or buy an unverified token on [Trade](https://stoadex.com/trade?chain=robinhood), where Stoa runs the same safety check first. Every Pons token's page on [Launches](https://stoadex.com/launches) shows the same check. It **simulates** buying a small amount through the live router and selling it straight back, on the chain as it is now. Nothing is sent and it costs nothing.
 
 | Result | What it means |
 | --- | --- |
