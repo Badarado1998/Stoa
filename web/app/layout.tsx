@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", images: ["/og-v4.png"] },
   // installed as an app (manifest.ts): name and status bar on iPhone home screens
   appleWebApp: { capable: true, title: "Stoa", statusBarStyle: "default" },
+  // Google Search Console ownership (URL-prefix property https://stoadex.com)
+  verification: { google: "AP_Tt9q0yq2k5u87TR5_9tr2uUQclr70RT9jfRFjVLA" },
 };
 // structured data for search engines: who Stoa is and what the site does
 const LD = [
