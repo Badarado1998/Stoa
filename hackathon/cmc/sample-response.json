@@ -1,0 +1,75 @@
+{
+  "market_context": {
+    "market": {
+      "totalMarketCapUsd": 2165027000000,
+      "marketCapChange24hPct": -1.159,
+      "btcDominancePct": 59,
+      "ethDominancePct": 10,
+      "btcUsd": 63527.7,
+      "ethUsd": 1771.8,
+      "usdgUsd": 0.999787,
+      "fearAndGreed": {
+        "value": 12,
+        "label": "Extreme fear",
+        "updated": "2026-11-18T15:08:10.023Z"
+      }
+    },
+    "tokens": [
+      {
+        "input": "0x13E6993417616De724F2b337D65063f229e96718",
+        "address": "0x13e6993417616de724f2b337d65063f229e96718",
+        "symbol": "STOA",
+        "name": "STOA",
+        "listedOnCmc": true,
+        "priceUsd": 3.61305e-05,
+        "marketCapUsd": 36130.463,
+        "liquidityUsd": 33257.723,
+        "high24hUsd": 9.42446e-05,
+        "low24hUsd": 3.36246e-05,
+        "last24h": {
+          "volumeUsd": 42469.937,
+          "trades": 473,
+          "buyers": 261,
+          "sellers": 212,
+          "priceChangePct": -20.56
+        },
+        "pools": 2,
+        "cmcRiskLabel": "safe",
+        "website": "https://stoadex.com",
+        "x": "https://x.com/StoaDex",
+        "source": "CoinMarketCap DEX data"
+      }
+    ],
+    "note": "Context only, not advice. Prices here are CoinMarketCap's; the price a swap gets is the one quote returns. A low market cap or thin liquidity means a large trade moves the price a lot.",
+    "source": "Data from CoinMarketCap (coinmarketcap.com)",
+    "access": "CoinMarketCap Pro API"
+  },
+  "quote": {
+    "chain": "robinhood",
+    "chainId": 4663,
+    "router": "0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5",
+    "sellToken": "0x0000000000000000000000000000000000000000",
+    "buyToken": "0x13E6993417616De724F2b337D65063f229e96718",
+    "amountIn": "500000000000000000",
+    "amountOut": "21199910120167517234716703",
+    "minOut": "21093910569566679648543119",
+    "slippageBps": 50,
+    "priceImpactPct": 10.6517,
+    "route": {
+      "mid": null,
+      "legs": [
+        {
+          "venue": "0x8965140Fb51b2E99a0Cd31a0E99Eae01D36517B8",
+          "isPool": false,
+          "name": "Uniswap V4"
+        }
+      ]
+    },
+    "fee": {
+      "protocolBps": 2,
+      "note": "already deducted from amountOut; referrers earn 10% of it"
+    },
+    "quotedAt": 1795014818,
+    "validForSeconds": 30
+  }
+}
