@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, erc20Abi, parseUnits, zeroAddress, type Hash } from "viem";
-import { DESTS, DST_CHAIN_ID, LIFI, LIFI_DIAMOND, NATIVE_ZERO, SOURCES, USDT_MAINNET, sameAddr, type LifiQuote } from "@/lib/bridge";
+import { ALLOWED_BRIDGES, DESTS, DST_CHAIN_ID, LIFI, LIFI_DIAMOND, NATIVE_ZERO, SOURCES, USDT_MAINNET, checkLifiTx, sameAddr, type LifiQuote } from "@/lib/bridge";
 import { fmt } from "@/lib/swap";
 import { useWalletModal } from "./Providers";
 
@@ -26,6 +26,10 @@ function explain(e: unknown): string {
 const usd = (v?: number) => (v !== undefined && v > 0 ? `$${v.toFixed(v < 1 ? 3 : 2)}` : null);
 const secs = (s?: number) => (!s ? "a few minutes" : s < 90 ? "about a minute" : `about ${Math.round(s / 60)} minutes`);
 const QUOTE_TTL = 45_000;
+/** a fresh quote at signing time may differ from the one on screen by at most this much (0.5%) */
+const REQUOTE_TOLERANCE_BPS = 50n;
+/** what MAX leaves for gas: more on Ethereum, where gas can spike */
+const gasReserve = (chainId: number) => (chainId === 1 ? 10n ** 16n : 3n * 10n ** 15n);
 
 /** Bridge in: from Base, Arbitrum, Ethereum, Optimism or BNB Chain to Robinhood Chain through LI.FI, signed in the
  *  user's own wallet, then straight on to Trade. */
@@ -62,10 +66,14 @@ export default function BridgePanel() {
     const q = new URLSearchParams({
       fromChain: String(src.chain.id), toChain: String(DST_CHAIN_ID), fromToken: sTok.address, toToken: dTok.address,
       fromAmount: amt!.toString(), fromAddress: address!, toAddress: address!, integrator: "stoa", slippage: "0.005",
+      allowBridges: ALLOWED_BRIDGES,
     });
     const r = await fetch(`${LIFI}/quote?${q}`);
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.estimate || !j.transactionRequest) throw new Error(r.status === 429 ? "Too many quotes right now. Wait a few seconds." : "No route for this amount right now. Try a larger amount or another token.");
+    // a route Stoa cannot check end to end is never shown
+    const why = checkLifiTx(j.transactionRequest, { user: address!, chainId: src.chain.id, token: sTok.address, amount: amt! });
+    if (why) throw new Error(dTok.symbol === "USDG" ? "No direct route to USDG for this one. Bridge ETH instead, then swap it on Stoa." : "No route Stoa can check for this amount right now. Try another token or amount.");
     return { ...(j as LifiQuote), at: Date.now() };
   }
 
@@ -114,11 +122,28 @@ export default function BridgePanel() {
     if (!quote || !address || !amt) return;
     try {
       if (chainId !== src.chain.id) { setPhase({ k: "signing", what: `Switch your wallet to ${src.name}` }); await switchChainAsync({ chainId: src.chain.id }); }
-      const q = Date.now() - quote.at > QUOTE_TTL ? await fetchQuote() : quote;
-      if (q !== quote) setQuote(q);
+      // the funds arrive at the same address on Robinhood Chain: a smart-contract wallet (a Safe, a smart account) may
+      // not exist or not be controlled there. EIP-7702 accounts (code 0xef0100...) are still the user's own key.
+      const code = await pub!.getCode({ address });
+      if (code && code !== "0x" && !code.toLowerCase().startsWith("0xef0100")) {
+        throw new Error("This wallet is a smart contract. Bridge in sends funds to the same address on Robinhood Chain, which a smart wallet may not control there, so it only works with a regular wallet.");
+      }
+      let q = quote;
+      if (Date.now() - quote.at > QUOTE_TTL) {
+        q = await fetchQuote();
+        setQuote(q);
+        // never sign numbers the user did not see: stop if the new minimum is more than 0.5% below the one on screen
+        const shown = BigInt(quote.estimate.toAmountMin), now = BigInt(q.estimate.toAmountMin);
+        if (now * 10_000n < shown * (10_000n - REQUOTE_TOLERANCE_BPS)) {
+          setPhase({ k: "idle" });
+          setQErr(`The price moved since you looked: you'd now receive at least ${fmt(now, dTok.decimals, 6)} ${dTok.symbol}. Check the new quote and tap again.`);
+          return;
+        }
+      }
       const t = q.transactionRequest;
-      // only LI.FI's own contract, on the chain the user picked
-      if (!sameAddr(t.to, LIFI_DIAMOND) || t.chainId !== src.chain.id) throw new Error("This route looks wrong. Get a new quote.");
+      // decode what the call does (receiver, refund address, chain, token, amount) and cap the value it carries
+      const why = checkLifiTx(t, { user: address, chainId: src.chain.id, token: sTok.address, amount: amt });
+      if (why) throw new Error(why);
       if (!native) {
         if (!sameAddr(q.estimate.approvalAddress, LIFI_DIAMOND)) throw new Error("This route asks to approve an unknown contract. Get a new quote.");
         const allowance = await pub!.readContract({ address: sTok.address, abi: erc20Abi, functionName: "allowance", args: [address, LIFI_DIAMOND] });
@@ -175,7 +200,7 @@ export default function BridgePanel() {
           <div className="box" style={{ marginTop: 12 }}>
             <div className="row"><label className="lbl" htmlFor="bamt">YOU SEND</label>
               <button type="button" className="lbl" style={{ border: 0, background: "none", cursor: bal ? "pointer" : "default" }} disabled={busy}
-                onClick={() => bal && setAmount(fmt(native ? (bal > 3n * 10n ** 15n ? bal - 3n * 10n ** 15n : 0n) : bal, sTok.decimals, 8).replace(/,/g, ""))}>
+                onClick={() => { const r = gasReserve(src.chain.id); if (bal) setAmount(fmt(native ? (bal > r ? bal - r : 0n) : bal, sTok.decimals, 8).replace(/,/g, "")); }}>
                 BALANCE {bal !== undefined ? fmt(bal, sTok.decimals, 4) : "—"}
               </button></div>
             <div className="row">
@@ -216,7 +241,7 @@ export default function BridgePanel() {
 
           <button type="button" className="big pri" style={{ width: "100%", marginTop: 14 }} disabled={disabled}
             onClick={() => (!isConnected ? openWallet() : go())}>{phase.k === "signing" ? "Confirm in your wallet…" : phase.k === "moving" ? "Bridging…" : label}</button>
-          <p className="note">Routes by LI.FI, which compares bridges for your amount. Stoa adds no fee and never holds your funds: you sign in your own wallet, and the funds arrive in the same address on Robinhood Chain.</p>
+          <p className="note">Routes by LI.FI over Across. Before your wallet opens, Stoa decodes each transaction and checks it sends exactly what you picked, to your own address on Robinhood Chain. Stoa adds no fee and never holds your funds: you sign in your own wallet, and the funds arrive in the same address on Robinhood Chain.</p>
         </>
       )}
     </div>

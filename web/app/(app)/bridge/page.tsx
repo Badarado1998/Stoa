@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import BridgePanel from "@/components/BridgePanel";
 
-const description = "Bridge ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to Robinhood Chain, then swap on Stoa. LI.FI compares bridges for your amount; you sign in your own wallet and Stoa adds no fee.";
+const description = "Bridge ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to Robinhood Chain, then swap on Stoa. Stoa checks every bridge transaction before your wallet opens; you sign in your own wallet and Stoa adds no fee.";
 export const metadata: Metadata = {
   title: "Bridge to Robinhood Chain",
   description,

@@ -1,6 +1,6 @@
 # How to bridge to Robinhood Chain
 
-To trade on Robinhood Chain you need funds there: a little ETH for gas, and ETH or USDG to swap. If your funds are on another chain, Stoa's **Bridge in** page moves them over and hands you straight to Trade. Routes come from LI.FI, which compares bridges (Across, Relay, Stargate, Layerswap and more) for your exact amount.
+To trade on Robinhood Chain you need funds there: a little ETH for gas, and ETH or USDG to swap. If your funds are on another chain, Stoa's **Bridge in** page moves them over and hands you straight to Trade. Routes come from LI.FI over Across, the one bridge whose LI.FI call names the receiver in the transaction itself, so Stoa can check it before you sign.
 
 ## 1. Open Bridge in
 
@@ -16,6 +16,8 @@ Choose the source chain and token:
 | Arbitrum | ETH, USDC, USDT0 |
 | Ethereum | ETH, USDC, USDT |
 | Optimism | ETH, USDC |
+
+A few pairs have no checkable route (for example USDC on Optimism to ETH, or anything from BNB Chain to USDG). Bridge ETH or USDG instead, then swap on Stoa.
 | BNB Chain | USDT, USDC |
 
 Then choose what should arrive on Robinhood Chain: **ETH** (gas and most pairs) or **USDG** (the stablecoin most stock-token pools use).
@@ -31,7 +33,9 @@ Enter an amount. Stoa asks LI.FI for a route for this wallet and shows what it d
 
 ## 4. Sign on the source chain
 
-Stoa switches your wallet to the source chain. A token needs an **approve** first (for exactly the amount you send), then the **bridge** transaction. Both go to LI.FI's contract `0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE` from your own wallet; Stoa refuses a route that asks for any other contract, and never holds the funds.
+Stoa switches your wallet to the source chain. A token needs an **approve** first (for exactly the amount you send), then the **bridge** transaction. Both go to LI.FI's contract `0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE` from your own wallet, and Stoa never holds the funds. Before your wallet opens, Stoa decodes the bridge transaction and refuses it unless it sends exactly the token and amount you picked, to your own address on Robinhood Chain (with refunds to you too), and asks for no more ETH than you typed. If the quote has to be refreshed and the new minimum is more than 0.5% lower, Stoa stops and shows it before you sign.
+
+Bridge in works with regular wallets. A smart-contract wallet (a Safe or a smart account) may not control the same address on Robinhood Chain, so Stoa stops before sending from one.
 
 ## 5. Swap on Stoa
 
