@@ -154,7 +154,7 @@ export const ROBINHOOD: Net = {
     .map(([a, name, dexId, factory, spacings]) => ({ address: a as Address, name, dexId, factory, spacings: [...spacings] })),
 };
 
-export const NETS: Net[] = [ELYSIUM, ROBINHOOD];
+export const NETS: Net[] = [ROBINHOOD, ELYSIUM]; // Robinhood first: the default network and the first one listed
 export const netById = (id?: number) => NETS.find((n) => n.chain.id === id);
 export const netByKey = (k?: string | null) => NETS.find((n) => n.key === k);
 
