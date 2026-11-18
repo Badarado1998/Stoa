@@ -8,6 +8,8 @@ For this hackathon we added a new tool, **`market_context`**, built on the CoinM
 
 The CMC integration is new for this hackathon. Everything else on Stoa (router, quotes, safety check) existed before; it is listed here only because `market_context` is used together with it.
 
+**DoraHacks submission:** https://dorahacks.io/build/51302 · **Post:** https://x.com/StoaDex/status/2123077120205414520
+
 **Demo video (30 s):** https://stoadex.com/media/market-context-demo.mp4 (also in this folder: [`demo.mp4`](demo.mp4))
 
 ## What the agent can now say
