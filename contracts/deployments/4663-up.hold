@@ -1,0 +1,2 @@
+up. rollout held on 19 Nov 2026: CLTickSpacingAdapter 0xB40892C77BC4A1ABA744C1afD96FCe048D6456C3 runs pool quote simulations
+without a gas cap (private security report, 19 Nov). up. will be added through the fixed CL adapter instead.

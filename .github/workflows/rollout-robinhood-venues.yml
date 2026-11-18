@@ -73,7 +73,9 @@ jobs:
             forge script script/RolloutMetricRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
             want=$((want + 1))
           fi
-          if [ -f deployments/4663-up.json ]; then  # committed by deploy-robinhood-up.yml
+          # up. is ON HOLD (contracts/deployments/4663-up.hold): its adapter 0xB408…56C3 has the uncapped quote simulation
+          # reported on 19 Nov; a fixed CLTickSpacingAdapter replaces it. Delete the .hold file only to resume this rollout.
+          if [ -f deployments/4663-up.json ] && [ ! -f deployments/4663-up.hold ]; then  # committed by deploy-robinhood-up.yml
             forge script script/RolloutUpRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
             want=$((want + 1))
           fi
