@@ -49,6 +49,13 @@
   "hyperevm": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540"
  },
  {
+  "symbol": "EQMU",
+  "name": "EQX Tokenized MU",
+  "address": "0x85854E22a602FFF395240d0739D42E51f542018a",
+  "decimals": 8,
+  "hyperevm": "0x9164Fd5f67FE4188Ff79675182183512bC37d66D"
+ },
+ {
   "symbol": "wQQQx",
   "name": "Wrapped Nasdaq xStock",
   "address": "0x9039Ebd84eE2a0e198EB265E692390762995872C",
@@ -61,13 +68,6 @@
   "address": "0x3BdE42a1dA8F1D95564f2c4a51a0cF73a725674C",
   "decimals": 6,
   "hyperevm": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
- },
- {
-  "symbol": "EQMU",
-  "name": "EQX Tokenized MU",
-  "address": "0x85854E22a602FFF395240d0739D42E51f542018a",
-  "decimals": 8,
-  "hyperevm": "0x9164Fd5f67FE4188Ff79675182183512bC37d66D"
  },
  {
   "symbol": "EQSPCX",
