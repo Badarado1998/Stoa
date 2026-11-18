@@ -34,7 +34,9 @@ const FINDINGS: { title: string; who: string; status: "fixed" | "rolling" | "kno
 ];
 
 export default async function SecurityPage() {
-  const [s, act] = await Promise.all([securityStatus().catch(() => null), securityActivity().catch(() => null)]);
+  // capped at 25 s so a slow RPC never fails the build (the page then shows "—" and refreshes within a minute)
+  const cap = <T,>(p: Promise<T>) => Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 25_000))]);
+  const [s, act] = await Promise.all([cap(securityStatus()), cap(securityActivity())]);
   const when = (t: number | null) => {
     if (!t) return "—";
     const h = (t * 1000 - Date.now()) / 3_600_000;
