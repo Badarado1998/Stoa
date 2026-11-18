@@ -124,6 +124,11 @@ function HeroButtons() {
     <div className="herobtns">
       <Link className="cta" href="/trade">Trade now</Link>
       <a className="ghost" href="#live">What&apos;s on Stoa ↓</a>
+      <div className="herogo" aria-label="Start here">
+        <Link href="/stocks">Buy stock tokens</Link>
+        <Link href="/launches">Pons launches</Link>
+        <Link href="/check">Check a token</Link>
+      </div>
     </div>
   );
 }

@@ -19,8 +19,11 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   if (!hit) return { title: "Stock token" };
   const { stock: s } = hit;
   const name = shortName(s.name);
-  const title = `${name} (${s.symbol}) stock token price on Robinhood Chain`;
-  const description = `${name} (${s.symbol}) tokenized stock on Robinhood Chain: Robinhood's ${s.symbol} price next to the on-chain price, 24h volume and pool liquidity, updated every few minutes. ${s.route ? `Swap ${s.symbol} with USDG on Stoa.` : "See where it trades on-chain."}`;
+  // routed stocks answer "how to buy" searches; the rest stay a price page
+  const title = s.route ? `How to buy ${name} (${s.symbol}) on Robinhood Chain` : `${name} (${s.symbol}) stock token price on Robinhood Chain`;
+  const description = s.route
+    ? `Buy the ${name} (${s.symbol}) stock token on Robinhood Chain in one swap: USDG or ETH to ${s.symbol} on Stoa, with Robinhood's ${s.symbol} price next to the on-chain price, liquidity and the steps.`
+    : `${name} (${s.symbol}) tokenized stock on Robinhood Chain: Robinhood's ${s.symbol} price next to the on-chain price, 24h volume and pool liquidity, updated every few minutes. See where it trades on-chain.`;
   return {
     title, description,
     alternates: { canonical: `/stocks/${s.symbol.toLowerCase()}` },
@@ -47,6 +50,16 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
       { "@type": "ListItem", position: 1, name: "Stocks", item: "https://stoadex.com/stocks" },
       { "@type": "ListItem", position: 2, name: `${s.symbol} · ${s.name}`, item: `https://stoadex.com/stocks/${s.symbol.toLowerCase()}` },
     ],
+  };
+  const steps = [
+    ["Have USDG or ETH on Robinhood Chain", `Hold USDG (or ETH for the swap and gas) in a wallet such as MetaMask, Rabby or OKX Wallet, on Robinhood Chain.`],
+    [`Open the ${s.symbol} swap on Stoa`, `Swap ${s.symbol} opens Trade with USDG to sell and ${s.symbol} to buy. Check the token address matches ${s.address}.`],
+    ["Enter an amount and read the quote", `Stoa compares every venue it routes for your exact amount and shows the rate, the venue, the 2 bps fee, price impact and the minimum you receive.`],
+    ["Confirm in your wallet", `Approve USDG once if asked, then confirm the swap. ${s.symbol} arrives in the same wallet.`],
+  ] as const;
+  const howTo = {
+    "@context": "https://schema.org", "@type": "HowTo", name: `How to buy ${s.name} (${s.symbol}) on Robinhood Chain`,
+    step: steps.map(([n, t], i) => ({ "@type": "HowToStep", position: i + 1, name: n, text: t })),
   };
   return (
     <section className="page">
@@ -77,6 +90,15 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           Stock Tokens are not offered in every country: check Robinhood&apos;s terms for yours. Stoa only routes swaps; nothing here is investment advice. <Link href="/docs/stocks">How Stocks works</Link> · Updated {new Date(updated).toUTCString().slice(17, 22)} UTC.
         </p>
       </div>
+      {s.route && (
+        <div className="panel pad" style={{ marginBottom: 16 }}>
+          <div className="lbl">HOW TO BUY {s.symbol} ON ROBINHOOD CHAIN</div>
+          <ol style={{ margin: "10px 0 0", paddingLeft: 22, display: "grid", gap: 10, lineHeight: 1.5, overflowWrap: "anywhere" }}>
+            {steps.map(([n, t]) => <li key={n}><b>{n}.</b> {t}</li>)}
+          </ol>
+          <p style={{ marginTop: 12, marginBottom: 0 }}><Link className="cta" href={swap}>Swap USDG to {s.symbol}</Link></p>
+        </div>
+      )}
       {more.length > 0 && (
         <div className="panel pad">
           <div className="lbl">OTHER STOCK TOKENS ON STOA</div>
@@ -86,6 +108,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         </div>
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />
+      {s.route && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howTo).replace(/</g, "\\u003c") }} />}
     </section>
   );
 }

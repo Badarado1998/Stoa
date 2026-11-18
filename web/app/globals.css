@@ -456,6 +456,9 @@ html,body{overflow-x:clip}
 /* home: hero actions, a shorter walk on phones, and the plain section under it */
 .herobtns{pointer-events:auto;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
 .herobtns .cta{min-height:46px;padding:0 22px;font-size:15px}
+.herogo{flex-basis:100%;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+.herogo a{min-height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.85);border:1px solid rgba(30,38,51,.08);color:var(--ink);font-size:13.5px;text-decoration:none}
+.herogo a:hover{border-color:var(--accent);color:var(--accent-d)}
 .herobtns .ghost{min-height:46px;padding:0 18px;font-size:14px;background:#fff}
 @media (max-width:860px){#track{height:850vh}}
 .homelive{position:relative;z-index:8;background:linear-gradient(180deg,rgba(214,227,247,0) 0,#DCE7F7 120px,#EAF0F9 40%,#F4F1EA 100%);padding:90px clamp(14px,4vw,48px) 64px;scroll-margin-top:0}
