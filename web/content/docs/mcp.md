@@ -29,6 +29,8 @@ Arguments and responses match the [API](api.md): amounts are integers in the tok
 
 ## Skill file
 
+Building your own agent in TypeScript? `npm i @stoadex/agent-tools` gives you the same tools for the Vercel AI SDK (`@stoadex/agent-tools/ai`), LangChain (`/langchain`) and OpenAI function calling (`/openai`), with an optional `referrer` so you earn 10% of Stoa's fee on swaps you build.
+
 Agents that use skills can load [stoadex.com/skills/stoa/SKILL.md](https://stoadex.com/skills/stoa/SKILL.md). It teaches the safe order: take the address from a trusted source, run `safety_check`, show the quote to the user, then build the swap and let the user's wallet sign.
 
 ## Limits and safety

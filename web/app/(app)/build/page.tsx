@@ -116,7 +116,7 @@ export default function BuildPage() {
           <pre className="code" style={{ marginTop: 12 }}>{TS}</pre>
           <div className="lbl" style={{ marginTop: 18 }}>SOLIDITY</div>
           <pre className="code" style={{ marginTop: 12 }}>{SOL}</pre>
-          <p className="note" style={{ marginTop: 14 }}>No npm package yet: use viem or ethers with the router ABI. <a href="/abi/StoaRouter.json" download>Download StoaRouter.json</a></p>
+          <p className="note" style={{ marginTop: 14 }}>For AI agents: <a href="https://www.npmjs.com/package/@stoadex/agent-tools" target="_blank" rel="noopener noreferrer"><code>npm i @stoadex/agent-tools</code></a> (Vercel AI SDK, LangChain, OpenAI). For contracts: use viem or ethers with the router ABI. <a href="/abi/StoaRouter.json" download>Download StoaRouter.json</a></p>
           <Link className="go" href="/docs/router-sdk">Router and SDK docs</Link>
         </div>
         <div className="panel pad">
