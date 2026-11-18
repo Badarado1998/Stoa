@@ -43,7 +43,7 @@ The response:
 - Send `tx` from the `taker` wallet as it is. Selling a token instead of `native`: approve `approval.spender` for `approval.amount` first; the response includes the `approval` object.
 - Quotes move with the market. Ask again right before you send, especially on Elysium, where maker quotes last about two blocks.
 - `route.mid` is set when the swap hops through the wrapped gas token; `legs` lists the venue for each leg.
-- Errors come back as `{ "error": "…" }` with status 400 (bad input), 422 (no route right now) or 429 (too many requests).
+- Errors come back as `{ "error": "…" }` with status 400 (bad input), 404 (unknown path), 422 (no route right now) or 429 (too many requests).
 
 ## Token list: `GET /tokens`
 

@@ -4,6 +4,14 @@ A review of the deployed contracts by the Stoa team, published in full. **This i
 
 **Independent security review under way.** Since 16 November 2026, [Hey Research Lab](https://x.com/HeyResearch) is reviewing RugCover, SpotlightMarket, StoaLimit and StoaRouter at commit [`c524b82`](https://github.com/StoaDex/Stoa/tree/c524b82/contracts), the code the live contracts run. It is a review, not an audit. Findings come to Stoa privately first, with a test, and are published here once fixed. The scope, build steps and known issues are in [contracts/AUDIT.md](https://github.com/StoaDex/Stoa/blob/main/contracts/AUDIT.md).
 
+## Update, 18 November 2026: website and API report
+
+Reported privately on 18 November 2026 by [Radenlingga](https://github.com/Radenlingga). No contract or user funds were affected.
+
+- **RPC keys in the website code.** The RPC endpoints the browser uses accepted requests from any site, so others could spend Stoa's RPC quota. **Fixed:** each key now only answers stoadex.com, and the server reads through a separate key that never reaches the browser.
+- **API rate limit not enforced across servers.** The documented 60 requests a minute per IP was counted per server instance. **Fix in progress:** enforced at the edge for every `/api/v1/` path.
+- **Unknown API paths answered with an HTML page.** **Fixed:** they now return a JSON 404 like the rest of the [API](api.md).
+
 ## Update, 17 November 2026: known issue from the bug bounty
 
 ### K-1 A token that taxes transfers can be delivered below the trader's minimum
