@@ -12,7 +12,7 @@ const TABS = [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launche
 const MENU: { h: string; items: [string, string][] }[] = [
   { h: "Trade", items: [["/trade", "Trade"], ["/bridge", "Bridge in"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/pools", "Pools"], ["/cover", "Rug Cover"], ["/check", "Token check"], ["/tokens", "Tokens"]] },
   { h: "$STOA & you", items: [["/token", "$STOA"], ["/spotlight", "Spotlight"], ["/earn", "Earn"], ["/portfolio", "Portfolio"], ["/wrapped", "Wrapped"], ["/referrals", "Referrals"]] },
-  { h: "Learn", items: [["/docs", "Docs"], ["/", "Walk the Stoa"], ["/build", "Integrate"], ["/curators", "Curators"], ["/security", "Security"], ["/changelog", "Changelog"]] },
+  { h: "Learn", items: [["/docs", "Docs"], ["/guides", "Community guides"], ["/", "Walk the Stoa"], ["/build", "Integrate"], ["/curators", "Curators"], ["/security", "Security"], ["/changelog", "Changelog"]] },
 ];
 
 export default function Header({ extra }: { extra?: ReactNode }) {
