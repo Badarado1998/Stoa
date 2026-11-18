@@ -57,7 +57,9 @@ contract AllowHooksRobinhood is VenueRollout {
 
         if (n > 0) {
             bytes[] memory c = new bytes[](n);
-            for (uint256 i; i < n; ++i) c[i] = calls[i];
+            for (uint256 i; i < n; ++i) {
+                c[i] = calls[i];
+            }
             return _safe(
                 "QHooks hooks: schedule",
                 MULTISEND_CALL_ONLY,
