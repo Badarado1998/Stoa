@@ -71,6 +71,11 @@ export default function BuildPage() {
         <p style={{ marginTop: 10 }}>One call returns the best route for your amount and the swap transaction to send. Pass your wallet as <code>referrer</code> and earn 10% of Stoa&apos;s fee on every swap your bot sends.</p>
         <pre className="code" style={{ marginTop: 12 }}>{API}</pre>
       </div>
+      <div className="panel pad" style={{ marginBottom: 20 }}>
+        <div className="rowx"><div className="lbl">BUY CARD FOR YOUR TOKEN PAGE</div><Link className="note" style={{ marginTop: 0 }} href="/docs/embed">Docs →</Link></div>
+        <p style={{ marginTop: 10 }}>Put a live &quot;Buy on Stoa&quot; card on your project&apos;s site: price, what a buy gets right now and on which venue, and a button that opens Stoa with your token selected. No wallet connects inside the card. Your wallet earns 10% of Stoa&apos;s fee on every swap it brings.</p>
+        <p className="note" style={{ marginTop: 10 }}>Used by <a href="https://nounyagent.com/token" target="_blank" rel="noopener noreferrer">$NOUNY</a> on its token page.</p>
+      </div>
       <div className="grid2 eq">
         <div className="panel pad">
           <div className="lbl">TYPESCRIPT (VIEM) · COMPLETE EXAMPLE</div>

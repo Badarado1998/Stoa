@@ -33,6 +33,12 @@ Open the token's page under [Tokens](https://stoadex.com/tokens) (or a launch's 
 
 The same as any referral link: 10% of the 2 bps protocol fee on each swap made through the card, booked to your address in the FeeDistributor and claimable on [Referrals](https://stoadex.com/referrals). See [Referrals](referrals.md).
 
+## Used by
+
+- [$NOUNY](https://nounyagent.com/token), on its token page since 18 November 2026, with the team wallet as the referrer.
+
+Using the card on your site? Tell us on [X](https://x.com/StoaDEX) and we'll add you here.
+
 ## Safety
 
 - Only `/embed` pages can be framed by other sites. Every other Stoa page refuses to load in a frame.
