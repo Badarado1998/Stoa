@@ -15,7 +15,7 @@ Add the hosted MCP server. It needs no key and no account:
 https://stoadex.com/mcp
 ```
 
-Tools: `list_tokens`, `quote`, `build_swap`, `safety_check`, `stock_tokens`. Everything is read-only. `build_swap` returns an **unsigned** transaction. Stoa never signs, holds keys or moves funds.
+Tools: `list_tokens`, `quote`, `build_swap`, `safety_check`, `bridge_quote`, `stock_tokens`. Everything is read-only. `build_swap` returns an **unsigned** transaction. Stoa never signs, holds keys or moves funds.
 
 ## How to swap safely
 
@@ -30,6 +30,8 @@ Tools: `list_tokens`, `quote`, `build_swap`, `safety_check`, `stock_tokens`. Eve
 5. **Verify `tx.to`** is the Stoa router for the chain: Robinhood Chain `0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5`. If the swap would revert, nothing is spent except gas.
 
 ## Robinhood stock tokens
+
+No funds on Robinhood Chain yet? `bridge_quote` moves ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to the same wallet on Robinhood Chain. Stoa decodes the transaction before returning it (receiver and refund are the wallet, destination is Robinhood Chain, exact amount). Show the user the amount that arrives and the fees; if `approval` is present, approve exactly that amount; the user's wallet signs on the source chain. Regular wallets only, not Safes or smart accounts.
 
 `stock_tokens` lists Robinhood Stock Tokens with Robinhood's price for the stock next to the on-chain price, and whether Stoa can route a swap (`routeOnStoa`). To buy one, sell USDG or ETH with `build_swap`. Stock tokens are issued by Robinhood Assets (Jersey) Limited, not by Stoa, and are not offered in every country.
 

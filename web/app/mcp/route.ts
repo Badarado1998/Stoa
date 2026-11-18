@@ -4,6 +4,7 @@ import { NETS, netByKey } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
 import { readSafety } from "@/lib/safety";
 import { mid, stockTokens } from "@/lib/stocks";
+import { bridgeQuote } from "@/lib/bridgeQuote";
 
 // https://stoadex.com/mcp: Stoa as a hosted, keyless MCP server (Streamable HTTP, stateless, JSON responses).
 // Read-only: every tool reads the chain or Stoa's own data. build_swap returns an UNSIGNED transaction; nothing here
@@ -21,6 +22,7 @@ const INSTRUCTIONS = [
   "3) Quote, show the user amountOut, minOut, price impact and route, and only then call build_swap.",
   "4) build_swap returns an unsigned transaction: the user's own wallet signs it. If selling a token (not native), the wallet must first approve approval.spender for approval.amount.",
   "5) Quotes move: rebuild right before sending. Amounts are integers in the token's smallest unit (wei).",
+  "6) No funds on Robinhood Chain yet? bridge_quote moves ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain; Stoa decodes and checks the transaction before returning it, and the user's wallet signs it on the source chain.",
 ].join(" ");
 
 const chainProp = { type: "string", enum: ["robinhood", "elysium"], description: "Network. Default robinhood." };
@@ -74,6 +76,22 @@ const TOOLS = [
     annotations: ro,
   },
   {
+    name: "bridge_quote",
+    title: "Bridge to Robinhood Chain",
+    description: "Move ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to the same wallet on Robinhood Chain (arriving as ETH or USDG), through LI.FI over Across. Returns an unsigned transaction on the source chain that Stoa has already decoded: receiver and refund address are the wallet, destination is Robinhood Chain, it spends exactly the amount asked. If 'approval' is present, approve exactly that amount first. Regular wallets only.",
+    inputSchema: {
+      type: "object", required: ["fromChain", "fromToken", "amount", "wallet"], additionalProperties: false,
+      properties: {
+        fromChain: { type: "string", enum: ["base", "arbitrum", "ethereum", "optimism", "bsc"], description: "Where the funds are now." },
+        fromToken: { type: "string", description: "ETH, USDC, USDT or USDT0, as available on that chain." },
+        toToken: { type: "string", enum: ["ETH", "USDG"], description: "What arrives on Robinhood Chain. Default ETH." },
+        amount: { type: "string", description: "Integer amount of fromToken in its smallest unit (18 decimals for ETH and BNB Chain stables, 6 for USDC/USDT elsewhere)." },
+        wallet: { type: "string", description: "The user's wallet: it signs on the source chain and receives on Robinhood Chain." },
+      },
+    },
+    annotations: ro,
+  },
+  {
     name: "stock_tokens",
     title: "Robinhood stock tokens",
     description: "Robinhood Stock Tokens on Robinhood Chain: Robinhood's price for the underlying stock next to the on-chain price, liquidity, 24h volume and whether Stoa can route a swap. Optionally filter by ticker.",
@@ -119,6 +137,10 @@ async function callTool(name: string, a: Record<string, unknown>) {
       if (!net || !net.deployed) return text("chain must be robinhood or elysium", true);
       if (!isAddress(token, { strict: false })) return text("token must be an address", true);
       try { return text(await readSafety(net, token)); } catch { return text("the chain did not answer, try again shortly", true); }
+    }
+    case "bridge_quote": {
+      const r = await bridgeQuote({ fromChain: str(a.fromChain), fromToken: str(a.fromToken), toToken: str(a.toToken), amount: str(a.amount), wallet: str(a.wallet) }).catch(() => ({ error: "the bridge service did not answer, try again shortly" }));
+      return text(r, "error" in r);
     }
     case "stock_tokens": {
       const data = await stockTokens().catch(() => null);
