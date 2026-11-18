@@ -5,6 +5,7 @@ import { NETS, ROBINHOOD, type Net } from "./networks";
 import { routedEvent } from "./abi";
 import { NATIVE } from "./tokens";
 import { CA as STOA } from "./stoaAddress";
+import { srv } from "@/lib/serverRpc";
 
 /** Stoa Wrapped: one wallet's swaps through Stoa on every chain, read from the routers' Routed events where the wallet is
  *  the recipient, valued the same way as /stats (stablecoin side, else gas-token side at the router's current quote,
@@ -60,7 +61,7 @@ async function dexPrices(net: Net, addrs: string[]): Promise<Record<string, numb
 async function chainRead(net: Net, who: Address): Promise<{ swaps: Swap[]; referred: number }> {
   const router = net.contracts.router;
   if (!router || !net.deployed) return { swaps: [], referred: 0 };
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, { ...ua, batch: { batchSize: 100 } }) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), { ...ua, batch: { batchSize: 100 } }) });
   const head = await c.getBlockNumber();
   const span = net.logsSpan === 0n ? head : net.logsSpan;
   const mine: Awaited<ReturnType<typeof c.getLogs<typeof routedEvent>>> = [];
@@ -131,7 +132,7 @@ async function chainRead(net: Net, who: Address): Promise<{ swaps: Swap[]; refer
 }
 
 async function stoaOf(who: Address): Promise<{ held: number; locked: number }> {
-  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc, ua) });
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), ua) });
   const spot = ROBINHOOD.contracts.spotlight, cover = ROBINHOOD.contracts.cover;
   const [bal, acc, back] = await Promise.allSettled([
     c.readContract({ address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [who] }),

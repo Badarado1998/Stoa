@@ -1,6 +1,7 @@
 import { createPublicClient, http, parseAbi, type Address, type PublicClient } from "viem";
 import type { Route } from "./swap";
 import { ROBINHOOD, type Net } from "./networks";
+import { srv } from "@/lib/serverRpc";
 
 /**
  * Guard for Stoa's first Uniswap V4 adapter on Robinhood Chain, until the timelock replaces it with
@@ -34,7 +35,7 @@ let serverMemo: { at: number; v: Guard } | null = null;
 /** Server side: read the old adapter's logs since the checkpoint and the sender of each transaction. */
 export async function computeGuard(): Promise<Guard> {
   if (serverMemo && Date.now() - serverMemo.at < 60_000) return serverMemo.v;
-  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc) });
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc)) });
   const oldInRouter = await c.readContract({ address: ROBINHOOD.contracts.router!, abi, functionName: "isAdapter", args: [OLD_V4 as Address] });
   if (!oldInRouter) {
     serverMemo = { at: Date.now(), v: { oldInRouter, poisoned: [] } };

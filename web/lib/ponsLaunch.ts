@@ -1,5 +1,6 @@
 import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem";
 import { ROBINHOOD } from "./networks";
+import { srv } from "@/lib/serverRpc";
 
 // One Pons launch, read straight from Robinhood Chain (server side): used by /api/pons/token/<address>, the
 // /launches/<address> page metadata and its link card. The list of launches lives in /api/pons/launches.
@@ -55,7 +56,7 @@ export const logoUrl = (v: unknown, token?: Address) => {
 export const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 15_000 };
 export const rhClient = () => {
   const rpc = (ROBINHOOD.chain.rpcUrls.default.http as readonly string[])[0] ?? ROBINHOOD.logsRpc;
-  return createPublicClient({ chain: ROBINHOOD.chain, transport: http(rpc, ua) });
+  return createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(rpc), ua) });
 };
 const eth = (v: bigint, dp = 4) => (Number(v) / 1e18).toFixed(dp);
 

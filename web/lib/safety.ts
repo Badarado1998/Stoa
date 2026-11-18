@@ -3,6 +3,7 @@ import { createPublicClient, decodeErrorResult, decodeFunctionResult, encodeFunc
 import type { Net } from "./networks";
 import { routerAbi } from "./abi";
 import { SAFETY_SIM_CODE } from "./safetySimCode";
+import { srv } from "@/lib/serverRpc";
 
 /** Token safety check: buy a small amount through the live router and sell it straight back, inside one eth_call with
  *  a throwaway simulator contract (contracts/src/tools/SafetySim.sol) placed by a state override, so nothing is ever
@@ -53,7 +54,7 @@ function why(data: Hex): string {
 
 async function simulate(net: Net, token: Address): Promise<Safety["test"]> {
   if (!net.contracts.router) return null;
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, ua) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
   const amountIn = net.gas === "ETH" ? parseEther("0.001") : parseEther("0.05");
   const res = await c.call({
     account: FROM, to: SIM,
@@ -89,7 +90,7 @@ async function top10(net: Net, token: Address, supply: bigint): Promise<number |
 }
 
 export async function readSafety(net: Net, token: Address): Promise<Safety> {
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, ua) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
   const t = getAddress(token);
   const [sym, supply] = await Promise.all([
     c.readContract({ address: t, abi: erc20Abi, functionName: "symbol" }).catch(() => "TOKEN"),

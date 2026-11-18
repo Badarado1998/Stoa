@@ -2,6 +2,7 @@ import { createPublicClient, http, parseAbi, parseAbiItem, type Address } from "
 import { ROBINHOOD } from "@/lib/networks";
 import { CA } from "@/lib/stoaAddress";
 import { STOA_CURVE } from "@/lib/stoaSupply";
+import { srv } from "@/lib/serverRpc";
 
 // $STOA price history on its Pons bonding curve, rebuilt from the curve's own trade events: start from today's
 // reserves and walk back through every buy and sell (the curve is x*y=k on these reserves, so the spot price after
@@ -28,7 +29,7 @@ export type PricePoint = { t: number; eth: number };
 
 export async function GET() {
   try {
-    const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc, ua) });
+    const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), ua) });
     const head = await c.getBlock();
     // the public RPC caps a log query at 10M blocks (about 12 days here): read in windows
     const logs = async <E extends typeof BUY | typeof SELL>(event: E) => {

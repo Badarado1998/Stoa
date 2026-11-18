@@ -4,6 +4,7 @@ import { createPublicClient, erc20Abi, getAddress, http, pad, type Address } fro
 import { ROBINHOOD, type Net } from "./networks";
 import type { Token } from "./tokens";
 import { CA } from "./stoaAddress";
+import { srv } from "@/lib/serverRpc";
 
 /** $STOA lives on Robinhood Chain, launched on Pons. It is found on-chain, not typed in: the web looks for a token
  *  the dev wallet created through Pons' V2 launch factory, so it appears seconds after the launch transaction lands,
@@ -40,7 +41,7 @@ async function logsFrom(client: ReturnType<typeof createPublicClient>): Promise<
 async function find(): Promise<Token | null> {
   const seen = cached();
   if (seen && (!CA || seen.address.toLowerCase() === CA.toLowerCase())) return seen;
-  const client = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc, { batch: true }) });
+  const client = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), { batch: true }) });
   const created = CA ? [CA] : await logsFrom(client);
   if (!created.length) return null;
   // symbol and decimals for every candidate in one batched request; only the ticker STOA counts

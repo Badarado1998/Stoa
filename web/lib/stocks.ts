@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { ROBINHOOD } from "./networks";
 import logoList from "./stock-logos.json";
+import { srv } from "@/lib/serverRpc";
 
 // company logos, stored on Stoa's own site (public/stocks/<address>.webp): Robinhood's logo CDN serves the same
 // placeholder for every token and does not load on some networks. Tokens without one get a ticker badge.
@@ -71,7 +72,7 @@ async function routable(addrs: string[]): Promise<Set<string>> {
   const out = new Set<string>();
   const router = ROBINHOOD.contracts.router;
   if (!router || !addrs.length) return out;
-  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(undefined, { timeout: 20_000, fetchOptions: { headers: { "user-agent": "curl/8.5.0" } } }) });
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.chain.rpcUrls.default.http[0]), { timeout: 20_000, fetchOptions: { headers: { "user-agent": "curl/8.5.0" } } }) });
   const chunks: string[][] = [];
   for (let i = 0; i < addrs.length; i += 8) chunks.push(addrs.slice(i, i + 8));
   for (let i = 0; i < chunks.length; i += 4) {

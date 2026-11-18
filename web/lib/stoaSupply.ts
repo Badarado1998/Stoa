@@ -1,6 +1,7 @@
 import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem";
 import { ROBINHOOD } from "./networks";
 import { CA } from "./stoaAddress";
+import { srv } from "@/lib/serverRpc";
 
 /** $STOA's Pons bonding curve. Unsold $STOA sits here until the curve graduates to a Uniswap V4 pool. */
 export const STOA_CURVE = "0xd0b519310688e830c9aee29ae117edc3fbb1c13f" as Address;
@@ -34,7 +35,7 @@ export async function readSupply(): Promise<Supply> {
   let last: unknown;
   for (const url of rpcs) {
     try {
-      const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(url, { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 8_000 }) });
+      const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(url), { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 8_000 }) });
       const [max, burned, inCurve, curveEth, threshold, graduated] = await Promise.all([
         c.readContract({ address: CA, abi: erc20Abi, functionName: "totalSupply" }),
         c.readContract({ address: CA, abi: erc20Abi, functionName: "balanceOf", args: [BURN] }),

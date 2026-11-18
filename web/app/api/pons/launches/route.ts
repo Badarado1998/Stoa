@@ -1,6 +1,7 @@
 import { createPublicClient, erc20Abi, http, parseAbi, parseAbiItem, type Address } from "viem";
 import { ROBINHOOD } from "@/lib/networks";
 import { PONS_FACTORY as FACTORY, logoUrl, ponsCurveAbi, ponsLogoAbi, type Launch } from "@/lib/ponsLaunch";
+import { srv } from "@/lib/serverRpc";
 
 // Live Pons launches on Robinhood Chain: tokens still on their bonding curve (with real ETH raised) and the ones that
 // graduated recently. Read from the chain once a minute for every visitor; Pons' own site is the source for the rest.
@@ -25,9 +26,9 @@ const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout:
 
 export async function GET() {
   try {
-    const logsClient = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc, ua) });
+    const logsClient = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), ua) });
     const rpc = (ROBINHOOD.chain.rpcUrls.default.http as readonly string[])[0] ?? ROBINHOOD.logsRpc;
-    const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(rpc, ua) });
+    const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(rpc), ua) });
 
     const head = await logsClient.getBlockNumber();
     const logs = await logsClient.getLogs({ address: FACTORY, event: LAUNCHED, fromBlock: head - WINDOW, toBlock: head });

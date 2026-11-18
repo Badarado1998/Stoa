@@ -2,6 +2,7 @@ import { createPublicClient, formatEther, http, parseAbi, type Address } from "v
 import rh from "./deployments-4663.json";
 import { ROBINHOOD } from "./networks";
 import { computeGuard } from "./v4guard";
+import { srv } from "@/lib/serverRpc";
 
 /** Live security status of Stoa on Robinhood Chain, read from the chain (server side, cached a minute by the page).
  *  Every value here is something anyone can check on the explorer: who owns each contract, whether it is paused,
@@ -48,7 +49,7 @@ const LABELS = (): Record<string, string> => ({
 });
 
 export async function securityStatus(): Promise<Status> {
-  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.chain.rpcUrls.default.http[0]) });
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.chain.rpcUrls.default.http[0])) });
   const list: [string, Address | undefined][] = [
     ["StoaRouter", a("router")],
     ["FeeDistributor", a("feeDistributor")],

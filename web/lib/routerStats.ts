@@ -3,6 +3,7 @@ import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem
 import { NETS, type Net } from "./networks";
 import { routedEvent } from "./abi";
 import { NATIVE } from "./tokens";
+import { srv } from "@/lib/serverRpc";
 
 /** Swaps routed through Stoa on every chain, read from the routers' Routed events: one event per settled swap
  *  (a failed swap reverts and emits nothing). Each swap counts once, valued on its stablecoin side when it has one,
@@ -47,7 +48,7 @@ async function dexPrices(net: Net, addrs: string[]): Promise<Record<string, numb
 async function chainSwaps(net: Net): Promise<{ swaps: StatSwap[]; ok: boolean }> {
   const router = net.contracts.router;
   if (!router || !net.deployed) return { swaps: [], ok: true };
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, { ...ua, batch: { batchSize: 100 } }) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), { ...ua, batch: { batchSize: 100 } }) });
   const head = await c.getBlockNumber();
   const span = net.logsSpan === 0n ? head : net.logsSpan;
   const logs: Awaited<ReturnType<typeof c.getLogs<typeof routedEvent>>> = [];

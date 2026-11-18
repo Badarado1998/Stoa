@@ -4,6 +4,7 @@ import { createPublicClient, formatUnits, getAddress, http, isAddress, parseAbi,
 import { NETS, netByKey, type Net } from "./networks";
 import { NATIVE, type Token } from "./tokens";
 import { CA } from "./stoaAddress";
+import { srv } from "@/lib/serverRpc";
 
 /** A token Stoa lists on one network, with its market (DexScreener) and Stoa's best route for a small buy, read live.
  *  Backs /tokens/<chain>/<address> and the /embed buy widget. Cached a minute per token. */
@@ -72,7 +73,7 @@ async function read(chain: string, address: string): Promise<TokenInfo | null> {
   const quote = (async () => {
     if (!net.contracts.router) return null;
     try {
-      const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, ua) });
+      const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
       const small = net.gas === "ETH" ? "0.01" : "1";
       const { result } = await c.simulateContract({ address: net.contracts.router, abi: quoteAbi, functionName: "quote", args: [NATIVE, addr, parseUnits(small, 18)] });
       if (!result.amountOut) return null;

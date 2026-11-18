@@ -1,6 +1,7 @@
 import { createPublicClient, http, parseAbiItem, type Address } from "viem";
 import { NATIVE } from "./tokens";
 import type { Net } from "./networks";
+import { srv } from "@/lib/serverRpc";
 
 const INIT = parseAbiItem(
   "event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)",
@@ -13,7 +14,7 @@ const lc = (a: string) => a.toLowerCase();
 /** V4 pools pairing `token` with the native coin, its wrapped token or the main stablecoin, newest first. */
 export async function findV4Pools(net: Net, token: Address): Promise<PoolKey[]> {
   if (!net.logsRpc) return [];
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc)) });
   const head = await c.getBlockNumber();
   // RPCs that cap the block range per query are read in windows, newest first, stopping at the first hits
   const windows: [bigint, bigint][] = [];

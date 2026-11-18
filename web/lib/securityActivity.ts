@@ -1,6 +1,7 @@
 import { createPublicClient, decodeFunctionData, http, parseAbi, parseAbiItem, type Address, type Hex } from "viem";
 import rh from "./deployments-4663.json";
 import { ROBINHOOD } from "./networks";
+import { srv } from "@/lib/serverRpc";
 
 /** What is waiting in Stoa's timelock on Robinhood Chain, what it recently executed, and the latest pool keys
  *  registered on the Uniswap V4 adapter. Read from the chain's logs (server side; the page caches it a minute). */
@@ -71,7 +72,7 @@ function describe(target: string, data: Hex): Call {
 }
 
 export async function securityActivity(): Promise<Activity> {
-  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(ROBINHOOD.logsRpc) });
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc)) });
   const head = await c.getBlockNumber();
   const ranges: [bigint, bigint][] = [];
   for (let s = FROM; s <= head; s += SPAN) ranges.push([s, s + SPAN - 1n > head ? head : s + SPAN - 1n]);

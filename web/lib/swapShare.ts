@@ -4,6 +4,7 @@ import { createPublicClient, decodeEventLog, erc20Abi, formatUnits, http, type A
 import { netByKey, type Net } from "./networks";
 import { routedEvent } from "./abi";
 import { NATIVE } from "./tokens";
+import { srv } from "@/lib/serverRpc";
 
 /** One swap through a Stoa router, read from its transaction's Routed event. Backs the shareable /swap/<chain>/<hash>
  *  page and its link card. A transaction never changes once mined, so callers can cache the result for a long time. */
@@ -26,7 +27,7 @@ function amt(raw: bigint, decimals: number): string {
 async function read(chain: string, hash: string): Promise<SharedSwap | null> {
   const net = netByKey(chain);
   if (!net?.contracts.router || !/^0x[0-9a-fA-F]{64}$/.test(hash)) return null;
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, ua) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
   let receipt;
   try { receipt = await c.getTransactionReceipt({ hash: hash as Hash }); } catch { return null; /* unknown or pending */ }
   if (receipt.status !== "success") return null;

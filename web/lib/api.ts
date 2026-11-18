@@ -4,6 +4,7 @@ import { ROBINHOOD, netByKey, type Net } from "./networks";
 import { computeGuard, routeWithoutOldV4, usesPoisoned, type Guard } from "./v4guard";
 import { routerAbi } from "./abi";
 import { NATIVE } from "./tokens";
+import { srv } from "@/lib/serverRpc";
 
 /** Stoa's public API for bots and apps (/api/v1/*): the router's best route for an amount, the minimum the swap accepts,
  *  and ready-to-send calldata. Same router, same 2 bps fee and same referrer share as the app. No key; soft rate limit. */
@@ -57,7 +58,7 @@ export async function apiQuote(p: QuoteInput) {
   if (referrer === null) return apiError(400, "referrer must be an address");
 
   const router = net.contracts.router;
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, ua) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
   const q = (a: bigint) => c.simulateContract({ address: router, abi: routerAbi, functionName: "quote", args: [sell, buy, a] });
   const small = amountIn / 1000n > 0n ? amountIn / 1000n : 1n;
   let route: { amountOut: bigint; mid: Address; leg1: { venue: Address; isPool: boolean }; leg2: { venue: Address; isPool: boolean } };

@@ -3,6 +3,7 @@ import { createPublicClient, erc20Abi, getAddress, http, parseAbi, type Address 
 import type { Net } from "./networks";
 import { routedEvent } from "./abi";
 import { NATIVE } from "./tokens";
+import { srv } from "@/lib/serverRpc";
 
 /** Profit and loss for one wallet on one network, from its swaps through Stoa (the router's Routed events paid to it).
  *  Kept in the gas token (ETH or HYPE), since most trades are against it: swaps against a stablecoin count at today's
@@ -27,7 +28,7 @@ const toNum = (v: bigint, d: number) => Number(v) / 10 ** d;
 export async function readPnl(net: Net, wallet: string): Promise<Pnl> {
   const who = getAddress(wallet);
   const router = net.contracts.router!;
-  const c = createPublicClient({ chain: net.chain, transport: http(net.logsRpc, { ...ua, batch: { batchSize: 50 } }) });
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), { ...ua, batch: { batchSize: 50 } }) });
   const head = await c.getBlockNumber();
   const span = net.logsSpan === 0n ? head : net.logsSpan;
   const logs: { tIn: string; tOut: string; aIn: bigint; aOut: bigint }[] = [];
