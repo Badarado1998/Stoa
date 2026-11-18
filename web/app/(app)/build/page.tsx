@@ -29,7 +29,6 @@ const WAYS: { lbl: string; who: string; body: string; href: string; cta: string 
   { lbl: "ROUTER CONTRACTS", who: "For contracts and aggregators", body: "Call StoaRouter from your own contract or front end: quote with an eth_call, then swap with your own limits. Same ABI on Robinhood Chain and Elysium.", href: "/docs/router-sdk", cta: "Router docs" },
 ];
 const USED: { name: string; href: string; what: string }[] = [
-  { name: "$NOUNY", href: "https://nounyagent.com/token", what: "Buy card on its token page, with the team wallet as referrer" },
   { name: "Nomad 0.6.0", href: "https://github.com/kadiri-seer/nomad/blob/main/docs/guides/stoa-setups.md", what: "Stoa's MCP tools built into the agent" },
 ];
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -100,7 +99,7 @@ export default function BuildPage() {
         <ul className="list" style={{ marginTop: 8 }}>
           {USED.map((u) => <li key={u.name}><a href={u.href} target="_blank" rel="noopener noreferrer"><b>{u.name}</b></a> <span className="note" style={{ marginTop: 0 }}>{u.what}</span></li>)}
         </ul>
-        <p className="note" style={{ marginTop: 10 }}>Integrated Stoa? Tell us on <a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X</a> and we&apos;ll add you here.</p>
+        <p className="note" style={{ marginTop: 10 }}>Listed here means integrated, not endorsed: the buy card and the API are open to anyone. Integrated Stoa? Tell us on <a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X</a> and we&apos;ll add you here.</p>
       </div>
       <div className="panel pad" style={{ marginBottom: 20 }}>
         <div className="rowx"><div className="lbl">HTTP API FOR BOTS · NO KEY</div><Link className="note" style={{ marginTop: 0 }} href="/docs/api">Docs →</Link></div>

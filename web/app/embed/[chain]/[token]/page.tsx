@@ -20,6 +20,9 @@ type P = { params: Promise<{ chain: string; token: string }>; searchParams: Prom
 const launchCached = (a: string) =>
   unstable_cache(async () => readLaunch(getAddress(a)).catch(() => null), ["embed-launch", a.toLowerCase()], { revalidate: 60 })();
 
+/** tokens whose buy card Stoa has switched off: the card shows a plain notice instead of a price or a Buy button */
+const EMBED_OFF = new Set(["0xcaeed5281bd1eeb26d5f8bd550bf5c3727ba6514"]); // $NOUNY, integration ended 18 Nov 2026
+
 const abs = (u: string | null) => (u ? (u.startsWith("http") ? u : `${SITE}${u}`) : null);
 
 function Foot({ unverified }: { unverified?: boolean }) {
@@ -66,6 +69,14 @@ function LaunchCard({ l, refAddr }: { l: LaunchInfo; refAddr?: string | null }) 
 export default async function Embed({ params, searchParams }: P) {
   const [{ chain, token }, sp] = await Promise.all([params, searchParams]);
   const ref = cleanRef(sp.ref);
+  if (EMBED_OFF.has(token.toLowerCase())) {
+    return (
+      <div className="embed">
+        <div className="em-q">This buy card is no longer available.<small>Check any token on stoadex.com/check before you buy.</small></div>
+        <Foot />
+      </div>
+    );
+  }
   const hit = findListed(chain, token);
   if (!hit) {
     if (chain !== "robinhood" || !isAddress(token, { strict: false })) notFound();
