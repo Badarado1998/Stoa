@@ -1,0 +1,21 @@
+name: publish-mcp-registry
+# Lists stoadex.com/mcp in the official MCP Registry as io.github.StoaDex/stoa (mcp-registry/server.json).
+# Run it by hand; bump "version" in server.json for every new publish. No secret: GitHub OIDC proves the StoaDex namespace.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-registry
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher validate server.json
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish server.json

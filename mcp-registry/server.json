@@ -1,0 +1,10 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.StoaDex/stoa",
+  "title": "Stoa: swaps on Robinhood Chain",
+  "description": "Quote, safety-check and build unsigned swaps on Robinhood Chain; bridge in; CMC market context.",
+  "version": "1.0.0",
+  "websiteUrl": "https://stoadex.com/docs/mcp",
+  "repository": { "url": "https://github.com/StoaDex/Stoa", "source": "github" },
+  "remotes": [{ "type": "streamable-http", "url": "https://stoadex.com/mcp" }]
+}
