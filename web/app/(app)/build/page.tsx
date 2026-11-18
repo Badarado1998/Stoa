@@ -7,8 +7,8 @@ import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
 
 export const metadata: Metadata = {
-  title: "Build",
-  description: "Quote, route and swap through Stoa from your own app or contract: router SDK, contract addresses, maker kit and aggregator integration.",
+  title: "Integrate Stoa",
+  description: "Put Stoa in your token page, bot, wallet, AI agent or contract: a buy card, an HTTP API, an MCP server and the router. No key needed, and referrers earn 10% of Stoa's fee.",
   alternates: { canonical: "/build" },
 };
 const API = `GET https://stoadex.com/api/v1/quote
@@ -17,6 +17,21 @@ const API = `GET https://stoadex.com/api/v1/quote
   &amount=10000000000000000&slippageBps=50
   &taker=0xYourWallet&referrer=0xYourWallet
 → { amountOut, minOut, route, tx: { to, data, value } }`;
+const MCP = `claude mcp add --transport http stoa https://stoadex.com/mcp
+
+# or in any MCP client config
+{ "mcpServers": { "stoa": { "url": "https://stoadex.com/mcp" } } }`;
+
+const WAYS: { lbl: string; who: string; body: string; href: string; cta: string }[] = [
+  { lbl: "BUY CARD", who: "For token projects", body: "A live \"Buy on Stoa\" card for your token page: price, what a buy gets right now and on which venue, and a button that opens Stoa with your token selected. Copy one line of HTML.", href: "/docs/embed", cta: "Embed docs" },
+  { lbl: "HTTP API", who: "For bots, wallets and Telegram bots", body: "One call returns the route for any amount across every venue, plus the swap transaction to send. No key, 60 requests a minute.", href: "/docs/api", cta: "API docs" },
+  { lbl: "MCP SERVER", who: "For AI agents", body: "stoadex.com/mcp: list tokens, quote, safety check, build an unsigned swap, bridge in, market context and stock tokens. Works in Claude, Cursor, Codex and Nomad. The user's wallet signs.", href: "/docs/mcp", cta: "MCP docs" },
+  { lbl: "ROUTER CONTRACTS", who: "For contracts and aggregators", body: "Call StoaRouter from your own contract or front end: quote with an eth_call, then swap with your own limits. Same ABI on Robinhood Chain and Elysium.", href: "/docs/router-sdk", cta: "Router docs" },
+];
+const USED: { name: string; href: string; what: string }[] = [
+  { name: "$NOUNY", href: "https://nounyagent.com/token", what: "Buy card on its token page, with the team wallet as referrer" },
+  { name: "Nomad 0.6.0", href: "https://github.com/kadiri-seer/nomad/blob/main/docs/guides/stoa-setups.md", what: "Stoa's MCP tools built into the agent" },
+];
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 const SOL = `// 1. off-chain: route = router.quote(USDC, WHYPE, 250e6)  (eth_call)
@@ -65,16 +80,35 @@ export default function BuildPage() {
   const rhStoa: [string, string | undefined][] = [["StoaRouter", R.router], ["FeeDistributor", R.fees], ["UniswapV4Adapter", R.v4], ["Admin Safe (2 of 3)", R.safe], ["Timelock (48h)", R.timelock]];
   return (
     <section className="page">
-      <PageHead eyebrow="IV · BUILD" title="Every pool is a building block">Quote, route and swap from your own app or contract.</PageHead>
+      <PageHead eyebrow="IV · BUILD" title="Integrate Stoa">Put Stoa in your token page, bot, wallet, AI agent or contract. No key needed.</PageHead>
+      <div className="lbl" style={{ margin: "0 0 12px 4px" }}>PICK YOUR WAY IN</div>
+      <div className="grid2 eq" style={{ marginBottom: 20 }}>
+        {WAYS.map((w) => (
+          <div key={w.lbl} className="panel pad">
+            <div className="rowx"><div className="lbl">{w.lbl}</div><span className="note" style={{ marginTop: 0 }}>{w.who}</span></div>
+            <p style={{ marginTop: 10 }}>{w.body}</p>
+            <Link className="go" href={w.href}>{w.cta}</Link>
+          </div>
+        ))}
+      </div>
+      <div className="panel pad" style={{ marginBottom: 20 }}>
+        <div className="rowx"><div className="lbl">EARN 10% AS A REFERRER</div><Link className="note" style={{ marginTop: 0 }} href="/docs/referrals">Docs →</Link></div>
+        <p style={{ marginTop: 10 }}>Name your address as <code>referrer</code> and you earn 10% of Stoa&apos;s 2 bps fee on every swap you send: about $0.02 per $1,000 swapped, in the token the trader received. It works the same in the buy card, the API, the MCP server&apos;s <code>build_swap</code> and the router&apos;s <code>swap</code>. Earnings are booked to your address in the FeeDistributor contract on-chain, and only your wallet can claim them on <Link href="/referrals">Referrals</Link>.</p>
+      </div>
+      <div className="panel pad" style={{ marginBottom: 20 }}>
+        <div className="lbl">USED BY</div>
+        <ul className="list" style={{ marginTop: 8 }}>
+          {USED.map((u) => <li key={u.name}><a href={u.href} target="_blank" rel="noopener noreferrer"><b>{u.name}</b></a> <span className="note" style={{ marginTop: 0 }}>{u.what}</span></li>)}
+        </ul>
+        <p className="note" style={{ marginTop: 10 }}>Integrated Stoa? Tell us on <a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">X</a> and we&apos;ll add you here.</p>
+      </div>
       <div className="panel pad" style={{ marginBottom: 20 }}>
         <div className="rowx"><div className="lbl">HTTP API FOR BOTS · NO KEY</div><Link className="note" style={{ marginTop: 0 }} href="/docs/api">Docs →</Link></div>
-        <p style={{ marginTop: 10 }}>One call returns the best route for your amount and the swap transaction to send. Pass your wallet as <code>referrer</code> and earn 10% of Stoa&apos;s fee on every swap your bot sends.</p>
         <pre className="code" style={{ marginTop: 12 }}>{API}</pre>
       </div>
       <div className="panel pad" style={{ marginBottom: 20 }}>
-        <div className="rowx"><div className="lbl">BUY CARD FOR YOUR TOKEN PAGE</div><Link className="note" style={{ marginTop: 0 }} href="/docs/embed">Docs →</Link></div>
-        <p style={{ marginTop: 10 }}>Put a live &quot;Buy on Stoa&quot; card on your project&apos;s site: price, what a buy gets right now and on which venue, and a button that opens Stoa with your token selected. No wallet connects inside the card. Your wallet earns 10% of Stoa&apos;s fee on every swap it brings.</p>
-        <p className="note" style={{ marginTop: 10 }}>Used by <a href="https://nounyagent.com/token" target="_blank" rel="noopener noreferrer">$NOUNY</a> on its token page.</p>
+        <div className="rowx"><div className="lbl">MCP SERVER FOR AI AGENTS · NO KEY</div><Link className="note" style={{ marginTop: 0 }} href="/docs/mcp">Docs →</Link></div>
+        <pre className="code" style={{ marginTop: 12 }}>{MCP}</pre>
       </div>
       <div className="grid2 eq">
         <div className="panel pad">
