@@ -31,7 +31,7 @@ export const CHANGES: Change[] = [
     items: [
       "New Bridge in page: send ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain and receive ETH or USDG in the same wallet on Robinhood Chain.",
       "Routes come from LI.FI over Across. The minimum you receive, the fees and the expected time show before you sign.",
-      "Hardened after a review by HEY Research Lab: Stoa decodes each bridge transaction and refuses it unless it sends the token and amount you picked to your own address on Robinhood Chain (refund address included), caps the ETH it carries, stops if a refreshed quote is more than 0.5% worse than the one on screen, and does not send from smart-contract wallets.",
+      "Hardened after a review by HEY Research Lab: Stoa decodes each bridge transaction and refuses it unless it sends the token and amount you picked to your own address on Robinhood Chain (refund address included), with the token you picked arriving and the bridge asked to deliver at least the minimum on screen, caps the ETH it carries, stops if a refreshed quote is more than 0.5% worse than the one on screen, and does not send from smart-contract wallets.",
       "You sign on the source chain in your own wallet; Stoa only accepts routes that go to LI.FI's contract, approves exactly the amount sent, adds no fee and never holds the funds. When the transfer lands, Swap on Stoa opens Trade.",
       "Trade shows a Bridge in link when the wallet has no ETH on Robinhood Chain, and so does the home page.",
       "AI agents get it too: the MCP server has a new bridge_quote tool that returns the same checked, unsigned transaction.",

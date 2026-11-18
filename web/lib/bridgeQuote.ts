@@ -32,7 +32,7 @@ export async function bridgeQuote(p: { fromChain?: string; fromToken?: string; t
   const j = (await r.json().catch(() => ({}))) as Partial<LifiQuote>;
   if (!r.ok || !j.estimate || !j.transactionRequest) return { error: dTok.symbol === "USDG" ? "No checkable route to USDG for this pair and amount. Bridge ETH instead, then swap on Stoa." : "No checkable route for this pair and amount right now." };
   const t = j.transactionRequest;
-  const why = checkLifiTx(t, { user: wallet, chainId: src.chain.id, token: sTok.address, amount });
+  const why = checkLifiTx(t, { user: wallet, chainId: src.chain.id, token: sTok.address, amount, toToken: dTok.address, minOut: BigInt(j.estimate.toAmountMin ?? 0) });
   if (why) return { error: "Stoa could not verify this route, so it is not returned. Try another token or amount." };
 
   const native = sameAddr(sTok.address, NATIVE_ZERO);

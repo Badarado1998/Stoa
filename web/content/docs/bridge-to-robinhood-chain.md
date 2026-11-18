@@ -33,7 +33,7 @@ Enter an amount. Stoa asks LI.FI for a route for this wallet and shows what it d
 
 ## 4. Sign on the source chain
 
-Stoa switches your wallet to the source chain. A token needs an **approve** first (for exactly the amount you send), then the **bridge** transaction. Both go to LI.FI's contract `0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE` from your own wallet, and Stoa never holds the funds. Before your wallet opens, Stoa decodes the bridge transaction and refuses it unless it sends exactly the token and amount you picked, to your own address on Robinhood Chain (with refunds to you too), and asks for no more ETH than you typed. If the quote has to be refreshed and the new minimum is more than 0.5% lower, Stoa stops and shows it before you sign.
+Stoa switches your wallet to the source chain. A token needs an **approve** first (for exactly the amount you send), then the **bridge** transaction. Both go to LI.FI's contract `0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE` from your own wallet, and Stoa never holds the funds. Before your wallet opens, Stoa decodes the bridge transaction and refuses it unless it sends exactly the token and amount you picked, to your own address on Robinhood Chain (with refunds to you too), that the token you picked is what arrives and the bridge must deliver at least the minimum on screen, and that it asks for no more ETH than you typed. If the quote has to be refreshed and the new minimum is more than 0.5% lower, Stoa stops and shows it before you sign.
 
 Bridge in works with regular wallets. A smart-contract wallet (a Safe or a smart account) may not control the same address on Robinhood Chain, so Stoa stops before sending from one.
 

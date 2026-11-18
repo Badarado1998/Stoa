@@ -72,7 +72,7 @@ export default function BridgePanel() {
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.estimate || !j.transactionRequest) throw new Error(r.status === 429 ? "Too many quotes right now. Wait a few seconds." : "No route for this amount right now. Try a larger amount or another token.");
     // a route Stoa cannot check end to end is never shown
-    const why = checkLifiTx(j.transactionRequest, { user: address!, chainId: src.chain.id, token: sTok.address, amount: amt! });
+    const why = checkLifiTx(j.transactionRequest, { user: address!, chainId: src.chain.id, token: sTok.address, amount: amt!, toToken: dTok.address, minOut: BigInt(j.estimate.toAmountMin ?? 0) });
     if (why) throw new Error(dTok.symbol === "USDG" ? "No direct route to USDG for this one. Bridge ETH instead, then swap it on Stoa." : "No route Stoa can check for this amount right now. Try another token or amount.");
     return { ...(j as LifiQuote), at: Date.now() };
   }
@@ -142,7 +142,8 @@ export default function BridgePanel() {
       }
       const t = q.transactionRequest;
       // decode what the call does (receiver, refund address, chain, token, amount) and cap the value it carries
-      const why = checkLifiTx(t, { user: address, chainId: src.chain.id, token: sTok.address, amount: amt });
+      // the relayer must deliver at least the minimum of the quote being signed (within 0.5% of the one on screen, above)
+      const why = checkLifiTx(t, { user: address, chainId: src.chain.id, token: sTok.address, amount: amt, toToken: dTok.address, minOut: BigInt(q.estimate.toAmountMin) });
       if (why) throw new Error(why);
       if (!native) {
         if (!sameAddr(q.estimate.approvalAddress, LIFI_DIAMOND)) throw new Error("This route asks to approve an unknown contract. Get a new quote.");

@@ -70,7 +70,11 @@ const SWAP_DATA = { type: "tuple[]", components: [
 /** Most gas-token value a token route may carry on top (some bridges charge a small native fee). */
 export const MAX_NATIVE_FEE = 3_000_000_000_000_000n; // 0.003 of the source chain's gas token
 
-export interface ExpectedTx { user: Address; chainId: number; token: Address; amount: bigint }
+/** toToken: what arrives on Robinhood Chain (NATIVE_ZERO for ETH, or USDG); minOut: the minimum shown to the user */
+export interface ExpectedTx { user: Address; chainId: number; token: Address; amount: bigint; toToken: Address; minOut: bigint }
+
+/** WETH on Robinhood Chain: Across fills an ETH route with it and unwraps it to ETH for a regular wallet */
+const RH_WETH = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73" as Address;
 
 /** Bridge in only uses Across: its LI.FI call carries the receiver (and the refund address) in the transaction itself,
  *  so both can be checked here. Intent and deposit routes (Relay, Layerswap, LI.FI Intents) bind the recipient in an
@@ -92,6 +96,8 @@ export function checkLifiTx(tx: { to: Address; data: `0x${string}`; value?: stri
   if (!sameAddr(bd.receiver, want.user)) return bad;
   if (bd.destinationChainId !== BigInt(DST_CHAIN_ID)) return bad;
   if (bd.hasDestinationCall) return bad; // the receiver would then be a contract on Robinhood Chain, not the user
+  // the Across data is checked on every path: receiver, refund address, the asset that arrives and how much of it
+  if (!acrossDataOk(tx.data, want, bd.minAmount, bd.hasSourceSwaps)) return bad;
   if (!bd.hasSourceSwaps) {
     if (!sameAddr(bd.sendingAssetId, want.token) || bd.minAmount > want.amount) return bad;
     return null;
@@ -104,16 +110,28 @@ export function checkLifiTx(tx: { to: Address; data: `0x${string}`; value?: stri
   if (!sameAddr(swaps[0].sendingAssetId, want.token) || swaps[0].fromAmount !== want.amount) return bad;
   if (!sameAddr(swaps[swaps.length - 1].receivingAssetId, bd.sendingAssetId)) return bad;
   if (sameAddr(bd.sendingAssetId, want.token) && bd.minAmount > want.amount) return bad;
-  return acrossAddressesOk(tx.data, want.user) ? null : bad;
+  return null;
 }
 
-/** The Across data (third argument) starts with the address that receives the funds on Robinhood Chain and the one
- *  that gets a refund if the fill fails: both must be the user. */
-function acrossAddressesOk(data: `0x${string}`, user: Address): boolean {
+/** The Across data (third argument of LI.FI's AcrossV4 call): receiver, refund address, sending asset, receiving asset,
+ *  outputAmount, outputAmountMultiplier, ... Receiver and refund must be the user; the receiving asset must be the token
+ *  picked on Robinhood Chain (WETH for ETH); and what the relayer must deliver can't be below the minimum on screen.
+ *  With source swaps LI.FI recomputes outputAmount on-chain as (amount after the swaps) x multiplier / 1e18, and that
+ *  amount is at least BridgeData.minAmount, so minAmount x multiplier / 1e18 must clear the minimum too. Otherwise a
+ *  tampered quote could keep the right receiver but ask the relayer for 1 wei and let it keep the rest. */
+function acrossDataOk(data: `0x${string}`, want: ExpectedTx, minAmount: bigint, hasSourceSwaps: boolean): boolean {
   const args = data.slice(10).toLowerCase();
   const word = (i: number) => args.slice(i * 64, i * 64 + 64);
-  const at = Number(BigInt("0x" + word(2)));
-  if (!Number.isSafeInteger(at) || at % 32 !== 0 || at / 32 + 2 > args.length / 64) return false;
-  const me = user.slice(2).toLowerCase().padStart(64, "0");
-  return word(at / 32) === me && word(at / 32 + 1) === me;
+  const at = Number(BigInt("0x" + (word(2) || "0")));
+  if (!Number.isSafeInteger(at) || at % 32 !== 0 || at / 32 + 6 > args.length / 64) return false;
+  const i = at / 32;
+  const pad = (a: Address) => a.slice(2).toLowerCase().padStart(64, "0");
+  if (word(i) !== pad(want.user) || word(i + 1) !== pad(want.user)) return false;
+  const receive = sameAddr(want.toToken, NATIVE_ZERO) ? RH_WETH : want.toToken;
+  if (word(i + 3) !== pad(receive)) return false;
+  if (want.minOut <= 0n) return false;
+  const outputAmount = BigInt("0x" + word(i + 4)), multiplier = BigInt("0x" + word(i + 5));
+  if (outputAmount < want.minOut) return false;
+  if (hasSourceSwaps && (minAmount * multiplier) / 10n ** 18n < want.minOut) return false;
+  return true;
 }
