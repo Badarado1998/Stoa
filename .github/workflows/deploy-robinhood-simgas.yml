@@ -1,0 +1,88 @@
+name: Deploy gas-capped V3 and CL adapters (Robinhood Chain)
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys UniswapV3AdapterV2 and three CLTickSpacingAdapterV2 (Aero, Ramses, up.), each pool quote simulation capped at
+# SIM_GAS like UniswapV4AdapterV3; verifies them on Sourcify; commits their addresses to
+# contracts/deployments/4663-simgas.json (contracts/ only, so no web build). They route nothing until the hourly
+# rollout-robinhood-venues.yml has the timelock add them and remove the old V3, Aero and Ramses adapters.
+# Gas from ROBINHOOD_DEPLOYER_PRIVATE_KEY (the keeper).
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transactions (leave unticked for a dry run)"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          test ! -f deployments/4663-simgas.json || { echo "::error::already deployed (deployments/4663-simgas.json)"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          ME=$(cast wallet address --private-key "$PK")
+          echo "Deployer: $ME · $(cast balance $ME --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+          cp ../web/lib/deployments-4663.json deployments/4663.json
+
+      - name: Fork tests - griefed pairs, unchanged quotes, the swapped-in router
+        run: forge test --match-contract AdapterSimGas -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeploySimGasRobinhood.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-simgas.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          R=0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5
+          J=deployments/4663-simgas.json
+          forge verify-contract $(jq -r .uniswapV3AdapterV2 $J) src/adapters/UniswapV3AdapterV2.sol:UniswapV3AdapterV2 \
+            --verifier sourcify --chain 4663 --constructor-args $(cast abi-encode "c(address,address,address)" \
+            0x1f7d7550B1b028f7571E69A784071F0205FD2EfA 0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73 $R) || true
+          cl() { forge verify-contract "$1" src/adapters/CLTickSpacingAdapterV2.sol:CLTickSpacingAdapterV2 \
+            --verifier sourcify --chain 4663 --constructor-args $(cast abi-encode "c(address,address,int24[])" "$2" $R "$3") || true; }
+          cl $(jq -r .aeroAdapterV2 $J) 0xc63d7338c178e805c544B8f897066bD3BBcBE136 "[1,10,50,100,150,200,250]"
+          cl $(jq -r .ramsesAdapterV2 $J) 0xE0c4ceb92d08CA985bB70fe0a22fEb121A9854A8 "[1,5,10,50,100,200,300,500]"
+          cl $(jq -r .upAdapterV2 $J) 0x1ac9dB4a2608ba45D6127B1737949b51Bb54B7F3 "[1,10,50,60,100,200,2000]"
+
+      - name: Commit the addresses (contracts/ only)
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git add contracts/deployments/4663-simgas.json
+          git commit -m "deploy: gas-capped V3 and CL adapters on Robinhood Chain (not routed until the timelock swaps them)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep $((i * 10)); done
+          exit 1
+
+      - name: Start the hourly governance runs
+        if: ${{ inputs.broadcast }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable rollout-robinhood-venues.yml -R "$GITHUB_REPOSITORY" || true
