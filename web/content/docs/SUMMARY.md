@@ -9,6 +9,7 @@
 
 ## Guides
 
+* [How to bridge to Robinhood Chain](bridge-to-robinhood-chain.md)
 * [How to swap on Robinhood Chain](swap-robinhood-chain.md)
 * [How to buy stock tokens on Robinhood Chain](buy-stock-tokens.md)
 * [How to check a token on Robinhood Chain](check-token-robinhood-chain.md)

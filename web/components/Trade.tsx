@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
@@ -452,6 +453,9 @@ function TradeOn({ net }: { net: Net }) {
       <div className="panel pad" style={{ position: "relative" }}>
         {!deployed && <div className="notice">Stoa is not live on {net.name} yet. Wrapping {G} works; swaps open at launch.</div>}
         {deployed && isPaused && <div className="notice">Swaps are paused for safety. Your funds are not affected; wrapping {G} still works.</div>}
+        {net.key === "robinhood" && isConnected && native.data?.value === 0n && (
+          <div className="notice">No ETH on Robinhood Chain yet. <Link href="/bridge">Bridge in from Base, Arbitrum or Ethereum →</Link></div>
+        )}
         <div className="rowx" style={{ marginBottom: 12 }}>
           <div className="seg" role="tablist">
             <button className={limitMode ? undefined : "on"} type="button" role="tab" aria-selected={!limitMode} onClick={() => setMode("swap")}>Swap</button>

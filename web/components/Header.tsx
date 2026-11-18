@@ -10,7 +10,7 @@ import NetSwitch from "./NetSwitch";
 const TABS = [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/cover", "Rug Cover"], ["/spotlight", "Spotlight"], ["/pools", "Pools"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
 // the menu in four short groups (the same grouping as the footer), two columns, so it fits one phone screen
 const MENU: { h: string; items: [string, string][] }[] = [
-  { h: "Trade", items: [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/pools", "Pools"], ["/cover", "Rug Cover"], ["/check", "Token check"], ["/tokens", "Tokens"]] },
+  { h: "Trade", items: [["/trade", "Trade"], ["/bridge", "Bridge in"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/pools", "Pools"], ["/cover", "Rug Cover"], ["/check", "Token check"], ["/tokens", "Tokens"]] },
   { h: "$STOA & you", items: [["/token", "$STOA"], ["/spotlight", "Spotlight"], ["/earn", "Earn"], ["/portfolio", "Portfolio"], ["/wrapped", "Wrapped"], ["/referrals", "Referrals"]] },
   { h: "Learn", items: [["/docs", "Docs"], ["/", "Walk the Stoa"], ["/build", "Build"], ["/curators", "Curators"], ["/security", "Security"], ["/changelog", "Changelog"]] },
 ];
