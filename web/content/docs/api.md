@@ -2,7 +2,7 @@
 
 Get Stoa's best route for any amount and a ready-to-send swap transaction with one HTTP call. Built for trading bots, wallets, Telegram bots and other apps. No key needed. Swaps go through the same router as the app, with the same 2 bps fee, and you can pass your own address as referrer to earn 10% of that fee on every swap you send.
 
-Base URL: `https://stoadex.com/api/v1`
+Base URL: `https://stoadex.com/api/v1`. Building an AI agent? Use the [MCP server](mcp.md) instead.
 
 ## Quote and swap: `GET /quote`
 

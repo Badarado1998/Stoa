@@ -1,0 +1,190 @@
+import { isAddress } from "viem";
+import { API_HEADERS, apiQuote, limited } from "@/lib/api";
+import { NETS, netByKey } from "@/lib/networks";
+import { NATIVE } from "@/lib/tokens";
+import { readSafety } from "@/lib/safety";
+import { mid, stockTokens } from "@/lib/stocks";
+
+// https://stoadex.com/mcp: Stoa as a hosted, keyless MCP server (Streamable HTTP, stateless, JSON responses).
+// Read-only: every tool reads the chain or Stoa's own data. build_swap returns an UNSIGNED transaction; nothing here
+// can sign, hold keys or move funds. Same limits as the public API (60 requests a minute per IP). Docs: /docs/mcp
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+const PROTOCOL = "2025-06-18";
+const SERVER = { name: "stoa", title: "Stoa: every route, compared", version: "1.0.0" };
+const INSTRUCTIONS = [
+  "Stoa is a swap router on Robinhood Chain (chain id 4663, gas ETH) and Elysium (gas HYPE).",
+  "Rules for agents: 1) Get token addresses from list_tokens or from the project's own site, never from a reply or DM.",
+  "2) Run safety_check before buying any token that is not in list_tokens' verified set; a 'danger' verdict means do not buy.",
+  "3) Quote, show the user amountOut, minOut, price impact and route, and only then call build_swap.",
+  "4) build_swap returns an unsigned transaction: the user's own wallet signs it. If selling a token (not native), the wallet must first approve approval.spender for approval.amount.",
+  "5) Quotes move: rebuild right before sending. Amounts are integers in the token's smallest unit (wei).",
+].join(" ");
+
+const chainProp = { type: "string", enum: ["robinhood", "elysium"], description: "Network. Default robinhood." };
+const tokenProp = (what: string) => ({ type: "string", description: `${what}: a token address, or "native" for the gas token (ETH on Robinhood Chain, HYPE on Elysium).` });
+const ro = { readOnlyHint: true, openWorldHint: true };
+
+const TOOLS = [
+  {
+    name: "list_tokens",
+    title: "List tokens",
+    description: "Tokens Stoa lists on a network, with address, symbol and decimals, plus the router address. Any other token address can still be quoted, but treat it as unverified and run safety_check first.",
+    inputSchema: { type: "object", properties: { chain: chainProp }, additionalProperties: false },
+    annotations: ro,
+  },
+  {
+    name: "quote",
+    title: "Quote a swap",
+    description: "Compare every venue Stoa routes for this exact amount and return the route it would fill: amountOut (after Stoa's 2 bps fee), minOut for the slippage, price impact and the venues. Read-only.",
+    inputSchema: {
+      type: "object", required: ["sellToken", "buyToken", "amount"], additionalProperties: false,
+      properties: {
+        chain: chainProp, sellToken: tokenProp("Token to sell"), buyToken: tokenProp("Token to buy"),
+        amount: { type: "string", description: "Amount to sell, integer in the sell token's smallest unit (wei). 0.01 ETH = 10000000000000000." },
+        slippageBps: { type: "integer", minimum: 0, maximum: 5000, description: "Max slippage in basis points. Default 50 (0.5%)." },
+      },
+    },
+    annotations: ro,
+  },
+  {
+    name: "build_swap",
+    title: "Build an unsigned swap",
+    description: "Same as quote, plus the unsigned transaction (to, data, value, chainId) for the taker's wallet to sign, and the approval it needs first when selling a token. Stoa never signs or sends anything.",
+    inputSchema: {
+      type: "object", required: ["sellToken", "buyToken", "amount", "taker"], additionalProperties: false,
+      properties: {
+        chain: chainProp, sellToken: tokenProp("Token to sell"), buyToken: tokenProp("Token to buy"),
+        amount: { type: "string", description: "Amount to sell, integer in the sell token's smallest unit (wei)." },
+        taker: { type: "string", description: "The wallet that signs, pays and receives." },
+        slippageBps: { type: "integer", minimum: 0, maximum: 5000, description: "Max slippage in basis points. Default 50." },
+        referrer: { type: "string", description: "Optional wallet that earns 10% of Stoa's fee on this swap." },
+        deadlineSeconds: { type: "integer", minimum: 15, maximum: 1800, description: "Seconds until the transaction expires. Default 120." },
+      },
+    },
+    annotations: ro,
+  },
+  {
+    name: "safety_check",
+    title: "Token safety check",
+    description: "Simulate a small buy and an immediate sell-back of a token through Stoa's live router (eth_call, nothing sent), and read how concentrated its supply is. Returns verdict ok | caution | danger | unknown, buy and sell tax, round-trip cost, creator and top-10 holdings. A pass describes the token today; its owner can still change the rules.",
+    inputSchema: { type: "object", required: ["token"], additionalProperties: false, properties: { chain: chainProp, token: { type: "string", description: "Token address." } } },
+    annotations: ro,
+  },
+  {
+    name: "stock_tokens",
+    title: "Robinhood stock tokens",
+    description: "Robinhood Stock Tokens on Robinhood Chain: Robinhood's price for the underlying stock next to the on-chain price, liquidity, 24h volume and whether Stoa can route a swap. Optionally filter by ticker.",
+    inputSchema: { type: "object", additionalProperties: false, properties: { symbol: { type: "string", description: "Optional ticker, e.g. NVDA." }, routableOnly: { type: "boolean", description: "Only stocks Stoa can swap right now." } } },
+    annotations: ro,
+  },
+] as const;
+
+type Rpc = { jsonrpc: "2.0"; id?: string | number | null; method: string; params?: Record<string, unknown> };
+const ok = (id: Rpc["id"], result: unknown) => ({ jsonrpc: "2.0", id, result });
+const err = (id: Rpc["id"], code: number, message: string) => ({ jsonrpc: "2.0", id: id ?? null, error: { code, message } });
+const text = (v: unknown, isError = false) => ({ content: [{ type: "text", text: typeof v === "string" ? v : JSON.stringify(v, null, 2) }], structuredContent: typeof v === "object" ? v : undefined, isError });
+const str = (v: unknown) => (v === undefined || v === null ? undefined : String(v));
+
+async function callTool(name: string, a: Record<string, unknown>) {
+  const chain = str(a.chain) ?? "robinhood";
+  switch (name) {
+    case "list_tokens": {
+      const net = netByKey(chain);
+      if (!net || !net.deployed) return text("chain must be robinhood or elysium", true);
+      return text({
+        chain: net.key, chainId: net.chain.id, router: net.contracts.router ?? null, native: { symbol: net.gas, address: "native", wrapped: net.wrapped },
+        tokens: net.tokens.filter((t) => t.address !== NATIVE).map((t) => ({ address: t.address, symbol: t.symbol, name: t.name, decimals: t.decimals })),
+        note: "Listed is not reviewed: names marked 'Pons launch' or 'Unverified' can be anything. Run safety_check before buying them.",
+      });
+    }
+    case "quote":
+    case "build_swap": {
+      if (name === "build_swap" && !str(a.taker)) return text("taker is required", true);
+      const r = await apiQuote({
+        chain, sellToken: str(a.sellToken) ?? "", buyToken: str(a.buyToken) ?? "", amount: str(a.amount) ?? "",
+        slippageBps: str(a.slippageBps), taker: name === "build_swap" ? str(a.taker) : undefined,
+        referrer: name === "build_swap" ? str(a.referrer) : undefined, deadlineSeconds: name === "build_swap" ? str(a.deadlineSeconds) : undefined,
+      });
+      const body = await r.json().catch(() => ({ error: "bad response" }));
+      if (!r.ok) return text(body, true);
+      if (name === "build_swap") body.note = "Unsigned. Check tx.to is the Stoa router for this chain, show the user amountOut and minOut, approve first if 'approval' is present, then let the user's wallet sign.";
+      return text(body);
+    }
+    case "safety_check": {
+      const net = netByKey(chain);
+      const token = str(a.token) ?? "";
+      if (!net || !net.deployed) return text("chain must be robinhood or elysium", true);
+      if (!isAddress(token, { strict: false })) return text("token must be an address", true);
+      try { return text(await readSafety(net, token)); } catch { return text("the chain did not answer, try again shortly", true); }
+    }
+    case "stock_tokens": {
+      const data = await stockTokens().catch(() => null);
+      if (!data) return text("stock data is unavailable right now, try again shortly", true);
+      const sym = str(a.symbol)?.toUpperCase();
+      const list = data.stocks
+        .filter((s) => (!sym || s.symbol.toUpperCase() === sym) && (!a.routableOnly || s.route))
+        .slice(0, sym ? 1 : 60)
+        .map((s) => {
+          const ref = mid(s);
+          return {
+            symbol: s.symbol, name: s.name, address: s.address, halted: s.halted, robinhoodPriceUsd: ref,
+            onChain: s.dex ? { priceUsd: s.dex.priceUsd, liquidityUsd: s.dex.liquidityUsd, volume24h: s.dex.volume24h, change24h: s.dex.change24h } : null,
+            gapPct: ref && s.dex ? Number((((s.dex.priceUsd - ref) / ref) * 100).toFixed(3)) : null,
+            routeOnStoa: s.route,
+          };
+        });
+      if (sym && !list.length) return text(`no Robinhood stock token with ticker ${sym}`, true);
+      return text({ chain: "robinhood", updated: new Date(data.updated).toISOString(), count: list.length, stocks: list, note: "Issued by Robinhood Assets (Jersey) Limited, not by Stoa, and not offered in every country. Swap with build_swap, selling USDG or ETH." });
+    }
+  }
+  return null;
+}
+
+async function handle(m: Rpc) {
+  switch (m.method) {
+    case "initialize":
+      return ok(m.id, { protocolVersion: PROTOCOL, capabilities: { tools: { listChanged: false } }, serverInfo: SERVER, instructions: INSTRUCTIONS });
+    case "ping":
+      return ok(m.id, {});
+    case "tools/list":
+      return ok(m.id, { tools: TOOLS });
+    case "tools/call": {
+      const p = m.params ?? {};
+      const out = await callTool(String(p.name ?? ""), (p.arguments as Record<string, unknown>) ?? {});
+      return out ? ok(m.id, out) : err(m.id, -32602, `unknown tool: ${String(p.name)}`);
+    }
+    case "resources/list": return ok(m.id, { resources: [] });
+    case "prompts/list": return ok(m.id, { prompts: [] });
+    default:
+      return err(m.id, -32601, `method not found: ${m.method}`);
+  }
+}
+
+const H = { ...API_HEADERS, "access-control-allow-methods": "GET, POST, DELETE, OPTIONS", "access-control-allow-headers": "content-type, mcp-session-id, mcp-protocol-version, accept", "access-control-expose-headers": "mcp-session-id" };
+
+export async function POST(req: Request) {
+  const block = limited(req);
+  if (block) return block;
+  let msg: unknown;
+  try { msg = await req.json(); } catch { return Response.json(err(null, -32700, "parse error"), { status: 400, headers: H }); }
+  const batch = Array.isArray(msg) ? (msg as Rpc[]) : [msg as Rpc];
+  const out = [];
+  for (const m of batch) {
+    if (!m || typeof m !== "object" || typeof m.method !== "string") { out.push(err(null, -32600, "invalid request")); continue; }
+    if (m.id === undefined) continue; // notification (e.g. notifications/initialized): no reply
+    out.push(await handle(m));
+  }
+  if (!out.length) return new Response(null, { status: 202, headers: H });
+  return Response.json(Array.isArray(msg) ? out : out[0], { headers: H });
+}
+
+// Stateless server: no server-initiated stream and no sessions to end.
+export function GET(req: Request) {
+  if ((req.headers.get("accept") ?? "").includes("text/event-stream")) return new Response(null, { status: 405, headers: { ...H, allow: "POST, OPTIONS" } });
+  return Response.json({ ...SERVER, transport: "streamable-http", endpoint: "https://stoadex.com/mcp", tools: TOOLS.map((t) => t.name), docs: "https://stoadex.com/docs/mcp", note: "POST JSON-RPC here from an MCP client." }, { headers: H });
+}
+export function DELETE() { return new Response(null, { status: 405, headers: H }); }
+export function OPTIONS() { return new Response(null, { status: 204, headers: H }); }
