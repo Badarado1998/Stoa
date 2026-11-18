@@ -22,6 +22,7 @@ import { TokenIcon } from "./ui";
 import PoolDepth from "./PoolDepth";
 import { useCoverOffer } from "./CoverTrade";
 import SafetyPanel from "./SafetyPanel";
+import CmcPanel from "./CmcPanel";
 import LimitPanel from "./LimitPanel";
 import { WatchStar } from "./Watch";
 import { session as usSession } from "@/lib/marketHours";
@@ -500,6 +501,7 @@ function TradeOn({ net }: { net: Net }) {
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
         </div>
         <MarketNote tokens={[sell, buy]} />
+        {net.key === "robinhood" && !isNative(buy) && !/^(USDG|WETH|USDC|USDT)$/.test(buy.symbol) && <CmcPanel token={buy.address} />}
 
         {limitMode ? (
           <>

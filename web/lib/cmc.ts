@@ -29,6 +29,30 @@ async function cmcRaw<T = any>(path: string, ttl: number): Promise<{ ok: true; d
 
 const num = (v: unknown, d = 6) => (v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) ? null : Number(Number(v).toPrecision(d)));
 
+export type CmcDexToken = {
+  address: string; symbol: string; name: string; listedOnCmc: true;
+  priceUsd: number | null; marketCapUsd: number | null; liquidityUsd: number | null; high24hUsd: number | null; low24hUsd: number | null;
+  last24h: { volumeUsd: number | null; trades: number | null; buyers: number | null; sellers: number | null; priceChangePct: number | null } | null;
+  pools: number | null; cmcRiskLabel: string | null; website: string | null; x: string | null; source: string;
+};
+
+/** CMC's DEX data for one Robinhood Chain token: null when CMC has none, "error" when CMC did not answer. */
+export async function cmcDexToken(address: string, ttl = 60): Promise<CmcDexToken | null | "error"> {
+  const res = await cmcRaw<any>(`/v1/dex/token?platform=robinhood&address=${address}`, ttl);
+  if (!res.ok) return "error";
+  const d = res.data;
+  if (!d || !d.addr) return null;
+  const day = Array.isArray(d.sts) ? d.sts.find((s: any) => s.tp === "24h") ?? d.sts[d.sts.length - 1] : null;
+  return {
+    address: d.addr, symbol: d.sym, name: d.n, listedOnCmc: true,
+    priceUsd: num(d.p), marketCapUsd: num(d.mcap, 8), liquidityUsd: num(d.liqUsd, 8),
+    high24hUsd: num(d.ph24h), low24hUsd: num(d.pl24h),
+    last24h: day ? { volumeUsd: num(day.vu, 8), trades: num(day.txs), buyers: num(day.nb), sellers: num(day.ns), priceChangePct: day.pc === undefined || day.pc === null ? null : num(Number(day.pc) * 100, 4) } : null,
+    pools: num(d.nps), cmcRiskLabel: d.rl ?? null, website: d.web ?? null, x: d.tw ?? null,
+    source: "CoinMarketCap DEX data",
+  };
+}
+
 export async function marketContext(input: { tokens?: unknown }) {
   const net = netByKey("robinhood")!;
   const asked = (Array.isArray(input.tokens) ? input.tokens : input.tokens ? [input.tokens] : []).map(String).slice(0, 5);
@@ -47,19 +71,10 @@ export async function marketContext(input: { tokens?: unknown }) {
     const known = isAddress(t, { strict: false }) ? net.tokens.find((x) => x.address.toLowerCase() === t.toLowerCase()) : net.tokens.find((x) => x.symbol.toUpperCase() === t.toUpperCase());
     const address = isAddress(t, { strict: false }) ? t : /^\$?stoa$/i.test(t) ? STOA_CA : known?.address;
     if (!address) return { input: t, error: "unknown token: pass a Robinhood Chain address (list_tokens has the verified ones)" };
-    const res = await cmcRaw<any>(`/v1/dex/token?platform=robinhood&address=${address}`, 60);
-    if (!res.ok) return { input: t, address, symbol: known?.symbol ?? null, error: "CoinMarketCap did not answer for this token, try again shortly" };
-    const d = res.data;
-    if (!d || !d.addr) return { input: t, address, symbol: known?.symbol ?? null, listedOnCmc: false, note: "CoinMarketCap has no market data for this token yet. Use quote for Stoa's on-chain price and safety_check before buying." };
-    const day = Array.isArray(d.sts) ? d.sts.find((s: any) => s.tp === "24h") ?? d.sts[d.sts.length - 1] : null;
-    return {
-      input: t, address: d.addr, symbol: d.sym, name: d.n, listedOnCmc: true,
-      priceUsd: num(d.p), marketCapUsd: num(d.mcap, 8), liquidityUsd: num(d.liqUsd, 8),
-      high24hUsd: num(d.ph24h), low24hUsd: num(d.pl24h),
-      last24h: day ? { volumeUsd: num(day.vu, 8), trades: num(day.txs), buyers: num(day.nb), sellers: num(day.ns), priceChangePct: day.pc === undefined || day.pc === null ? null : num(Number(day.pc) * 100, 4) } : null,
-      pools: num(d.nps), cmcRiskLabel: d.rl ?? null, website: d.web ?? null, x: d.tw ?? null,
-      source: "CoinMarketCap DEX data",
-    };
+    const r = await cmcDexToken(address);
+    if (r === "error") return { input: t, address, symbol: known?.symbol ?? null, error: "CoinMarketCap did not answer for this token, try again shortly" };
+    if (!r) return { input: t, address, symbol: known?.symbol ?? null, listedOnCmc: false, note: "CoinMarketCap has no market data for this token yet. Use quote for Stoa's on-chain price and safety_check before buying." };
+    return { input: t, ...r };
   }));
 
   if (!global && !fg && !majors && tokens.every((x: any) => !x.listedOnCmc && !x.priceUsd)) return { error: "CoinMarketCap did not answer, try again shortly" };
