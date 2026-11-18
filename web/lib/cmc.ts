@@ -73,5 +73,6 @@ export async function marketContext(input: { tokens?: unknown }) {
     tokens,
     note: "Context only, not advice. Prices here are CoinMarketCap's; the price a swap gets is the one quote returns. A low market cap or thin liquidity means a large trade moves the price a lot.",
     source: "Data from CoinMarketCap (coinmarketcap.com)",
+    access: KEY ? "CoinMarketCap Pro API" : "CoinMarketCap keyless public API",
   };
 }
