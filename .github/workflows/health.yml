@@ -57,7 +57,8 @@ jobs:
           PONS=$(jq -r '.ponsAdapter // empty' web/lib/deployments-4663.json)
           if [ -n "$PONS" ] && [ "$(cast call $RH_ROUTER 'isAdapter(address)(bool)' $PONS --rpc-url $RH_RPC)" = "true" ]; then
             sq=$(cast call $RH_ROUTER 'quote(address,address,uint256)((uint256,address,(address,bool),(address,bool)))' 0x0000000000000000000000000000000000000000 0x13E6993417616De724F2b337D65063f229e96718 1000000000000000 --rpc-url $RH_RPC | sed -E 's/^\(([0-9]+).*/\1/')
-            { [ -n "$sq" ] && [ "$sq" -gt 0 ]; } || fail+=("no route ETH -> \$STOA on Robinhood Chain (quote '$sq'). If \$STOA just graduated, add its Uniswap V4 pool on stoadex.com/token")
+            # a regex, not -gt: a $STOA quote in raw units is above bash's 64-bit integers
+            [[ "$sq" =~ ^[1-9][0-9]*$ ]] || fail+=("no route ETH -> \$STOA on Robinhood Chain (quote '$sq'). If \$STOA just graduated, add its Uniswap V4 pool on stoadex.com/token")
             echo "robinhood: quote 0.001 ETH = $sq STOA raw"
           fi
           echo "robinhood: quote 0.01 ETH = $rq USDG raw, paused=$rp"
