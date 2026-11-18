@@ -7,7 +7,7 @@ const usd = (v: number | null | undefined) =>
 
 /** CoinMarketCap's view of the token being bought on Robinhood Chain: market cap, liquidity and the last 24 hours.
  *  Context only; the price you get is Stoa's quote above. Hidden when CMC has no data. */
-export default function CmcPanel({ token }: { token: string }) {
+export default function CmcPanel({ token, note = "context only, the price you get is the quote above" }: { token: string; note?: string }) {
   const q = useQuery({
     queryKey: ["cmc", token.toLowerCase()],
     staleTime: 300_000,
@@ -31,7 +31,7 @@ export default function CmcPanel({ token }: { token: string }) {
         <div><span>Volume</span><b>{usd(day?.volumeUsd)}</b></div>
         <div><span>Trades</span><b>{day?.trades ?? "—"}</b></div>
       </div>
-      {day && day.buyers !== null && day.sellers !== null && <div className="cmc-f">{day.buyers} buyers · {day.sellers} sellers · context only, the price you get is the quote above</div>}
+      {day && day.buyers !== null && day.sellers !== null && <div className="cmc-f">{day.buyers} buyers · {day.sellers} sellers · {note}</div>}
     </div>
   );
 }

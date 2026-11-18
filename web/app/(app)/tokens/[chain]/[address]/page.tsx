@@ -8,6 +8,7 @@ import CopyButton from "@/components/CopyButton";
 import RefKeeper from "@/components/RefKeeper";
 import TokenShare from "@/components/TokenShare";
 import SafetyPanel from "@/components/SafetyPanel";
+import CmcPanel from "@/components/CmcPanel";
 import { findListed, isStoa, listedTokens, priceFmt, readToken, usdFmt } from "@/lib/tokenInfo";
 
 // /tokens/<chain>/<address>: one listed token, its market and Stoa's best route for it right now.
@@ -117,6 +118,7 @@ export default async function TokenPage({ params }: P) {
             {stat("FDV", usdFmt(t?.fdvUsd ?? null))}
           </div>
           {token.tone === "other" && <SafetyPanel chain={net.key} token={token.address} />}
+          {net.key === "robinhood" && !/^(USDG|WETH|USDC|USDT)$/.test(sym) && token.address !== "0x0000000000000000000000000000000000000000" && <CmcPanel token={token.address} note="context only, the price you get is Stoa's quote" />}
           <TokenShare chain={net.key} address={token.address} symbol={sym} />
           {others.length > 0 && (
             <div className="panel pad">

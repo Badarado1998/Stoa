@@ -16,6 +16,7 @@ import { routerAbi } from "@/lib/abi";
 import { shareOrCopy, useRefFromUrl } from "@/lib/share";
 import CoverPanel, { CoverChip } from "./CoverPanel";
 import SafetyPanel from "./SafetyPanel";
+import CmcPanel from "./CmcPanel";
 import TokenShare from "./TokenShare";
 
 const PONS = (a: string) => `https://ponsfamily.com/launchpad/${a}`;
@@ -154,6 +155,7 @@ export default function LaunchToken({ token }: { token: Address }) {
 
       <CoverPanel token={token} symbol={sym} />
       <SafetyPanel chain="robinhood" token={token} />
+      <CmcPanel token={token} note="context only, the price you get is Stoa's quote" />
 
       <div className="grid3" style={{ marginBottom: 16 }}>
         <Cell label="MARKET CAP" v={l ? usd(l.mcapUsd) : undefined} sub={l ? `${l.native && +l.mcapEth > 0 ? `${(+l.mcapEth).toLocaleString("en-US")} ETH · ` : ""}${l.supply.toLocaleString("en-US")} supply` : undefined} />
