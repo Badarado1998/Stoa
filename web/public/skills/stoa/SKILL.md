@@ -15,7 +15,7 @@ Add the hosted MCP server. It needs no key and no account:
 https://stoadex.com/mcp
 ```
 
-Tools: `list_tokens`, `quote`, `build_swap`, `safety_check`, `bridge_quote`, `stock_tokens`. Everything is read-only. `build_swap` returns an **unsigned** transaction. Stoa never signs, holds keys or moves funds.
+Tools: `list_tokens`, `quote`, `build_swap`, `safety_check`, `bridge_quote`, `market_context`, `stock_tokens`. Everything is read-only. `build_swap` returns an **unsigned** transaction. Stoa never signs, holds keys or moves funds.
 
 ## How to swap safely
 
@@ -32,6 +32,8 @@ Tools: `list_tokens`, `quote`, `build_swap`, `safety_check`, `bridge_quote`, `st
 ## Robinhood stock tokens
 
 No funds on Robinhood Chain yet? `bridge_quote` moves ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to the same wallet on Robinhood Chain. Stoa decodes the transaction before returning it (receiver and refund are the wallet, destination is Robinhood Chain, exact amount). Show the user the amount that arrives and the fees; if `approval` is present, approve exactly that amount; the user's wallet signs on the source chain. Regular wallets only, not Safes or smart accounts.
+
+`market_context` returns CoinMarketCap's view: the crypto market (size, 24h move, Fear and Greed) and, for tokens you pass, market cap, liquidity and 24h volume, trades, buyers and sellers. Use it to explain the setting of a trade, not to promise an outcome. Thin liquidity or a tiny market cap means a big order moves the price; say so. The price the user gets is the one `quote` returns.
 
 `stock_tokens` lists Robinhood Stock Tokens with Robinhood's price for the stock next to the on-chain price, and whether Stoa can route a swap (`routeOnStoa`). To buy one, sell USDG or ETH with `build_swap`. Stock tokens are issued by Robinhood Assets (Jersey) Limited, not by Stoa, and are not offered in every country.
 

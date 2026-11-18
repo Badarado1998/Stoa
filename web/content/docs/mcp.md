@@ -17,6 +17,7 @@ It uses the Streamable HTTP transport and is stateless. Every tool is read-only.
 | `build_swap` | The same quote, plus the unsigned transaction for the `taker` wallet and, when selling a token, the approval it needs first |
 | `safety_check` | Simulates a small buy and sell-back (nothing sent), plus creator and top-10 holdings. Verdict: `ok`, `caution`, `danger` or `unknown` |
 | `bridge_quote` | Moves ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to the same wallet on Robinhood Chain (as ETH or USDG), through LI.FI over Across. Returns an unsigned source-chain transaction that Stoa has already decoded: receiver and refund address are the wallet, destination is Robinhood Chain, exact amount. Regular wallets only |
+| `market_context` | CoinMarketCap data to put a trade in context: total crypto market cap and 24h change, BTC and ETH prices, Fear and Greed, and for up to 5 Robinhood Chain tokens their price, market cap, liquidity and last 24h of trading. Context only; the price a swap gets is the one `quote` returns |
 | `stock_tokens` | Robinhood Stock Tokens: Robinhood's price next to the on-chain price, liquidity, volume, and whether Stoa routes them |
 
 Arguments and responses match the [API](api.md): amounts are integers in the token's smallest unit, and `native` means the gas token.

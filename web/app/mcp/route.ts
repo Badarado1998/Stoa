@@ -5,6 +5,7 @@ import { NATIVE } from "@/lib/tokens";
 import { readSafety } from "@/lib/safety";
 import { mid, stockTokens } from "@/lib/stocks";
 import { bridgeQuote } from "@/lib/bridgeQuote";
+import { marketContext } from "@/lib/cmc";
 
 // https://stoadex.com/mcp: Stoa as a hosted, keyless MCP server (Streamable HTTP, stateless, JSON responses).
 // Read-only: every tool reads the chain or Stoa's own data. build_swap returns an UNSIGNED transaction; nothing here
@@ -23,6 +24,7 @@ const INSTRUCTIONS = [
   "4) build_swap returns an unsigned transaction: the user's own wallet signs it. If selling a token (not native), the wallet must first approve approval.spender for approval.amount.",
   "5) Quotes move: rebuild right before sending. Amounts are integers in the token's smallest unit (wei).",
   "6) No funds on Robinhood Chain yet? bridge_quote moves ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain; Stoa decodes and checks the transaction before returning it, and the user's wallet signs it on the source chain.",
+  "7) market_context gives CoinMarketCap's view (crypto market, Fear and Greed, a token's market cap, liquidity and 24h trading) to put a trade in context; it is not advice, and the price a swap gets is the one quote returns.",
 ].join(" ");
 
 const chainProp = { type: "string", enum: ["robinhood", "elysium"], description: "Network. Default robinhood." };
@@ -92,6 +94,18 @@ const TOOLS = [
     annotations: ro,
   },
   {
+    name: "market_context",
+    title: "Market context (CoinMarketCap)",
+    description: "CoinMarketCap data to put a trade in context: total crypto market cap and 24h change, BTC and ETH prices and dominance, the Fear and Greed index, and for up to 5 Robinhood Chain tokens their price, market cap, liquidity, 24h high/low, volume, trades, buyers and sellers. Use it before suggesting or explaining a trade; use quote for the price a swap actually gets.",
+    inputSchema: {
+      type: "object", additionalProperties: false,
+      properties: {
+        tokens: { type: "array", maxItems: 5, items: { type: "string" }, description: "Optional. Robinhood Chain token addresses (or symbols from list_tokens, or \"native\" for ETH). Leave out for the market overview only." },
+      },
+    },
+    annotations: ro,
+  },
+  {
     name: "stock_tokens",
     title: "Robinhood stock tokens",
     description: "Robinhood Stock Tokens on Robinhood Chain: Robinhood's price for the underlying stock next to the on-chain price, liquidity, 24h volume and whether Stoa can route a swap. Optionally filter by ticker.",
@@ -140,6 +154,10 @@ async function callTool(name: string, a: Record<string, unknown>) {
     }
     case "bridge_quote": {
       const r = await bridgeQuote({ fromChain: str(a.fromChain), fromToken: str(a.fromToken), toToken: str(a.toToken), amount: str(a.amount), wallet: str(a.wallet) }).catch(() => ({ error: "the bridge service did not answer, try again shortly" }));
+      return text(r, "error" in r);
+    }
+    case "market_context": {
+      const r = await marketContext({ tokens: a.tokens }).catch(() => ({ error: "CoinMarketCap did not answer, try again shortly" }));
       return text(r, "error" in r);
     }
     case "stock_tokens": {

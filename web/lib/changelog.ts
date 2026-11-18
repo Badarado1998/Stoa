@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "mcp-market-context",
+    date: "2026-11-18",
+    title: "MCP: market context from CoinMarketCap",
+    tag: "Robinhood Chain",
+    items: [
+      "New market_context tool on stoadex.com/mcp: the crypto market's size and 24h move, BTC and ETH prices, and CoinMarketCap's Fear and Greed index.",
+      "For up to 5 Robinhood Chain tokens it adds CoinMarketCap's price, market cap, liquidity and the last 24 hours of trading (volume, trades, buyers and sellers), so an agent can explain a trade before the user signs.",
+      "Context only: the price a swap gets is still the one quote returns, and nothing is signed or sent.",
+    ],
+    link: { href: "/docs/mcp", label: "MCP docs" },
+  },
+  {
     id: "bridge-in",
     date: "2026-11-18",
     title: "Bridge in: bring funds to Robinhood Chain without leaving Stoa",
