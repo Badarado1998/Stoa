@@ -5,11 +5,12 @@ import { SITE } from "@/lib/chain";
 import { shareOrCopy } from "@/lib/share";
 
 /** Share link and embed code for a token page. Both carry the connected wallet's referral. */
-export default function TokenShare({ chain, address, symbol }: { chain: string; address: string; symbol: string }) {
+/** `page` is the shared page's path (default the token page; Pons launches pass /launches/<address>) */
+export default function TokenShare({ chain, address, symbol, page }: { chain: string; address: string; symbol: string; page?: string }) {
   const { address: me } = useAccount();
   const [copied, setCopied] = useState<"link" | "embed" | null>(null);
   const ref = me ? `?ref=${me}` : "";
-  const link = `${SITE}/tokens/${chain}/${address}${ref}`;
+  const link = `${SITE}${page ?? `/tokens/${chain}/${address}`}${ref}`;
   const embed = `<iframe src="${SITE}/embed/${chain}/${address}${ref}" width="100%" height="230" style="max-width:420px;border:0;border-radius:16px" title="Buy ${symbol} on Stoa" loading="lazy"></iframe>`;
   const flash = (k: "link" | "embed") => { setCopied(k); setTimeout(() => setCopied(null), 1600); };
   return (

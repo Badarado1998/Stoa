@@ -16,6 +16,7 @@ import { routerAbi } from "@/lib/abi";
 import { shareOrCopy, useRefFromUrl } from "@/lib/share";
 import CoverPanel, { CoverChip } from "./CoverPanel";
 import SafetyPanel from "./SafetyPanel";
+import TokenShare from "./TokenShare";
 
 const PONS = (a: string) => `https://ponsfamily.com/launchpad/${a}`;
 const usd = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
@@ -175,6 +176,10 @@ export default function LaunchToken({ token }: { token: Address }) {
             ? <>The Share link carries your referral: you earn 10% of Stoa&apos;s protocol fee on the swaps it brings, claimable on <Link href="/referrals">Referrals</Link>.</>
             : <>Connect a wallet and the Share link carries your referral (10% of Stoa&apos;s protocol fee on the swaps it brings).</>}
         </p>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <TokenShare chain="robinhood" address={token} symbol={sym} page={`/launches/${token}`} />
       </div>
     </>
   );

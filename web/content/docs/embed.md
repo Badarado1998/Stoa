@@ -8,9 +8,13 @@ A small card with the token's price and 24-hour change, what a small buy gets on
 
 The price comes from DexScreener and the route is read live from Stoa's router. Both refresh every minute.
 
+## Pons launches
+
+A Pons launch gets its own card: price, creator tax, and how far its curve is from graduation (or that it has graduated to Uniswap V4). The button opens Stoa with the launch selected, so it can be bought on its curve from day one. Launch cards are marked as unverified: Stoa does not review launches.
+
 ## Add it to your site
 
-Open the token's page under [Tokens](https://stoadex.com/tokens), connect your wallet and press **Copy embed code**. The code carries your wallet as the referrer. It looks like this:
+Open the token's page under [Tokens](https://stoadex.com/tokens) (or a launch's page under [Launches](https://stoadex.com/launches)), connect your wallet and press **Copy embed code**. The code carries your wallet as the referrer. It looks like this:
 
 ```html
 <iframe src="https://stoadex.com/embed/robinhood/<token address>?ref=<your wallet>"
@@ -21,7 +25,7 @@ Open the token's page under [Tokens](https://stoadex.com/tokens), connect your w
 | Part | Value |
 | --- | --- |
 | Network | `robinhood` or `elysium` |
-| Token address | Any token listed under [Tokens](https://stoadex.com/tokens), or $STOA (`0x13E6993417616De724F2b337D65063f229e96718`) |
+| Token address | Any token listed under [Tokens](https://stoadex.com/tokens), $STOA (`0x13E6993417616De724F2b337D65063f229e96718`), or any Pons launch on Robinhood Chain |
 | `ref` | Optional. Your wallet address: swaps made through the card pay you the referral share |
 | Size | 230 px high fits the card; any width from about 300 px |
 
