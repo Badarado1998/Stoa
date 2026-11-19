@@ -22,6 +22,7 @@ permissions:
 jobs:
   swap:
     runs-on: ubuntu-latest
+    environment: signers # the Safe signer keys live here, usable from main only
     env:
       RPC: ${{ inputs.network == 'robinhood' && (secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com') || (secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz') }}
       PK: ${{ inputs.network == 'robinhood' && secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY || secrets.DEPLOYER_PRIVATE_KEY }}

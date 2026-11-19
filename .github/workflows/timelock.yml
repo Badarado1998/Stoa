@@ -14,6 +14,7 @@ permissions:
 jobs:
   timelock:
     runs-on: ubuntu-latest
+    environment: signers # the Safe signer keys live here, usable from main only
     env:
       RPC: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
       OWNER_PK: ${{ secrets.OWNER_PRIVATE_KEY }}
