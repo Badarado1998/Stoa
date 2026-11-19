@@ -120,6 +120,13 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x2201e0d90f9f443bb337f528558e019fbeda1d94",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x2c853c68aa83dd6258fbde57caed21d97b6edb90",
   "fee": 0,
   "tickSpacing": 200,
@@ -128,6 +135,13 @@
  {
   "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x2eb2849cde7957b86d0dfd4b59e450a9f9d15559",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x2edd2762ec5a928f749380309eca0e33941b3e3e",
   "fee": 0,
   "tickSpacing": 200,
   "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
@@ -163,6 +177,13 @@
  {
   "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x3e4587b12ac365407b5c5d788941eaebcfc18a1e",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x3f81538ed2641ef9234e5ad09e3c1a2d38ac8918",
   "fee": 0,
   "tickSpacing": 200,
   "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
@@ -225,6 +246,13 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x524988ccc8d7a23566e2fffb24b1b07e5aa2f134",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x534b76f46d69caee896c4f993a86ea2e12248b90",
   "fee": 0,
   "tickSpacing": 200,
@@ -233,6 +261,13 @@
  {
   "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x56f316047b358c0d3c04540ff47ff4373df48ec0",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x583b10d1912e8d3def8709a6c1cb7ac88fa27fd7",
   "fee": 0,
   "tickSpacing": 200,
   "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
@@ -848,6 +883,13 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xd79eb5d4edf7bd843eef5109f1a1ff5c96b17948",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0xdafaa1ed0b9f5746a0cfa2be80371cf06a986977",
   "fee": 0,
   "tickSpacing": 200,
@@ -898,6 +940,13 @@
  {
   "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0xebaa0ca1a9d178550fb2f9ca4099a292375a403a",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xee5576fa1bcaa380e591d01245f406f3f384eb01",
   "fee": 0,
   "tickSpacing": 200,
   "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
@@ -996,6 +1045,20 @@
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0x7a9194934e9e87689dfbb18a36d844ba737ea731",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0x8490acd2d52d0ebd34cb13e01bd9a9380b36411d",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0x8b1066d06809151fd9dc769fbd47ae3124ef6bb2",
   "fee": 0,
   "tickSpacing": 200,
   "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
@@ -1135,6 +1198,13 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xcb1610887991321b953c5da009f87a0cf9eb1e18",
+  "fee": 8388608,
+  "tickSpacing": 8,
+  "hooks": "0x4e3468951d49f2eea976ed0d6e75ffcb44a9a544"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xd086f891229cd123aadfcae7c4b40150a80fd9d7",
   "fee": 8388608,
   "tickSpacing": 8,
@@ -1246,6 +1316,13 @@
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
+  "currency0": "0x05a3d1cd21d0c88145e82600e62e7e496e0f222b",
+  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "fee": 20000,
+  "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
   "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x061732dc141e0a2d37f5fa91cf5343f24064e60f",
   "fee": 9000,
@@ -1289,6 +1366,13 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x1b0e319c6a659f002271b69db8a7df2f911c153e",
+  "fee": 3000,
+  "tickSpacing": 60,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x1df1f09c4dd65c76746d53467361d536cdfdc719",
   "fee": 2500,
   "tickSpacing": 50,
@@ -1313,6 +1397,13 @@
   "currency1": "0x27495511b8a2e163efc75d788706a40dd100bc27",
   "fee": 25000,
   "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x28babd556b60e53663b8615036479a29c2cdd1bf",
+  "fee": 50000,
+  "tickSpacing": 500,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -1446,6 +1537,13 @@
   "currency1": "0x3f9108a3beca998c14c6dda822a7e8eaeb88e20d",
   "fee": 25000,
   "tickSpacing": 250,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x4189f0c66ebbb0bfef1c31f763131361ef32f77c",
+  "fee": 50000,
+  "tickSpacing": 500,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -1695,13 +1793,6 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
-  "currency1": "0x9f7125e5c153ee5df9a5647cde7e7ba19d82f0a7",
-  "fee": 75,
-  "tickSpacing": 1,
-  "hooks": "0x0000000000000000000000000000000000000000"
- },
- {
-  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0xa30fa36db767ad9ed3f7a60fc79526fb4d56d344",
   "fee": 10000,
   "tickSpacing": 100,
@@ -1726,6 +1817,13 @@
   "currency1": "0xaa07a0e9209e16ac99708c3ec70159c6ef3128a3",
   "fee": 9000,
   "tickSpacing": 90,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xb039597ed45cba7b6e2fb9e8be51802969cee5be",
+  "fee": 50000,
+  "tickSpacing": 500,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -1796,6 +1894,13 @@
   "currency1": "0xc9675fe679c7d4e1b94416f66d61c96127eb964a",
   "fee": 0,
   "tickSpacing": 60,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xca9c78dd337a67f6e0077f65f5e9218719d30edf",
+  "fee": 15000,
+  "tickSpacing": 150,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -2305,13 +2410,6 @@
  {
   "currency0": "0x5e81213613b6b86eab4c6c50d718d34359459786",
   "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 2000,
-  "tickSpacing": 2,
-  "hooks": "0x0000000000000000000000000000000000000000"
- },
- {
-  "currency0": "0x5e81213613b6b86eab4c6c50d718d34359459786",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "fee": 7800,
   "tickSpacing": 78,
   "hooks": "0x0000000000000000000000000000000000000000"
@@ -2335,6 +2433,13 @@
   "currency1": "0x6245e67affa44a23077f0ea7f981a8dc743a0c47",
   "fee": 21000,
   "tickSpacing": 210,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0x6330d8c3178a418788df01a47479c0ce7ccf450b",
+  "fee": 10000,
+  "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -2482,6 +2587,13 @@
   "currency1": "0x94641b97010608c3827fb058074889f19868ff33",
   "fee": 19000,
   "tickSpacing": 190,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0x94641b97010608c3827fb058074889f19868ff33",
+  "fee": 50000,
+  "tickSpacing": 500,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -2703,6 +2815,13 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xc9a981fee1f9dec688bb123ccdecc63d0debfc4e",
+  "fee": 2100,
+  "tickSpacing": 21,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xca9c78dd337a67f6e0077f65f5e9218719d30edf",
   "fee": 9000,
   "tickSpacing": 90,
@@ -2747,6 +2866,13 @@
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
   "fee": 50,
+  "tickSpacing": 1,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
+  "fee": 100,
   "tickSpacing": 1,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
@@ -2797,6 +2923,13 @@
   "currency1": "0xdee52f2ab639b6942b0d0f0565400b93b7a0fbe5",
   "fee": 55000,
   "tickSpacing": 550,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xdee52f2ab639b6942b0d0f0565400b93b7a0fbe5",
+  "fee": 20000,
+  "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -2906,13 +3039,6 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0xf0c4bf4c582cb3836e98394b1d4e7b7281101be8",
-  "fee": 1000,
-  "tickSpacing": 10,
-  "hooks": "0x0000000000000000000000000000000000000000"
- },
- {
-  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xf51fb54de60f6e16252e852a5ed0e60b8307606a",
   "fee": 3000,
   "tickSpacing": 30,
@@ -2934,6 +3060,13 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xf6589f11bc40b669e584073f428b05562f568733",
+  "fee": 5000,
+  "tickSpacing": 50,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xfb2664f07b6aadd29ea7a59d8859b1aeb8645cda",
   "fee": 40000,
   "tickSpacing": 400,
@@ -2944,6 +3077,13 @@
   "currency1": "0xfe09fb328be1c286b4f597ed34764b7472ae72c5",
   "fee": 5000,
   "tickSpacing": 50,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xfe09fb328be1c286b4f597ed34764b7472ae72c5",
+  "fee": 1895,
+  "tickSpacing": 19,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
