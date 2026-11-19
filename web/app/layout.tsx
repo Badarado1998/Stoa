@@ -2,7 +2,13 @@ import type { Metadata, Viewport } from "next";
 import Providers from "@/components/Providers";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import { SITE } from "@/lib/chain";
+import { Inter, JetBrains_Mono, Marcellus } from "next/font/google";
 import "./globals.css";
+
+// self-hosted at build time (no request to Google, nothing render-blocking); globals.css reads the variables
+const serif = Marcellus({ subsets: ["latin"], weight: "400", display: "swap", variable: "--font-serif" });
+const sans = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-sans" });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--font-mono" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -29,13 +35,7 @@ export const viewport: Viewport = { themeColor: "#EEF2F6", width: "device-width"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
-      </head>
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LD) }} />
         <Providers>{children}</Providers>

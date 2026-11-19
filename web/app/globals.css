@@ -1,7 +1,7 @@
 :root{
   --ink:#1E2633; --txt:#465061; --muted:#6B7482; --line:rgba(30,38,51,.14);
   --accent:#2F6FD6; --accent-d:#1F4FA8; --glass:#4C97F0; --pearl:#F4F1EA;
-  --serif:'Marcellus',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --serif:var(--font-serif),'Marcellus',Georgia,serif; --sans:var(--font-sans),'Inter',system-ui,sans-serif; --mono:var(--font-mono),'JetBrains Mono',ui-monospace,monospace;
 }
 *{box-sizing:border-box}
 [hidden]{display:none !important}
