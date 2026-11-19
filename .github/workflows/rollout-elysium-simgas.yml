@@ -27,6 +27,7 @@ concurrency:
 jobs:
   step:
     runs-on: ubuntu-latest
+    environment: signers # the Safe signer keys live here, usable from main only
     permissions:
       contents: read
       actions: write # only to switch the hourly runs off before the deploy

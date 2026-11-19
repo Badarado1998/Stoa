@@ -22,6 +22,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: signers # the Safe signer keys live here, usable from main only
     defaults:
       run:
         working-directory: contracts
