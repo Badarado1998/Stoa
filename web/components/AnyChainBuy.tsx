@@ -254,7 +254,7 @@ function Panel() {
             Before your wallet opens, Stoa checks the deposit goes to Relay&apos;s Depository from your own address, with exactly the token and amount you picked.
             The delivery address is set in Relay&apos;s order, which Stoa cannot check before you sign yet, so purchases are limited to ${MAX_USD} for now.
             Use a regular wallet: a smart wallet, even one not deployed yet on {src.name}, may not control the same address on Robinhood Chain.
-            Stoa adds no fee and never holds your funds.
+            Stoa adds no fee of its own and never holds your funds: the fees shown are the route's (Relay and Trustware).
           </p>
         </>
       )}
