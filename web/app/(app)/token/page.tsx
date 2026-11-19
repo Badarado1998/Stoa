@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import StoaCA from "@/components/StoaCA";
 import TokenUtility from "@/components/TokenUtility";
+import AnyChainBuy from "@/components/AnyChainBuy";
 
 const description = "Stoa's protocol fees buy and burn $STOA every week, makers bond it to quote Stoa pools, and holders vote in Spotlight to earn projects' ETH bids. Live burns and supply.";
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function TokenPage() {
         Three jobs, all enforced by contracts: Stoa&apos;s protocol fees buy $STOA and burn it, makers bond $STOA to quote Stoa pools, and holders vote in Spotlight to earn the ETH projects bid.
       </PageHead>
       <StoaCA />
+      <AnyChainBuy />
       <TokenUtility />
     </section>
   );
