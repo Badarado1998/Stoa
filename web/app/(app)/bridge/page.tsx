@@ -26,11 +26,11 @@ export default function BridgePage() {
       <BridgePanel />
       <div className="panel pad" style={{ marginTop: 16 }}>
         <div className="lbl">GOOD TO KNOW</div>
-        <ul className="list" style={{ marginTop: 8 }}>
-          <li>Gas <b>You pay gas on the source chain. Bring a little ETH to Robinhood Chain too, for gas there.</b></li>
-          <li>Steps <b>Tokens may need an approve first, then the bridge transaction. Both happen on the source chain.</b></li>
-          <li>Time <b>Most transfers land within minutes; the quote shows the estimate.</b></li>
-          <li>Fees <b>The bridge&apos;s and LI.FI&apos;s fees are shown before you sign. Stoa adds nothing.</b></li>
+        <ul className="list prose" style={{ marginTop: 8 }}>
+          <li><span>Gas</span> <b>You pay gas on the source chain. Bring a little ETH to Robinhood Chain too, for gas there.</b></li>
+          <li><span>Steps</span> <b>Tokens may need an approve first, then the bridge transaction. Both happen on the source chain.</b></li>
+          <li><span>Time</span> <b>Most transfers land within minutes; the quote shows the estimate.</b></li>
+          <li><span>Fees</span> <b>The bridge&apos;s and LI.FI&apos;s fees are shown before you sign. Stoa adds nothing.</b></li>
         </ul>
         <p className="note">More: <Link href="/docs/bridge-to-robinhood-chain">How to bridge to Robinhood Chain</Link>.</p>
       </div>

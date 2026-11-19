@@ -217,6 +217,10 @@ button{font:inherit}
 .list{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column}
 .list li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:14px}
 .list li b{font-weight:500;font-family:var(--mono);font-size:12.5px;color:var(--ink);text-align:right}
+/* .list.prose: rows whose value is a sentence: label on top, sentence below, left-aligned in the body font */
+.list.prose li{flex-direction:column;gap:3px}
+.list.prose li b{font-family:inherit;font-size:14px;font-weight:400;text-align:left;line-height:1.45;color:var(--ink)}
+.list.prose li>span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 pre.code{margin:0;padding:16px;border-radius:12px;background:#152033;color:#DCE6F5;font-family:var(--mono);font-size:12.5px;line-height:1.6;overflow:auto}
 pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .addr{display:flex;align-items:center;gap:8px;justify-content:flex-end}
