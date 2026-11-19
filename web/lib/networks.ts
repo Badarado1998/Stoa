@@ -99,16 +99,17 @@ const RH_CORE: Token[] = [
 ];
 const D = rh as unknown as Partial<Record<string, string>> & { block?: number };
 const rhUsed = new Set(RH_CORE.map((t) => t.symbol.toLowerCase()));
-/** The most traded tokens in Uniswap V4 pools that Stoa registers on Robinhood Chain. Not reviewed by Stoa. Only
- *  tokens with a public logo (DexScreener or GeckoTerminal) are listed; any other token still trades by pasting its address. */
-const RH_POPULAR: Token[] = (rhPopular as { symbol: string; address: string; decimals: number; launchpad?: string; logo?: string }[])
+/** The most traded tokens in Uniswap V4 pools that Stoa registers on Robinhood Chain, rebuilt daily by
+ *  contracts/script/data/popular_tokens.py (24h volume, liquidity floor, Stoa's safety check, a logo). Not reviewed by
+ *  Stoa; any other token still trades by pasting its address. */
+const RH_POPULAR: Token[] = (rhPopular as { symbol: string; address: string; decimals: number; launchpad?: string; kind?: string; logo?: string }[])
   .filter((t) => t.symbol && !rhUsed.has(t.symbol.toLowerCase()))
   // the list is sorted by trading activity: keep the most traded token per symbol (look-alikes drop out), then
   // keep it only if it has a logo
   .filter((t, i, a) => a.findIndex((x) => x.symbol.toLowerCase() === t.symbol.toLowerCase()) === i)
   .filter((t) => t.logo)
   .map((t) => ({
-    symbol: t.symbol, name: `${t.launchpad ? `${t.launchpad} launch` : "Unverified"} · ${short(t.address)}`, address: t.address as Address,
+    symbol: t.symbol, name: `${t.kind === "stock" ? "Robinhood stock token" : t.launchpad ? `${t.launchpad} launch` : "Unverified"} · ${short(t.address)}`, address: t.address as Address,
     decimals: t.decimals, glyph: t.symbol[0] ?? "?", tone: "other" as const, logo: t.logo,
   }));
 const rhContracts = {

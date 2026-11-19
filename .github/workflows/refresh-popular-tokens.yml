@@ -1,0 +1,39 @@
+name: Refresh the Robinhood Chain token list
+
+# Daily, after refresh-v4-pools.yml (08:17 WIB) has ranked the V4 pools: rebuilds web/lib/popular-tokens-4663.json
+# (contracts/script/data/popular_tokens.py: 24h volume and liquidity from DexScreener, Stoa's safety check, a logo;
+# listed tokens stay while they pass, new ones are added most traded first) and commits it with any new logos.
+on:
+  schedule:
+    - cron: "47 1 * * *" # 08:47 WIB
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-popular-tokens
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet pillow
+      - name: Rebuild the list
+        working-directory: contracts/script/data
+        env:
+          ROBINHOOD_RPC_URL: https://rpc.mainnet.chain.robinhood.com
+        run: python3 popular_tokens.py | tee /tmp/out.txt
+      - name: Commit
+        run: |
+          grep -E "^(drop|skip|listed)" /tmp/out.txt | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true
+          git add web/lib/popular-tokens-4663.json web/public/tokens
+          git diff --cached --quiet && { echo "No change"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
+          git commit -m "data: refresh the Robinhood Chain token list"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep $((i * 10)); done
+          exit 1
