@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { BaseError, encodeAbiParameters, encodeFunctionData, isAddress, keccak256, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import { addressUrlOn, txUrlOn } from "@/lib/networks";
 import { adminAbi } from "@/lib/abi";
@@ -21,7 +22,7 @@ export default function Admin() {
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
   const pub = usePublicClient({ chainId: elysium.id });
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   const [venue, setVenue] = useState("");

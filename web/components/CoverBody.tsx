@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAccount, usePublicClient, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts, useSwitchChain } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { erc20Abi, isAddress, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
 import { PageHead, Sk } from "./ui";
 import { useWalletModal } from "./Providers";
@@ -160,7 +161,7 @@ function How({ params }: { params?: Params }) {
 }
 
 function OpenTable({ rows, onDone }: { rows: Row[]; onDone: () => void }) {
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const { isConnected, chainId: cur } = useAccount();
   const { busy, send, note } = useSend(onDone);
   return (
@@ -207,7 +208,7 @@ function OpenTable({ rows, onDone }: { rows: Row[]; onDone: () => void }) {
 function BuyerPanel({ live }: { live: boolean }) {
   const { address } = useAccount();
   const pub = usePublicClient({ chainId });
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const q = useQuery({
     queryKey: ["cover-mine", address],
     enabled: live && !!pub && !!address,
@@ -266,7 +267,7 @@ function BuyerPanel({ live }: { live: boolean }) {
 
 function BackerPanel({ live, paused }: { live: boolean; paused: boolean }) {
   const { address } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const me = address ?? zeroAddress;
   const r = useReadContracts({
     contracts: [
@@ -327,7 +328,7 @@ function BackerPanel({ live, paused }: { live: boolean; paused: boolean }) {
 /** For a token's creator: open a cover with a bond, or release it after the term. */
 function CreatorPanel({ live, paused, params, onDone }: { live: boolean; paused: boolean; params?: Params; onDone: () => void }) {
   const { address } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [token, setToken] = useState("");
   const [bondTxt, setBondTxt] = useState("");
   const [ack, setAck] = useState(false);

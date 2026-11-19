@@ -6,7 +6,7 @@ import type { Launch } from "@/lib/ponsLaunch";
 import { listedTokens } from "@/lib/tokenInfo";
 import { stockTokens } from "@/lib/stocks";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/check", "/spotlight", "/cover", "/wrapped", "/security", "/guides", "/bridge"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/check", "/spotlight", "/cover", "/wrapped", "/security", "/guides", "/bridge", "/weekly"];
 /** rebuilt every hour: the token pages of the launches closest to graduation and the latest graduations */
 export const revalidate = 3600;
 

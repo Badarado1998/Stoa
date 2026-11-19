@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { erc20Abi, parseAbiItem, type Address } from "viem";
 import { getLogsOn } from "@/lib/logs";
-import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { SITE } from "@/lib/chain";
 import { feesAbi } from "@/lib/abi";
 import { fmt } from "@/lib/swap";
@@ -40,7 +41,7 @@ export default function Referrals() {
   });
   const TOK = [...BASE, ...(extra.data ?? [])];
   const { open } = useWalletModal();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const owed = useReadContracts({

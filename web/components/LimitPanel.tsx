@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useAccount, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { BaseError, ContractFunctionRevertedError, erc20Abi, parseUnits, zeroAddress, type Address, type Hash } from "viem";
 import { txUrlOn, type Net } from "@/lib/networks";
 import { isNative, type Token } from "@/lib/tokens";
@@ -31,7 +32,7 @@ export default function LimitPanel({ net, sell, buy, amt, marketOut, sBal, refer
 }) {
   const { address, isConnected, chainId } = useAccount();
   const pub = usePublicClient({ chainId: net.chain.id });
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [priceTxt, setPriceTxt] = useState("");
   const [touched, setTouched] = useState(false);
   const [exp, setExp] = useState(EXPIRY[1].s);
@@ -140,7 +141,7 @@ function useOrders(address: Address | undefined, net: Net) {
 }
 
 function OrderList({ net, orders, tokens, send, busy }: { net: Net; orders: ReturnType<typeof useOrders>; tokens: Token[]; send: (l: string, f: () => Promise<Hash>) => Promise<void>; busy: string | null }) {
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const pub = usePublicClient({ chainId: net.chain.id });
   const tok = (a: Address) => tokens.find((t) => t.address.toLowerCase() === a.toLowerCase());
   const syms = useReadContracts({

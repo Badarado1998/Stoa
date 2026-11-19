@@ -1,4 +1,5 @@
 import { isAddress } from "viem";
+import { readSpotlight } from "@/lib/spotlightServer";
 import { API_HEADERS, apiQuote, limited } from "@/lib/api";
 import { NETS, netByKey } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
@@ -112,6 +113,13 @@ const TOOLS = [
     inputSchema: { type: "object", additionalProperties: false, properties: { symbol: { type: "string", description: "Optional ticker, e.g. NVDA." }, routableOnly: { type: "boolean", description: "Only stocks Stoa can swap right now." } } },
     annotations: ro,
   },
+  {
+    name: "spotlight",
+    title: "Spotlight this week",
+    description: "Stoa Spotlight on Robinhood Chain: projects bid ETH for 3 sponsored slots a week and $STOA holders lock and vote; voters share most of each winning bid. Returns the week, its phase (before_week_1, bids_open, votes_only) and closing times, the rules (quorum, min bid, entry fee), every candidate with its bid and votes, last week's winners and the $STOA locked. Sponsored, not reviewed: run safety_check before buying a Spotlight token.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {} },
+    annotations: ro,
+  },
 ] as const;
 
 type Rpc = { jsonrpc: "2.0"; id?: string | number | null; method: string; params?: Record<string, unknown> };
@@ -159,6 +167,9 @@ async function callTool(name: string, a: Record<string, unknown>) {
     case "market_context": {
       const r = await marketContext({ tokens: a.tokens }).catch(() => ({ error: "CoinMarketCap did not answer, try again shortly" }));
       return text(r, "error" in r);
+    }
+    case "spotlight": {
+      try { return text(await readSpotlight()); } catch { return text("Robinhood Chain did not answer, try again shortly", true); }
     }
     case "stock_tokens": {
       const data = await stockTokens().catch(() => null);

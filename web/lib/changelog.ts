@@ -12,6 +12,39 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "weekly-page",
+    date: "2026-11-19",
+    title: "This week on Stoa",
+    tag: "Both chains",
+    items: [
+      "A new page with one week on Stoa, Monday to Sunday UTC: volume and swaps routed, $STOA bought and burned by the weekly buyback, the Spotlight week with every bid, vote and winner, and everything that shipped.",
+      "Switch between this week so far and last week. Volume, burns and Spotlight are read from the chain.",
+    ],
+    link: { href: "/weekly", label: "This week" },
+  },
+  {
+    id: "referral-board",
+    date: "2026-11-19",
+    title: "Top referrers",
+    tag: "Both chains",
+    items: [
+      "The Referrals page now ranks referrers by the volume of the swaps their links brought in, with swaps, the last 7 days and an estimate of what each earned (10% of the 2 bps fee).",
+      "Read from the routers' on-chain events. Your own row is highlighted when your wallet is connected.",
+    ],
+    link: { href: "/referrals", label: "Referrals" },
+  },
+  {
+    id: "spotlight-api-mcp",
+    date: "2026-11-19",
+    title: "Spotlight in the API and MCP",
+    tag: "Robinhood Chain",
+    items: [
+      "GET stoadex.com/api/v1/spotlight and the new spotlight tool on stoadex.com/mcp return the week in progress: its phase and closing times (UTC), the rules, every candidate with its ETH bid and $STOA votes, last week's winners and the $STOA locked.",
+      "Every transaction button on Stoa now moves your wallet to the right network first, instead of failing when it is on another one.",
+    ],
+    link: { href: "/docs/api", label: "API docs" },
+  },
+  {
     id: "spotlight-lock-easier",
     date: "2026-11-19",
     title: "Spotlight: easier locking",

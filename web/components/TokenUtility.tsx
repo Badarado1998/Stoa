@@ -5,7 +5,8 @@ import { coverAbi, useCoverLive } from "@/lib/cover";
 import { spotlightAbi } from "@/lib/spotlight";
 import { useQuery } from "@tanstack/react-query";
 import { BaseError, encodeFunctionData, erc20Abi, parseUnits, zeroAddress, type Address, type Hash } from "viem";
-import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { CA } from "@/lib/stoaToken";
 import { bondAbi, buybackAbi, feeStateAbi, routerAbi, v4AdapterAbi } from "@/lib/abi";
@@ -58,7 +59,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
   const pub = usePublicClient({ chainId: net.chain.id });
   const { isConnected } = useAccount();
   const { open } = useWalletModal();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   const r = useReadContracts({
@@ -427,7 +428,7 @@ function BondPanel() {
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
   const pub = usePublicClient({ chainId: net.chain.id });
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [amt, setAmt] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);

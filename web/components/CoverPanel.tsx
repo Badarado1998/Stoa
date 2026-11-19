@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAccount, usePublicClient, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts, useSwitchChain } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { erc20Abi as symbolAbi, type Address, type Hash } from "viem";
 import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { BREACHED, COVER, GRACE, RELEASED, SALE_STOP, coverAbi, eth, explainCover, pct, until, useCoverLive, useTerm, when, type Term } from "@/lib/cover";
@@ -29,7 +30,7 @@ export default function CoverPanel({ token, symbol }: { token: Address; symbol: 
   const pub = usePublicClient({ chainId });
   const { isConnected, chainId: cur } = useAccount();
   const { switchChain } = useSwitchChain();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   const hist = useQuery({

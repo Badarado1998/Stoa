@@ -49,6 +49,10 @@ The response:
 
 `GET /tokens?chain=robinhood` lists the tokens Stoa shows in the app on a network, with decimals, plus the router address. Any other token address can still be quoted.
 
+## Spotlight: `GET /spotlight`
+
+[stoadex.com/api/v1/spotlight](https://stoadex.com/api/v1/spotlight) returns Spotlight on Robinhood Chain right now: the week and its phase (`before_week_1`, `bids_open` or `votes_only`), when bids and votes close (UTC), the rules (quorum, minimum bid, entry fee, the share that goes to voters), every candidate with its bid in ETH and votes in $STOA, last week's winners, and the $STOA locked. It updates every 30 seconds. Spotlight slots are sponsored and not reviewed: check a token with the [safety check](https://stoadex.com/check) before buying it.
+
 ## Limits
 
 - 60 requests a minute per IP. Need more for a production integration? Send a DM to [@StoaDEX](https://x.com/StoaDEX).

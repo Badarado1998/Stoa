@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BaseError, erc20Abi, formatUnits, isAddress, parseAbiItem, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
-import { useAccount, usePublicClient, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContracts, useSwitchChain } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { CA as STOA } from "@/lib/stoaToken";
 import { fmt } from "@/lib/swap";
@@ -219,7 +220,7 @@ function ThisWeek({ prev, meta, e, onSettled }: { prev: SpotEpoch | null; meta?:
   const pub = usePublicClient({ chainId: net.chain.id });
   const { isConnected } = useAccount();
   const { open } = useWalletModal();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const winners = (prev?.winners ?? []).filter((w) => !SPOTLIGHT_HIDDEN.includes(w.toLowerCase()));
@@ -271,7 +272,7 @@ function ThisWeek({ prev, meta, e, onSettled }: { prev: SpotEpoch | null; meta?:
 function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<string, SpotTokenMeta>; mine: Record<string, bigint>; phase: string; onDone: () => void }) {
   const pub = usePublicClient({ chainId: net.chain.id });
   const { address, isConnected } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const { rows, leading } = useMemo(() => standing(ep), [ep]);
   const [edit, setEdit] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -364,7 +365,7 @@ function useSend(onDone: () => void) {
 function HolderPanel({ race, started, paused, onDone }: { race: number; started: boolean; paused: boolean; onDone: () => void }) {
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const me = address ?? zeroAddress;
   const r = useReadContracts({
     contracts: [
@@ -442,7 +443,7 @@ function HolderPanel({ race, started, paused, onDone }: { race: number; started:
 function Claims({ e }: { e: number }) {
   const pub = usePublicClient({ chainId: net.chain.id });
   const { address } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const q = useQuery({
     queryKey: ["spot-claims", address, e],
     enabled: !!pub && !!address && e >= 1,
@@ -481,7 +482,7 @@ function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { 
   const pub = usePublicClient({ chainId: net.chain.id });
   const { address, isConnected } = useAccount();
   const { open } = useWalletModal();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [token, setToken] = useState("");
   const [amt, setAmt] = useState("");
   const refunds = useQuery({

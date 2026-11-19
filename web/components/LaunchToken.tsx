@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAccount, usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useReadContract } from "wagmi";
+import { useChainWrite } from "@/lib/chainWrite";
 import { BaseError, zeroAddress, type Address, type Hash } from "viem";
 import { PageHead, Sk } from "./ui";
 import { useNet, useWalletModal } from "./Providers";
@@ -75,7 +76,7 @@ export default function LaunchToken({ token }: { token: Address }) {
   const pub = usePublicClient({ chainId: ROBINHOOD.chain.id });
   const { isConnected } = useAccount();
   const { open } = useWalletModal();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useChainWrite();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   const V4 = ROBINHOOD.contracts.v4;

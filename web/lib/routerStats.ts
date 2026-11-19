@@ -14,14 +14,19 @@ export interface StatSwap {
   chain: Net["key"]; hash: string; time: number;
   tokenIn: string; tokenOut: string; symIn: string; symOut: string;
   amountIn: number; amountOut: number; usd: number | null;
+  /** the referrer the swap paid (zero address when none) */
+  referrer?: string;
 }
 export interface ChainStats {
   key: Net["key"]; name: string; explorer: string; router: string;
   swaps: number; swaps24h: number; usdAll: number; usd7d: number; usd24h: number; first: number | null; unpriced: number; ok: boolean;
 }
 export interface DayStats { date: string; chains: Record<string, { swaps: number; usd: number }> }
+export interface ReferrerStats { address: string; chains: string[]; swaps: number; usd: number; usd7d: number }
 export interface RouterStats {
   updated: number; chains: ChainStats[]; days: DayStats[]; recent: StatSwap[];
+  /** referrers ranked by the volume of the swaps they referred (top 25) */
+  referrers: ReferrerStats[];
   total: { swaps: number; usdAll: number; usd7d: number; usd24h: number };
 }
 
@@ -106,6 +111,7 @@ async function chainSwaps(net: Net): Promise<{ swaps: StatSwap[]; ok: boolean }>
     return {
       chain: net.key, hash: l.transactionHash!, time: stamp(l) || times.get(l.blockNumber!) || 0,
       tokenIn: l.args.tokenIn!, tokenOut: l.args.tokenOut!, symIn: mIn.symbol, symOut: mOut.symbol, amountIn, amountOut, usd,
+      referrer: l.args.referrer ? lc(l.args.referrer) : undefined,
     } satisfies StatSwap;
   });
   return { swaps, ok: true };
@@ -141,8 +147,20 @@ export async function readRouterStats(): Promise<RouterStats> {
       })),
     });
   }
+  // referrers: every swap that paid one, grouped by referrer and ranked by referred volume
+  const ZERO = "0x0000000000000000000000000000000000000000";
+  const refs = new Map<string, ReferrerStats>();
+  for (const x of all) {
+    if (!x.referrer || x.referrer === ZERO) continue;
+    const r = refs.get(x.referrer) ?? { address: x.referrer, chains: [], swaps: 0, usd: 0, usd7d: 0 };
+    r.swaps++; r.usd += x.usd ?? 0;
+    if (x.time >= now - 7 * 86400) r.usd7d += x.usd ?? 0;
+    if (!r.chains.includes(x.chain)) r.chains.push(x.chain);
+    refs.set(x.referrer, r);
+  }
+  const referrers = [...refs.values()].sort((a, b) => b.usd - a.usd || b.swaps - a.swaps).slice(0, 25);
   return {
-    updated: now, chains, days, recent: all.slice(0, 20),
+    updated: now, chains, days, recent: all.slice(0, 20).map((x) => { const { referrer, ...rest } = x; void referrer; return rest; }), referrers,
     total: { swaps: all.length, usdAll: sum(all), usd7d: sum(all, now - 7 * 86400), usd24h: sum(all, now - 86400) },
   };
 }

@@ -189,7 +189,7 @@ button{font:inherit}
 .cmp{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .cmp .gain{margin-top:8px;padding:8px 12px;border-radius:10px;background:#EAF6EF;color:#1F7A4D;font-size:13px}
 .seg{display:inline-flex;background:#EEF2F7;border-radius:10px;padding:3px;gap:2px}
-.seg button{border:none;background:transparent;padding:7px 12px;border-radius:8px;font-size:13px;color:var(--txt);cursor:pointer}
+.seg button{white-space:nowrap;border:none;background:transparent;padding:7px 12px;border-radius:8px;font-size:13px;color:var(--txt);cursor:pointer}
 .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(30,38,51,.1)}
 .pop{position:absolute;right:0;top:44px;width:260px;padding:14px;z-index:4;display:none}
 .pop.open{display:block}
