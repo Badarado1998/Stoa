@@ -16,6 +16,8 @@ Run from this folder: ELYSIUM_RPC_URL=... python3 -I v4_copy_keys_elysium.py
 import json
 import os
 import sys
+import time
+import urllib.error
 import urllib.request
 
 RPC = os.environ.get("ELYSIUM_RPC_URL") or "https://rpc.elysium.kinetiq.xyz"
@@ -36,11 +38,29 @@ def canon(c):
 def call(method, params):
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
     req = urllib.request.Request(RPC, body, {"Content-Type": "application/json", "User-Agent": "stoa-v4-copy"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        out = json.load(r)
+    for attempt in range(5):  # a rate limit or a server error is retried, a few times, then the run stops
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                out = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 429 and e.code < 500 or attempt == 4:
+                raise
+            time.sleep(2 ** (attempt + 1))
     if "error" in out:
         raise RuntimeError(out["error"])
     return out["result"]
+
+
+def get_logs(a, z, topics):
+    # a node may cap one answer (Elysium's public node: 10,000 logs); then the window is read in halves
+    try:
+        return call("eth_getLogs", [{"address": OLD, "fromBlock": hex(a), "toBlock": hex(z), "topics": topics}])
+    except RuntimeError as e:
+        if z <= a or not any(w in str(e).lower() for w in ("limit", "more than", "too many", "too large", "exceed")):
+            raise
+        m = (a + z) // 2
+        return get_logs(a, m, topics) + get_logs(m + 1, z, topics)
 
 
 def sha3(hexdata):
@@ -61,7 +81,7 @@ def main():
     logs, a = [], DEPLOY_BLOCK
     while a <= head:
         z = min(a + SPAN - 1, head)
-        logs += call("eth_getLogs", [{"address": OLD, "fromBlock": hex(a), "toBlock": hex(z), "topics": [[reg, unreg]]}])
+        logs += get_logs(a, z, [[reg, unreg]])
         a = z + 1
     logs.sort(key=lambda l: (int(l["blockNumber"], 16), int(l["logIndex"], 16)))
     # the old adapter emits Unregistered and then Registered, back to back, when a registration replaces a key

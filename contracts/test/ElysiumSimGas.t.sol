@@ -228,7 +228,8 @@ contract ElysiumSimGasTest is Test, VenuesElysium, ElysiumLive {
         assertFalse(router.isAdapter(ELY_OLD_V4), "old V4 out");
         uint256 memeAfter = router.quote(address(0), memeTok, 0.1 ether).amountOut;
         console2.log("router HYPE->top V4 token before / after:", memeBefore, memeAfter);
-        assertEq(memeAfter, memeBefore, "V4 routing unchanged");
+        // at least as good: if an outsider pushed the keeper's key off the old adapter, V3's copy of the real pool quotes more
+        assertGe(memeAfter, memeBefore, "V4 routing at least as good");
         assertFalse(router.isAdapter(ELY_OLD_V3), "old V3 out");
         assertFalse(router.isAdapter(ELY_OLD_AERO), "old Aero out");
         assertFalse(router.isAdapter(ELY_OLD_RAMSES), "old Ramses out");

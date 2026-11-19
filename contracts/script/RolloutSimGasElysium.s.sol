@@ -155,6 +155,11 @@ contract RolloutSimGasElysium is SafeRunner, VenuePackageRobinhood, ElysiumLive 
             require(tsB > 1 && eta > 0, "unexpected state: check the timelock and router");
             uint256 ready = tsB > eta ? tsB : eta;
             if (block.timestamp < ready) return console2.log("WAIT: step 3 (swap adapters) opens at unix time", ready);
+            // the workflow rebuilds the seed just before this run; if that failed, the seed may lack the keeper's newest
+            // keys, so step 3 waits for a run whose rebuild worked (SEED_FRESH=0). Run by hand it defaults to fresh.
+            if (!vm.envOr("SEED_FRESH", true)) {
+                return console2.log("WAIT: step 3 waits for a run whose seed rebuild and key copy worked");
+            }
             uint256 missing = missingV4Keys(ads[3]);
             if (missing > 0) {
                 return console2.log("WAIT: step 3 waits for the keeper to copy V4 keys; pairs missing:", missing);

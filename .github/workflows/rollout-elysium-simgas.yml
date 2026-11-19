@@ -59,16 +59,27 @@ jobs:
           fi
 
       # Before every run until the swap is done: rebuild the seed from the keeper's own registrations (keys added since
-      # the deploy included) and register what V4AdapterV3 lacks, so step 3's check reads a current, complete seed.
-      - name: Keep V4AdapterV3's keys current (keeper)
+      # the deploy included), then register what V4AdapterV3 lacks, so step 3's check reads a current, complete seed.
+      # Either failing does not stop this run's step 1 or 2; it only holds step 3 (SEED_FRESH=false) until a run where
+      # both work. The keeper key is given to the copy alone.
+      - name: Rebuild the seed from the keeper's registrations
+        id: rebuild
         if: ${{ steps.pre.outputs.skip != '1' }}
-        env:
-          K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        continue-on-error: true
         run: |
           [ "$(cast call 0x104752d50ef893da579ad813918269e09ea17dba 'isAdapter(address)(bool)' 0xeb4bec2795ce314d1add4f8b3f2fcfbf38e892e5 --rpc-url "$RPC")" = "true" ] \
             || { echo "The old V4 adapter is out of the router: nothing to keep current."; exit 0; }
-          [ -n "$K2" ] || { echo "::notice::No keeper key (DEPLOYER_PRIVATE_KEY): V4AdapterV3's keys were not refreshed."; exit 0; }
-          (cd script/data && ELYSIUM_RPC_URL="$RPC" python3 -I v4_copy_keys_elysium.py)
+          cd script/data && ELYSIUM_RPC_URL="$RPC" python3 -I v4_copy_keys_elysium.py
+
+      - name: Register what V4AdapterV3 lacks (keeper)
+        id: copy
+        if: ${{ steps.pre.outputs.skip != '1' && steps.rebuild.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          [ "$(cast call 0x104752d50ef893da579ad813918269e09ea17dba 'isAdapter(address)(bool)' 0xeb4bec2795ce314d1add4f8b3f2fcfbf38e892e5 --rpc-url "$RPC")" = "true" ] || exit 0
+          [ -n "$K2" ] || { echo "::warning::No keeper key (DEPLOYER_PRIVATE_KEY): V4AdapterV3's keys were not refreshed."; exit 1; }
           RPC="$RPC" PRIVATE_KEY="0x${K2#0x}" ADAPTER="$(jq -r .uniswapV4AdapterV3 deployments/99901-simgas.json)" \
             SEED=script/data/v4-v3-seed-99901.json STRICT=1 ./script/seed-v4.sh
 
@@ -78,6 +89,7 @@ jobs:
         env:
           K1: ${{ secrets.OWNER_PRIVATE_KEY }}
           K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SEED_FRESH: ${{ (steps.rebuild.outcome == 'success' && steps.copy.outcome == 'success') && 'true' || 'false' }}
         run: |
           set -o pipefail
           [ "$(cast chain-id --rpc-url "$RPC")" = "99901" ] || { echo "::error::RPC is not Elysium"; exit 1; }
