@@ -15,7 +15,7 @@ export default function TradeSkeleton() {
           <div className="row"><span className="blab">You sell</span><span /></div>
           <div className="row"><span className="out" style={{ fontSize: 30, color: "#848E9D" }}>0.00</span><span className="tok"><Icon src="/tokens/eth.svg" />ETH</span></div>
         </div>
-        <div className="flip"><span aria-hidden="true" /></div>
+        <div className="flip"><button type="button" aria-label="Switch tokens" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" /></svg></button></div>
         <div className="box">
           <div className="row"><span className="blab">You get</span><span /></div>
           <div className="row"><span className="out" style={{ fontSize: 30, color: "#848E9D" }}>0.00</span><span className="tok"><Icon src="/tokens/0x5fc5360d0400a0fd4f2af552add042d716f1d168.webp" />USDG</span></div>
