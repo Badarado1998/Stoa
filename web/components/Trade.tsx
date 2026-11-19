@@ -596,12 +596,12 @@ function TradeOn({ net }: { net: Net }) {
         <div className="panel pad">
           <div className="lbl">EVERY SWAP ON {net.short.toUpperCase()} CHECKS</div>
           <div className="src">
-            {net.makers && <div>Stoa maker pools <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>}
-            <div>Uniswap V2 · V3 · V4 <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
-            {net.makers && <div>Aero · Ramses <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
-            {!net.makers && net.newVenues.length > 0 && <div>{net.newVenues.map((v) => v.name).join(" · ")} <em>{newVenuesLive ? "LIVE" : "BEING ADDED"}</em></div>}
-            {net.pons && <div>Pons launch curves <em>{ponsLive ? "LIVE" : "BEING ADDED"}</em></div>}
-            {net.makers && <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
+            {net.makers && <div><span className="vn"><VenueIcons ids={["stoa"]} />Stoa maker pools</span> <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>}
+            <div><span className="vn"><VenueIcons ids={["uniswap"]} />Uniswap V2 · V3 · V4</span> <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>
+            {net.makers && <div><span className="vn"><VenueIcons ids={["aero", "ramses"]} />Aero · Ramses</span> <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
+            {!net.makers && net.newVenues.length > 0 && <div><span className="vn"><VenueIcons ids={net.newVenues.map((v) => v.dexId)} />{net.newVenues.map((v) => v.name).join(" · ")}</span> <em>{newVenuesLive ? "LIVE" : "BEING ADDED"}</em></div>}
+            {net.pons && <div><span className="vn"><VenueIcons ids={["pons"]} />Pons launch curves</span> <em>{ponsLive ? "LIVE" : "BEING ADDED"}</em></div>}
+            {net.makers && <div><span className="vn"><VenueIcons ids={["lb"]} />Liquidity Book</span> <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
           <p className="note">Every swap compares these venues, directly and through {W}, and fills on the one that pays the most.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
@@ -683,4 +683,19 @@ function TokenMenu({ net, tokens, covered, onPick, onImport, onClose }: { net: N
     </div>
   );
   return sheet ? createPortal(<div className="tokbg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>{body}</div>, document.body) : body;
+}
+
+/** Venue logos (each venue's own mark, shown to name the venue) beside a row in the venue list */
+const VENUE_ICON: Record<string, string> = {
+  stoa: "/stoa-logo-200.png", uniswap: "/venues/uniswap.webp", aero: "/venues/aero.webp",
+  ramses: "/venues/ramses.webp", lb: "/venues/lb.webp", pons: "/venues/pons.webp",
+};
+function VenueIcons({ ids }: { ids: readonly string[] }) {
+  const srcs = ids.map((i) => VENUE_ICON[i]).filter(Boolean);
+  if (!srcs.length) return null;
+  return (
+    <span className="vi" aria-hidden="true">
+      {srcs.map((src) => <img key={src} src={src} alt="" width={22} height={22} loading="lazy" />)}
+    </span>
+  );
 }
