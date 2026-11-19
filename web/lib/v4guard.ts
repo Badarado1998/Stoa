@@ -1,4 +1,4 @@
-import { createPublicClient, http, parseAbi, type Address, type PublicClient } from "viem";
+import { createPublicClient, fallback, http, parseAbi, type Address, type PublicClient } from "viem";
 import type { Route } from "./swap";
 import { ROBINHOOD, type Net } from "./networks";
 import { srv } from "@/lib/serverRpc";
@@ -31,6 +31,7 @@ const canon = (a: string) => (lc(a) === ZERO ? lc(ROBINHOOD.wrapped) : lc(a));
 const pairKey = (a: string, b: string) => [canon(a), canon(b)].sort().join("-");
 
 let serverMemo: { at: number; v: Guard } | null = null;
+const senderCache = new Map<string, string>();
 
 /** Server side: read the old adapter's logs since the checkpoint and the sender of each transaction. */
 export async function computeGuard(): Promise<Guard> {
@@ -43,8 +44,15 @@ export async function computeGuard(): Promise<Guard> {
   }
   const logs = await c.getLogs({ address: OLD_V4 as Address, fromBlock: CHECKPOINT + 1n, toBlock: "latest" });
   const hashes = [...new Set(logs.map((l) => l.transactionHash).filter(Boolean))] as `0x${string}`[];
-  const senders = new Map<string, string>();
-  await Promise.all(hashes.map(async (h) => senders.set(h, lc((await c.getTransaction({ hash: h })).from))));
+  // senders never change, so each is looked up once per instance, 8 at a time, through the server RPCs with the public
+  // one last (about 180 lookups at once were refused with 429 from Vercel, which made every guard read "unknown")
+  const urls = [...new Set([...(ROBINHOOD.chain.rpcUrls.default.http as readonly string[]).map((u) => srv(u)), ROBINHOOD.logsRpc])];
+  const tc = createPublicClient({ chain: ROBINHOOD.chain, transport: fallback(urls.map((u) => http(u, { retryCount: 2, retryDelay: 300 })), { rank: false }) });
+  const todo = hashes.filter((h) => !senderCache.has(h));
+  for (let i = 0; i < todo.length; i += 8) {
+    await Promise.all(todo.slice(i, i + 8).map(async (h) => senderCache.set(h, lc((await tc.getTransaction({ hash: h })).from))));
+  }
+  const senders = senderCache;
   const bad = new Set<string>();
   for (const l of logs) {
     if (!l.transactionHash || senders.get(l.transactionHash) === KEEPER) continue;
