@@ -63,12 +63,14 @@ export async function stoaPrices(): Promise<{ ethUsd: number | null; stoaPerUsd:
   const [e, s, g] = await Promise.allSettled([
     c.simulateContract({ address: router, abi: routerAbi, functionName: "quote", args: [ZERO, USDG, 10n ** 16n] }),
     c.simulateContract({ address: router, abi: routerAbi, functionName: "quote", args: [USDG, STOA_RH, 10n * 10n ** 6n] }),
-    computeGuard(),
+    Promise.race([computeGuard(), new Promise<Guard>((_, no) => setTimeout(() => no(new Error("slow")), 6_000))]),
   ]);
-  // the ETH price goes through the same V4 guard as every other Stoa quote (lib/v4guard); without the guard, no price
+  // the ETH price goes through the same V4 guard as every other Stoa quote (lib/v4guard). When the guard can't be
+  // read in time, every pair counts as suspect and the price is read without the first V4 adapter, as /api/v1/quote does.
+  const guard: Guard = g.status === "fulfilled" ? g.value : { oldInRouter: true, poisoned: ["*"] };
   let ethUsd: number | null = null;
-  if (e.status === "fulfilled" && g.status === "fulfilled") {
-    const r = await guardRoute(c as unknown as PublicClient, ROBINHOOD, ZERO, USDG, 10n ** 16n, e.value.result, g.value as Guard).catch(() => null);
+  if (e.status === "fulfilled") {
+    const r = await guardRoute(c as unknown as PublicClient, ROBINHOOD, ZERO, USDG, 10n ** 16n, e.value.result, guard).catch(() => null);
     if (r && r.amountOut > 0n) ethUsd = (Number(r.amountOut) / 1e6) * 100;
   }
   const stoaPerUsd = s.status === "fulfilled" && s.value.result.amountOut > 0n ? Number(s.value.result.amountOut) / 1e18 / 10 : null;
