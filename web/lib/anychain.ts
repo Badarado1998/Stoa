@@ -1,4 +1,4 @@
-import { decodeFunctionData, parseAbi, type Address } from "viem";
+import { decodeFunctionData, encodeFunctionData, parseAbi, type Address } from "viem";
 import { NATIVE_ZERO, SOURCES, sameAddr } from "./bridge";
 
 /** Buy $STOA from any chain: Trustware (trustware.io) routes a deposit from Base, Arbitrum, Ethereum, Optimism or BNB
@@ -10,7 +10,7 @@ import { NATIVE_ZERO, SOURCES, sameAddr } from "./bridge";
  *  depositor is the user's own address, and it deposits exactly the token and amount picked; any approval is for that
  *  token, that amount and the Depository only. What it cannot check yet: the recipient, token and minimum on Robinhood
  *  Chain live in Relay's off-chain order, which Trustware does not return. Until it does (Relay's protocol.v2 order data,
- *  checked with getOrderId), each purchase is capped at MAX_USD. */
+ *  checked with getOrderId), each purchase is capped at MAX_USD, valued at Stoa's own prices. */
 
 export const STOA_RH = "0x13E6993417616De724F2b337D65063f229e96718" as Address;
 export const DST_CHAIN = 4663;
@@ -18,7 +18,7 @@ export const DST_CHAIN = 4663;
 export const RELAY_DEPOSITORY = "0x4cD00E387622C35bDDB9b4c962C136462338BC31" as Address;
 /** The most one purchase may move while the delivery side cannot be checked before signing */
 export const MAX_USD = 500;
-/** Shown to everyone once Hey Research Lab has reviewed it; until then only with ?preview=anychain on /token */
+/** Shown to everyone once enabled; until then only with ?preview=anychain on /token */
 export const ANYCHAIN_PUBLIC = false;
 /** Relay Depository calls; a token deposit carries no native value */
 const ABI = parseAbi([
@@ -29,8 +29,25 @@ const ABI = parseAbi([
 export interface TwTx { chainId: number; to: Address; data: `0x${string}`; value?: string | number; gasLimit?: string | number }
 export interface TwApproval { chainId: number; tokenAddress: Address; spender: Address; amount: string }
 export interface TwEstimate { fromAmount: string; fromAmountUsd?: string; toAmount: string; toAmountMin: string; toAmountUsd?: string; etaSeconds?: number; fees?: { type: string; amountUsd?: string }[] }
-/** What /api/anychain/quote returns */
-export interface AnyQuote { intentId: string; expiresAt?: string; provider: string; estimate: TwEstimate; transaction: TwTx; approvals: TwApproval[] }
+/** What /api/anychain/quote returns. ethUsd and stoaPerUsd are Stoa's own prices (its router on Robinhood Chain), not
+ *  Trustware's; sig is Stoa's server signature of the intent id, which /status and /receipt require. */
+export interface AnyQuote {
+  intentId: string; expiresAt?: string; provider: string; estimate: TwEstimate; transaction: TwTx; approvals: TwApproval[];
+  ethUsd?: number | null; stoaPerUsd?: number | null; sig?: string;
+}
+/** the most Stoa's and Trustware's dollar values may differ before a quote is refused */
+const USD_TOLERANCE = 0.05;
+
+/** the purchase's dollar value on Stoa's side: stablecoins from the amount and Stoa's own decimals, ETH at Stoa's own
+ *  price. null when it cannot be worked out (no ETH price), which refuses the quote. */
+export function usdOf(want: AnyWant, ethUsd?: number | null): number | null {
+  const s = SOURCES.find((x) => x.chain.id === want.chainId);
+  const t = s?.tokens.find((x) => sameAddr(x.address, want.token));
+  if (!t) return null;
+  const units = Number(want.amount) / 10 ** t.decimals;
+  if (sameAddr(t.address, NATIVE_ZERO)) return ethUsd && ethUsd > 0 ? units * ethUsd : null;
+  return units; // USDC, USDT, USDT0: dollars
+}
 
 export interface AnyWant { user: Address; chainId: number; token: Address; amount: bigint }
 
@@ -52,6 +69,8 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
   const value = BigInt(tx.value ?? 0);
   let call: ReturnType<typeof decodeFunctionData<typeof ABI>>;
   try { call = decodeFunctionData({ abi: ABI, data: tx.data }); } catch { return bad; }
+  // the calldata must be exactly the canonical encoding of what was decoded: no trailing bytes, no dirty address words
+  if (encodeFunctionData({ abi: ABI, functionName: call.functionName, args: call.args } as Parameters<typeof encodeFunctionData<typeof ABI>>[0]).toLowerCase() !== String(tx.data).toLowerCase()) return bad;
   const native = sameAddr(want.token, NATIVE_ZERO);
   if (native) {
     if (call.functionName !== "depositNative") return bad;
@@ -67,7 +86,13 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
       if (Number(a.chainId) !== want.chainId || !sameAddr(a.tokenAddress, want.token) || !sameAddr(a.spender, RELAY_DEPOSITORY) || BigInt(a.amount) > want.amount) return bad;
     }
   }
-  const usd = Number(q.estimate.fromAmountUsd ?? NaN);
-  if (!Number.isFinite(usd) || usd > MAX_USD) return `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
+  // the cap uses Stoa's own figure; Trustware's, when it sends one, must agree with it
+  const ours = usdOf(want, q.ethUsd);
+  if (ours === null) return "Stoa could not price this purchase right now, so it stopped it before your wallet. Try again in a minute.";
+  if (ours > MAX_USD) return `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
+  if (q.estimate.fromAmountUsd !== undefined && q.estimate.fromAmountUsd !== null) {
+    const theirs = Number(q.estimate.fromAmountUsd);
+    if (!Number.isFinite(theirs) || theirs <= 0 || Math.abs(theirs - ours) > ours * USD_TOLERANCE) return bad;
+  }
   return null;
 }
