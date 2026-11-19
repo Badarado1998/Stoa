@@ -37,7 +37,10 @@ export default function Journey() {
   useEffect(() => {
     let alive = true;
     let last = -1;
-    (async () => {
+    // the hero is already on screen (server-drawn); the 3D walk loads once the page is idle, so it never delays the
+    // first paint or the first tap
+    const idle = (f: () => void) => ("requestIdleCallback" in window ? (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 300));
+    idle(async () => {
       try {
         const { createScene } = await import("@/lib/scene");
         if (!alive || !canvas.current) return;
@@ -54,7 +57,7 @@ export default function Journey() {
       } catch {
         if (alive) { setFailed(true); setReady(true); }
       }
-    })();
+    });
     return () => {
       alive = false;
       const s = api.current as (SceneApi & { _off?: () => void }) | null;
@@ -74,7 +77,7 @@ export default function Journey() {
   return (
     <>
       <canvas id="gl" ref={canvas} aria-hidden="true" />
-      <div id="load" className={ready ? "gone" : undefined}><img src="/logo.png" alt="" /><span>ENTERING THE STOA</span></div>
+      <div id="load" className={ready ? "gone" : undefined} aria-hidden="true" />
       <Header extra={<SoundButton />} />
 
       {failed ? (
