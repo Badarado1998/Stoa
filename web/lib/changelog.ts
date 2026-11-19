@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "spotlight-lock-easier",
+    date: "2026-11-19",
+    title: "Spotlight: easier locking",
+    tag: "$STOA",
+    items: [
+      "Locking $STOA now moves your wallet to Robinhood Chain by itself if it is on another network, instead of failing.",
+      "A Max button, one clear button for each step (approve, then lock), and plain error messages, for example when the wallet has no ETH for gas.",
+      "Unlock controls only show once you have $STOA locked.",
+    ],
+    link: { href: "/spotlight#lock", label: "Lock $STOA" },
+  },
+  {
     id: "stoa-at-a-glance",
     date: "2026-11-19",
     title: "$STOA at a glance",

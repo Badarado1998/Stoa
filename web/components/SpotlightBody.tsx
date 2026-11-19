@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { BaseError, erc20Abi, isAddress, parseAbiItem, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
-import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
+import { BaseError, erc20Abi, formatUnits, isAddress, parseAbiItem, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
+import { useAccount, usePublicClient, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
 import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { CA as STOA } from "@/lib/stoaToken";
 import { fmt } from "@/lib/swap";
@@ -20,7 +20,12 @@ const stoaN = (v?: bigint) => (v === undefined ? undefined : Number(v / 10n ** 1
 /** 1000000e18 → "1M", 2500000e18 → "2.5M" */
 const mil = (v: bigint) => `${Number(v / 10n ** 21n) / 1000}M`;
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
-const errText = (e: unknown) => (e instanceof BaseError ? e.shortMessage : (e as Error).message);
+const errText = (e: unknown) => {
+  const t = e instanceof BaseError ? `${e.shortMessage} ${e.details ?? ""}` : (e as Error).message ?? "";
+  if (/insufficient funds/i.test(t)) return "Not enough ETH on Robinhood Chain to pay the gas. A few cents of ETH is enough.";
+  if (/user rejected|denied/i.test(t)) return "Cancelled in your wallet.";
+  return e instanceof BaseError ? e.shortMessage : t;
+};
 
 function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   return (
@@ -335,17 +340,22 @@ function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<s
 
 function useSend(onDone: () => void) {
   const pub = usePublicClient({ chainId: net.chain.id });
+  const { chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   async function send(label: string, fn: () => Promise<Hash>) {
     if (!pub) return;
     setBusy(label); setMsg(null);
     try {
+      // the wallet may still be on Elysium (the default network): move it to Robinhood Chain first
+      if (chainId !== net.chain.id) await switchChainAsync({ chainId: net.chain.id });
       const hash = await fn();
       const rc = await pub.waitForTransactionReceipt({ hash });
       if (rc.status !== "success") throw new Error("Transaction reverted");
       setMsg({ ok: true, text: `${label}: confirmed`, hash }); onDone();
-    } catch (x) { setMsg({ ok: false, text: errText(x) }); } finally { setBusy(null); }
+      return true;
+    } catch (x) { setMsg({ ok: false, text: errText(x) }); return false; } finally { setBusy(null); }
   }
   const note = msg && <div className={msg.ok ? "ok" : "err"} style={{ marginTop: 10 }}>{msg.text}{msg.hash && <> · <a href={txUrlOn(net, msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>;
   return { busy, send, note };
@@ -389,12 +399,33 @@ function HolderPanel({ race, started, paused, onDone }: { race: number; started:
         <li>Free to vote or unlock this week <b>{stoaN(avail)} STOA</b></li>
         <li>Unlocking <b>{stoaN(pending)} STOA{pending > 0n ? ` · ${unlockAt <= now ? "ready to withdraw" : `from ${utc(Number(unlockAt))}`}` : ""}</b></li>
       </ul>
-      <input className="inp" inputMode="decimal" placeholder="Amount of $STOA" value={amt} onChange={(x) => setAmt(x.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, ""))} />
-      {raw !== undefined && raw > 0n && (allow ?? 0n) < raw
-        ? btn("Approve $STOA", () => send("Approve $STOA", () => writeContractAsync({ address: STOA, abi: erc20Abi, functionName: "approve", args: [SPOT!, raw!], chainId: net.chain.id })), paused)
-        : btn("Lock", () => send("Lock", () => w("lock", raw!)), paused || !raw || raw > (bal ?? 0n))}
-      {btn("Request unlock", () => send("Request unlock", () => w("requestUnlock", raw!)), !raw || raw > (avail ?? 0n))}
-      {btn("Withdraw", () => send("Withdraw", () => writeContractAsync({ address: SPOT!, abi: spotlightAbi, functionName: "withdraw", args: [address!], chainId: net.chain.id })), pending === 0n || unlockAt > now)}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <input className="inp" style={{ flex: 1, minWidth: 0, marginTop: 0 }} inputMode="decimal" placeholder="Amount of $STOA" aria-label="Amount of $STOA" value={amt} onChange={(x) => setAmt(x.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, ""))} />
+        <button className="ghost" type="button" disabled={!bal} onClick={() => setAmt(formatUnits(bal ?? 0n, 18))}>Max</button>
+      </div>
+      {raw !== undefined && raw > (bal ?? 0n) && <p className="note" style={{ marginTop: 6 }}>More than you hold. Use Max for your whole wallet balance.</p>}
+      {(() => {
+        const needApprove = raw !== undefined && raw > 0n && (allow ?? 0n) < raw;
+        const label = needApprove ? "1 · Approve $STOA" : "Lock $STOA";
+        return (
+          <button className="cta" type="button" style={{ marginTop: 10, width: "100%" }}
+            disabled={!!busy || paused || !raw || raw > (bal ?? 0n)}
+            onClick={() => needApprove
+              ? send(label, () => writeContractAsync({ address: STOA, abi: erc20Abi, functionName: "approve", args: [SPOT!, raw!], chainId: net.chain.id }))
+              : void send(label, () => w("lock", raw!)).then((ok) => { if (ok) setAmt(""); })}>
+            {busy === label ? `${label}…` : label}
+          </button>
+        );
+      })()}
+      {raw !== undefined && raw > 0n && (allow ?? 0n) < raw && <p className="note" style={{ marginTop: 6 }}>Two steps: approve this exact amount, then lock it. Both run on Robinhood Chain.</p>}
+      {active + pending > 0n && (
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+          <div className="lbl">UNLOCK</div>
+          <p className="note" style={{ marginTop: 4 }}>Request unlock uses the amount above (up to {stoaN(avail)} STOA now).</p>
+          {btn("Request unlock", () => send("Request unlock", () => w("requestUnlock", raw!)), !raw || raw > (avail ?? 0n))}
+          {btn("Withdraw", () => send("Withdraw", () => writeContractAsync({ address: SPOT!, abi: spotlightAbi, functionName: "withdraw", args: [address!], chainId: net.chain.id })), pending === 0n || unlockAt > now)}
+        </div>
+      )}
       {paused && btn("Withdraw everything now", () => send("Withdraw everything now", () => writeContractAsync({ address: SPOT!, abi: spotlightAbi, functionName: "emergencyWithdraw", args: [address!], chainId: net.chain.id })), active + pending === 0n)}
       {note}
       <p className="note">
