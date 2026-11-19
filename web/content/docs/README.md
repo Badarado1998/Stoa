@@ -10,7 +10,7 @@ Most AMMs price a trade with a fixed formula. On Stoa, every pool is priced by *
 
 | You are | What you do on Stoa |
 | --- | --- |
-| Trader | Swap on the best route across Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book on Elysium; Uniswap V2/V3/V4, Aero, Ramses and Pons launch curves on Robinhood Chain. |
+| Trader | Swap on the best route across Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses and Liquidity Book on Elysium; Uniswap V2/V3/V4, Aero, Ramses, Metric and Pons launch curves on Robinhood Chain. |
 | Liquidity provider | Pool vaults (ERC-4626 shares that grow with fees) open after the external audit. |
 | Curator / maker | Run a pool: bring a price source, post a HYPE bond, quote every block. |
 | Builder | Use the router, SDK and LP tokens inside your own app or contract. |

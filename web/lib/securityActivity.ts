@@ -1,4 +1,5 @@
 import { createPublicClient, decodeFunctionData, http, parseAbi, parseAbiItem, type Address, type Hex } from "viem";
+import { OLD_V4 } from "@/lib/v4guard";
 import rh from "./deployments-4663.json";
 import { ROBINHOOD } from "./networks";
 import { srv } from "@/lib/serverRpc";
@@ -42,8 +43,8 @@ export type Activity = { pending: Op[]; recent: Op[]; registrations: Reg[]; tota
 
 function nameOf(addr: string): string {
   const x = lc(addr);
-  if (a("uniswapV4Adapter") && x === lc(a("uniswapV4Adapter")!)) return "Uniswap V4 adapter (old)";
-  if (a("uniswapV4AdapterV2") && x === lc(a("uniswapV4AdapterV2")!)) return "Uniswap V4 adapter (new)";
+  if (x === OLD_V4) return "Uniswap V4 adapter (first, removed)";
+  if (a("uniswapV4AdapterV2") && x === lc(a("uniswapV4AdapterV2")!)) return "Uniswap V4 adapter (V2)";
   const venue = ROBINHOOD.venues[x];
   if (venue) return `${venue} adapter`;
   const known: [string, string][] = [

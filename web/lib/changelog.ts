@@ -12,6 +12,29 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "v4-adapter-v2-live",
+    date: "2026-11-19",
+    title: "New Uniswap V4 adapter is live on Robinhood Chain",
+    tag: "Robinhood Chain",
+    items: [
+      "UniswapV4AdapterV2 replaced Stoa's first Uniswap V4 adapter in the router, old out and new in the same transaction, after the 48-hour timelock and the router's 24-hour wait.",
+      "Only Stoa's keeper or the timelock can register a V4 pool on it, following the independent security review by Hey Research Lab. The keeper copied the first adapter's pools over before the switch.",
+      "Next: UniswapV4AdapterV3 (no eviction, pinned pools, capped quote simulations) is scheduled to replace it through the same timelock.",
+    ],
+    link: { href: "/security", label: "Security status" },
+  },
+  {
+    id: "metric-live",
+    date: "2026-11-19",
+    title: "Metric is live on Robinhood Chain",
+    tag: "Robinhood Chain",
+    items: [
+      "The Metric adapter is in the router after the 48-hour timelock and the router's 24-hour wait. Swaps on Robinhood Chain now also check Metric's oracle-priced pools, which quote stock tokens from a live price feed.",
+      "Metric quotes are simulated through Metric's own quoter before the router picks a route, so a paused or empty Metric pool is skipped.",
+    ],
+    link: { href: "/trade?chain=robinhood", label: "Open Trade" },
+  },
+  {
     id: "autonomo-listings",
     date: "2026-11-19",
     title: "Stoa's safety check and quotes on Autonomo",
