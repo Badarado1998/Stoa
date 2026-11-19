@@ -911,3 +911,15 @@ details.fold[open] summary{margin-bottom:6px}
   body:has(.mnav) .foot .badge{padding-top:0;border-top:0;justify-content:center}
 }
 @media (max-width:860px){.sgrid .stat .v{font-size:20px}}
+/* quest */
+.qsteps{list-style:none;margin:12px 0 16px;padding:0}
+.qsteps li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.qsteps li:first-child{border-top:0}
+.qsteps .qn{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:999px;background:#EAF1FB;color:var(--accent-d);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.qsteps b,.qrow b{display:block;color:var(--ink);font-size:15px;font-weight:600}
+.qsteps small,.qrow small{display:block;margin-top:2px;font-size:13.5px;color:var(--muted);line-height:1.45}
+.qrow{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.qok,.qno{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.qok{background:#E7F4EC;color:#1E6B41}.qno{background:#EEF1F5;color:var(--muted)}
+.qrules{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}

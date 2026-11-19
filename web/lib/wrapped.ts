@@ -197,3 +197,15 @@ async function read(address: string): Promise<Wrapped | null> {
 
 /** once per request: metadata, page and link card share the read */
 export const readWrapped = cache(read);
+
+/** Quest checks (/api/quest): a wallet's Robinhood Chain swaps through Stoa from `since` (unix seconds), the ones worth
+ *  at least `minUsd`, and the $STOA it has locked (Spotlight, plus Rug Cover backing). Read from the router's Routed
+ *  events where the wallet is the recipient, valued the same way as Wrapped. */
+export async function questProgress(address: string, since: number, until: number, minUsd: number) {
+  if (!isAddress(address)) return null;
+  const who = getAddress(address);
+  const [r, stoa] = await Promise.all([chainRead(ROBINHOOD, who), stoaOf(who).catch(() => ({ held: 0, locked: 0 }))]);
+  const swaps = r.swaps.filter((s) => s.time >= since && s.time <= until);
+  const qualifying = swaps.filter((s) => (s.usd ?? 0) >= minUsd);
+  return { address: who, swaps: swaps.length, qualifying: qualifying.length, usd: swaps.reduce((a, s) => a + (s.usd ?? 0), 0), locked: stoa.locked };
+}
