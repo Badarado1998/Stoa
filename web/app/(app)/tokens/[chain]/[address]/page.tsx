@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GloamPanel from "@/components/GloamPanel";
 import Link from "next/link";
 import { CoverChip } from "@/components/CoverPanel";
 import { notFound, redirect } from "next/navigation";
@@ -118,6 +119,7 @@ export default async function TokenPage({ params }: P) {
             {stat("FDV", usdFmt(t?.fdvUsd ?? null))}
           </div>
           {token.tone === "other" && <SafetyPanel chain={net.key} token={token.address} />}
+          {net.key === "robinhood" && <GloamPanel symbol={sym} address={token.address} />}
           {net.key === "robinhood" && !/^(USDG|WETH|USDC|USDT)$/.test(sym) && token.address !== "0x0000000000000000000000000000000000000000" && <CmcPanel token={token.address} note="context only, the price you get is Stoa's quote" />}
           <TokenShare chain={net.key} address={token.address} symbol={sym} />
           {others.length > 0 && (
