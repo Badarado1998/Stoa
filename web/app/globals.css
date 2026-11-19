@@ -666,3 +666,18 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .cmc-g div{display:flex;flex-direction:column;gap:2px}.cmc-g span{font-size:11.5px;color:var(--muted)}.cmc-g b{font-size:15px}
 .cmc-f{font-size:11.5px;color:var(--muted);margin-top:8px}
 @media (max-width:520px){.cmc-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Spotlight call to action (SpotlightBanner) */
+.spotban{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);background:#fff;border:1px solid rgba(47,111,214,.22);box-shadow:0 6px 18px rgba(30,38,51,.06)}
+.spotban:hover{border-color:var(--accent)}
+.spotban .sb-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(47,111,214,.15)}
+.spotban .sb-t{font-size:14px;min-width:0}
+.spotban .sb-t small{font-size:13px;color:var(--muted)}
+.spotban .sb-go{margin-left:auto;flex:none;font-weight:600;font-size:14px;color:var(--accent-d)}
+.spotban.bar{border-radius:14px;padding:12px 16px;margin:0 0 16px}
+.herospot{flex-basis:100%;display:flex;justify-content:center}
+.herospot:empty{display:none}
+.spotban.pill{pointer-events:auto;display:inline-flex;border-radius:999px;padding:8px 14px;margin:14px auto 0;max-width:92vw;letter-spacing:normal;text-transform:none;font-family:var(--sans)}
+.spotban.pill .sb-t{font-size:13px}.spotban.pill .sb-go{margin-left:6px;font-size:13px}
+.spotban .sb-t{flex:1 1 auto;text-align:left}
+@media (max-width:560px){.spotban.bar{padding:10px 14px;gap:8px}.spotban .sb-t{font-size:13px}.spotban .sb-go{font-size:13px}.spotban.pill .sb-t small{display:none}}

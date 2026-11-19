@@ -5,6 +5,7 @@ import Header from "./Header";
 import StoaCA from "./StoaCA";
 import StoaPulse from "./StoaPulse";
 import HomeLive from "./HomeLive";
+import SpotlightBanner from "./SpotlightBanner";
 import Footer from "./Footer";
 
 type Stop = { n: string; l: string; p: number; a: number };
@@ -130,6 +131,7 @@ function HeroButtons() {
         <Link href="/launches">Pons launches</Link>
         <Link href="/check">Check a token</Link>
       </div>
+      <div className="herospot"><SpotlightBanner variant="pill" /></div>
     </div>
   );
 }

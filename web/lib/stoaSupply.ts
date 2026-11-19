@@ -59,3 +59,35 @@ export const units = (v: bigint, dp = 2) => {
   const s = (Number(v) / 1e18).toFixed(dp);
   return s.replace(/\.?0+$/, "");
 };
+
+/** Server side: $STOA locked in Stoa's contracts (Spotlight votes, Rug Cover backers, maker bonds). Missing contracts
+ *  count as 0. */
+export async function readLocked(): Promise<{ total: bigint; spotlight: bigint; cover: bigint; bonds: bigint }> {
+  const C = ROBINHOOD.contracts;
+  const lockAbi = parseAbi(["function totalLocked() view returns (uint256)", "function totalBonded() view returns (uint256)"]);
+  const rpcs = [...(ROBINHOOD.chain.rpcUrls.default.http as readonly string[]), ROBINHOOD.logsRpc];
+  let last: unknown;
+  for (const url of rpcs) {
+    try {
+      const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(url), { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 8_000 }) });
+      const [spotlight, cover, bonds] = await Promise.all([
+        C.spotlight ? c.readContract({ address: C.spotlight, abi: lockAbi, functionName: "totalLocked" }) : 0n,
+        C.cover ? c.readContract({ address: C.cover, abi: lockAbi, functionName: "totalLocked" }) : 0n,
+        C.bonds ? c.readContract({ address: C.bonds, abi: lockAbi, functionName: "totalBonded" }) : 0n,
+      ]);
+      return { total: spotlight + cover + bonds, spotlight, cover, bonds };
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
+}
+
+/** the next weekly buyback (buyback-robinhood.yml: Mondays 13:41 UTC), unix seconds */
+export function nextBuybackAt(nowSec: number) {
+  const d = new Date(nowSec * 1000);
+  const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 13, 41) / 1000;
+  let add = (1 - d.getUTCDay() + 7) % 7;
+  if (add === 0 && nowSec >= t) add = 7;
+  return t + add * 86400;
+}
