@@ -13,14 +13,20 @@ export function gloamSymbol(symbol: string): string | null {
   return GLOAM_SYMBOLS[symbol.replace(/^\$/, "").toUpperCase()] ?? null;
 }
 
-/** Gloam's Swap tab with a trade filled in (from USDG by default, or into USDG when the token is USDG) */
-export function gloamSwapUrl(symbol: string, amount = 100): string | null {
+/** Gloam's Swap tab with a trade filled in: into `symbol`, from `fromSymbol` when Gloam lists it (else from USDG, or
+ *  from ETH when the token is USDG) */
+export function gloamSwapUrl(symbol: string, amount = 100, fromSymbol?: string): string | null {
   const to = gloamSymbol(symbol);
   if (!to) return null;
-  const from = to === "USDG" ? "ETH" : "USDG";
+  const given = fromSymbol ? gloamSymbol(fromSymbol) : null;
+  const from = given && given !== to ? given : to === "USDG" ? "ETH" : "USDG";
+  if (given && given === from) return withCode(`https://www.gloam.trade/app/vault?tab=swap#from=${from}&to=${to}&amount=${amount}&chain=robinhood`);
   // chain: Robinhood Chain; p: Stoa's partner link code from Gloam's portal (public, it appears in every link), so swaps
   // that start here are counted to Stoa there. Left out until the code is set.
+  return withCode(`https://www.gloam.trade/app/vault?tab=swap#from=${from}&to=${to}&amount=${from === "ETH" ? 0.05 : amount}&chain=robinhood`);
+}
+
+function withCode(url: string) {
   const code = process.env.NEXT_PUBLIC_GLOAM_LINK_CODE;
-  const p = code && /^[A-Za-z0-9_-]{8,40}$/.test(code) ? `&p=${code}` : "";
-  return `https://www.gloam.trade/app/vault?tab=swap#from=${from}&to=${to}&amount=${from === "ETH" ? 0.05 : amount}&chain=robinhood${p}`;
+  return code && /^[A-Za-z0-9_-]{8,40}$/.test(code) ? `${url}&p=${code}` : url;
 }

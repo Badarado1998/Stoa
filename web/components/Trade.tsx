@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { gloamSwapUrl } from "@/lib/gloam";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
@@ -528,6 +529,11 @@ function TradeOn({ net }: { net: Net }) {
         {buy.tone === "other" && !isNative(buy) && (buy.name.endsWith("Robinhood Stock Token")
               ? <p className="note">{buy.symbol} is a Robinhood Stock Token, issued by Robinhood Assets (Jersey) Limited. Its pools trade against USDG, so sell USDG for the most direct route. <a href="/stocks">All stock tokens</a></p>
               : <SafetyPanel chain={net.key} token={buy.address} compact />)}
+        {net.key === "robinhood" && gloamSwapUrl(buy.symbol) && (
+          <p className="note" style={{ marginTop: 10 }}>
+            Rather not show which wallet traded? <a href={gloamSwapUrl(buy.symbol, Number(amount) > 0 ? Number(amount) : 100, sell.symbol)!} target="_blank" rel="noopener noreferrer">Trade {buy.symbol} privately on Gloam ↗</a> (a separate app with its own pools).
+          </p>
+        )}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
           <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
         )}

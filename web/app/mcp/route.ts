@@ -1,4 +1,5 @@
 import { isAddress } from "viem";
+import { gloamSwapUrl } from "@/lib/gloam";
 import { readSpotlight } from "@/lib/spotlightServer";
 import { API_HEADERS, apiQuote, limited } from "@/lib/api";
 import { NETS, netByKey } from "@/lib/networks";
@@ -158,7 +159,12 @@ async function callTool(name: string, a: Record<string, unknown>) {
       const token = str(a.token) ?? "";
       if (!net || !net.deployed) return text("chain must be robinhood or elysium", true);
       if (!isAddress(token, { strict: false })) return text("token must be an address", true);
-      try { return text(await readSafety(net, token)); } catch { return text("the chain did not answer, try again shortly", true); }
+      try {
+        const s = await readSafety(net, token);
+        // where Gloam lists the token, a link to trade it privately there (a separate app: its own router and pools)
+        const url = net.key === "robinhood" && s.verdict !== "danger" ? gloamSwapUrl(s.symbol) : null;
+        return text(url ? { ...s, privateSwap: { app: "Gloam", url, note: "Gloam is a separate app that swaps from a private balance; Stoa does not route it. The user reviews and confirms there." } } : s);
+      } catch { return text("the chain did not answer, try again shortly", true); }
     }
     case "bridge_quote": {
       const r = await bridgeQuote({ fromChain: str(a.fromChain), fromToken: str(a.fromToken), toToken: str(a.toToken), amount: str(a.amount), wallet: str(a.wallet) }).catch(() => ({ error: "the bridge service did not answer, try again shortly" }));

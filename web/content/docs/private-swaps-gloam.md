@@ -8,13 +8,15 @@ What Stoa adds is the check before the trade: the same safety check Stoa runs be
 
 On a Robinhood Chain token page, **Trade privately** opens Gloam's Swap tab with the trade filled in (for example USDG into TSLA). You review the quote and confirm in Gloam. The link shows only for tokens Gloam's docs list for Robinhood Chain: USDG, ETH, USDe, U, cbBTC, VIRTUAL, PONS, CASHCAT, AI, ORBIO, GLOAM and stock tokens such as SPY, NVDA, TSLA and AAPL.
 
+On Trade, when you buy a token Gloam lists, a line under the safety check links to the same trade on Gloam.
+
 Before you open it, run [Stoa's safety check](https://stoadex.com/check) on the token: a test buy and sell through Stoa's router, simulated on the live chain, plus who holds the supply.
 
 ## For agents
 
 An agent with both MCP servers can check a token on Stoa, then swap it privately on Gloam:
 
-1. **Check** with Stoa's MCP (`stoadex.com/mcp`): call `safety_check` with the token. Stop if the verdict is `danger`; treat `caution` and `unknown` as a reason to ask the user.
+1. **Check** with Stoa's MCP (`stoadex.com/mcp`): call `safety_check` with the token. Stop if the verdict is `danger`; treat `caution` and `unknown` as a reason to ask the user. For tokens Gloam lists, the answer also carries `privateSwap.url`, a link the user can open to review and confirm the trade in Gloam.
 2. **Quote** with Gloam's MCP (`@gloamtrade/mcp`): `gloam_swap_quote`.
 3. **Swap**: `gloam_execute_private_swap`, then `gloam_finish_swap`.
 
