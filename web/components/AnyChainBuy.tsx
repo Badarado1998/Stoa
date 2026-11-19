@@ -257,7 +257,7 @@ function Panel() {
           <div className="lbl" style={{ marginTop: 16 }}>YOU GET ON ROBINHOOD CHAIN</div>
           <div className="box" style={{ marginTop: 8 }}>
             <div className="row">
-              <span className="amt" style={{ fontFamily: "var(--mono)", fontSize: 26 }}>{quote ? fmt(BigInt(quote.estimate.toAmount), 18, 2) : loading ? "…" : "0.00"}</span>
+              <span className="amt" style={{ fontFamily: "var(--num)", fontSize: 26 }}>{quote ? fmt(BigInt(quote.estimate.toAmount), 18, 2) : loading ? "…" : "0.00"}</span>
               <b>$STOA</b>
             </div>
             {quote?.estimate.toAmountUsd && <div className="usd">≈ {usd(Number(quote.estimate.toAmountUsd))}</div>}

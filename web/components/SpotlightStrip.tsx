@@ -35,7 +35,7 @@ export function SpotlightPicks({ onImport }: { onImport: (address: string) => vo
   return (
     <div style={{ padding: "4px 8px 8px", borderBottom: "1px solid var(--line)", marginBottom: 6 }}>
       <div className="rowx" style={{ marginBottom: 6 }}>
-        <small style={{ fontFamily: "var(--mono)", letterSpacing: ".12em", color: "var(--muted)" }}>SPOTLIGHT</small>
+        <small style={{ fontFamily: "var(--num)", letterSpacing: ".12em", color: "var(--muted)" }}>SPOTLIGHT</small>
         <Link href="/spotlight" style={{ fontSize: 11.5, color: "var(--muted)" }}>Sponsored</Link>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

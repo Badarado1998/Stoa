@@ -25,7 +25,7 @@ export default function RouterStats() {
   const cell = (label: string, v: React.ReactNode) => (
     <div className="panel pad">
       <div className="lbl">{label}</div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 26, marginTop: 6 }}>{v}</div>
+      <div style={{ fontFamily: "var(--num)", fontSize: 26, marginTop: 6 }}>{v}</div>
     </div>
   );
   return (

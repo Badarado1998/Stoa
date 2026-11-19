@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { gloamSwapUrl } from "@/lib/gloam";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
@@ -479,9 +478,9 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
 
         <WatchChips net={net} onPick={(a, via) => { if (busy) return; const st = via && tokens.find((t) => t.symbol === via); if (st && st.address !== sell.address) pick("sell", st); addCustom(a, "buy"); }} />
         <div className="box">
-          <div className="row"><label className="lbl" htmlFor="sellv">SELL</label>
-            <button type="button" className="lbl" style={{ border: 0, background: "none", cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
-              BALANCE {sBal !== undefined ? fmt(sBal, sell.decimals, 4) : "—"}
+          <div className="row"><label className="blab" htmlFor="sellv">You sell</label>
+            <button type="button" className="blab" style={{ border: 0, background: "none", padding: 0, cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
+              {sBal !== undefined ? `Balance ${fmt(sBal, sell.decimals, 4)}` : ""}
             </button></div>
           <div className="row" style={{ position: "relative" }}>
             <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} readOnly={!!busy} onChange={(e) => { setMsg(null); setDone(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
@@ -492,9 +491,9 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         </div>
         <div className="flip"><button type="button" aria-label="Switch tokens" onClick={flip}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" /></svg></button></div>
         <div className="box">
-          <div className="row"><span className="lbl" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>BUY{buy.tone === "other" && <WatchStar chain={net.key} address={buy.address} symbol={buy.symbol} logo={buy.logo} via={buy.name.endsWith("Robinhood Stock Token") ? "USDG" : undefined} small />}</span><span className="lbl">BALANCE {bBal !== undefined ? fmt(bBal, buy.decimals, 4) : "—"}</span></div>
+          <div className="row"><span className="blab" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>You get{buy.tone === "other" && <WatchStar chain={net.key} address={buy.address} symbol={buy.symbol} logo={buy.logo} via={buy.name.endsWith("Robinhood Stock Token") ? "USDG" : undefined} small />}</span><span className="blab">{bBal !== undefined ? `Balance ${fmt(bBal, buy.decimals, 4)}` : ""}</span></div>
           <div className="row" style={{ position: "relative" }}>
-            <span className="out" style={{ fontSize: outTxt.length > 13 ? 20 : outTxt.length > 10 ? 24 : 28, color: quote ? "var(--ink)" : "#6F7886" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
+            <span className="out" style={{ fontSize: outTxt.length > 13 ? 22 : outTxt.length > 10 ? 26 : 30, color: quote ? "var(--ink)" : "#AAB2BE" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
               {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => !busy && setMenu(menu === "buy" ? null : "buy")} />
@@ -530,11 +529,6 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         {buy.tone === "other" && !isNative(buy) && (buy.name.endsWith("Robinhood Stock Token")
               ? <p className="note">{buy.symbol} is a Robinhood Stock Token, issued by Robinhood Assets (Jersey) Limited. Its pools trade against USDG, so sell USDG for the most direct route. <a href="/stocks">All stock tokens</a></p>
               : <SafetyPanel chain={net.key} token={buy.address} compact />)}
-        {net.key === "robinhood" && gloamSwapUrl(buy.symbol) && (
-          <p className="note" style={{ marginTop: 10 }}>
-            Rather not show which wallet traded? <a href={gloamSwapUrl(buy.symbol, Number(amount) > 0 ? Number(amount) : undefined, sell.symbol)!} target="_blank" rel="noopener noreferrer">Trade {buy.symbol} privately on Gloam ↗</a> (a separate app with its own pools).
-          </p>
-        )}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
           <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
         )}

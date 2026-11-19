@@ -33,7 +33,7 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   return (
     <div className="panel pad">
       <div className="lbl">{label}</div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
+      <div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
       {sub && <p className="note" style={{ marginTop: 6 }}>{sub}</p>}
     </div>
   );
@@ -120,7 +120,7 @@ export default function LaunchToken({ token }: { token: Address }) {
         {(!l || !l.graduated) && (
           <div style={{ marginTop: 18 }}>
             <div style={{ height: 12, borderRadius: 999, background: "#E6ECF5", overflow: "hidden" }}><div style={{ width: `${l?.progress ?? 0}%`, height: "100%", background: "var(--accent)", transition: "width .6s" }} /></div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 6, fontSize: 13, color: "var(--muted)", fontFamily: "var(--mono)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 6, fontSize: 13, color: "var(--muted)", fontFamily: "var(--num)" }}>
               <span>{l ? `${l.progress.toFixed(1)}% to graduation` : <Sk w={120} />}</span>
               <span>{l ? `${(+l.raised).toLocaleString("en-US", { maximumFractionDigits: l.native ? 3 : 2 })} / ${(+l.threshold).toLocaleString("en-US", { maximumFractionDigits: 1 })} ${pairSym}` : ""}</span>
             </div>

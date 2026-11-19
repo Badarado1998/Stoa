@@ -42,10 +42,10 @@ export default function PnlPanel({ net, address }: { net: Net; address: string }
                 return (
                   <tr key={r.token}>
                     <td><b>{r.symbol}</b><div className="note" style={{ marginTop: 2 }}>{r.swaps} {r.swaps === 1 ? "swap" : "swaps"}</div></td>
-                    <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{Number(r.cost).toLocaleString("en-US", { maximumFractionDigits: 5 })} {p.gas}</td>
-                    <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{Number(r.proceeds) ? `${Number(r.proceeds).toLocaleString("en-US", { maximumFractionDigits: 5 })} ${p.gas}` : "—"}</td>
-                    <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{amt(r.held, r.decimals)}<div className="note" style={{ marginTop: 2 }}>{r.value === null ? "no quote" : `${Number(r.value).toLocaleString("en-US", { maximumFractionDigits: 5 })} ${p.gas}`}</div></td>
-                    <td style={{ textAlign: "right", fontFamily: "var(--mono)", color: color(total) }}>{total === null ? "—" : `${g(total, 5)} ${p.gas}`}<div className="note" style={{ marginTop: 2, color: color(total) }}>{r.pnlPct === null ? "" : `${g(r.pnlPct, 1)}%`}</div></td>
+                    <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{Number(r.cost).toLocaleString("en-US", { maximumFractionDigits: 5 })} {p.gas}</td>
+                    <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{Number(r.proceeds) ? `${Number(r.proceeds).toLocaleString("en-US", { maximumFractionDigits: 5 })} ${p.gas}` : "—"}</td>
+                    <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{amt(r.held, r.decimals)}<div className="note" style={{ marginTop: 2 }}>{r.value === null ? "no quote" : `${Number(r.value).toLocaleString("en-US", { maximumFractionDigits: 5 })} ${p.gas}`}</div></td>
+                    <td style={{ textAlign: "right", fontFamily: "var(--num)", color: color(total) }}>{total === null ? "—" : `${g(total, 5)} ${p.gas}`}<div className="note" style={{ marginTop: 2, color: color(total) }}>{r.pnlPct === null ? "" : `${g(r.pnlPct, 1)}%`}</div></td>
                   </tr>
                 );
               })}

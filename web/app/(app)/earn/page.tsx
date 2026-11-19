@@ -17,7 +17,7 @@ export default function EarnPage() {
           <div className="rowx" style={{ marginBottom: 12 }}><Pair /><span className="chip">After audit</span></div>
           <div className="box" style={{ opacity: 0.6 }}>
             <div className="row"><span className="lbl">DEPOSIT</span><span className="lbl">BALANCE —</span></div>
-            <div className="row"><span style={{ fontFamily: "var(--mono)", fontSize: 28, color: "#AAB2BE" }}>0.00</span><span className="tok"><img className="ti img" src="/tokens/usdc.svg" alt="" width={26} height={26} />USDC</span></div>
+            <div className="row"><span style={{ fontFamily: "var(--num)", fontSize: 28, color: "#AAB2BE" }}>0.00</span><span className="tok"><img className="ti img" src="/tokens/usdc.svg" alt="" width={26} height={26} />USDC</span></div>
           </div>
           <div className="det"><span>You receive</span><span>Vault shares (ERC-4626)</span><span>Fees earned</span><span>Added to share price</span><span>Withdraw</span><span>Any time</span></div>
           <button className="big" type="button" disabled>Vaults open after the audit</button>

@@ -142,7 +142,7 @@ function Stat({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   return (
     <div className="panel pad">
       <div className="lbl">{label}</div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={90} />}</div>
+      <div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={90} />}</div>
       {sub && <p className="note" style={{ marginTop: 6 }}>{sub}</p>}
     </div>
   );
@@ -181,7 +181,7 @@ function OpenTable({ rows, onDone }: { rows: Row[]; onDone: () => void }) {
                     <span className="chip" style={holding ? undefined : { background: "#FDECEA", color: "#B4442E" }}>{holding ? "Holding" : "Below floor"}</span>
                     <div className="note" style={{ marginTop: 4 }}>holds {pct(r.balance, r.supply)}% · floor {pct(r.term.floor, r.supply)}%</div>
                   </td>
-                  <td className="hm" style={{ fontFamily: "var(--mono)" }}>{eth(left, 3)} ETH</td>
+                  <td className="hm" style={{ fontFamily: "var(--num)" }}>{eth(left, 3)} ETH</td>
                   <td className="hm">{closes > now() ? `in ${until(closes)}` : "closed"}<div className="note" style={{ marginTop: 2 }}>release from {when(Number(r.term.endsAt) + GRACE)}</div></td>
                   <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                     {holding

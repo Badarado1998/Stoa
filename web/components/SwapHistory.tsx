@@ -83,8 +83,8 @@ export default function SwapHistory() {
         {rows.map((r) => (
           <tr key={r.hash}>
             <td>{r.time ? new Date(r.time * 1000).toLocaleString() : "—"}</td>
-            <td style={{ fontFamily: "var(--mono)" }}>{fmt(r.amountIn, m(r.tokenIn).decimals, 4)} {m(r.tokenIn).symbol}</td>
-            <td style={{ fontFamily: "var(--mono)" }}>{fmt(r.amountOut, m(r.tokenOut).decimals, 4)} {m(r.tokenOut).symbol}</td>
+            <td style={{ fontFamily: "var(--num)" }}>{fmt(r.amountIn, m(r.tokenIn).decimals, 4)} {m(r.tokenIn).symbol}</td>
+            <td style={{ fontFamily: "var(--num)" }}>{fmt(r.amountOut, m(r.tokenOut).decimals, 4)} {m(r.tokenOut).symbol}</td>
             <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
               <button type="button" className="linkbtn" onClick={() => share(r)}>{copied === r.hash ? "Copied" : "Share"}</button>
               {" · "}<a href={txUrl(r.hash)} target="_blank" rel="noopener noreferrer">View</a>

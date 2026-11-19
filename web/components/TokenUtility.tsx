@@ -48,7 +48,7 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   return (
     <div className="panel pad">
       <div className="lbl">{label}</div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
+      <div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
       {sub && <p className="note" style={{ marginTop: 6 }}>{sub}</p>}
     </div>
   );
@@ -166,7 +166,7 @@ function PricePanel() {
     return (
       <div className="panel pad">
         <div className="lbl">$STOA MARKET CAP · UNISWAP V4</div>
-        <div style={{ fontSize: 30, fontWeight: 700, marginTop: 10 }}>{v4.isLoading ? "…" : p === null ? "—" : fmtUsd(mcap(p))}</div>
+        <div style={{ fontSize: 30, fontWeight: 700, marginTop: 10 }}>{v4.isLoading ? <Sk w={120} /> : p === null ? "—" : fmtUsd(mcap(p))}</div>
         <p className="note">
           {p === null
             ? "$STOA has graduated from its Pons curve. Its market cap shows here once its Uniswap V4 pool routes on Stoa."
@@ -202,8 +202,8 @@ function PricePanel() {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 30, fontWeight: 700 }}>{q.isLoading ? "…" : fmtUsd(mcap(last))}</span>
-        {pts.length > 1 && <span style={{ fontFamily: "var(--mono)", color: ch >= 0 ? "#1F8A4C" : "#B4532A" }}>{ch >= 0 ? "+" : ""}{ch.toFixed(1)}% {range === "all" ? "since launch" : "in 24h"}</span>}
+        <span style={{ fontSize: 30, fontWeight: 700 }}>{q.isLoading ? <Sk w={120} /> : fmtUsd(mcap(last))}</span>
+        {pts.length > 1 && <span style={{ fontFamily: "var(--num)", color: ch >= 0 ? "#1F8A4C" : "#B4532A" }}>{ch >= 0 ? "+" : ""}{ch.toFixed(1)}% {range === "all" ? "since launch" : "in 24h"}</span>}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 150, marginTop: 10, display: "block" }} role="img" aria-label="$STOA market cap chart">
         <defs><linearGradient id="stoaArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#4C97F0" stopOpacity=".25" /><stop offset="1" stopColor="#4C97F0" stopOpacity="0" /></linearGradient></defs>
@@ -263,11 +263,11 @@ function Glance(q: { init: GlanceInit; supply?: bigint; burned?: bigint; buyback
     <div className="panel pad">
       <div className="rowx"><div className="lbl">$STOA AT A GLANCE</div><span className="chip live">Live from the chain</span></div>
       <div className="glance">
-        <div><span>Total supply</span><b>{cmp(p.supply) ?? "…"}</b><small>All of it started on the Pons bonding curve</small></div>
-        <div><span>Burned</span><b>{cmp(p.burned) ?? "…"}</b><small>{pctOf(p.burned, p.supply) ?? "…"} of supply at the burn address{p.buybackBurned ? ` · ${cmp(p.buybackBurned)} by buybacks` : ""}</small></div>
-        <div><span>Circulating</span><b>{cmp(circ) ?? "…"}</b><small>Supply minus burned{curve ? " and what the curve still holds" : ""}</small></div>
-        <div><span>Locked by holders</span><b>{cmp(locked) ?? "…"}</b><small>{locked === undefined ? "…" : `${pctOf(locked, circ) ?? "…"} of circulating · Spotlight ${cmp(spot)}, Rug Cover ${cmp(cover)}, maker bonds ${cmp(p.bonded)}`}</small></div>
-        <div><span>Team and launch wallets</span><b>{pctOf(teamAll, p.supply) ?? "…"}</b><small>of supply · no presale, no team allocation</small></div>
+        <div><span>Total supply</span><b>{cmp(p.supply) ?? <Sk w={70} />}</b><small>All of it started on the Pons bonding curve</small></div>
+        <div><span>Burned</span><b>{cmp(p.burned) ?? <Sk w={70} />}</b><small>{pctOf(p.burned, p.supply) ?? "…"} of supply at the burn address{p.buybackBurned ? ` · ${cmp(p.buybackBurned)} by buybacks` : ""}</small></div>
+        <div><span>Circulating</span><b>{cmp(circ) ?? <Sk w={70} />}</b><small>Supply minus burned{curve ? " and what the curve still holds" : ""}</small></div>
+        <div><span>Locked by holders</span><b>{cmp(locked) ?? <Sk w={70} />}</b><small>{locked === undefined ? "…" : `${pctOf(locked, circ) ?? "…"} of circulating · Spotlight ${cmp(spot)}, Rug Cover ${cmp(cover)}, maker bonds ${cmp(p.bonded)}`}</small></div>
+        <div><span>Team and launch wallets</span><b>{pctOf(teamAll, p.supply) ?? <Sk w={70} />}</b><small>of supply · no presale, no team allocation</small></div>
         <div><span>Next buyback</span><b>{p.live ? (now ? `${days}d ${hours}h` : "…") : "—"}</b><small>{p.live ? `${now ? nextTxt : "Mondays, 13:41 UTC"} · fees waiting ${p.waitingUsd === undefined ? "…" : p.waitingUsd < 0.01 ? "< $0.01" : p.waitingUsd < 1000 ? `$${p.waitingUsd.toFixed(2)}` : fmtUsd(p.waitingUsd)}` : "Starts once the buyback contract owns the fees"}</small></div>
       </div>
       <p className="note" style={{ marginTop: 12 }}>Every number is read from Robinhood Chain when you open this page. Details and contracts are below.</p>
@@ -360,7 +360,7 @@ export default function TokenUtility({ init = null }: { init?: GlanceInit }) {
           <table className="tbl">
             <thead><tr><th>FEES USED</th><th>$STOA BURNED</th><th /></tr></thead>
             <tbody>{history.data!.map((h) => (
-              <tr key={h.hash}><td style={{ fontFamily: "var(--mono)" }}>{fmt(h.amountIn, decOf(h.token), 6)} {symOf(h.token)}</td><td style={{ fontFamily: "var(--mono)" }}>{fmt(h.burned, 18, 2)}</td><td style={{ textAlign: "right" }}><a href={txUrlOn(net, h.hash)} target="_blank" rel="noopener noreferrer">View</a></td></tr>
+              <tr key={h.hash}><td style={{ fontFamily: "var(--num)" }}>{fmt(h.amountIn, decOf(h.token), 6)} {symOf(h.token)}</td><td style={{ fontFamily: "var(--num)" }}>{fmt(h.burned, 18, 2)}</td><td style={{ textAlign: "right" }}><a href={txUrlOn(net, h.hash)} target="_blank" rel="noopener noreferrer">View</a></td></tr>
             ))}</tbody>
           </table>
         </div>

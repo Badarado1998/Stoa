@@ -33,7 +33,7 @@ function ElysiumPools() {
           <thead><tr><th>POOL</th><th className="hm">PRICING</th><th className="hm">FEE</th><th className="hm">PER-SWAP CAP</th><th>STATUS</th><th /></tr></thead>
           <tbody>
             <tr>
-              <td><Pair /></td><td className="hm">Maker-quoted</td><td className="hm" style={{ fontFamily: "var(--mono)" }}>2 bps</td><td className="hm" style={{ fontFamily: "var(--mono)" }}>$500</td>
+              <td><Pair /></td><td className="hm">Maker-quoted</td><td className="hm" style={{ fontFamily: "var(--num)" }}>2 bps</td><td className="hm" style={{ fontFamily: "var(--num)" }}>$500</td>
               <td><span className="chip live">{live ? "Deployed" : "Opening soon"}</span></td>
               <td style={{ textAlign: "right" }}><Link href="/trade?chain=elysium" className="go" style={{ margin: 0 }}>Trade</Link></td>
             </tr>
@@ -189,9 +189,9 @@ function RobinhoodPools({ net }: { net: Net }) {
                 <tr key={r.id}>
                   <td><div className="pair"><Logo s={r.base} /><Logo s={r.quote} />{r.base.symbol} / {r.quote.symbol}</div></td>
                   <td className="hm">{r.venue}{r.hooked ? " · hook" : ""}</td>
-                  <td className="hm" style={{ fontFamily: "var(--mono)" }}>{r.fee}</td>
-                  <td style={{ fontFamily: "var(--mono)" }}>{usd(r.liq)}</td>
-                  <td className="hm" style={{ fontFamily: "var(--mono)" }}>{usd(r.vol)}</td>
+                  <td className="hm" style={{ fontFamily: "var(--num)" }}>{r.fee}</td>
+                  <td style={{ fontFamily: "var(--num)" }}>{usd(r.liq)}</td>
+                  <td className="hm" style={{ fontFamily: "var(--num)" }}>{usd(r.vol)}</td>
                   <td style={{ textAlign: "right" }}><Link href={tradeHref(r)} className="go" style={{ margin: 0 }}>Trade</Link></td>
                 </tr>
               ))

@@ -12,7 +12,7 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   return (
     <div className="panel pad">
       <div className="lbl">{label}</div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
+      <div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
       <p className="note" style={{ marginTop: 6, minHeight: 18 }}>{sub ?? ""}</p>
     </div>
   );
@@ -50,10 +50,10 @@ export default function StatsBody() {
             {s ? s.chains.map((c) => (
               <tr key={c.key}>
                 <td style={{ fontWeight: 600 }}>{c.name}{!c.ok && <span className="note"> · not answering right now</span>}</td>
-                <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{c.swaps.toLocaleString("en-US")}</td>
-                <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(c.usd24h)}</td>
-                <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(c.usd7d)}</td>
-                <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(c.usdAll)}</td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{c.swaps.toLocaleString("en-US")}</td>
+                <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(c.usd24h)}</td>
+                <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(c.usd7d)}</td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(c.usdAll)}</td>
                 <td style={{ textAlign: "right" }}><a href={`${c.explorer}/address/${c.router}`} target="_blank" rel="noopener noreferrer">Router</a></td>
               </tr>
             )) : <tr><td colSpan={6}><Sk w={240} /></td></tr>}
@@ -69,12 +69,12 @@ export default function StatsBody() {
               const tot = Object.values(d.chains).reduce((a, x) => ({ swaps: a.swaps + x.swaps, usd: a.usd + x.usd }), { swaps: 0, usd: 0 });
               return (
                 <tr key={d.date}>
-                  <td style={{ fontFamily: "var(--mono)" }}>{d.date}</td>
+                  <td style={{ fontFamily: "var(--num)" }}>{d.date}</td>
                   {s.chains.map((c) => {
                     const x = d.chains[c.key] ?? { swaps: 0, usd: 0 };
-                    return <td key={c.key} style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(x.usd)}<span className="note" style={{ display: "block", fontSize: 12 }}>{swapsTxt(x.swaps)}</span></td>;
+                    return <td key={c.key} style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(x.usd)}<span className="note" style={{ display: "block", fontSize: 12 }}>{swapsTxt(x.swaps)}</span></td>;
                   })}
-                  <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(tot.usd)}<span className="note" style={{ display: "block", fontSize: 12 }}>{swapsTxt(tot.swaps)}</span></td>
+                  <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(tot.usd)}<span className="note" style={{ display: "block", fontSize: 12 }}>{swapsTxt(tot.swaps)}</span></td>
                 </tr>
               );
             }) : <tr><td><Sk w={240} /></td></tr>}
@@ -93,9 +93,9 @@ export default function StatsBody() {
                 <tr key={x.hash}>
                   <td>{x.time ? new Date(x.time * 1000).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</td>
                   <td className="hm">{c ? short(c.name) : x.chain}</td>
-                  <td style={{ fontFamily: "var(--mono)" }}>{amt(x.amountIn)} {x.symIn}</td>
-                  <td style={{ fontFamily: "var(--mono)" }}>{amt(x.amountOut)} {x.symOut}</td>
-                  <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{x.usd === null ? "—" : usd(x.usd)}</td>
+                  <td style={{ fontFamily: "var(--num)" }}>{amt(x.amountIn)} {x.symIn}</td>
+                  <td style={{ fontFamily: "var(--num)" }}>{amt(x.amountOut)} {x.symOut}</td>
+                  <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{x.usd === null ? "—" : usd(x.usd)}</td>
                   <td style={{ textAlign: "right" }}>{c && <a href={`${c.explorer}/tx/${x.hash}`} target="_blank" rel="noopener noreferrer">View</a>}</td>
                 </tr>
               );

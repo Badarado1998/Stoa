@@ -125,11 +125,11 @@ export default function LaunchesBody() {
                 </td>
                 <td style={{ minWidth: 120 }}>
                   <div style={{ height: 8, borderRadius: 999, background: "#E6ECF5", overflow: "hidden" }}><div style={{ width: `${l.progress}%`, height: "100%", background: "var(--accent)" }} /></div>
-                  <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 4, fontFamily: "var(--mono)" }}>{l.progress.toFixed(1)}% · {(+l.raised).toFixed(2)}/{(+l.threshold).toFixed(1)} ETH</div>
+                  <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 4, fontFamily: "var(--num)" }}>{l.progress.toFixed(1)}% · {(+l.raised).toFixed(2)}/{(+l.threshold).toFixed(1)} ETH</div>
                 </td>
-                <td className="hm" style={{ fontFamily: "var(--mono)" }}>{usd(l.mcapUsd)}</td>
-                <td className="hm" style={{ fontFamily: "var(--mono)" }}>{(l.creatorTaxBps / 100).toFixed(1)}%</td>
-                <td className="hm" style={{ fontFamily: "var(--mono)" }}>{age(l.launchedAt)}</td>
+                <td className="hm" style={{ fontFamily: "var(--num)" }}>{usd(l.mcapUsd)}</td>
+                <td className="hm" style={{ fontFamily: "var(--num)" }}>{(l.creatorTaxBps / 100).toFixed(1)}%</td>
+                <td className="hm" style={{ fontFamily: "var(--num)" }}>{age(l.launchedAt)}</td>
                 <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                   <button type="button" className="ghost" style={{ padding: "3px 10px", fontSize: 12.5, minHeight: 0 }} aria-label={`Share ${l.symbol}`}

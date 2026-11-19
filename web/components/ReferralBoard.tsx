@@ -39,12 +39,12 @@ export default function ReferralBoard() {
           <tbody>
             {list.map((r, i) => (
               <tr key={r.address} style={r.address === me ? { background: "rgba(47,111,214,.07)" } : undefined}>
-                <td style={{ fontFamily: "var(--mono)" }}>{i + 1}</td>
+                <td style={{ fontFamily: "var(--num)" }}>{i + 1}</td>
                 <td><a href={`${explorer(r.chains[0])}/address/${r.address}`} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{short(r.address)}</a>{r.address === me && <b> · you</b>}</td>
-                <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{r.swaps.toLocaleString("en-US")}</td>
-                <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(r.usd)}</td>
-                <td className="hm" style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{usd(r.usd7d)}</td>
-                <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{r.usd * EARN < 0.01 ? "< $0.01" : usd(r.usd * EARN)}</td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{r.swaps.toLocaleString("en-US")}</td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(r.usd)}</td>
+                <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(r.usd7d)}</td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{r.usd * EARN < 0.01 ? "< $0.01" : usd(r.usd * EARN)}</td>
               </tr>
             ))}
           </tbody>

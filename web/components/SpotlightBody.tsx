@@ -32,7 +32,7 @@ function Cell({ label, v, sub }: { label: string; v?: string; sub?: string }) {
   return (
     <div className="panel pad">
       <div className="lbl">{label}</div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
+      <div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v ?? <Sk w={110} />}</div>
       {sub && <p className="note" style={{ marginTop: 6 }}>{sub}</p>}
     </div>
   );
@@ -197,7 +197,7 @@ function LockCounter({ quorum, started, race }: { quorum?: bigint; started: bool
         <div className="lbl">{started ? `VOTES READY · WEEK ${race + 1}` : "VOTES READY FOR WEEK 1"}</div>
         <span className="chip">{q.data ? `${q.data.holders} ${q.data.holders === 1 ? "holder" : "holders"} locked` : "…"}</span>
       </div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>
+      <div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>
         {v === undefined ? <Sk w={160} /> : <>{stoaN(v)} <small style={{ fontSize: 14, color: "var(--muted)" }}>/ {stoaN(full)} $STOA</small></>}
       </div>
       <div role="progressbar" aria-label="Locked $STOA toward filling all slots" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}
@@ -326,9 +326,9 @@ function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<s
               return (
                 <tr key={c.token} style={c.canceled ? { opacity: 0.5 } : undefined}>
                   <td><TokenCell t={c.token} meta={meta[k]} /></td>
-                  <td style={{ fontFamily: "var(--mono)" }}>{eth(c.pot)} ETH</td>
-                  <td className="hm" style={{ fontFamily: "var(--mono)" }}>{stoaN(c.votes)}</td>
-                  <td className="hm" style={{ fontFamily: "var(--mono)" }}>{perM(c) === undefined ? "—" : `${eth(perM(c), 5)} ETH`}</td>
+                  <td style={{ fontFamily: "var(--num)" }}>{eth(c.pot)} ETH</td>
+                  <td className="hm" style={{ fontFamily: "var(--num)" }}>{stoaN(c.votes)}</td>
+                  <td className="hm" style={{ fontFamily: "var(--num)" }}>{perM(c) === undefined ? "—" : `${eth(perM(c), 5)} ETH`}</td>
                   <td><span className="chip" style={leading.has(k) ? undefined : { background: "#F2F4F7", color: "var(--muted)" }}>{status}</span></td>
                   {isConnected && <td>{c.canceled ? "—" : <input className="inp" style={{ margin: 0, width: 130 }} inputMode="numeric" placeholder="0" value={edit[k] ?? ""} onChange={(x) => setEdit({ ...edit, [k]: x.target.value.replace(/[^0-9]/g, "") })} aria-label={`Your votes for ${meta[k]?.symbol ?? c.token}`} />}</td>}
                 </tr>

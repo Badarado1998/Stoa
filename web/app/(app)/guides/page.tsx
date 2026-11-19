@@ -28,7 +28,7 @@ export default function GuidesPage() {
             {g.guides.map((x) => (
               <li key={x.handle} style={{ display: "block" }}>
                 <a href={x.url ?? xUrl(x.handle)} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>{x.title} ↗</a>
-                <span style={{ display: "block", fontFamily: "var(--mono)", fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>@{x.handle}{x.badge ? ` · ${x.badge} place` : ""}</span>
+                <span style={{ display: "block", fontFamily: "var(--num)", fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>@{x.handle}{x.badge ? ` · ${x.badge} place` : ""}</span>
                 <span style={{ display: "block", color: "var(--muted)", fontSize: 14, marginTop: 4 }}>{x.why}</span>
               </li>
             ))}

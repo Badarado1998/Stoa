@@ -18,6 +18,13 @@ import { findListed, isStoa, listedTokens, priceFmt, readToken, usdFmt } from "@
 export const revalidate = 60;
 export async function generateStaticParams() { return []; }
 
+/** a quote amount for reading: two decimals from 1 up, four significant digits below */
+const short = (v: string) => {
+  const n = Number(v.replace(/,/g, ""));
+  if (!Number.isFinite(n)) return v;
+  return n >= 1 ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : n.toLocaleString("en-US", { maximumSignificantDigits: 4 });
+};
+
 type P = { params: Promise<{ chain: string; address: string }> };
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
@@ -148,7 +155,7 @@ export default async function TokenPage({ params }: P) {
           </div>
           {t?.quote ? (
             <div className="tquote">
-              <span>{t.quote.amountIn} {net.gas} → <b>{t.quote.amountOut} {sym}</b></span>
+              <span>{t.quote.amountIn} {net.gas} → <b>{short(t.quote.amountOut)} {sym}</b></span>
               {t.quote.venues.length > 0 && <span className="via">via {t.quote.venues.join(" → ")}</span>}
             </div>
           ) : <p className="note">No route for {sym} on Stoa at this moment. Try again in a minute, or open Trade to check other amounts.</p>}

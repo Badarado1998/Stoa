@@ -35,7 +35,7 @@ export default function Portfolio() {
             {ALL.map((t) => {
               const v = isNative(t) ? native.data?.value : bal(erc.indexOf(t));
               if (!CORE.has(t.address) && !v) return null; // verified tokens show only when held
-              return <tr key={t.symbol}><td><span className="pair"><TokenIcon t={t} />{t.symbol}</span></td><td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>{v !== undefined ? fmt(v, t.decimals, 6) : "—"}</td></tr>;
+              return <tr key={t.symbol}><td><span className="pair"><TokenIcon t={t} />{t.symbol}</span></td><td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{v !== undefined ? fmt(v, t.decimals, 6) : "—"}</td></tr>;
             })}
           </tbody></table>
       </div>

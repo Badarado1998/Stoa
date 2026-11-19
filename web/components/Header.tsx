@@ -6,9 +6,9 @@ import WalletButton from "./WalletButton";
 import NetSwitch from "./NetSwitch";
 import { NAV_GROUPS } from "@/lib/siteNav";
 
-// the top bar shows what is live on both networks today; everything else (Earn, Curators, Build, Referrals, Wrapped,
+// the top bar: the same five places as the phone tab bar; everything else (Stocks, Launches, Spotlight, Earn, Referrals,
 // Docs) is one tap away in the menu, which opens on every screen size
-const TABS = [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/cover", "Rug Cover"], ["/spotlight", "Spotlight"], ["/pools", "Pools"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
+const TABS = [["/trade", "Trade"], ["/tokens", "Tokens"], ["/bridge", "Bridge"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
 // the menu: every page in the same four groups as the More page and the footer, two columns, so it fits one phone screen
 const MENU = NAV_GROUPS;
 
@@ -50,7 +50,6 @@ export default function Header({ extra }: { extra?: ReactNode }) {
           {TABS.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : undefined}>{l}</Link>)}
         </nav>
         <div className="right">
-          <Link className="ghost hide-m hide-l" href="/docs">Docs</Link>
           <a className="ghost hide-m" href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer" aria-label="Stoa on X">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11.5h-6.8l-5.3-6.9-6.1 6.9H1.3l7.9-9L.9 2.3h7l4.8 6.3 5.5-6.3zm-1.2 17.9h1.9L7.1 4.2H5.1l11.9 16z" /></svg>
           </a>

@@ -42,7 +42,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const swap = `/trade?chain=robinhood&sell=USDG&buy=${s.address}`;
   const more = all.filter((x) => x.route && x.address !== s.address).slice(0, 12);
   const cell = (label: string, v: React.ReactNode, sub?: React.ReactNode) => (
-    <div className="panel pad"><div className="lbl">{label}</div><div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>{v}</div>{sub && <div className="note" style={{ marginTop: 4 }}>{sub}</div>}</div>
+    <div className="panel pad"><div className="lbl">{label}</div><div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v}</div>{sub && <div className="note" style={{ marginTop: 4 }}>{sub}</div>}</div>
   );
   const ld = {
     "@context": "https://schema.org", "@type": "BreadcrumbList",
