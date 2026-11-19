@@ -1,10 +1,12 @@
-name: Deploy gas-capped V3 and CL adapters (Elysium)
+name: Deploy gas-capped V3, CL and V4 adapters (Elysium)
 # Manual only. Unticked "broadcast" = dry run against Elysium mainnet: sends nothing.
-# Deploys UniswapV3AdapterV2 and two CLTickSpacingAdapterV2 (Aero, Ramses) for the Elysium router, each pool quote
-# simulation capped at SIM_GAS as on Robinhood Chain; verifies them on Sourcify; commits their addresses to
-# contracts/deployments/99901-simgas.json (contracts/ only, so no web build). They route nothing until
-# rollout-elysium-simgas.yml has the timelock add them and remove the old V3, Aero and Ramses adapters.
-# Gas from DEPLOYER_PRIVATE_KEY (Elysium deployer 0x0568...c500).
+# Deploys UniswapV3AdapterV2, two CLTickSpacingAdapterV2 (Aero, Ramses) and UniswapV4AdapterV3 for the Elysium router,
+# each pool quote simulation capped as on Robinhood Chain (V4: keeper-only registration, no eviction); the keeper copies
+# the old V4 adapter's keys onto V4AdapterV3; verifies them on Sourcify; commits their addresses to
+# contracts/deployments/99901-simgas.json and the copied keys to contracts/script/data/v4-v3-seed-99901.json
+# (contracts/ only, so no web build). They route nothing until rollout-elysium-simgas.yml has the timelock add them
+# and remove the old V3, Aero, Ramses and V4 adapters.
+# Gas from DEPLOYER_PRIVATE_KEY (Elysium deployer 0x0568...c500, also Stoa's Elysium keeper).
 on:
   workflow_dispatch:
     inputs:
@@ -42,8 +44,14 @@ jobs:
           [ "$(cast chain-id --rpc-url "$ELYSIUM_RPC_URL")" = "99901" ] || { echo "::error::RPC is not Elysium mainnet"; exit 1; }
           ME=$(cast wallet address --private-key "$PK")
           echo "Deployer: $ME · $(cast balance $ME --ether --rpc-url "$ELYSIUM_RPC_URL") HYPE"
+          [ "$(echo "$ME" | tr 'A-F' 'a-f')" = "0x056896d7d62fb4fae30f53d76cb55264f4c5c500" ] \
+            || { echo "::error::DEPLOYER_PRIVATE_KEY is not Stoa's Elysium keeper (it must register the V4 keys)"; exit 1; }
 
-      - name: Fork tests - griefed pair, live quotes, the rollout through the real Safe
+      - name: List the old V4 adapter's keys (the keeper's registrations)
+        working-directory: contracts/script/data
+        run: python3 -I v4_copy_keys_elysium.py
+
+      - name: Fork tests - griefed pair, live quotes, V4 keys copied, the rollout through the real Safe
         run: forge test --match-contract ElysiumSimGas -vv
 
       - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
@@ -51,6 +59,12 @@ jobs:
           forge script script/DeploySimGasElysium.s.sol --rpc-url "$ELYSIUM_RPC_URL" --private-key "$PK" \
             --slow ${{ inputs.broadcast && '--broadcast' || '' }}
           cat deployments/99901-simgas.json
+
+      - name: Copy the V4 keys onto UniswapV4AdapterV3 (keeper)
+        if: ${{ inputs.broadcast }}
+        run: |
+          RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="$PK" ADAPTER="$(jq -r .uniswapV4AdapterV3 deployments/99901-simgas.json)" \
+            SEED=script/data/v4-v3-seed-99901.json ./script/seed-v4.sh
 
       - name: Verify on Sourcify
         if: ${{ inputs.broadcast }}
@@ -65,6 +79,12 @@ jobs:
             --verifier sourcify --chain 99901 --constructor-args $(cast abi-encode "c(address,address,int24[])" "$2" $R "$3") || true; }
           cl $(jq -r .aeroAdapterV2 $J) 0xEfd7A089D3057F05189B05f74Ffcf30610c42891 "[1,10,50,100,150,200,250]"
           cl $(jq -r .ramsesAdapterV2 $J) 0x29cd8852FF040CfE74fb20277A121eD1293AFb41 "[1,5,10,50,100,200,300,400,500]"
+          HOOKS="[0x0000000000000000000000000000000000000000,0x6b1216A40B65c83e9c9e18a562C446697B8cf8EC,0xe0dEF4221b9840a610D4e7d55812a79A6431a8eC,0x3aB88DDc3CF2A012af88B60828edb4553697E5dC,0xE928F2336051cBD5B9D4531C25EaDd13f9A82aeC,0xBAcF71Bf02b8cfE171853C5eC4A060Ba2Ac1E0cc,0x3eA9581a32a396F69b177B65b91149Cf887BEACC,0x00C002Cdae688F39a90CF2AD74c59421C9502aCC,0x0fa71294c909b11A0b805df4763Ba576c69c2acC,0x10F11002b148BE522005f9b5D666bef339392aEC,0xb67656Ce894ac93c0164d8490aD23161A77EE000]"
+          forge verify-contract $(jq -r .uniswapV4AdapterV3 $J) src/adapters/UniswapV4AdapterV3.sol:UniswapV4AdapterV3 \
+            --verifier sourcify --chain 99901 --constructor-args $(cast abi-encode "c(address,address,address,address,address[],address,address)" \
+            0xE2e105D3F7209A9DA11f83cCf3E7398a753823F1 0xbA876237B0F021A6c6D852d6c26E107997cC5E81 $R \
+            0xeBa02cCc1f724Cd098fc20492EF9313e1ED2417B "$HOOKS" 0x056896d7d62fB4faE30f53d76CB55264f4c5c500 \
+            $(cast call $R "guardian()(address)" --rpc-url "$ELYSIUM_RPC_URL")) || true
 
       - name: Commit the addresses (contracts/ only)
         if: ${{ inputs.broadcast }}
@@ -73,8 +93,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
-          git add contracts/deployments/99901-simgas.json
-          git commit -m "deploy: gas-capped V3 and CL adapters on Elysium (not routed until the timelock swaps them)"
+          git add contracts/deployments/99901-simgas.json contracts/script/data/v4-v3-seed-99901.json
+          git commit -m "deploy: gas-capped V3, CL and V4 adapters on Elysium (not routed until the timelock swaps them)"
           for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep $((i * 10)); done
           exit 1
 

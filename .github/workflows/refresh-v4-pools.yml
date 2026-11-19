@@ -38,7 +38,11 @@ jobs:
           ADAPTER="$(jq -r '.uniswapV4Adapter // empty' ../web/lib/deployments.json)"
           test -n "$ADAPTER" || { echo "no V4 adapter deployed"; exit 0; }
           test -n "${{ secrets.DEPLOYER_PRIVATE_KEY }}" || { echo "::warning::DEPLOYER_PRIVATE_KEY missing; skipping registration"; exit 0; }
-          RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" ADAPTER="$ADAPTER" ./script/seed-v4.sh
+          # the router's V4 adapter, and UniswapV4AdapterV3 (keeper-only registration) until the timelock swaps them
+          for A in $( (echo "$ADAPTER"; jq -r '.uniswapV4AdapterV3 // empty' deployments/99901-simgas.json 2>/dev/null) | awk 'NF && !seen[tolower($0)]++'); do
+            echo "adapter $A"
+            RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="${{ secrets.DEPLOYER_PRIVATE_KEY }}" ADAPTER="$A" ./script/seed-v4.sh
+          done
       - name: Robinhood Chain - rank and register new pools
         continue-on-error: true
         env:

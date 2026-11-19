@@ -3,7 +3,9 @@ name: Elysium governance steps (gas-capped adapters)
 # Hourly once deploy-elysium-simgas.yml has committed contracts/deployments/99901-simgas.json; before that it turns
 # itself off (the deploy workflow turns it back on). Each run moves the swap one step forward if due
 # (script/RolloutSimGasElysium.s.sol): 1) schedule in the 48h timelock, 2) propose on the router, 3) add the
-# gas-capped V3, Aero and Ramses adapters and remove the old three in the same transaction. Disables itself when done.
+# gas-capped V3, Aero and Ramses adapters and UniswapV4AdapterV3, and remove the old four in the same transaction (only
+# once every copied V4 pair has a key on V4AdapterV3). Disables itself when done; then point web/lib/deployments.json's
+# uniswapV4Adapter at V4AdapterV3 so the daily refresh-v4-pools.yml and the site use it.
 # Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
 # one of them set it approves and the other signer can press the same step on stoadex.com/admin (Elysium).
 on:

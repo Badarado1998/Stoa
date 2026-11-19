@@ -9,6 +9,8 @@ import {UniswapV3AdapterV2} from "../src/adapters/UniswapV3AdapterV2.sol";
 import {ICLTickSpacingFactory} from "../src/adapters/CLTickSpacingAdapter.sol";
 import {CLTickSpacingAdapterV2} from "../src/adapters/CLTickSpacingAdapterV2.sol";
 import {StoaRouter} from "../src/StoaRouter.sol";
+import {UniswapV4AdapterV3} from "../src/adapters/UniswapV4AdapterV3.sol";
+import {IPoolManager, PoolKey} from "../src/adapters/UniswapV4Adapter.sol";
 import {IVenueAdapter} from "../src/interfaces/IStoa.sol";
 import {MockToken} from "./mocks/Mocks.sol";
 import {IV3FactoryFull, IPoolMint, Lp} from "./AdapterSimGas.t.sol";
@@ -32,11 +34,41 @@ contract ElysiumSimGasTest is Test, VenuesElysium, ElysiumLive {
     }
 
     function _new() internal returns (address[] memory ads) {
-        ads = new address[](3);
+        ads = new address[](4);
         ads[0] = address(new UniswapV3AdapterV2(IUniswapV3Factory(UNI_V3_FACTORY), WHYPE, ELY_ROUTER));
         ads[1] = address(new CLTickSpacingAdapterV2(ICLTickSpacingFactory(AERO_CL_FACTORY), ELY_ROUTER, aeroSpacings()));
         ads[2] =
             address(new CLTickSpacingAdapterV2(ICLTickSpacingFactory(RAMSES_CL_FACTORY), ELY_ROUTER, ramsesSpacings()));
+        ads[3] = address(
+            new UniswapV4AdapterV3(
+                IPoolManager(V4_POOL_MANAGER), WHYPE, ELY_ROUTER, ELY_TIMELOCK, v4Hooks(), ELY_KEEPER, router.guardian()
+            )
+        );
+    }
+
+    /// The keeper copies the old V4 adapter's keys (script/data/v4-v3-seed-99901.json), as the deploy workflow does.
+    /// Returns how many it registered; a key V3 refuses is counted in `refused` and logged.
+    function _copyKeys(UniswapV4AdapterV3 v4, uint256 max) internal returns (uint256 n, uint256 refused) {
+        string memory j = vm.readFile("script/data/v4-v3-seed-99901.json");
+        vm.startPrank(ELY_KEEPER);
+        for (uint256 i; i < max; ++i) {
+            string memory k = string.concat("[", vm.toString(i), "]");
+            if (!vm.keyExistsJson(j, k)) break;
+            PoolKey memory key = PoolKey({
+                currency0: vm.parseJsonAddress(j, string.concat(k, ".currency0")),
+                currency1: vm.parseJsonAddress(j, string.concat(k, ".currency1")),
+                fee: uint24(vm.parseJsonUint(j, string.concat(k, ".fee"))),
+                tickSpacing: int24(vm.parseJsonInt(j, string.concat(k, ".tickSpacing"))),
+                hooks: vm.parseJsonAddress(j, string.concat(k, ".hooks"))
+            });
+            try v4.register(key) {
+                ++n;
+            } catch {
+                ++refused;
+                console2.log("refused key", i);
+            }
+        }
+        vm.stopPrank();
     }
 
     function test_fork_elysium_v3_griefedPairStaysUsable() public {
@@ -103,11 +135,39 @@ contract ElysiumSimGasTest is Test, VenuesElysium, ElysiumLive {
         }
     }
 
+    /// The most traded V4 pairs (script/data/v4-seed-pools.json): V3 quotes what the old adapter quotes.
+    function test_fork_elysium_v4_liveQuotesUnchanged() public {
+        if (!on) return vm.skip(true);
+        UniswapV4AdapterV3 v4 = UniswapV4AdapterV3(payable(_new()[3]));
+        (uint256 n, uint256 refused) = _copyKeys(v4, type(uint256).max);
+        console2.log("V4 keys copied / refused", n, refused);
+        assertEq(refused, 0, "every key of the old adapter fits V3");
+        string memory j = vm.readFile("script/data/v4-seed-pools.json");
+        for (uint256 i; i < 6; ++i) {
+            string memory k = string.concat("[", vm.toString(i), "]");
+            address c0 = vm.parseJsonAddress(j, string.concat(k, ".currency0"));
+            address c1 = vm.parseJsonAddress(j, string.concat(k, ".currency1"));
+            address a = c0 == address(0) ? WHYPE : c0;
+            address tok = a == WHYPE ? c1 : a;
+            if (a != WHYPE && c1 != WHYPE) continue;
+            uint256 qOld = IVenueAdapter(ELY_OLD_V4).quote(WHYPE, tok, 1 ether);
+            uint256 qNew = IVenueAdapter(address(v4)).quote(WHYPE, tok, 1 ether);
+            console2.log("HYPE->token old / new", qOld, qNew);
+            assertEq(qNew, qOld, "same V4 quote");
+        }
+    }
+
     /// The exact operations the hourly workflow schedules, run through the real Safe and timelock.
     function test_fork_elysium_rolloutThroughTimelock() public {
         if (!on) return vm.skip(true);
         uint256 before = router.quote(address(0), USDC, 1 ether).amountOut;
         address[] memory ads = _new();
+        _copyKeys(UniswapV4AdapterV3(payable(ads[3])), type(uint256).max);
+        assertEq(new RolloutSimGasElysium().missingV4Keys(ads[3]), 0, "every copied pair has a key on V3");
+        // a launchpad token that trades on V4 (the most traded pool of the seed)
+        string memory sj = vm.readFile("script/data/v4-seed-pools.json");
+        address memeTok = vm.parseJsonAddress(sj, "[0].currency1");
+        uint256 memeBefore = router.quote(address(0), memeTok, 0.1 ether).amountOut;
         RolloutSimGasElysium r = new RolloutSimGasElysium();
         (RolloutSimGasElysium.Op memory a, RolloutSimGasElysium.Op memory b) = r.opsFor(ads);
         TimelockController tl = TimelockController(payable(ELY_TIMELOCK));
@@ -125,9 +185,13 @@ contract ElysiumSimGasTest is Test, VenuesElysium, ElysiumLive {
         tl.executeBatch(b.targets, b.values, b.payloads, b.predecessor, b.salt);
         vm.stopPrank();
 
-        for (uint256 i; i < 3; ++i) {
+        for (uint256 i; i < 4; ++i) {
             assertTrue(router.isAdapter(ads[i]), "new adapter in");
         }
+        assertFalse(router.isAdapter(ELY_OLD_V4), "old V4 out");
+        uint256 memeAfter = router.quote(address(0), memeTok, 0.1 ether).amountOut;
+        console2.log("router HYPE->top V4 token before / after:", memeBefore, memeAfter);
+        assertEq(memeAfter, memeBefore, "V4 routing unchanged");
         assertFalse(router.isAdapter(ELY_OLD_V3), "old V3 out");
         assertFalse(router.isAdapter(ELY_OLD_AERO), "old Aero out");
         assertFalse(router.isAdapter(ELY_OLD_RAMSES), "old Ramses out");
