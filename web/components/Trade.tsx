@@ -531,7 +531,7 @@ function TradeOn({ net }: { net: Net }) {
               : <SafetyPanel chain={net.key} token={buy.address} compact />)}
         {net.key === "robinhood" && gloamSwapUrl(buy.symbol) && (
           <p className="note" style={{ marginTop: 10 }}>
-            Rather not show which wallet traded? <a href={gloamSwapUrl(buy.symbol, Number(amount) > 0 ? Number(amount) : 100, sell.symbol)!} target="_blank" rel="noopener noreferrer">Trade {buy.symbol} privately on Gloam ↗</a> (a separate app with its own pools).
+            Rather not show which wallet traded? <a href={gloamSwapUrl(buy.symbol, Number(amount) > 0 ? Number(amount) : undefined, sell.symbol)!} target="_blank" rel="noopener noreferrer">Trade {buy.symbol} privately on Gloam ↗</a> (a separate app with its own pools).
           </p>
         )}
         {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
