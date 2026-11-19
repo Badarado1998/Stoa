@@ -2,7 +2,7 @@
  *  with each entrant's wallet (/api/quest answers the same in Galxe's format). Times are UTC. */
 export const QUEST = {
   name: "Stoa Explorer",
-  start: Date.UTC(2026, 10, 21, 0, 0) / 1000, // Sat 21 Nov 2026, 00:00 UTC
+  start: Date.UTC(2026, 10, 19, 19, 0) / 1000, // Thu 19 Nov 2026, 19:00 UTC
   end: Date.UTC(2026, 11, 4, 23, 59, 59) / 1000, // Fri 4 Dec 2026, 23:59 UTC
   minUsd: 10, holdUsd: 5,
   pool: "$200 in $STOA",
