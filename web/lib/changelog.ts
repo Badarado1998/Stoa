@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "autonomo-listings",
+    date: "2026-11-19",
+    title: "Stoa's safety check and quotes on Autonomo",
+    tag: "Robinhood Chain",
+    items: [
+      "Stoa's safety check and swap quotes are listed on Autonomo as x402 APIs at $0.01 a call: autonomo.fun/x/stoa-safety and autonomo.fun/x/stoa-quote.",
+      "Agents pay in USDG or $AUTONOMO on Robinhood Chain, or USDC on Base. The same data stays free and keyless straight from Stoa.",
+    ],
+    link: { href: "/docs/autonomo", label: "Stoa for Autonomo agents" },
+  },
+  {
     id: "anychain-buy",
     date: "2026-11-19",
     title: "Buy $STOA from any chain",
