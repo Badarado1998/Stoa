@@ -8,7 +8,7 @@ import { readSafety } from "./safety";
 import { NATIVE_ZERO, sameAddr } from "./bridge";
 import { DST_CHAIN, MAX_USD, capUsdOf, checkAnyQuote, depositIdOf, sourceOk, usdOf, type AnyQuote } from "./anychain";
 import { CROSS_BUY, ETH_SHARE, MIN_OUT_BPS, type AnyTokenQuote } from "./anyToken";
-import { signTicket, stoaPrices } from "./anychainServer";
+import { TICKET_TTL_S, signTicket, stoaPrices } from "./anychainServer";
 
 /** Buy any Robinhood Chain token from another chain, in one signature.
  *
@@ -107,6 +107,7 @@ export async function anyTokenQuote(a: AnyTokenAsk): Promise<{ q: AnyTokenQuote 
   };
   const why = checkAnyQuote(q, { ...want, amount: paid });
   if (why) return { error: why.startsWith("Buying") ? why : "no checkable route", status: 422 };
-  q.sig = signTicket({ intentId: d.intentId, user, chainId: a.chainId, depositId: depositIdOf(q.transaction.data)! });
+  q.exp = Math.floor(Date.now() / 1000) + TICKET_TTL_S;
+  q.sig = signTicket({ intentId: d.intentId, user, chainId: a.chainId, depositId: depositIdOf(q.transaction.data)!, exp: q.exp });
   return { q };
 }

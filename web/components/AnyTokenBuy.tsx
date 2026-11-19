@@ -12,7 +12,7 @@ import { explain, markDelivered, sendReceipt, ticketOf, usedDeliveries, type Tic
 type Phase =
   | { k: "idle" }
   | { k: "signing"; what: string }
-  | { k: "moving"; tx: Hash; t: Ticket; q: AnyTokenQuote; since: number; slow?: boolean; unseen?: boolean }
+  | { k: "moving"; tx: Hash; t: Ticket; q: AnyTokenQuote; since: number; depositAt?: number; slow?: boolean; unseen?: boolean }
   | { k: "done"; destTx: string; bought?: bigint; refunded?: bigint; q: AnyTokenQuote }
   | { k: "failed"; text: string };
 
@@ -93,12 +93,12 @@ function Panel() {
   useEffect(() => {
     if (phase.k !== "moving") return;
     let stop = false;
-    const { t, q, since } = phase;
+    const { t, q, since, depositAt } = phase;
     let receiptAt = Date.now();
     const tick = async () => {
       if (stop) return;
       try {
-        const qs = new URLSearchParams({ intentId: t.intentId, user: t.user, chainId: String(t.chainId), depositId: t.depositId, sig: t.sig });
+        const qs = new URLSearchParams({ intentId: t.intentId, user: t.user, chainId: String(t.chainId), depositId: t.depositId, exp: String(t.exp), sig: t.sig });
         const j = await (await fetch(`/api/anychain/status?${qs}`)).json();
         if (stop) return;
         if ((j.status === "pending" || j.status === "unknown") && Date.now() - receiptAt > 30_000) {
@@ -108,12 +108,13 @@ function Panel() {
         if (j.status === "success" && typeof j.destTx === "string" && /^0x[0-9a-fA-F]{64}$/.test(j.destTx) && rh) {
           const rc = await rh.getTransactionReceipt({ hash: j.destTx as Hash }).catch(() => null);
           const blk = rc ? await rh.getBlock({ blockNumber: rc.blockNumber }).catch(() => null) : null;
-          const fresh = !!blk && Number(blk.timestamp) * 1000 >= since - 120_000 && !usedDeliveries().includes(j.destTx.toLowerCase());
+          const fresh = !!blk && Number(blk.timestamp) * 1000 >= (depositAt ?? since) - 120_000 && !usedDeliveries().includes(j.destTx.toLowerCase());
           const res = rc && fresh ? crossBuyResult(rc.logs, t.user, q.tokenOut) : null;
           if (res?.kind === "bought" && res.amount >= BigInt(q.minOut)) { markDelivered(j.destTx); return setPhase({ k: "done", destTx: j.destTx, bought: res.amount, q }); }
           if (res?.kind === "refunded") { markDelivered(j.destTx); return setPhase({ k: "done", destTx: j.destTx, refunded: res.eth, q }); }
           if (rc) setPhase((p) => (p.k === "moving" && !p.unseen ? { ...p, unseen: true } : p));
         }
+        if (j.status === "success" && !j.destTx) setPhase((p) => (p.k === "moving" && !p.unseen ? { ...p, unseen: true } : p));
         if (j.status === "failed" || j.status === "expired") return setPhase({ k: "failed", text: "The route reports this purchase failed. Check the source transaction and your wallet there; if nothing comes back, contact Stoa with the source transaction hash." });
       } catch { /* next tick */ }
       if (Date.now() - since > 45 * 60_000) return setPhase({ k: "failed", text: "Still not confirmed after 45 minutes. Check your wallet on Robinhood Chain before trying again." });
@@ -157,11 +158,13 @@ function Panel() {
       const ticket = ticketOf(q, address, src.chain.id);
       void sendReceipt(ticket, tx);
       const moving = { k: "moving" as const, tx, t: ticket, q, since: Date.now() };
-      let cancelled = false;
-      const rc = await pub!.waitForTransactionReceipt({ hash: tx, timeout: 180_000, onReplaced: (r) => { if (r.reason === "cancelled") cancelled = true; else void sendReceipt(ticket, r.transaction.hash); } }).catch(() => null);
-      if (cancelled) throw new Error("You cancelled the deposit in your wallet. Nothing was bought.");
+      let gone: "cancelled" | "replaced" | null = null;
+      const rc = await pub!.waitForTransactionReceipt({ hash: tx, timeout: 180_000, onReplaced: (r) => { if (r.reason === "repriced") void sendReceipt(ticket, r.transaction.hash); else gone = r.reason; } }).catch(() => null);
+      if (gone === "cancelled") throw new Error("You cancelled the deposit in your wallet. Nothing was bought.");
+      if (gone === "replaced") throw new Error("Your wallet replaced the deposit with another transaction. Nothing was bought.");
       if (rc && rc.status !== "success") throw new Error(`The transaction failed on ${src.name}. Nothing was sent.`);
-      setPhase(rc ? { ...moving, tx: rc.transactionHash } : { ...moving, slow: true });
+      const depositAt = rc ? await pub!.getBlock({ blockNumber: rc.blockNumber }).then((b) => Number(b.timestamp) * 1000).catch(() => undefined) : undefined;
+      setPhase(rc ? { ...moving, tx: rc.transactionHash, depositAt } : { ...moving, slow: true });
     } catch (e) { setPhase({ k: "failed", text: explain(e) }); } finally { going.current = false; }
   }
 
