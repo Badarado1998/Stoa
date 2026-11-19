@@ -13,7 +13,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], displa
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "Stoa — Every route, compared. Swaps on Robinhood Chain and Elysium", template: "%s · Stoa" },
-  description: "A swap router on Robinhood Chain and Elysium. Every swap is compared across every venue the router uses, for your exact amount, and filled on the best one.",
+  description: "A swap router on Robinhood Chain and Elysium. Every swap is compared across every venue the router uses, for your exact amount, and filled on the one that pays the most.",
   // no fixed title or url here, so each page's own title is used when a link is shared
   openGraph: { description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", siteName: "Stoa", type: "website", images: [{ url: "/og-v4.png", width: 1200, height: 630, alt: "Stoa: every route, compared. Swaps on Robinhood Chain and Elysium" }] },
   twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", images: ["/og-v4.png"] },
@@ -28,7 +28,7 @@ const LD = [
   { "@context": "https://schema.org", "@type": "WebSite", name: "Stoa", url: SITE },
   {
     "@context": "https://schema.org", "@type": "WebApplication", name: "Stoa", url: `${SITE}/trade`, applicationCategory: "FinanceApplication", operatingSystem: "Web",
-    description: "Swap router on Robinhood Chain and Elysium: every swap is compared across every venue the router uses and filled on the best one.",
+    description: "Swap router on Robinhood Chain and Elysium: every swap is compared across every venue the router uses and filled on the one that pays the most.",
   },
 ];
 export const viewport: Viewport = { themeColor: "#EEF2F6", width: "device-width", initialScale: 1 };

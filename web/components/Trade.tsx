@@ -565,7 +565,7 @@ function TradeOn({ net }: { net: Net }) {
         {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
         {done && (() => {
           const link = `${SITE}/swap/${done.net}/${done.hash}${address ? `?ref=${address}` : ""}`;
-          const text = `Swapped ${done.inTxt} ${done.symIn} for ${done.outTxt} ${done.symOut} on @StoaDEX. Every route compared, filled on the best one.`;
+          const text = `Swapped ${done.inTxt} ${done.symIn} for ${done.outTxt} ${done.symOut} on @StoaDEX. Every venue it routes, compared for my exact amount.`;
           const post = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`;
           return (
             <div className="sharecard">
@@ -597,7 +597,7 @@ function TradeOn({ net }: { net: Net }) {
             {net.pons && <div>Pons launch curves <em>{ponsLive ? "LIVE" : "BEING ADDED"}</em></div>}
             {net.makers && <div>Liquidity Book <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
-          <p className="note">Every swap compares these venues, directly and through {W}, and fills on the best one.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
+          <p className="note">Every swap compares these venues, directly and through {W}, and fills on the one that pays the most.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
         {net.key === "robinhood" && (
           <a className="panel pad" href="/check" style={{ display: "block", textDecoration: "none", color: "inherit" }}>

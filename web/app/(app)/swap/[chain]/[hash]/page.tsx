@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const s = await readSwap(chain, hash).catch(() => null);
   if (!s) return { title: "Swap", robots: { index: false } };
   const title = `${s.amountIn} ${s.symIn} → ${s.amountOut} ${s.symOut}`;
-  const description = `Swapped on Stoa on ${s.netName}${s.venues.length ? `, filled on ${s.venues.join(" and ")}` : ""}. Every swap compares every venue the router uses on the network and fills on the best one.`;
+  const description = `Swapped on Stoa on ${s.netName}${s.venues.length ? `, filled on ${s.venues.join(" and ")}` : ""}. Every swap compares every venue the router uses on the network and fills on the one that pays the most.`;
   return {
     title, description,
     robots: { index: false },
@@ -52,7 +52,7 @@ export default async function SwapPage({ params }: P) {
         <Link className="big pri" href={trade} style={{ display: "flex", justifyContent: "center", alignItems: "center", textDecoration: "none", marginTop: 18 }}>
           Swap {s.symIn} → {s.symOut} on Stoa
         </Link>
-        <p className="note">Every swap on Stoa checks every venue the router has on {s.netName} and fills on the best one, for a 2 bps fee. Read straight from the transaction on-chain.</p>
+        <p className="note">Every swap on Stoa checks every venue the router has on {s.netName} and fills on the one that pays the most, for a 2 bps fee. Read straight from the transaction on-chain.</p>
       </div>
     </section>
   );

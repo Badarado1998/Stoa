@@ -171,7 +171,7 @@ function RobinhoodPools({ net }: { net: Net }) {
   return (
     <>
       <PageHead eyebrow="POOLS · ROBINHOOD CHAIN" title="The pools behind each swap" action={<Link className="cta" href="/trade?chain=robinhood">Trade</Link>}>
-        On Robinhood Chain the router checks every {venueText} pool it knows for your pair and fills on the best one. Below are the most liquid of those pools.
+        On Robinhood Chain the router checks every {venueText} pool it knows for your pair and fills on the one that pays the most. Below are the most liquid of those pools.
       </PageHead>
       <RouterStats />
       <div className="panel" style={{ overflow: "hidden", marginBottom: 20 }}>
