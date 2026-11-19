@@ -14,19 +14,24 @@ import { computeGuard, guardRoute, type Guard } from "./v4guard";
  *  Trustware key only when that secret is not set. */
 function key() {
   const own = process.env.ANYCHAIN_HMAC_SECRET;
-  if (own && own.length >= 32) return createHash("sha256").update(`stoa-anychain-ticket:${own}`).digest();
+  // a secret that is set but too short is a mistake: fail loudly rather than fall back to the Trustware-derived key
+  if (own !== undefined && own !== "" && own.length < 32) throw new Error("ANYCHAIN_HMAC_SECRET must be at least 32 characters");
+  if (own) return createHash("sha256").update(`stoa-anychain-ticket:${own}`).digest();
   const k = process.env.TRUSTWARE_API_KEY;
   if (!k) throw new Error("not configured");
   return createHash("sha256").update(`stoa-anychain-intent:${k}`).digest();
 }
-export interface Ticket { intentId: string; user: string; chainId: number; depositId: string }
+export interface Ticket { intentId: string; user: string; chainId: number; depositId: string; exp: number }
+/** how long a quote's ticket lets /status and /receipt act on it (the page follows a purchase for up to 45 minutes) */
+export const TICKET_TTL_S = 3 * 3600;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function signTicket(t: Ticket) {
-  return createHmac("sha256", key()).update(`${t.intentId.toLowerCase()}|${t.user.toLowerCase()}|${t.chainId}|${t.depositId.toLowerCase()}`).digest("hex");
+  return createHmac("sha256", key()).update(`${t.intentId.toLowerCase()}|${t.user.toLowerCase()}|${t.chainId}|${t.depositId.toLowerCase()}|${t.exp}`).digest("hex");
 }
 /** a ticket from a request (query or JSON body), or null when it is malformed or not Stoa's */
-export function readTicket(v: { intentId?: unknown; user?: unknown; chainId?: unknown; depositId?: unknown; sig?: unknown }): Ticket | null {
-  const t: Ticket = { intentId: String(v.intentId ?? ""), user: String(v.user ?? ""), chainId: Number(v.chainId), depositId: String(v.depositId ?? "") };
+export function readTicket(v: { intentId?: unknown; user?: unknown; chainId?: unknown; depositId?: unknown; exp?: unknown; sig?: unknown }): Ticket | null {
+  const t: Ticket = { intentId: String(v.intentId ?? ""), user: String(v.user ?? ""), chainId: Number(v.chainId), depositId: String(v.depositId ?? ""), exp: Number(v.exp) };
+  if (!Number.isSafeInteger(t.exp) || t.exp < Math.floor(Date.now() / 1000)) return null; // expired tickets do nothing
   const sig = String(v.sig ?? "");
   if (!UUID.test(t.intentId) || !isAddress(t.user, { strict: false }) || !SOURCES.some((s) => s.chain.id === t.chainId)) return null;
   if (!/^0x[0-9a-fA-F]{64}$/.test(t.depositId) || !/^[0-9a-f]{64}$/.test(sig)) return null;
@@ -73,6 +78,10 @@ export async function stoaPrices(): Promise<{ ethUsd: number | null; stoaPerUsd:
     const r = await guardRoute(c as unknown as PublicClient, ROBINHOOD, ZERO, USDG, 10n ** 16n, e.value.result, guard).catch(() => null);
     if (r && r.amountOut > 0n) ethUsd = (Number(r.amountOut) / 1e6) * 100;
   }
-  const stoaPerUsd = s.status === "fulfilled" && s.value.result.amountOut > 0n ? Number(s.value.result.amountOut) / 1e18 / 10 : null;
+  let stoaPerUsd: number | null = null;
+  if (s.status === "fulfilled") {
+    const r = await guardRoute(c as unknown as PublicClient, ROBINHOOD, USDG, STOA_RH, 10n * 10n ** 6n, s.value.result, guard).catch(() => null);
+    if (r && r.amountOut > 0n) stoaPerUsd = Number(r.amountOut) / 1e18 / 10;
+  }
   return { ethUsd, stoaPerUsd };
 }

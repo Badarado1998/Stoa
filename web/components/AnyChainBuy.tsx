@@ -11,7 +11,7 @@ import { useWalletModal } from "./Providers";
 type Phase =
   | { k: "idle" }
   | { k: "signing"; what: string }
-  | { k: "moving"; tx: Hash; t: Ticket; min: string; since: number; slow?: boolean; unseen?: boolean }
+  | { k: "moving"; tx: Hash; t: Ticket; min: string; since: number; depositAt?: number; slow?: boolean; unseen?: boolean }
   | { k: "done"; destTx: string | null; got: bigint | null }
   | { k: "failed"; text: string };
 
@@ -30,9 +30,9 @@ const REQUOTE_TOLERANCE_BPS = 50n;
 const gasReserve = (chainId: number) => (chainId === 1 ? 10n ** 16n : 3n * 10n ** 15n);
 const RH_EXPLORER = "https://robinhoodchain.blockscout.com";
 /** what /status and /receipt need back: the intent, who bought, from which chain, the order id, Stoa's signature */
-type Ticket = { intentId: string; user: string; chainId: number; depositId: string; sig: string };
+type Ticket = { intentId: string; user: string; chainId: number; depositId: string; exp: number; sig: string };
 const ticketOf = (q: AnyQuote, user: string, chainId: number): Ticket =>
-  ({ intentId: q.intentId, user, chainId, depositId: depositIdOf(q.transaction.data) ?? "", sig: q.sig ?? "" });
+  ({ intentId: q.intentId, user, chainId, depositId: depositIdOf(q.transaction.data) ?? "", exp: q.exp ?? 0, sig: q.sig ?? "" });
 /** tell Trustware which source tx filled the intent; retried (409 = the source chain does not show the tx yet), since
  *  without it an ETH route stays pending. The status poll sends it again while the route still reads pending. */
 async function sendReceipt(t: Ticket, txHash: Hash, waits = [0, 3000, 8000, 20000, 45000]) {
@@ -114,13 +114,13 @@ function Panel() {
   useEffect(() => {
     if (phase.k !== "moving") return;
     let stop = false;
-    const { t, min, since } = phase;
+    const { t, min, since, depositAt } = phase;
     const buyer = t.user; // who bought is fixed when the deposit is sent, whatever account is connected later
     let receiptAt = Date.now();
     const tick = async () => {
       if (stop) return;
       try {
-        const qs = new URLSearchParams({ intentId: t.intentId, user: t.user, chainId: String(t.chainId), depositId: t.depositId, sig: t.sig });
+        const qs = new URLSearchParams({ intentId: t.intentId, user: t.user, chainId: String(t.chainId), depositId: t.depositId, exp: String(t.exp), sig: t.sig });
         const r = await fetch(`/api/anychain/status?${qs}`);
         const j = await r.json();
         if (stop) return;
@@ -134,13 +134,15 @@ function Panel() {
           // transaction mined after the deposit was sent and not already counted for an earlier purchase
           const rc = await rh.getTransactionReceipt({ hash: j.destTx as Hash }).catch(() => null);
           const blk = rc ? await rh.getBlock({ blockNumber: rc.blockNumber }).catch(() => null) : null;
-          const fresh = !!blk && Number(blk.timestamp) * 1000 >= since - 120_000 && !usedDeliveries().includes(j.destTx.toLowerCase());
+          // "after the deposit" by the deposit's own block time when known (no device clock), else by when it was sent
+          const fresh = !!blk && Number(blk.timestamp) * 1000 >= (depositAt ?? since) - 120_000 && !usedDeliveries().includes(j.destTx.toLowerCase());
           const got = rc && fresh ? parseEventLogs({ abi: erc20Abi, eventName: "Transfer", logs: rc.logs.filter((l) => sameAddr(l.address, STOA_RH)) })
             .filter((l) => sameAddr(l.args.to, buyer)).reduce((a, l) => a + l.args.value, 0n) : 0n;
           if (got >= BigInt(min)) { markDelivered(j.destTx); return setPhase({ k: "done", destTx: j.destTx, got }); }
           // the route says delivered but Robinhood Chain does not show it: say so now, keep checking
           if (rc || blk) setPhase((p) => (p.k === "moving" && !p.unseen ? { ...p, unseen: true } : p));
         }
+        if (j.status === "success" && !j.destTx) setPhase((p) => (p.k === "moving" && !p.unseen ? { ...p, unseen: true } : p));
         if (j.status === "failed" || j.status === "expired") return setPhase({ k: "failed", text: "The route reports this purchase failed. Check the source transaction and your wallet there; if nothing comes back, contact Stoa with the source transaction hash." });
       } catch { /* next tick */ }
       if (Date.now() - since > 45 * 60_000) return setPhase({ k: "failed", text: "Still not confirmed after 45 minutes. Check your wallet on Robinhood Chain before trying again." });
@@ -192,15 +194,18 @@ function Panel() {
       void sendReceipt(ticket, tx);
       const moving = { k: "moving" as const, tx, t: ticket, min: q.estimate.toAmountMin, since: Date.now() };
       // the deposit is sent: from here the page follows it and never offers a second purchase for it. If the wallet
-      // speeds it up, the new hash is the one that counts (and goes to Trustware); if it is cancelled, nothing was bought.
-      let cancelled = false;
+      // speeds it up (same deposit, new gas), the new hash is the one that counts and goes to Trustware; if the wallet
+      // replaces or cancels it with any other transaction, nothing was bought.
+      let gone: "cancelled" | "replaced" | null = null;
       const rc = await pub!.waitForTransactionReceipt({
         hash: tx, timeout: 180_000,
-        onReplaced: (r) => { if (r.reason === "cancelled") cancelled = true; else void sendReceipt(ticket, r.transaction.hash); },
+        onReplaced: (r) => { if (r.reason === "repriced") void sendReceipt(ticket, r.transaction.hash); else gone = r.reason; },
       }).catch(() => null);
-      if (cancelled) throw new Error("You cancelled the deposit in your wallet. Nothing was bought.");
+      if (gone === "cancelled") throw new Error("You cancelled the deposit in your wallet. Nothing was bought.");
+      if (gone === "replaced") throw new Error("Your wallet replaced the deposit with another transaction. Nothing was bought.");
       if (rc && rc.status !== "success") throw new Error(`The transaction failed on ${src.name}. Nothing was sent.`);
-      setPhase(rc ? { ...moving, tx: rc.transactionHash } : { ...moving, slow: true });
+      const depositAt = rc ? await pub!.getBlock({ blockNumber: rc.blockNumber }).then((b) => Number(b.timestamp) * 1000).catch(() => undefined) : undefined;
+      setPhase(rc ? { ...moving, tx: rc.transactionHash, depositAt } : { ...moving, slow: true });
     } catch (e) { setPhase({ k: "failed", text: explain(e) }); } finally { going.current = false; }
   }
 

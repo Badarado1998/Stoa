@@ -35,7 +35,7 @@ export interface TwEstimate { fromAmount: string; fromAmountUsd?: string; toAmou
  *  Trustware's; sig is Stoa's server signature of the intent id, which /status and /receipt require. */
 export interface AnyQuote {
   intentId: string; expiresAt?: string; provider: string; estimate: TwEstimate; transaction: TwTx; approvals: TwApproval[];
-  ethUsd?: number | null; stoaPerUsd?: number | null; sig?: string;
+  ethUsd?: number | null; stoaPerUsd?: number | null; sig?: string; exp?: number;
   /** Relay's order data for the deposit, when the route passes it on. When present it must be exactly this purchase
    *  (lib/relayOrder.ts: the id it hashes to is the id in the deposit call); a route that sends one that is not is refused. */
   order?: RelayOrder;
@@ -133,6 +133,9 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
   const ours = usdOf(want, q.ethUsd), cap = capUsdOf(want, q.ethUsd);
   if (ours === null || cap === null) return "Stoa could not price this purchase right now, so it stopped it before your wallet. Try again in a minute.";
   if (cap > MAX_USD) return `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
+  // ETH is valued at Stoa's own router price, so for ETH Trustware's dollar figure is required as a second opinion: a
+  // low router read can then never lift the cap on its own
+  if (native && (q.estimate.fromAmountUsd === undefined || q.estimate.fromAmountUsd === null)) return bad;
   if (q.estimate.fromAmountUsd !== undefined && q.estimate.fromAmountUsd !== null) {
     const theirs = Number(q.estimate.fromAmountUsd);
     if (!Number.isFinite(theirs) || theirs <= 0 || Math.abs(theirs - ours) > ours * USD_TOLERANCE) return bad;

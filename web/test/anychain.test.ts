@@ -12,7 +12,7 @@ const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Address;
 function nativeQuote(amount: bigint, over: Partial<AnyQuote["estimate"]> = {}, ethUsd = 3000): AnyQuote {
   return {
     intentId: "00000000-0000-4000-8000-000000000000", provider: "relay", approvals: [], ethUsd, stoaPerUsd: 30000,
-    estimate: { fromAmount: amount.toString(), toAmount: "1000000000000000000000", toAmountMin: "990000000000000000000", ...over },
+    estimate: { fromAmount: amount.toString(), fromAmountUsd: String((Number(amount) / 1e18) * ethUsd), toAmount: "1000000000000000000000", toAmountMin: "990000000000000000000", ...over },
     transaction: { chainId: 8453, to: RELAY_DEPOSITORY, value: amount.toString(), data: encodeFunctionData({ abi: ABI, functionName: "depositNative", args: [user, id] }) },
   };
 }
@@ -41,6 +41,13 @@ test("the minimum must be within 2% of the quoted output, and not above it", () 
   assert.notEqual(checkAnyQuote(nativeQuote(a, { toAmountMin: "970000000000000000000" }), want(a)), null);
   assert.notEqual(checkAnyQuote(nativeQuote(a, { toAmountMin: "1000000000000000000001" }), want(a)), null);
   assert.equal(checkAnyQuote(nativeQuote(a, { toAmountMin: "980000000000000000000" }), want(a)), null);
+});
+
+test("an ETH purchase without Trustware's dollar figure is refused", () => {
+  const a = 10n ** 17n;
+  const q = nativeQuote(a);
+  delete q.estimate.fromAmountUsd;
+  assert.notEqual(checkAnyQuote(q, want(a)), null);
 });
 
 test("Trustware's dollar figure must agree with Stoa's", () => {
@@ -72,7 +79,7 @@ test("Relay's order data, when passed on, must be exactly this purchase", async 
     const min = BigInt(od.output.payments[0].minimumAmount), exp = BigInt(od.output.payments[0].expectedAmount);
     const q: AnyQuote = {
       intentId: "00000000-0000-4000-8000-000000000000", provider: "relay", approvals: [], ethUsd: 3000, stoaPerUsd: 30000,
-      estimate: { fromAmount: amount.toString(), toAmount: (min * 10_000n >= exp * 9_800n ? exp : min).toString(), toAmountMin: min.toString() },
+      estimate: { fromAmount: amount.toString(), fromAmountUsd: String((Number(amount) / 1e18) * 3000), toAmount: (min * 10_000n >= exp * 9_800n ? exp : min).toString(), toAmountMin: min.toString() },
       transaction: { chainId: 8453, to: RELAY_DEPOSITORY, value: amount.toString(), data: dep.data }, order: od,
     };
     // the deposit's depositor is the dummy user in both fixtures; only the order differs

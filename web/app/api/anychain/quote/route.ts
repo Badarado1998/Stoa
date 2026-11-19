@@ -3,7 +3,7 @@ import { tw } from "@/lib/trustware";
 import { DST_CHAIN, MAX_USD, STOA_RH, capUsdOf, checkAnyQuote, depositIdOf, sourceOk, type AnyQuote } from "@/lib/anychain";
 import { NATIVE_ZERO, sameAddr } from "@/lib/bridge";
 import { limited } from "@/lib/api";
-import { isJson, signTicket, stoaPrices } from "@/lib/anychainServer";
+import { TICKET_TTL_S, isJson, signTicket, stoaPrices } from "@/lib/anychainServer";
 
 // POST /api/anychain/quote {chainId, token, amount, user}: a Trustware route from a source chain into $STOA on Robinhood
 // Chain, to the user's own address. Only Relay depository routes that pass checkAnyQuote are returned; the browser
@@ -50,6 +50,7 @@ export async function POST(req: Request) {
   const why = checkAnyQuote(q, { user: user as Address, chainId, token: token as Address, amount });
   if (why) return Response.json({ error: why.startsWith("Buying") ? why : "no checkable route" }, { status: 422 });
   // Stoa's signature over this intent, this buyer, this chain and the order id the deposit commits to
-  q.sig = signTicket({ intentId: d.intentId, user, chainId, depositId: depositIdOf(q.transaction.data)! });
+  q.exp = Math.floor(Date.now() / 1000) + TICKET_TTL_S;
+  q.sig = signTicket({ intentId: d.intentId, user, chainId, depositId: depositIdOf(q.transaction.data)!, exp: q.exp });
   return Response.json(q, { headers: { "cache-control": "no-store" } });
 }
