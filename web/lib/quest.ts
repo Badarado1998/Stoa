@@ -1,13 +1,13 @@
-/** Stoa Explorer, a two-week quest run on Galxe. Galxe checks the X tasks itself; the on-chain tasks are checked by
- *  /api/quest, which Galxe calls with each entrant's address. Times are UTC. */
+/** Stoa Explorer, a two-week quest run on Zealy. The on-chain tasks are checked by /api/quest/zealy, which Zealy calls
+ *  with each entrant's wallet (/api/quest answers the same in Galxe's format). Times are UTC. */
 export const QUEST = {
   name: "Stoa Explorer",
   start: Date.UTC(2026, 10, 21, 0, 0) / 1000, // Sat 21 Nov 2026, 00:00 UTC
   end: Date.UTC(2026, 11, 4, 23, 59, 59) / 1000, // Fri 4 Dec 2026, 23:59 UTC
-  minUsd: 10,
+  minUsd: 10, holdUsd: 5,
   pool: "$200 in $STOA",
   winners: 40,
-  galxe: process.env.NEXT_PUBLIC_GALXE_QUEST_URL || "",
+  url: process.env.NEXT_PUBLIC_QUEST_URL || "https://zealy.io/cw/stoa",
 } as const;
 const D = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** "Sat 21 Nov, 00:00 UTC" */

@@ -5,7 +5,7 @@ import { isAddress } from "viem";
 
 type R = { swap: 0 | 1; lock: 0 | 1; swaps: number; qualifyingSwaps: number; lockedStoa: number } | { error: string };
 
-/** Checks the two on-chain tasks for an address, with the same endpoint Galxe calls. */
+/** Checks the two on-chain tasks for an address, with the same chain reads Zealy uses. */
 export default function QuestCheck() {
   const { address } = useAccount();
   const [a, setA] = useState("");
@@ -32,7 +32,7 @@ export default function QuestCheck() {
         <div style={{ marginTop: 12 }}>
           {row(r.swap === 1, "Swap $10 or more on Stoa", `${r.qualifyingSwaps} of ${r.swaps} swaps since the quest opened count`)}
           {row(r.lock === 1, "Bonus: $STOA locked", r.lockedStoa ? `${r.lockedStoa.toLocaleString("en-US")} $STOA locked` : "None locked yet")}
-          <p className="note">Galxe reads the same answer when you press Verify there. New swaps show within a few minutes.</p>
+          <p className="note">Zealy reads the same answer when you claim there. New swaps show within a few minutes.</p>
         </div>
       ))}
     </div>

@@ -131,7 +131,7 @@ async function chainRead(net: Net, who: Address): Promise<{ swaps: Swap[]; refer
   return { swaps, referred };
 }
 
-async function stoaOf(who: Address): Promise<{ held: number; locked: number }> {
+export async function stoaOf(who: Address): Promise<{ held: number; locked: number }> {
   const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), ua) });
   const spot = ROBINHOOD.contracts.spotlight, cover = ROBINHOOD.contracts.cover;
   const [bal, acc, back] = await Promise.allSettled([
