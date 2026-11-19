@@ -133,7 +133,7 @@ export default async function TokenPage({ params }: P) {
             <div className="lbl">QUESTIONS</div>
             {faq.map(([q, a]) => (
               <div key={q} style={{ marginTop: 14 }}>
-                <h3 style={{ fontSize: 15, margin: 0 }}>{q}</h3>
+                <h2 style={{ fontSize: 15, margin: 0 }}>{q}</h2>
                 <p className="note" style={{ marginTop: 4, marginBottom: 0 }}>{a}</p>
               </div>
             ))}

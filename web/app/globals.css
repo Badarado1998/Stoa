@@ -96,6 +96,8 @@ button{font:inherit}
 .dgrp a:hover{background:#F1F4F8;color:var(--ink)}
 .dgrp a.on{background:#EEF4FD;color:var(--accent);font-weight:500;border-left-color:var(--accent);border-radius:0 8px 8px 0}
 .dmain{min-width:0;padding-bottom:24px}
+.dmain p a,.dmain li a,.dmain td a{color:var(--accent-d);text-decoration:underline;text-underline-offset:2px}
+.foot .linkbtn{color:inherit}
 .crumb{font-size:13px;color:var(--muted);margin-bottom:10px}
 .dmain h1{margin:0 0 10px;font-family:var(--serif);font-weight:400;font-size:clamp(2rem,4vw,2.7rem);color:var(--ink);line-height:1.1}
 .dmain .lead{font-size:17px;line-height:1.6;color:var(--txt);margin:0 0 24px}
@@ -567,7 +569,7 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 @media (prefers-reduced-motion:reduce){.hl-vis *{animation:none !important;stroke-dashoffset:0 !important;opacity:1 !important;width:auto}.v-row em i{transform:none}.hl-txt>*,.hl-trust a,.hl-head,.hl-k-safe,.hl-end{opacity:1;transform:none;transition:none}}
 
 /* watchlist, price alerts and stock tokens */
-.star{width:40px;padding:0;justify-content:center;border-color:var(--line);background:#fff;color:#8A94A3}
+.star{width:40px;padding:0;justify-content:center;border-color:var(--line);background:#fff;color:var(--muted)}
 .star.on{color:#E2A400}
 .star span{font-size:13px}
 .star:has(span){width:auto;padding:0 12px}

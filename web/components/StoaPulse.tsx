@@ -32,7 +32,7 @@ export default function StoaPulse() {
   const trade = `/trade?chain=robinhood&buy=${CA}`;
   return (
     <div className="stoapulse">
-      <Link href="/token" className="sp-info" aria-label={`$STOA ${grad ? "graduated" : `${pct.toFixed(1)}% to graduation`}, details`}>
+      <Link href="/token" className="sp-info" aria-label={`$STOA ${grad ? "graduated to Uniswap V4" : `${pct.toFixed(1)}% to graduation`}, details`}>
         <span className="sp-dot" aria-hidden />
         <b>$STOA</b>
         <span className="sp-txt">{grad ? "graduated to Uniswap V4" : `${pct.toFixed(1)}% to graduation`}</span>

@@ -170,7 +170,7 @@ function SoundButton() {
     } catch { /* audio unavailable */ }
   };
   return (
-    <button className="ghost" type="button" aria-pressed={on} onClick={toggle}>
+    <button className="ghost" type="button" aria-pressed={on} aria-label={on ? "Sound on" : "Sound off"} onClick={toggle}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
         <path d="M4 9v6h4l5 4V5L8 9H4z" /><path d={on ? "M16 9a4 4 0 010 6M19 6a8 8 0 010 12" : "M16 9l5 6M21 9l-5 6"} />
       </svg>
