@@ -695,7 +695,7 @@ function VenueIcons({ ids }: { ids: readonly string[] }) {
   if (!srcs.length) return null;
   return (
     <span className="vi" aria-hidden="true">
-      {srcs.map((src) => <img key={src} src={src} alt="" width={22} height={22} loading="lazy" />)}
+      {srcs.map((src) => <img key={src} src={src} alt="" width={22} height={22} loading="lazy" className={src === VENUE_ICON.stoa ? "mark" : undefined} />)}
     </span>
   );
 }
