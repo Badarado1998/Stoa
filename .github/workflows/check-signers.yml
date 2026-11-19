@@ -1,0 +1,43 @@
+name: Check signer keys (no transaction)
+
+# Manual only. Prints which addresses the Safe signer keys belong to, and nothing else: no key, no transaction.
+# "in signers environment" must show 0x5A63...03c9 and 0x0568...c500. "repository level" shows whether the old
+# repository-level copies still exist (they should be deleted once the environment holds the keys).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  environment:
+    runs-on: ubuntu-latest
+    environment: signers # the Safe signer keys live here, usable from main only
+    steps:
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
+        with:
+          version: v1.5.1
+      - name: Addresses of the keys in the signers environment
+        env:
+          K1: ${{ secrets.OWNER_PRIVATE_KEY }}
+          K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          a() { [ -n "$1" ] && cast wallet address --private-key "0x${1#0x}" || echo "missing"; }
+          A1=$(a "$K1"); A2=$(a "$K2")
+          echo "OWNER_PRIVATE_KEY    -> $A1" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "DEPLOYER_PRIVATE_KEY -> $A2" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$(echo "$A1" | tr 'A-F' 'a-f')" = "0x5a63c75b38e7ee42220cc3a57702e06d1d8903c9" ] || { echo "::error::OWNER_PRIVATE_KEY is not 0x5A63...03c9"; exit 1; }
+          [ "$(echo "$A2" | tr 'A-F' 'a-f')" = "0x056896d7d62fb4fae30f53d76cb55264f4c5c500" ] || { echo "::error::DEPLOYER_PRIVATE_KEY is not 0x0568...c500"; exit 1; }
+          echo "Both keys are the Safe signers." | tee -a "$GITHUB_STEP_SUMMARY"
+
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Are the repository-level copies still there?
+        env:
+          K1: ${{ secrets.OWNER_PRIVATE_KEY }}
+          K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          s() { [ -n "$1" ] && echo "still set (delete it)" || echo "deleted"; }
+          echo "repository-level OWNER_PRIVATE_KEY: $(s "$K1")" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "repository-level DEPLOYER_PRIVATE_KEY: $(s "$K2")" | tee -a "$GITHUB_STEP_SUMMARY"
