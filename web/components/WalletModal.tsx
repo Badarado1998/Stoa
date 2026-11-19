@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useBalance } from "wagmi";
+import { WC_ENABLED, ensureWalletConnect } from "@/lib/wagmi";
 import { txUrl } from "@/lib/chain";
 import { NETS } from "@/lib/networks";
 import { useNet, useSetNet } from "./Providers";
@@ -48,6 +49,7 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
   const generic = connectors.find((c) => c.id === "injected");
   const installed = named.length ? named : hasEth && generic ? [generic] : [];
   const wcConn = connectors.find((c) => c.type === "walletConnect");
+  const wcShown = WC_ENABLED || !!wcConn; // the connector itself loads on the first tap (lib/wagmi.ts)
   const go = (c: (typeof connectors)[number]) => { setPending(c.uid); if (c.type === "walletConnect") onClose(); connect({ connector: c, chainId: elysium.id }); };
   const wrongChain = isConnected && chainId !== elysium.id;
 
@@ -100,12 +102,12 @@ export default function WalletModal({ open, onClose }: { open: boolean; onClose:
                 </div>
               </>
             )}
-            {wcConn && (
+            {wcShown && (
               <>
                 <div className="wh">{installed.length || mobile ? "OTHER WALLETS" : "USE YOUR PHONE"}</div>
                 <div className="wl">
-                  <Row icon="/wallets/wallet-connect.svg" name="WalletConnect" sub={pending === wcConn.uid ? "Waiting for approval…" : mobile ? "Rabby, Trust and 300+ more" : "Scan a QR with your phone wallet"}
-                    busy={pending === wcConn.uid} disabled={isPending} onClick={() => go(wcConn)} />
+                  <Row icon="/wallets/wallet-connect.svg" name="WalletConnect" sub={wcConn && pending === wcConn.uid ? "Waiting for approval…" : mobile ? "Rabby, Trust and 300+ more" : "Scan a QR with your phone wallet"}
+                    busy={!!wcConn && pending === wcConn.uid} disabled={isPending} onClick={() => { const c = wcConn ?? ensureWalletConnect(); if (c) go(c); }} />
                 </div>
               </>
             )}
