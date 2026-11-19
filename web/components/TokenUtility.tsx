@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useCoverLive } from "@/lib/cover";
+import { coverAbi, useCoverLive } from "@/lib/cover";
+import { spotlightAbi } from "@/lib/spotlight";
 import { useQuery } from "@tanstack/react-query";
 import { BaseError, encodeFunctionData, erc20Abi, parseUnits, zeroAddress, type Address, type Hash } from "viem";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
@@ -217,6 +218,58 @@ function PricePanel() {
 // Stoa's team account on fomo (fomo.family, username @StoaDex). fomo's team tag needs the team to hold at least 0.5% of supply
 // there; the team bought 6.8M $STOA on the Pons curve for it on 15 Nov 2026 and keeps at least 0.5% while the tag is active.
 const TEAM_WALLET = "0xfe6f7c6e2ad2c3594fe7fb61c28c4499bbb83bf0" as Address;
+
+/** the next weekly buyback: buyback-robinhood.yml runs Mondays at 13:41 UTC (GitHub may start it a few minutes late) */
+function nextBuyback(nowSec: number) {
+  const d = new Date(nowSec * 1000);
+  const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 13, 41) / 1000;
+  const day = d.getUTCDay(); // 0 Sun, 1 Mon
+  let add = (1 - day + 7) % 7;
+  if (add === 0 && nowSec >= t) add = 7;
+  return t + add * 86400;
+}
+const pctOf = (a?: bigint, b?: bigint) => (a === undefined || !b ? undefined : `${((Number(a) / Number(b)) * 100).toFixed(2)}%`);
+
+/** One screen of $STOA facts, all read live from the chain: supply and burns, what holders have locked in Stoa's
+ *  contracts, the team's share and the next buyback. */
+/** 1e27 wei → "1B", 22.39M, 977.61M */
+const cmp = (v?: bigint) => (v === undefined ? undefined : Number(v / 10n ** 18n).toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 2 }));
+function Glance(p: { supply?: bigint; burned?: bigint; buybackBurned?: bigint; bonded?: bigint; team?: bigint; launch?: bigint; waitingUsd?: number; live: boolean }) {
+  const r = useReadContracts({
+    contracts: [
+      { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [STOA_CURVE], chainId: net.chain.id },
+      ...(C.spotlight ? [{ address: C.spotlight, abi: spotlightAbi, functionName: "totalLocked", chainId: net.chain.id }] : []),
+      ...(C.cover ? [{ address: C.cover, abi: coverAbi, functionName: "totalLocked", chainId: net.chain.id }] : []),
+    ] as never,
+    query: { refetchInterval: 30_000 },
+  });
+  const [now] = useState(() => Math.floor(Date.now() / 1000));
+  const res = (r.data ?? []) as { result?: unknown }[];
+  const curve = res[0]?.result as bigint | undefined;
+  const spot = C.spotlight ? (res[1]?.result as bigint | undefined) : 0n;
+  const cover = C.cover ? (res[C.spotlight ? 2 : 1]?.result as bigint | undefined) : 0n;
+  const circ = p.supply !== undefined && p.burned !== undefined && curve !== undefined ? p.supply - p.burned - curve : undefined;
+  const locked = spot !== undefined && cover !== undefined && p.bonded !== undefined ? spot + cover + p.bonded : undefined;
+  const teamAll = p.team !== undefined && p.launch !== undefined ? p.team + p.launch : undefined;
+  const next = nextBuyback(now);
+  const days = Math.floor((next - now) / 86400), hours = Math.floor(((next - now) % 86400) / 3600);
+  const nextTxt = `${new Date(next * 1000).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}, 13:41 UTC`;
+  return (
+    <div className="panel pad">
+      <div className="rowx"><div className="lbl">$STOA AT A GLANCE</div><span className="chip live">Live from the chain</span></div>
+      <div className="glance">
+        <div><span>Total supply</span><b>{cmp(p.supply) ?? "…"}</b><small>All of it started on the Pons bonding curve</small></div>
+        <div><span>Burned</span><b>{cmp(p.burned) ?? "…"}</b><small>{pctOf(p.burned, p.supply) ?? "…"} of supply at the burn address{p.buybackBurned ? ` · ${cmp(p.buybackBurned)} by buybacks` : ""}</small></div>
+        <div><span>Circulating</span><b>{cmp(circ) ?? "…"}</b><small>Supply minus burned{curve ? " and what the curve still holds" : ""}</small></div>
+        <div><span>Locked by holders</span><b>{cmp(locked) ?? "…"}</b><small>{locked === undefined ? "…" : `${pctOf(locked, circ) ?? "…"} of circulating · Spotlight ${cmp(spot)}, Rug Cover ${cmp(cover)}, maker bonds ${cmp(p.bonded)}`}</small></div>
+        <div><span>Team and launch wallets</span><b>{pctOf(teamAll, p.supply) ?? "…"}</b><small>of supply · no presale, no team allocation</small></div>
+        <div><span>Next buyback</span><b>{p.live ? `${days}d ${hours}h` : "—"}</b><small>{p.live ? `${nextTxt} · fees waiting ${p.waitingUsd === undefined ? "…" : p.waitingUsd < 0.01 ? "< $0.01" : p.waitingUsd < 1000 ? `$${p.waitingUsd.toFixed(2)}` : fmtUsd(p.waitingUsd)}` : "Starts once the buyback contract owns the fees"}</small></div>
+      </div>
+      <p className="note" style={{ marginTop: 12 }}>Every number is read from Robinhood Chain when you open this page. Details and contracts are below.</p>
+    </div>
+  );
+}
+
 const TEAM_BUY_TX = "0xbf4ca2f6bff0c6124ebafe82eaca82faf873248e3d027322182efb60f49d7bf3";
 // the dev wallet that launched $STOA on Pons (the creator Pons records); it sent all 22.0M $STOA it received to 0x…dEaD
 // in 12 transfers between 14 and 17 Nov 2026. Its live balance is shown next to the team wallet's.
@@ -278,6 +331,7 @@ export default function TokenUtility() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <Glance supply={supply} burned={burnedAll} buybackBurned={burnedBuyback} bonded={bonded} team={team} launch={launchBal} waitingUsd={waitingUsd} live={live && active} />
       <CurvePanel routable={route.data} />
       <PricePanel />
       {/* 1. buyback & burn */}

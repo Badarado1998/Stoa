@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-at-a-glance",
+    date: "2026-11-19",
+    title: "$STOA at a glance",
+    tag: "$STOA",
+    items: [
+      "The $STOA page opens with one panel of live on-chain facts: total supply, burned, circulating, $STOA locked by holders (Spotlight, Rug Cover and maker bonds), the team and launch wallets' share, and the next weekly buyback with the fees waiting for it.",
+      "Every number is read from Robinhood Chain when the page opens, so anyone can check it against the contracts listed below it.",
+    ],
+    link: { href: "/token", label: "$STOA" },
+  },
+  {
     id: "spotlight-votes-ready",
     date: "2026-11-19",
     title: "Spotlight: votes ready counter",
