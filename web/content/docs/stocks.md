@@ -13,7 +13,7 @@ The badge at the top shows the US session right now: open (9:30 to 16:00 New Yor
 
 ## Swapping a stock token
 
-**Swap** appears when Stoa's router can buy the token with 100 USDG right now. It opens [Trade](trade.md) with USDG to sell and the stock token to buy, because most stock token pools pair them with USDG. Trade then quotes your exact amount across every venue, as for any other token.
+**Swap** appears when Stoa's router can buy the token with 100 USDG right now. It opens [Trade](trade.md) with USDG to sell and the stock token to buy, because most stock token pools pair them with USDG. Trade then quotes your exact amount across every venue, as for any other token, including [Metric's oracle-priced pools](metric.md), which trade Stock Tokens against USDG.
 
 Tokens without Swap have no pool Stoa can use yet. Every day Stoa's keeper looks for Uniswap V4 pools of Robinhood's listed Stock Tokens and adds the ones that are deep enough and old enough to the V4 adapter, so the list of tokens with Swap grows on its own. It never replaces a pool that is already there.
 
