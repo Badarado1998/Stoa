@@ -68,7 +68,7 @@ export default async function TokenPage({ params }: P) {
       </PageHead>
 
       <div className="grid2">
-        <div className="panel pad hero">
+        <div className="panel pad tmain">
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {token.logo ? <img src={token.logo} alt="" width={52} height={52} style={{ borderRadius: 999, objectFit: "cover", background: "#EAF1FB" }} />
@@ -133,7 +133,7 @@ export default async function TokenPage({ params }: P) {
               </div>
             </div>
           )}
-          <div className="panel pad faq">
+          <div className="panel pad tfaq">
             <div className="lbl">QUESTIONS</div>
             {faq.map(([q, a]) => (
               <details key={q}>
