@@ -8,7 +8,7 @@ import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { CA as STOA } from "@/lib/stoaToken";
 import { fmt } from "@/lib/swap";
 import { getLogsOn } from "@/lib/logs";
-import { BID_WINDOW, SLOTS, SPOT, SPOT_START, SPOTLIGHT_HIDDEN, epochAt, epochStart, left, spotlightAbi, wib, type SpotCandidate } from "@/lib/spotlight";
+import { BID_WINDOW, SLOTS, SPOT, SPOT_START, SPOTLIGHT_HIDDEN, epochAt, epochStart, left, spotlightAbi, utc, type SpotCandidate } from "@/lib/spotlight";
 import { PageHead, Sk, TokenIcon } from "./ui";
 import { useWalletModal } from "./Providers";
 import { readEpoch, tokenMeta, useNow, useSpotLive, type SpotEpoch, type SpotTokenMeta } from "./spotlightData";
@@ -106,7 +106,7 @@ export default function SpotlightBody() {
 
       {ready && (!live || !started) && (
         <div className="notice" style={{ marginBottom: 0 }}>
-          Week 1 opens <b>{wib(SPOT_START)}</b>{now < SPOT_START ? ` (in ${left(SPOT_START - now)})` : ""}.{" "}
+          Week 1 opens <b>{utc(SPOT_START)}</b>{now < SPOT_START ? ` (in ${left(SPOT_START - now)})` : ""}.{" "}
           {live ? "You can lock $STOA now, so your votes are ready when it opens." : "The contract goes live before then; this page switches on by itself."}
         </div>
       )}
@@ -116,7 +116,7 @@ export default function SpotlightBody() {
         <Cell
           label={!ready ? "THIS WEEK" : started ? `WEEK ${race + 1} · ${phase === "bids" ? "BIDS OPEN" : "VOTES ONLY"}` : "WEEK 1"}
           v={!ready ? undefined : !started ? left(SPOT_START - now) : phase === "bids" ? left(bidsClose - now) : left(raceEnd - now)}
-          sub={!ready ? undefined : !started ? `until ${wib(SPOT_START)}` : phase === "bids" ? `bids close ${wib(bidsClose)}` : `votes close ${wib(raceEnd)}`}
+          sub={!ready ? undefined : !started ? `until ${utc(SPOT_START)}` : phase === "bids" ? `bids close ${utc(bidsClose)}` : `votes close ${utc(raceEnd)}`}
         />
         <Cell label="ETH PAID TO HOLDERS" v={live ? (d ? `${eth(d.paid)} ETH` : undefined) : "0 ETH"} sub="All weeks, set aside for voters to claim" />
         <Cell label="$STOA BURNED BY SPOTLIGHT" v={live ? (d ? stoaN(d.burned) : undefined) : "0"} sub={d && d.pot > 0n ? `${eth(d.pot)} ETH waiting to buy and burn` : "10% of winning bids plus entry fees"} />
@@ -133,8 +133,8 @@ export default function SpotlightBody() {
         <div className="lbl">THE RULES</div>
         <ul className="list">
           <li>Slots per week <b>{SLOTS}</b></li>
-          <li>Bids <b>Mon 07:00 to Sat 07:00 WIB</b></li>
-          <li>Votes <b>Until Mon 07:00 WIB</b></li>
+          <li>Bids <b>Mon 00:00 to Sat 00:00 UTC</b></li>
+          <li>Votes <b>Until Mon 00:00 UTC</b></li>
           <li>Winners <b>Largest bids with at least 1M $STOA of votes</b></li>
           <li>To voters <b>90% of the winning bid, pro rata</b></li>
           <li>To burn <b>10% of winning bids + entry fees</b></li>
@@ -230,7 +230,7 @@ function ThisWeek({ prev, meta, e, onSettled }: { prev: SpotEpoch | null; meta?:
   return (
     <div className="panel pad">
       <div className="rowx"><div className="lbl">THIS WEEK&apos;S SPOTLIGHT</div><span className="chip">Sponsored · chosen by $STOA holders</span></div>
-      {e < 1 && <p style={{ marginTop: 10 }}>The first winners show here, and on Trade, Launches and Tokens, from {wib(epochStart(1))}.</p>}
+      {e < 1 && <p style={{ marginTop: 10 }}>The first winners show here, and on Trade, Launches and Tokens, from {utc(epochStart(1))}.</p>}
       {e >= 1 && prev && !prev.finalized && (
         <div style={{ marginTop: 10 }}>
           <p>Week {prev.epoch + 1} has closed and is waiting to be settled. Anyone can settle it: it picks the winners and makes their ETH claimable. It only costs gas.</p>
@@ -387,7 +387,7 @@ function HolderPanel({ race, started, paused, onDone }: { race: number; started:
         <li>In your wallet <b>{stoaN(bal) ?? "—"} STOA</b></li>
         <li>Locked, voting <b>{stoaN(active)} STOA</b></li>
         <li>Free to vote or unlock this week <b>{stoaN(avail)} STOA</b></li>
-        <li>Unlocking <b>{stoaN(pending)} STOA{pending > 0n ? ` · ${unlockAt <= now ? "ready to withdraw" : `from ${wib(Number(unlockAt))}`}` : ""}</b></li>
+        <li>Unlocking <b>{stoaN(pending)} STOA{pending > 0n ? ` · ${unlockAt <= now ? "ready to withdraw" : `from ${utc(Number(unlockAt))}`}` : ""}</b></li>
       </ul>
       <input className="inp" inputMode="decimal" placeholder="Amount of $STOA" value={amt} onChange={(x) => setAmt(x.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, ""))} />
       {raw !== undefined && raw > 0n && (allow ?? 0n) < raw
@@ -399,8 +399,8 @@ function HolderPanel({ race, started, paused, onDone }: { race: number; started:
       {note}
       <p className="note">
         {started
-          ? `Unlocked $STOA can be withdrawn when week ${race + 1} ends (${wib(epochStart(race + 1))}). $STOA that voted this week can be unlocked from next week.`
-          : `Locked $STOA can vote from ${wib(SPOT_START)}. Unlocking before then is ready at that time.`}{" "}
+          ? `Unlocked $STOA can be withdrawn when week ${race + 1} ends (${utc(epochStart(race + 1))}). $STOA that voted this week can be unlocked from next week.`
+          : `Locked $STOA can vote from ${utc(SPOT_START)}. Unlocking before then is ready at that time.`}{" "}
         Locking earns nothing by itself: you earn when a token you voted for wins. Team and dev wallets do not lock or vote.
       </p>
     </div>

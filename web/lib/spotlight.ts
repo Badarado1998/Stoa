@@ -58,11 +58,11 @@ export const epochStart = (e: number) => SPOT_START + e * WEEK;
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-/** "Mon 23 Nov, 07:00 WIB" (UTC+7, the team's time zone) */
-export function wib(ts: number) {
-  const d = new Date((ts + 7 * 3600) * 1000);
+/** "Mon 23 Nov, 00:00 UTC" */
+export function utc(ts: number) {
+  const d = new Date(ts * 1000);
   const hh = String(d.getUTCHours()).padStart(2, "0"), mm = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${hh}:${mm} WIB`;
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${hh}:${mm} UTC`;
 }
 /** "2d 4h", "3h 12m", "45s" */
 export function left(sec: number) {

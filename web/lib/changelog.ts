@@ -19,7 +19,7 @@ export const CHANGES: Change[] = [
     items: [
       "The Spotlight page now shows how much $STOA is locked and can vote, and how many holders locked it, read live from the contract.",
       "A bar shows progress toward the votes the three weekly slots need: each winning token needs 1M $STOA of votes, so 3M fills every slot.",
-      "Week 1 opens Mon 23 Nov, 07:00 WIB. $STOA locked before then votes from the first minute.",
+      "Week 1 opens Mon 23 Nov, 00:00 UTC. $STOA locked before then votes from the first minute.",
     ],
     link: { href: "/spotlight", label: "Spotlight" },
   },
@@ -256,7 +256,7 @@ export const CHANGES: Change[] = [
     items: [
       "Every week projects bid ETH for three sponsored slots on Stoa: the top of Trade's token list, Launches and Tokens, marked Sponsored.",
       "$STOA holders lock and vote. The three largest bids with at least 1M $STOA of votes win; 90% of each goes to the holders who voted for it, 10% buys $STOA and burns it, and losing bids are refunded.",
-      "The contract is deployed and source-verified, so holders can lock $STOA now. Week 1 opens Monday 23 November, 07:00 WIB. The contract is reviewed in the internal security review (29 unit and attack tests, a fork test on Robinhood Chain, Slither); it is not externally audited.",
+      "The contract is deployed and source-verified, so holders can lock $STOA now. Week 1 opens Monday 23 November, 00:00 UTC. The contract is reviewed in the internal security review (29 unit and attack tests, a fork test on Robinhood Chain, Slither); it is not externally audited.",
     ],
     link: { href: "/spotlight", label: "Open Spotlight" },
   },

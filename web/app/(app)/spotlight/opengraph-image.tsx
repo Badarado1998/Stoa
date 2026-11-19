@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { BLUE, MUTED, OG_SIZE, OgFrame, ogFonts } from "@/lib/og";
-import { SPOT_START, epochAt, wib } from "@/lib/spotlight";
+import { SPOT_START, epochAt, utc } from "@/lib/spotlight";
 
 // Link card for /spotlight: what it is, and the week in progress (or when week 1 opens).
 export const revalidate = 300;
@@ -11,7 +11,7 @@ export const alt = "Stoa Spotlight: projects bid ETH for sponsored slots, $STOA 
 export default async function Image() {
   const now = Math.floor(Date.now() / 1000);
   const e = epochAt(now);
-  const foot = e < 0 ? `WEEK 1 OPENS ${wib(SPOT_START).toUpperCase()}` : `WEEK ${e + 1} IS OPEN · ROBINHOOD CHAIN`;
+  const foot = e < 0 ? `WEEK 1 OPENS ${utc(SPOT_START).toUpperCase()}` : `WEEK ${e + 1} IS OPEN · ROBINHOOD CHAIN`;
   const steps: [string, string, string][] = [
     ["1", "Projects bid ETH", "for 3 sponsored slots a week"],
     ["2", "Holders lock $STOA", "and vote for the projects"],
