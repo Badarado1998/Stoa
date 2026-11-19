@@ -1,4 +1,5 @@
 "use client";
+import { VenueIcons, venueIds } from "./VenueIcons";
 import { useQuery } from "@tanstack/react-query";
 import { parseAbi, type Address, type PublicClient } from "viem";
 import type { Net } from "@/lib/networks";
@@ -85,7 +86,7 @@ export default function VenueCompare({ net, pub, sell, buy, amt, route, out, blo
         {rows.map((r) => {
           const on = lc(r.venue) === used;
           return [
-            <span key={r.venue + "n"} style={on ? { color: "var(--ink)", fontWeight: 600 } : undefined}>{on ? "✓ " : ""}{r.name}</span>,
+            <span key={r.venue + "n"} style={{ display: "flex", alignItems: "center", gap: 8, ...(on ? { color: "var(--ink)", fontWeight: 600 } : {}) }}><VenueIcons ids={venueIds(r.name).slice(0, 1)} />{on ? "✓ " : ""}{r.name}</span>,
             <span key={r.venue + "v"} style={on ? { color: "var(--accent)", fontWeight: 600 } : undefined}>{fmtAmt(r.out, d)} {sym}</span>,
           ];
         })}
