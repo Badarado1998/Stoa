@@ -12,10 +12,11 @@ contract DeployStoaCrossBuy is Script {
 
     function run() external returns (StoaCrossBuy cb) {
         require(block.chainid == 4663, "Robinhood Chain only");
-        vm.startBroadcast(vm.envUint("ROBINHOOD_DEPLOYER_PRIVATE_KEY"));
+        vm.startBroadcast();
         cb = new StoaCrossBuy(StoaRouter(payable(LIVE_ROUTER)));
         vm.stopBroadcast();
         require(address(cb.router()) == LIVE_ROUTER, "router");
+        vm.writeJson(vm.serializeAddress("s", "crossBuy", address(cb)), "deployments/4663-crossbuy.json");
         console2.log("StoaCrossBuy", address(cb));
     }
 }

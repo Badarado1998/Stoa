@@ -1,0 +1,67 @@
+name: Deploy StoaCrossBuy (Robinhood Chain)
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys StoaCrossBuy, the destination step of "buy any token from another chain": delivered ETH is swapped through
+# the live Stoa router for the buyer, or sent back to the buyer if the swap fails. No owner, no settings, no storage;
+# nothing in governance changes. Verifies it on Sourcify.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transaction (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          echo "Deployer: $(cast wallet address --private-key "$PK") · $(cast balance $(cast wallet address --private-key "$PK") --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+
+      - name: Fork test - $STOA, USDG and a Pons curve token through the live router, and every refund path
+        run: forge test --match-contract ForkRobinhoodCrossBuy -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployStoaCrossBuy.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-crossbuy.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          M=$(jq -r .crossBuy deployments/4663-crossbuy.json)
+          forge verify-contract $M src/tools/StoaCrossBuy.sol:StoaCrossBuy --verifier sourcify --chain 4663 \
+            --constructor-args $(cast abi-encode "c(address)" 0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5) || true
+
+      - name: Check the deployed contract
+        if: ${{ inputs.broadcast }}
+        run: |
+          M=$(jq -r .crossBuy deployments/4663-crossbuy.json)
+          echo "router $(cast call $M 'router()(address)' --rpc-url "$ROBINHOOD_RPC_URL")"
+          echo "::notice::StoaCrossBuy deployed at $M"
