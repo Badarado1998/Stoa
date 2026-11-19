@@ -225,7 +225,7 @@ function Panel() {
   const disabled = isConnected && (!quote || tooMuch || loading || busy);
 
   return (
-    <div className="panel pad" style={{ marginTop: 16 }}>
+    <div className="panel pad" id="anychain" style={{ marginTop: 16 }}>
       <div className="rowx"><div className="lbl">BUY $STOA FROM ANY CHAIN</div><span className="chip">via Trustware · Relay</span></div>
       {phase.k === "done" ? (
         <div>

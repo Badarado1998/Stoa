@@ -18,6 +18,11 @@ export default function BridgePage() {
       <PageHead eyebrow="BRIDGE IN" title="Bring funds to Robinhood Chain">
         Send ETH or stablecoins from another chain and they arrive in the same wallet on Robinhood Chain, ready to swap on Stoa.
       </PageHead>
+      <Link href="/token#anychain" className="spotban bar" style={{ marginBottom: 16 }}>
+        <span className="sb-dot" aria-hidden="true" />
+        <span className="sb-t">Want $STOA? Buy it straight from Base, Arbitrum, Ethereum, Optimism or BNB Chain</span>
+        <span className="sb-go">Buy $STOA →</span>
+      </Link>
       <BridgePanel />
       <div className="panel pad" style={{ marginTop: 16 }}>
         <div className="lbl">GOOD TO KNOW</div>

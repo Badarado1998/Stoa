@@ -21,7 +21,7 @@ export const RELAY_DEPOSITORY = "0x4cD00E387622C35bDDB9b4c962C136462338BC31" as 
 /** The most one purchase may move while the delivery side cannot be checked before signing */
 export const MAX_USD = 500;
 /** Shown to everyone once enabled; until then only with ?preview=anychain on /token */
-export const ANYCHAIN_PUBLIC = false;
+export const ANYCHAIN_PUBLIC = true;
 /** Relay Depository calls; a token deposit carries no native value */
 const ABI = parseAbi([
   "function depositNative(address depositor, bytes32 id) payable",

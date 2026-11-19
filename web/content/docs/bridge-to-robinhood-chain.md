@@ -41,6 +41,8 @@ Bridge in works with regular wallets. A smart-contract wallet (a Safe or a smart
 
 When the transfer lands, the funds are in the same address on Robinhood Chain. Tap **Swap on Stoa** to go to [Trade](https://stoadex.com/trade?chain=robinhood) with them selected. Keep a little ETH for gas.
 
+Only want $STOA? Skip the bridge and swap: [Buy $STOA from any chain](https://stoadex.com/token#anychain) pays on the source chain and delivers $STOA on Robinhood Chain in one step (up to $500 per purchase for now). See [How to buy $STOA](buy-stoa.md).
+
 ## If something looks wrong
 
 - The page shows the source transaction and a tracking link while the transfer is on its way. You can close the page; the funds still arrive.

@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "anychain-buy",
+    date: "2026-11-19",
+    title: "Buy $STOA from any chain",
+    tag: "$STOA",
+    items: [
+      "Pay with ETH or stablecoins on Base, Arbitrum, Ethereum, Optimism or BNB Chain, and $STOA arrives in the same wallet on Robinhood Chain, routed by Trustware through Relay.",
+      "Before your wallet opens, Stoa checks the deposit goes to Relay's Depository from your own address with exactly the token and amount you picked, values the purchase at its own prices, and shows how much less $STOA the route gives than Stoa's price.",
+      "Up to $500 per purchase for now. The page says done only once the $STOA is in your wallet on Robinhood Chain.",
+    ],
+    link: { href: "/token#anychain", label: "Buy $STOA" },
+  },
+  {
     id: "spotlight-projects",
     date: "2026-11-19",
     title: "Spotlight for projects",

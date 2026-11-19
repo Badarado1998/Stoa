@@ -16,6 +16,17 @@ $STOA launched on [Pons](https://ponsfamily.com/launchpad/0x13E6993417616De724F2
 | Stoa | Swap ETH, or any token Stoa routes, for $STOA. Stoa fills it in the V4 pool |
 | Pons | Open $STOA on Pons and buy with ETH; it trades the same pool |
 
+## Buy from another chain
+
+Hold ETH or stablecoins on Base, Arbitrum, Ethereum, Optimism or BNB Chain? Use **Buy $STOA from any chain** on the [$STOA page](https://stoadex.com/token#anychain): you pay on the source chain and $STOA arrives in the same wallet on Robinhood Chain, usually within a minute.
+
+- **How it is routed.** [Trustware](https://trustware.io) routes it through Relay: you deposit into Relay's Depository on the source chain, and Relay delivers $STOA on Robinhood Chain.
+- **What Stoa checks before your wallet opens.** The deposit goes to Relay's Depository, from your own address, with exactly the token and amount you picked; any approval is for that amount only. Stoa values the purchase at its own prices, not the route's.
+- **Limit.** Up to $500 per purchase for now, because the delivery details sit in Relay's order, which Stoa cannot check before you sign yet.
+- **Costs.** The route's fees (Relay and Trustware) are shown before you sign, with how much less $STOA you get than Stoa's own price. Stoa adds no fee of its own.
+- **Wallets.** A regular wallet only: $STOA arrives at the same address, which a smart wallet may not control on Robinhood Chain.
+- **Done means delivered.** The page shows done only once Robinhood Chain shows the $STOA in your wallet, at least the minimum shown.
+
 ## Buy on Stoa, step by step
 
 1. Open [stoadex.com/trade?chain=robinhood&buy=0x13E6993417616De724F2b337D65063f229e96718](https://stoadex.com/trade?chain=robinhood&buy=0x13E6993417616De724F2b337D65063f229e96718). The link selects Robinhood Chain and $STOA for you.
