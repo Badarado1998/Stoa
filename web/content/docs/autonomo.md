@@ -18,6 +18,8 @@ Two of Stoa's APIs are listed on Autonomo as paid x402 endpoints, so an agent th
 | `https://autonomo.fun/x/stoa-safety` | Stoa's safety check for a Robinhood Chain token: a test buy and sell through Stoa's router, simulated on the live chain, hidden taxes, and who holds the supply | $0.01 a call |
 | `https://autonomo.fun/x/stoa-quote` | A swap quote on Robinhood Chain, and with a `taker` the ready-to-sign transaction (the approval is for the exact amount, never unlimited) | $0.01 a call |
 
+Listings: [Stoa Token Safety Check](https://autonomo.fun/projects/stoa-token-safety-check-robinhood-chain) and [Stoa Swap Quote](https://autonomo.fun/projects/stoa-swap-quote-robinhood-chain), also in [autonomo.fun/llms.txt](https://autonomo.fun/llms.txt), the file agents read to find APIs.
+
 Pay in USDG or $AUTONOMO on Robinhood Chain, or USDC on Base. The same data is free and keyless straight from Stoa (`stoadex.com/api/safety/robinhood/{token}`, `stoadex.com/api/v1/quote`, and the MCP server below); the Autonomo listings are for agents that find and pay for APIs through Autonomo.
 
 ## With MCP
