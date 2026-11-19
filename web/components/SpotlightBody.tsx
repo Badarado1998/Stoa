@@ -176,9 +176,18 @@ function LockCounter({ quorum, started, race }: { quorum?: bigint; started: bool
       return { voting, holders: n };
     },
   });
+  // the server's figure (edge-cached) shows at once and stands in if the browser's own log read is slow or refused
+  const api = useQuery({
+    queryKey: ["spot-api-locked"],
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const j = (await (await fetch("/api/v1/spotlight")).json()) as { stoaLocked?: number };
+      return typeof j.stoaLocked === "number" ? parseUnits(j.stoaLocked.toFixed(6), 18) : undefined;
+    },
+  });
   const need = quorum ?? M;
   const full = need * BigInt(SLOTS);
-  const v = q.data?.voting;
+  const v = q.data?.voting ?? api.data;
   const slots = v === undefined ? 0 : Math.min(SLOTS, Number(v / need));
   const pct = v === undefined ? 0 : Math.min(100, Number((v * 1000n) / full) / 10);
   const toNext = v === undefined || slots >= SLOTS ? 0n : need * BigInt(slots + 1) - v;
