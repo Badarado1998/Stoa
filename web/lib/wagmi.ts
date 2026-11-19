@@ -2,7 +2,7 @@ import { createConfig, http, fallback } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
 import { elysium, RPCS } from "./chain";
 import { robinhood } from "./networks";
-import { SOURCES } from "./bridge";
+import { SOURCES, SOURCE_RPCS } from "./bridge";
 
 const wc = process.env.NEXT_PUBLIC_WC_PROJECT_ID;
 // JSON-RPC batching per endpoint: dRPC's free plan rejects batches of more than 3 calls
@@ -24,7 +24,7 @@ export const wagmiConfig = createConfig({
   transports: {
     [elysium.id]: RPCS.length ? fallback(RPCS.map(rpc), { rank: false, retryCount: 1 }) : http(),
     [robinhood.id]: fallback(rhRpcs.map(rpc), { rank: false, retryCount: 1 }),
-    ...Object.fromEntries(SOURCES.map((s) => [s.chain.id, http()])),
+    ...Object.fromEntries(SOURCES.map((s) => [s.chain.id, fallback((SOURCE_RPCS[s.chain.id] ?? []).map((u) => http(u)).concat(http()), { rank: false, retryCount: 1 })])),
   },
   ssr: true,
 });

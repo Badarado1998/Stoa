@@ -4,7 +4,7 @@ import { createPublicClient, fallback, http, isAddress, parseAbi, type Address, 
 import { ROBINHOOD } from "./networks";
 import { srv } from "@/lib/serverRpc";
 import { STOA_RH } from "./anychain";
-import { SOURCES } from "./bridge";
+import { SOURCES, SOURCE_RPCS } from "./bridge";
 import { computeGuard, guardRoute, type Guard } from "./v4guard";
 
 /** Stoa's signature of a quote it issued: the Trustware intent id, the buyer, the source chain and the Relay order id
@@ -44,20 +44,27 @@ export function readTicket(v: { intentId?: unknown; user?: unknown; chainId?: un
 /** true when a JSON body was sent as JSON (a text/plain body from another site's page is refused) */
 export const isJson = (req: Request) => (req.headers.get("content-type") ?? "").toLowerCase().split(";")[0].trim() === "application/json";
 
-const SOURCE_RPC: Record<number, string> = {
-  1: "https://ethereum-rpc.publicnode.com", 8453: "https://base-rpc.publicnode.com", 42161: "https://arb1.arbitrum.io/rpc",
-  10: "https://mainnet.optimism.io", 56: "https://bsc-rpc.publicnode.com",
-};
 /** a read-only client for a source chain */
 export function sourceClient(chainId: number) {
   const s = SOURCES.find((x) => x.chain.id === chainId)!;
   const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 8_000 };
-  return createPublicClient({ chain: s.chain, transport: fallback([http(SOURCE_RPC[chainId], ua), http(undefined, ua)]) });
+  return createPublicClient({ chain: s.chain, transport: fallback((SOURCE_RPCS[chainId] ?? []).map((u) => http(u, ua))) });
 }
 
 const routerAbi = parseAbi(["function quote(address,address,uint256) returns ((uint256 amountOut, address mid, (address venue, bool isPool) leg1, (address venue, bool isPool) leg2))"]);
 const USDG = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
+
+/** The V4 guard, quickly: Stoa's own /api/v1/v4-guard answer (cached at the edge for a minute) when it is a real one,
+ *  else computed here within 6 s; otherwise it rejects, and the caller treats every pair as suspect. */
+async function guardFast(): Promise<Guard> {
+  try {
+    const r = await fetch("https://stoadex.com/api/v1/v4-guard", { signal: AbortSignal.timeout(3_000), headers: { "user-agent": "stoa-server" } });
+    const g = (await r.json()) as Guard;
+    if (r.ok && Array.isArray(g.poisoned) && !g.poisoned.includes("*") && typeof g.oldInRouter === "boolean") return g;
+  } catch { /* compute it */ }
+  return Promise.race([computeGuard(), new Promise<Guard>((_, no) => setTimeout(() => no(new Error("slow")), 6_000))]);
+}
 
 /** Stoa's own prices from its router on Robinhood Chain: USD per ETH (0.01 ETH → USDG) and $STOA per USD (10 USDG →
  *  $STOA). Either is null when the chain does not answer. */
@@ -68,7 +75,7 @@ export async function stoaPrices(): Promise<{ ethUsd: number | null; stoaPerUsd:
   const [e, s, g] = await Promise.allSettled([
     c.simulateContract({ address: router, abi: routerAbi, functionName: "quote", args: [ZERO, USDG, 10n ** 16n] }),
     c.simulateContract({ address: router, abi: routerAbi, functionName: "quote", args: [USDG, STOA_RH, 10n * 10n ** 6n] }),
-    Promise.race([computeGuard(), new Promise<Guard>((_, no) => setTimeout(() => no(new Error("slow")), 6_000))]),
+    guardFast(),
   ]);
   // the ETH price goes through the same V4 guard as every other Stoa quote (lib/v4guard). When the guard can't be
   // read in time, every pair counts as suspect and the price is read without the first V4 adapter, as /api/v1/quote does.

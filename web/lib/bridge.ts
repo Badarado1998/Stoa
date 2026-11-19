@@ -18,6 +18,17 @@ export interface BridgeSource { key: string; name: string; chain: Chain; tokens:
 const ETH: BridgeToken = { symbol: "ETH", address: NATIVE_ZERO, decimals: 18 };
 
 /** Source chains and tokens, each quoted into Robinhood Chain through LI.FI on 18 Nov 2026. */
+/** Public RPCs for the source chains, first one first. viem's defaults for Ethereum (cloudflare-eth) and BNB Chain
+ *  (ankr, now key-only) no longer answer, which left balances, allowances and receipts unread on those chains. All of
+ *  these answer browser requests (CORS). */
+export const SOURCE_RPCS: Record<number, string[]> = {
+  1: ["https://ethereum-rpc.publicnode.com", "https://eth.drpc.org"],
+  8453: ["https://mainnet.base.org", "https://base-rpc.publicnode.com"],
+  42161: ["https://arb1.arbitrum.io/rpc", "https://arbitrum-one-rpc.publicnode.com"],
+  10: ["https://mainnet.optimism.io", "https://optimism-rpc.publicnode.com"],
+  56: ["https://bsc-dataseed.bnbchain.org", "https://bsc-rpc.publicnode.com"],
+};
+
 export const SOURCES: BridgeSource[] = [
   { key: "base", name: "Base", chain: base, tokens: [ETH, { symbol: "USDC", address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6 }] },
   { key: "arbitrum", name: "Arbitrum", chain: arbitrum, tokens: [ETH, { symbol: "USDC", address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", decimals: 6 }, { symbol: "USDT0", address: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", decimals: 6 }] },
