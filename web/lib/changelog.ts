@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "spotlight-votes-ready",
+    date: "2026-11-19",
+    title: "Spotlight: votes ready counter",
+    tag: "$STOA",
+    items: [
+      "The Spotlight page now shows how much $STOA is locked and can vote, and how many holders locked it, read live from the contract.",
+      "A bar shows progress toward the votes the three weekly slots need: each winning token needs 1M $STOA of votes, so 3M fills every slot.",
+      "Week 1 opens Mon 23 Nov, 07:00 WIB. $STOA locked before then votes from the first minute.",
+    ],
+    link: { href: "/spotlight", label: "Spotlight" },
+  },
+  {
     id: "mcp-market-context",
     date: "2026-11-18",
     title: "MCP: market context from CoinMarketCap",

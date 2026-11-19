@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { BaseError, erc20Abi, isAddress, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
+import { BaseError, erc20Abi, isAddress, parseAbiItem, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
 import { useAccount, usePublicClient, useReadContracts, useWriteContract } from "wagmi";
 import { ROBINHOOD, addressUrlOn, txUrlOn } from "@/lib/networks";
 import { CA as STOA } from "@/lib/stoaToken";
@@ -17,6 +17,8 @@ const net = ROBINHOOD;
 const M = 10n ** 24n; // 1M $STOA
 const eth = (v?: bigint, d = 4) => (v === undefined ? undefined : fmt(v, 18, d));
 const stoaN = (v?: bigint) => (v === undefined ? undefined : Number(v / 10n ** 18n).toLocaleString("en-US"));
+/** 1000000e18 → "1M", 2500000e18 → "2.5M" */
+const mil = (v: bigint) => `${Number(v / 10n ** 21n) / 1000}M`;
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const errText = (e: unknown) => (e instanceof BaseError ? e.shortMessage : (e as Error).message);
 
@@ -120,6 +122,7 @@ export default function SpotlightBody() {
         <Cell label="$STOA BURNED BY SPOTLIGHT" v={live ? (d ? stoaN(d.burned) : undefined) : "0"} sub={d && d.pot > 0n ? `${eth(d.pot)} ETH waiting to buy and burn` : "10% of winning bids plus entry fees"} />
       </div>
 
+      {live && ready && <LockCounter quorum={d?.cur.params.quorum} started={started} race={race} />}
       {ready && <ThisWeek prev={d?.prev ?? null} meta={d?.meta} e={e} onSettled={() => void data.refetch()} />}
       {live && started && d && <Race ep={d.cur} meta={d.meta} mine={d.mine} phase={phase} onDone={() => void data.refetch()} />}
       {live && ready && <HolderPanel race={race} started={started} paused={!!d?.paused} onDone={() => void data.refetch()} />}
@@ -143,6 +146,66 @@ export default function SpotlightBody() {
           {SPOT && <> · <a href={addressUrlOn(net, SPOT)} target="_blank" rel="noopener noreferrer">Contract</a></>}
         </p>
       </div>
+    </div>
+  );
+}
+
+/** How much $STOA is locked and can vote, against what the slots need: each winning token needs `quorum` votes, so
+ *  SLOTS × quorum of voting $STOA is enough to fill every slot. Counted from Locked events and each holder's active
+ *  balance (pending unlocks don't vote). */
+function LockCounter({ quorum, started, race }: { quorum?: bigint; started: boolean; race: number }) {
+  const pub = usePublicClient({ chainId: net.chain.id });
+  const q = useQuery({
+    queryKey: ["spot-lockers"],
+    enabled: !!pub,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const lockedEv = parseAbiItem("event Locked(address indexed holder, uint256 amount)");
+      const logs = (await getLogsOn(net, { address: SPOT!, event: lockedEv, fromBlock: net.deployBlock })) as unknown as { args: { holder: Address } }[];
+      const holders = [...new Set(logs.map((l) => l.args.holder.toLowerCase()))] as Address[];
+      if (!holders.length) return { voting: 0n, holders: 0 };
+      const accts = await pub!.multicall({ contracts: holders.map((h) => ({ address: SPOT!, abi: spotlightAbi, functionName: "accounts", args: [h] })), allowFailure: false });
+      let voting = 0n, n = 0;
+      for (const a of accts as unknown as (readonly [bigint, bigint, bigint])[]) { if (a[0] > 0n) { voting += a[0]; n++; } }
+      return { voting, holders: n };
+    },
+  });
+  const need = quorum ?? M;
+  const full = need * BigInt(SLOTS);
+  const v = q.data?.voting;
+  const slots = v === undefined ? 0 : Math.min(SLOTS, Number(v / need));
+  const pct = v === undefined ? 0 : Math.min(100, Number((v * 1000n) / full) / 10);
+  const toNext = v === undefined || slots >= SLOTS ? 0n : need * BigInt(slots + 1) - v;
+  return (
+    <div className="panel pad">
+      <div className="rowx">
+        <div className="lbl">{started ? `VOTES READY · WEEK ${race + 1}` : "VOTES READY FOR WEEK 1"}</div>
+        <span className="chip">{q.data ? `${q.data.holders} ${q.data.holders === 1 ? "holder" : "holders"} locked` : "…"}</span>
+      </div>
+      <div style={{ fontFamily: "var(--mono)", fontSize: 24, marginTop: 6 }}>
+        {v === undefined ? <Sk w={160} /> : <>{stoaN(v)} <small style={{ fontSize: 14, color: "var(--muted)" }}>/ {stoaN(full)} $STOA</small></>}
+      </div>
+      <div role="progressbar" aria-label="Locked $STOA toward filling all slots" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}
+        style={{ position: "relative", height: 10, borderRadius: 10, background: "rgba(47,111,214,.12)", marginTop: 12, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 10, background: "var(--accent)", transition: "width .6s ease" }} />
+        {Array.from({ length: SLOTS - 1 }, (_, i) => (
+          <span key={i} style={{ position: "absolute", top: 0, bottom: 0, left: `${((i + 1) * 100) / SLOTS}%`, width: 2, background: "#fff" }} />
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${SLOTS},1fr)`, marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
+        {Array.from({ length: SLOTS }, (_, i) => (
+          <span key={i} style={{ textAlign: "right", color: slots > i ? "var(--accent-d)" : undefined, fontWeight: slots > i ? 600 : undefined }}>
+            {mil(need * BigInt(i + 1))} · {i + 1} {i === 0 ? "slot" : "slots"}{slots > i ? " ✓" : ""}
+          </span>
+        ))}
+      </div>
+      <p className="note" style={{ marginTop: 10 }}>
+        Each winning token needs {stoaN(need)} $STOA of votes. {v === undefined ? "" : slots >= SLOTS
+          ? "Enough $STOA is locked to fill all three slots."
+          : `${stoaN(toNext)} more locked $STOA ${slots === 0 ? "lets the first slot be won" : `opens slot ${slots + 1}`}.`}{" "}
+        Holders split their votes across tokens, so this is the most that can win, not a promise. Without votes, bids are refunded and nobody earns.
+      </p>
+      {slots < SLOTS && <a className="cta" href="#lock" style={{ marginTop: 12 }}>Lock $STOA</a>}
     </div>
   );
 }
@@ -316,9 +379,9 @@ function HolderPanel({ race, started, paused, onDone }: { race: number; started:
   const btn = (label: string, on: () => void, disabled: boolean) => (
     <button className="ghost" type="button" disabled={!!busy || disabled} onClick={on} style={{ marginRight: 8, marginTop: 8 }}>{busy === label ? `${label}…` : label}</button>
   );
-  if (!isConnected) return <div className="panel pad"><div className="lbl">YOUR $STOA</div><p className="note">Connect a wallet on Robinhood Chain to lock $STOA, vote and claim ETH.</p><button className="cta" type="button" onClick={open}>Connect wallet</button></div>;
+  if (!isConnected) return <div className="panel pad" id="lock"><div className="lbl">YOUR $STOA</div><p className="note">Connect a wallet on Robinhood Chain to lock $STOA, vote and claim ETH.</p><button className="cta" type="button" onClick={open}>Connect wallet</button></div>;
   return (
-    <div className="panel pad">
+    <div className="panel pad" id="lock">
       <div className="lbl">YOUR $STOA</div>
       <ul className="list">
         <li>In your wallet <b>{stoaN(bal) ?? "—"} STOA</b></li>
