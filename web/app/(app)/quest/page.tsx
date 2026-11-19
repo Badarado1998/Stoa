@@ -15,14 +15,14 @@ export default function QuestPage() {
     ["1", "Follow @StoaDex on X", <>Opened from the quest page on Zealy.</>],
     ["2", "Quote the quest post on X", <>Add a line of your own and paste the link on Zealy.</>],
     ["3", `Swap $${QUEST.minUsd} or more on Stoa`, <>Any pair on Robinhood Chain, through <Link href="/trade">stoadex.com/trade</Link>. Checked on-chain.</>],
+    ["4", `Hold $${QUEST.holdUsd} of $STOA`, <>In your wallet or locked, when you claim. <Link href="/token">About $STOA</Link>. Checked on-chain.</>],
     ["+1", "Bonus: share a real result", <>Post a <Link href="/check">safety check</Link> result or your <Link href="/wrapped">Wrapped</Link> card on X and mention @StoaDex. More XP.</>],
     ["+1", "Bonus: lock any $STOA", <>In <Link href="/spotlight#lock">Spotlight</Link>, where it votes and earns the ETH projects bid. More XP. Checked on-chain.</>],
-    ["+1", `Bonus: hold $${QUEST.holdUsd} of $STOA`, <>In your wallet or locked, when you claim. <Link href="/token">About $STOA</Link>. More XP. Checked on-chain.</>],
   ];
   return (
     <section className="page" style={{ maxWidth: 760 }}>
       <PageHead eyebrow="QUEST · ROBINHOOD CHAIN" title={QUEST.name}>
-        Three tasks and three bonuses. {QUEST.winners} winners share {QUEST.pool}, run on Zealy.
+        Four tasks and two bonuses. {QUEST.winners} winners share {QUEST.pool}, run on Zealy.
       </PageHead>
       <div className="panel pad">
         <div className="rowx"><div className="lbl">THE TASKS</div><span className="chip">{questSpan()}</span></div>
@@ -37,7 +37,7 @@ export default function QuestPage() {
       <details className="panel pad fold-panel" style={{ marginTop: 16 }}>
         <summary className="lbl">RULES</summary>
         <ul className="qrules">
-          <li>{QUEST.winners} winners × $5 in $STOA ({QUEST.pool}), picked on Zealy after the quest closes from entrants who completed tasks 1 to 3. Bonuses add XP.</li>
+          <li>{QUEST.winners} winners × $5 in $STOA ({QUEST.pool}), picked on Zealy after the quest closes from entrants who completed tasks 1 to 4. Bonuses add XP.</li>
           <li>Only swaps through Stoa&apos;s router on Robinhood Chain between {questDate(QUEST.start)} and {questDate(QUEST.end)}, worth ${QUEST.minUsd} or more, count. Any pair.</li>
           <li>One entry per person. Wash trading, bot wallets and copies of one person are removed before the draw.</li>
           <li>Prizes are sent in $STOA on Robinhood Chain to the winning wallet within 7 days of the close. Stoa will never DM you or ask for a key or a payment.</li>
