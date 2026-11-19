@@ -865,3 +865,40 @@ details.fold[open] summary{margin-bottom:6px}
   .list li{flex-direction:column;gap:2px}
   .list li b{text-align:left}
 }
+
+/* home, under the 3D walk: the same stoa in line drawing. A temple front heads the section, each card is a fluted
+   column with a capital, and the safety notes stand as columns on three steps */
+.colo{display:block;width:min(520px,100%);height:auto;margin:0 auto 26px;fill:none;stroke:var(--ink);stroke-width:1.4;stroke-linejoin:round;opacity:.85}
+.colo path{stroke-dasharray:1400;stroke-dashoffset:1400;transition:stroke-dashoffset 2.2s cubic-bezier(.4,0,.2,1)}
+.colo .fine{stroke:var(--accent);stroke-width:1;opacity:.55}
+.hl-head.in .colo path{stroke-dashoffset:0}
+.hl-head{text-align:center}
+.hl-head p{margin-left:auto;margin-right:auto}
+.hl-card{padding-left:40px !important;overflow:hidden}
+.hl-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:22px;border-right:1px solid rgba(30,38,51,.08);background:repeating-linear-gradient(90deg,#F3F6FB 0 4px,#E3EAF4 4px 5px);}
+.hl-card:after{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(180deg,#E3EAF4,#F3F6FB);border-bottom:1px solid rgba(30,38,51,.08)}
+.hl-k2 span{letter-spacing:.14em}
+.hl-temple{margin-top:56px}
+.hl-ent{position:relative;text-align:center;padding:16px 12px 14px;background:#fff;border:1px solid #D6E5FA;border-radius:4px;opacity:0;transform:translateY(12px);transition:opacity .6s ease,transform .6s ease}
+.hl-ent.in{opacity:1;transform:none}
+.hl-ent:before{content:"";position:absolute;left:50%;bottom:100%;transform:translateX(-50%);width:0;height:0;border-left:min(46vw,440px) solid transparent;border-right:min(46vw,440px) solid transparent;border-bottom:34px solid #E9EFF8}
+.hl-ent .hl-k{font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--sans)}
+.hl-temple .hl-trust{margin-top:10px;gap:10px}
+.hl-temple .hl-trust a{position:relative;border-radius:2px;padding:18px 16px 18px 26px;background:linear-gradient(90deg,#fff 0,#fff 100%)}
+.hl-temple .hl-trust a:before{content:"";position:absolute;left:0;top:0;bottom:0;width:12px;background:repeating-linear-gradient(90deg,#F3F6FB 0 3px,#E3EAF4 3px 4px);border-right:1px solid #D6E5FA}
+.hl-steps{display:flex;flex-direction:column;align-items:center;margin-top:10px}
+.hl-steps i{display:block;height:9px;background:#fff;border:1px solid #D6E5FA;border-top:0}
+.hl-steps i:nth-child(1){width:100%;border-top:1px solid #D6E5FA}
+.hl-steps i:nth-child(2){width:calc(100% + 16px)}
+.hl-steps i:nth-child(3){width:calc(100% + 32px)}
+.hl-end{justify-content:center}
+@media (max-width:860px){
+  .hl-card{padding-left:30px !important}
+  .hl-card:before{width:14px}
+  .hl-ent:before{border-left-width:calc(50vw - 20px);border-right-width:calc(50vw - 20px);border-bottom-width:24px}
+  .hl-steps i:nth-child(2){width:calc(100% + 10px)}
+  .hl-steps i:nth-child(3){width:calc(100% + 20px)}
+  /* home hero: the four shortcut chips are in the menu; keep the hero to the address, the status, two buttons */
+  .herogo{display:none !important}
+}
+@media (prefers-reduced-motion:reduce){.colo path{stroke-dashoffset:0;transition:none}}

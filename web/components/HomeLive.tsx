@@ -41,6 +41,7 @@ export default function HomeLive() {
     <section id="live" className="homelive" ref={root}>
       <div className="hl-in">
         <div className="hl-head" data-in>
+          <Colonnade />
           <div className="hl-k">ON STOA TODAY</div>
           <h2>Everything you can do, in one place</h2>
           <p>Keep scrolling. Tap a card to open it.</p>
@@ -50,7 +51,7 @@ export default function HomeLive() {
             <Link key={f.t} href={f.h} className="hl-card" style={{ "--i": i } as React.CSSProperties} data-in>
               <div className="hl-vis" aria-hidden="true">{f.v}</div>
               <div className="hl-txt">
-                <div className="hl-k2"><span>{String(i + 1).padStart(2, "0")} · {f.k}</span>{f.tag && <b>{f.tag}</b>}</div>
+                <div className="hl-k2"><span>{ROMAN[i] ?? i + 1} · {f.k}</span>{f.tag && <b>{f.tag}</b>}</div>
                 <h3>{f.t}</h3>
                 <p>{f.d}</p>
                 <span className="hl-go">Open {f.t} →</span>
@@ -58,7 +59,8 @@ export default function HomeLive() {
             </Link>
           ))}
         </div>
-        <div className="hl-k hl-k-safe" data-in>HOW IT IS KEPT SAFE</div>
+        <div className="hl-temple">
+        <div className="hl-ent" data-in><span className="hl-k">HOW IT IS KEPT SAFE</span></div>
         <div className="hl-trust">
           {TRUST.map((t, i) => {
             const st = { "--d": `${i * 90}ms` } as React.CSSProperties;
@@ -68,12 +70,41 @@ export default function HomeLive() {
               : <Link key={t.b} href={t.h} data-in style={st}>{body}</Link>;
           })}
         </div>
+        <div className="hl-steps" aria-hidden="true"><i /><i /><i /></div>
+        </div>
         <div className="btns hl-end" data-in>
           <Link className="cta" href="/trade">Start trading</Link>
           <Link className="ghost" href="/docs">Read the docs</Link>
         </div>
       </div>
     </section>
+  );
+}
+
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+
+/** A temple front drawn in line: pediment, entablature, six fluted columns and three steps. It draws itself when the
+ *  section comes into view. Decoration only. */
+function Colonnade() {
+  const cols = [0, 1, 2, 3, 4, 5].map((i) => 70 + i * 92);
+  return (
+    <svg className="colo" viewBox="0 0 600 230" aria-hidden="true">
+      <path d="M40 74 L300 14 L560 74 Z" />
+      <path d="M58 66 L300 26 L542 66" className="fine" />
+      <path d="M30 74 H570 V92 H30 Z" />
+      <path d="M36 100 H564" className="fine" />
+      {cols.map((x) => (
+        <g key={x}>
+          <path d={`M${x - 20} 104 H${x + 20} V112 H${x - 20} Z`} />
+          <path d={`M${x - 14} 112 V186 M${x + 14} 112 V186`} />
+          <path d={`M${x - 5} 116 V182 M${x + 5} 116 V182`} className="fine" />
+          <path d={`M${x - 20} 186 H${x + 20} V194 H${x - 20} Z`} />
+        </g>
+      ))}
+      <path d="M24 194 H576 V202 H24 Z" />
+      <path d="M14 202 H586 V210 H14 Z" />
+      <path d="M4 210 H596 V218 H4 Z" />
+    </svg>
   );
 }
 
