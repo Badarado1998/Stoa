@@ -732,7 +732,7 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
   .mnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:600;text-decoration:none}
   .mnav a.on{color:var(--accent)}
   #app{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
-  .hdr .menu-btn{display:none}
+  body:has(.mnav) .hdr .menu-btn{display:none}
   .foot .cols{display:none !important}
   .show-m{display:flex !important}
   .toasts{bottom:calc(80px + env(safe-area-inset-bottom))}
