@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   title: { default: "Stoa — Every route, compared. Swaps on Robinhood Chain and Elysium", template: "%s · Stoa" },
   description: "A swap router on Robinhood Chain and Elysium. Every swap is compared across every venue the router uses, for your exact amount, and filled on the one that pays the most.",
   // no fixed title or url here, so each page's own title is used when a link is shared
-  openGraph: { description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", siteName: "Stoa", type: "website", images: [{ url: "/og-v4.png", width: 1200, height: 630, alt: "Stoa: every route, compared. Swaps on Robinhood Chain and Elysium" }] },
-  twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", images: ["/og-v4.png"] },
+  openGraph: { description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", siteName: "Stoa", type: "website", images: [{ url: "/og-v5.png", width: 1200, height: 630, alt: "Stoa: every route, compared. Swaps on Robinhood Chain and Elysium" }] },
+  twitter: { card: "summary_large_image", site: "@StoaDex", description: "Swap on Robinhood Chain and Elysium. Every venue the router uses, compared on every swap.", images: ["/og-v5.png"] },
   // installed as an app (manifest.ts): name and status bar on iPhone home screens
   appleWebApp: { capable: true, title: "Stoa", statusBarStyle: "default" },
   // Google Search Console ownership (URL-prefix property https://stoadex.com)

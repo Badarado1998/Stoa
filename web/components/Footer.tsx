@@ -20,7 +20,7 @@ export default function Footer() {
         {/* HEY Research Lab badge (HEY looks for it on our site; one-line pill variant of their snippet) */}
         <a href="https://heyresearch.xyz/project/stoadex-stoa?utm_source=badge&utm_medium=html" target="_blank" rel="noopener noreferrer">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://heyresearch.xyz/api/badge/stoadex-stoa?style=pill" alt="Stoa on HEY Research Lab" width={439} height={36} loading="lazy" />
+          <img src="https://heyresearch.xyz/api/badge/stoadex-stoa?style=pill" alt="Stoa on HEY Research Lab" width={439} height={36} decoding="async" />
         </a>
       </div>
     </footer>

@@ -480,9 +480,9 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         <WatchChips net={net} onPick={(a, via) => { if (busy) return; const st = via && tokens.find((t) => t.symbol === via); if (st && st.address !== sell.address) pick("sell", st); addCustom(a, "buy"); }} />
         <div className="box">
           <div className="row"><label className="blab" htmlFor="sellv">You sell</label>
-            <button type="button" className="blab" style={{ border: 0, background: "none", padding: 0, cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
+            {sBal !== undefined && <button type="button" className="blab" style={{ border: 0, background: "none", padding: 0, cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
               {sBal !== undefined ? `Balance ${fmt(sBal, sell.decimals, 4)}` : ""}
-            </button></div>
+            </button>}</div>
           <div className="row" style={{ position: "relative" }}>
             <input id="sellv" type="text" inputMode="decimal" placeholder="0.00" autoComplete="off" value={amount} readOnly={!!busy} onChange={(e) => { setMsg(null); setDone(null); setAmount(e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "")); }} />
             <TokenBtn t={sell} onClick={() => !busy && setMenu(menu === "sell" ? null : "sell")} />
@@ -494,7 +494,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         <div className="box">
           <div className="row"><span className="blab" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>You get{buy.tone === "other" && <WatchStar chain={net.key} address={buy.address} symbol={buy.symbol} logo={buy.logo} via={buy.name.endsWith("Robinhood Stock Token") ? "USDG" : undefined} small />}</span><span className="blab">{bBal !== undefined ? `Balance ${fmt(bBal, buy.decimals, 4)}` : ""}</span></div>
           <div className="row" style={{ position: "relative" }}>
-            <span className="out" style={{ fontSize: outTxt.length > 13 ? 22 : outTxt.length > 10 ? 26 : 30, color: quote ? "var(--ink)" : "#AAB2BE" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
+            <span className="out" style={{ fontSize: outTxt.length > 13 ? 22 : outTxt.length > 10 ? 26 : 30, color: quote ? "var(--ink)" : "#848E9D" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
               {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => !busy && setMenu(menu === "buy" ? null : "buy")} />
