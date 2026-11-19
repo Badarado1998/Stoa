@@ -118,7 +118,7 @@ export default function SpotlightBody() {
       )}
       {d?.paused && <div className="notice" style={{ marginBottom: 0 }}>Spotlight is paused: no new bids, locks or votes. Claims, refunds and withdrawals still work, and you can take all your $STOA out at once below.</div>}
 
-      <div className="grid3">
+      <div className="grid3 sgrid">
         <Cell
           label={!ready ? "THIS WEEK" : started ? `WEEK ${race + 1} · ${phase === "bids" ? "BIDS OPEN" : "VOTES ONLY"}` : "WEEK 1"}
           v={!ready ? undefined : !started ? left(SPOT_START - now) : phase === "bids" ? left(bidsClose - now) : left(raceEnd - now)}

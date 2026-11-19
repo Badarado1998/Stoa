@@ -102,7 +102,7 @@ export default function CoverBody() {
       )}
       {live && paused && <div className="notice" style={{ marginBottom: 16 }}>Paused for safety: new covers, covered buys and locks are stopped. Claims, breaches, releases, unlocks and ETH claims keep working, and backers can take their $STOA out at once.</div>}
 
-      <div className="grid3" style={{ marginBottom: 16 }}>
+      <div className="grid3 sgrid" style={{ marginBottom: 16 }}>
         <Stat label="COVERS OPEN" v={live ? (g.data ? String(openList.length) : undefined) : "—"} sub="Pons tokens whose creator bonded ETH" />
         <Stat label="ETH BONDED BY CREATORS" v={live ? (g.data ? eth((g.data[1]?.result as bigint) ?? 0n, 3) : undefined) : "—"} sub={params ? `${eth(params.minBond, 2)} to ${eth(params.maxBond, 2)} ETH per token during the beta` : "Bonds back their promises"} />
         <Stat label="$STOA BURNED" v={live ? (g.data ? stoaN((g.data[2]?.result as bigint) ?? 0n) : undefined) : "—"} sub="Bought with buyer premiums and part of creator fees" />

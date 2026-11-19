@@ -76,7 +76,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <span style={{ display: "flex", gap: 8 }}><CopyButton text={s.address} label="Copy address" /><a className="ghost" href={addressUrlOn(ROBINHOOD, s.address)} target="_blank" rel="noopener noreferrer">Explorer</a></span>
         </div>
       </div>
-      <div className="grid3" style={{ marginBottom: 16 }}>
+      <div className="grid3 sgrid" style={{ marginBottom: 16 }}>
         {cell("ROBINHOOD PRICE", s.halted ? "Halted" : ref ? fmtUsd(ref) : "—", "Mid of Robinhood's bid and ask for one token")}
         {cell("ON-CHAIN PRICE", s.dex ? fmtUsd(s.dex.priceUsd) : "No pool yet", diff != null ? `${diff >= 0 ? "+" : ""}${diff.toFixed(2)}% from Robinhood's price` : undefined)}
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}

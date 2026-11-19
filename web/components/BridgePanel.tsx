@@ -242,7 +242,8 @@ export default function BridgePanel() {
 
           <button type="button" className="big pri" style={{ width: "100%", marginTop: 14 }} disabled={disabled}
             onClick={() => (!isConnected ? openWallet() : go())}>{phase.k === "signing" ? "Confirm in your wallet…" : phase.k === "moving" ? "Bridging…" : label}</button>
-          <p className="note">Routes by LI.FI over Across. Before your wallet opens, Stoa decodes each transaction and checks it sends exactly what you picked, to your own address on Robinhood Chain. Stoa adds no fee and never holds your funds: you sign in your own wallet, and the funds arrive in the same address on Robinhood Chain.</p>
+          <p className="note">No Stoa fee · arrives in the same wallet.</p>
+          <details className="note fold"><summary>How it works</summary>Routes by LI.FI over Across. Before your wallet opens, Stoa decodes each transaction and checks it sends exactly what you picked, to your own address on Robinhood Chain. Stoa adds no fee and never holds your funds: you sign in your own wallet, and the funds arrive in the same address on Robinhood Chain.</details>
         </>
       )}
     </div>

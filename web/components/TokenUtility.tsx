@@ -350,7 +350,7 @@ export default function TokenUtility({ init = null }: { init?: GlanceInit }) {
         {live && !active && <p className="note">The fee contract moves to the buyback contract through the 48-hour timelock{ts && ts > 1n ? `: from ${when(ts)}` : ""}. Until then fees keep accruing and are used in the first run.</p>}
         {route.data === false && <p className="note">$STOA still trades on its Pons bonding curve, so the router has no route to it yet. Fees wait and are used once $STOA graduates to Uniswap V4.</p>}
       </div>
-      <div className="grid3">
+      <div className="grid3 sgrid">
         <Cell label="BURNED BY BUYBACKS" v={live ? (burnedBuyback === undefined ? undefined : `${big(burnedBuyback)} STOA`) : "—"} sub="Weekly, every Monday" />
         <Cell label="FEES WAITING" v={live ? (waitingUsd === undefined ? undefined : waitingUsd < 0.01 ? "< $0.01" : fmtUsd(waitingUsd)) : "—"} sub={live && accU !== undefined && accW !== undefined ? `${n(accU, 6, 4)} USDG · ${n(accW, 18, 6)} WETH` : undefined} />
         <Cell label="$STOA BURNED, ALL SOURCES" v={burnedAll === undefined ? undefined : `${big(burnedAll)}`} sub={supply ? `${((Number(burnedAll ?? 0n) / Number(supply)) * 100).toFixed(2)}% of supply at the burn address` : undefined} />
@@ -373,7 +373,7 @@ export default function TokenUtility({ init = null }: { init?: GlanceInit }) {
           Stoa maker pools on Robinhood Chain are quoted by makers who bond $STOA. A maker can quote only while its bond is at least the pool&apos;s minimum. A maker that posts abusive quotes gets slashed, and slashed $STOA is burned. Withdrawing a bond takes 3 days, longer than the 48-hour timelock, so a slash always lands first.
         </p>
       </div>
-      <div className="grid3">
+      <div className="grid3 sgrid">
         <Cell label="BONDED BY MAKERS" v={live ? (bonded === undefined ? undefined : `${big(bonded)} STOA`) : "—"} />
         <Cell label="SLASHED AND BURNED" v={live ? (slashed === undefined ? undefined : `${big(slashed)} STOA`) : "—"} />
         <Cell label="UNBONDING DELAY" v="3 days" sub="Longer than the 48h timelock" />

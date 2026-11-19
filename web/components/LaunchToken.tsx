@@ -158,7 +158,7 @@ export default function LaunchToken({ token }: { token: Address }) {
       <SafetyPanel chain="robinhood" token={token} />
       <CmcPanel token={token} note="context only, the price you get is Stoa's quote" />
 
-      <div className="grid3" style={{ marginBottom: 16 }}>
+      <div className="grid3 sgrid" style={{ marginBottom: 16 }}>
         <Cell label="MARKET CAP" v={l ? usd(l.mcapUsd) : undefined} sub={l ? `${l.native && +l.mcapEth > 0 ? `${(+l.mcapEth).toLocaleString("en-US")} ETH · ` : ""}${l.supply.toLocaleString("en-US")} supply` : undefined} />
         <Cell label="PRICE" v={l ? px(l.priceUsd) : undefined} sub={l ? (l.priceUsd === null ? `Priced in ${pairSym}` : l.graduated ? "Stoa's best quote for a small buy" : "Spot price on the curve") : undefined} />
         <Cell label="CREATOR TAX" v={l ? `${(l.creatorTaxBps / 100).toFixed(1)}%` : undefined} sub={l ? (l.graduated ? "Was charged on curve trades" : "On each curve buy and sell, plus Pons' 1% fee") : undefined} />

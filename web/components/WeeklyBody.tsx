@@ -100,7 +100,7 @@ export default function WeeklyBody() {
         <span className="chip">{range} (UTC){which === "this" ? " · so far" : ""}</span>
       </div>
 
-      <div className="grid3">
+      <div className="grid3 sgrid">
         <Cell label="VOLUME THROUGH STOA" v={stats.data ? usd(vol) : stats.isError ? "—" : undefined} sub={stats.data ? `${swaps.toLocaleString("en-US")} swap${swaps === 1 ? "" : "s"} · ${perChain}` : undefined} />
         <Cell label="$STOA BOUGHT AND BURNED" v={burns.data ? stoaTxt(burned) : burns.isError ? "—" : undefined} sub={burns.data ? (weekBurns.length ? `${weekBurns.length} buyback${weekBurns.length === 1 ? "" : "s"}, from protocol fees` : "Weekly buyback runs Mondays, 13:41 UTC") : undefined} />
         <Cell label="SHIPPED" v={`${shipped.length} update${shipped.length === 1 ? "" : "s"}`} sub="From the changelog" />

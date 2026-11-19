@@ -37,7 +37,7 @@ export default function StatsBody() {
   if (q.isError && !s) return <p className="note">Could not read the routers right now. Try again in a minute.</p>;
   return (
     <>
-      <div className="grid3" style={{ marginBottom: 16 }}>
+      <div className="grid3 sgrid" style={{ marginBottom: 16 }}>
         <Cell label="VOLUME · ALL TIME" v={s && usd(s.total.usdAll)} sub={s && `${swapsTxt(s.total.swaps)} on ${s.chains.length} chains`} />
         <Cell label="LAST 7 DAYS" v={s && usd(s.total.usd7d)} sub={per("usd7d")} />
         <Cell label="LAST 24 HOURS" v={s && usd(s.total.usd24h)} sub={per("usd24h")} />

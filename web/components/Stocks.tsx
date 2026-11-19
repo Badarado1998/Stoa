@@ -28,6 +28,7 @@ const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(Math.abs(v) < 10 ? 2
  *  the biggest 24h moves on-chain, and the widest gaps from Robinhood's price. Read from the same data as the list. */
 const MIN_LIQ = 10_000;
 function Movers({ rows }: { rows: StockRow[] }) {
+  const [tab, setTab] = useState(0); // phones show one list at a time
   const liquid = rows.filter((r) => r.dex && r.dex.liquidityUsd >= MIN_LIQ);
   if (liquid.length < 3) return null;
   const gap = (r: StockRow) => (r.ref && r.dex ? ((r.dex.priceUsd - r.ref) / r.ref) * 100 : null);
@@ -38,8 +39,13 @@ function Movers({ rows }: { rows: StockRow[] }) {
   ];
   return (
     <div className="movers">
-      {lists.filter((l) => l.items.length).map((l) => (
-        <div key={l.h} className="panel pad">
+      <div className="seg mtabs show-m" role="tablist" aria-label="Movers">
+        {lists.filter((l) => l.items.length).map((l, i) => (
+          <button key={l.h} type="button" role="tab" aria-selected={tab === i} className={tab === i ? "on" : undefined} onClick={() => setTab(i)}>{l.h}</button>
+        ))}
+      </div>
+      {lists.filter((l) => l.items.length).map((l, i) => (
+        <div key={l.h} className={`panel pad${tab === i ? "" : " mhide"}`}>
           <div className="lbl">{l.h.toUpperCase()}</div>
           <div className="note" style={{ margin: "2px 0 8px" }}>{l.sub}</div>
           {l.items.map(({ r, v, tone }) => (
@@ -58,6 +64,7 @@ function Movers({ rows }: { rows: StockRow[] }) {
 export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: number }) {
   const [q, setQ] = useState("");
   const [all, setAll] = useState(false);
+  const [more, setMore] = useState(false); // the first 30 rows until asked
   const routed = rows.filter((r) => r.route).length;
   const shown = useMemo(() => {
     const k = q.trim().toLowerCase();
@@ -76,7 +83,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
         </div>
         <div className="stockhead" aria-hidden="true"><span>Token</span><span>Robinhood price</span><span>On-chain price</span><span>On-chain liquidity</span><span /></div>
         <div className="stocklist">
-          {shown.map((r) => {
+          {(more || q ? shown : shown.slice(0, 30)).map((r) => {
             const diff = r.ref && r.dex ? (r.dex.priceUsd - r.ref) / r.ref * 100 : null;
             return (
               <div key={r.address} className="stock">
@@ -96,13 +103,15 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
             );
           })}
           {!shown.length && <p className="note">No stock token matches “{q}”.</p>}
+          {!more && !q && shown.length > 30 && <button type="button" className="ghost" style={{ alignSelf: "center", marginTop: 6 }} onClick={() => setMore(true)}>Show {shown.length - 30} more</button>}
         </div>
-        <p className="note" style={{ marginBottom: 0 }}>
+        <details className="note fold" style={{ marginBottom: 0 }}>
+          <summary>How this page works</summary>
           Robinhood price: the mid of Robinhood&apos;s bid and ask for one token, from the underlying shares (it moves only while the US market, extended hours or the overnight session is open).
           On-chain price: the deepest pool DexScreener lists; the percentage is how far it is from Robinhood&apos;s price.
           Swap appears when Stoa&apos;s router can buy the token with 100 USDG right now; Trade then quotes your exact amount across every venue.
-          Updated {new Date(updated).toUTCString().slice(17, 22)} UTC. <Link href="/docs/stocks">How this page works</Link>
-        </p>
+          Updated {new Date(updated).toUTCString().slice(17, 22)} UTC. <Link href="/docs/stocks">More in the docs</Link>
+        </details>
       </div>
     </>
   );
