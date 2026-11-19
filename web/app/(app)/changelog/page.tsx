@@ -19,20 +19,21 @@ export default function ChangelogPage() {
         Every release, newest first. Anything still waiting on the 48h timelock is marked as scheduled.
       </PageHead>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {CHANGES.map((c) => (
-          <article key={c.id} id={c.id} className="panel pad">
+        {/* the newest three open; older releases fold to their title (a link to one opens it) */}
+        {CHANGES.map((c, i) => (
+          <details key={c.id} id={c.id} className="panel pad clog" open={i < 3}>
+            <summary>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <time className="eyebrow" dateTime={c.date}>{fmtDate(c.date).toUpperCase()}</time>
               <span className="chip">{c.tag}</span>
             </div>
-            <h2 style={{ margin: "10px 0 4px", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>
-              <a href={`#${c.id}`} style={{ color: "inherit", textDecoration: "none" }}>{c.title}</a>
-            </h2>
+            <h2 style={{ margin: "10px 0 4px", fontSize: 20, fontWeight: 500, color: "var(--ink)" }}>{c.title}</h2>
+            </summary>
             <ul style={{ margin: "8px 0 0", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6, fontSize: 14.5, lineHeight: 1.5 }}>
               {c.items.map((it) => <li key={it}>{it}</li>)}
             </ul>
             {c.link && <p className="note"><Link href={c.link.href}>{c.link.label} →</Link></p>}
-          </article>
+          </details>
         ))}
       </div>
     </section>

@@ -52,7 +52,7 @@ export default async function SecurityPage() {
 
       {!s ? <div className="notice">Robinhood Chain did not answer just now. Try again in a minute.</div> : (
         <>
-          <div className="grid3" style={{ gap: 12, marginBottom: 16 }}>
+          <div className="grid3 sgrid" style={{ gap: 12, marginBottom: 16 }}>
             <div className="panel pad stat"><div className="lbl">ADMIN CHANGES WAIT</div><span className="v">{s.timelockDelayH !== null ? `${s.timelockDelayH}h` : "—"}</span><div className="note" style={{ marginTop: 6 }}>Every owner action goes through a public timelock first{s.safe ? `, proposed by a ${s.safe.threshold}-of-${s.safe.owners} Safe` : ""}.</div></div>
             <div className="panel pad stat"><div className="lbl">NEW VENUES WAIT</div><span className="v">{s.routerDelayH !== null ? `+${s.routerDelayH}h` : "—"}</span><div className="note" style={{ marginTop: 6 }}>{s.setupLocked ? "The router is locked: a venue is proposed, then waits before it can be added." : "Router setup is not locked yet."}</div></div>
             <div className="panel pad stat"><div className="lbl">PAUSED CONTRACTS</div><span className="v">{s.contracts.filter((c) => c.paused).length}</span><div className="note" style={{ marginTop: 6 }}>A guardian can pause swaps in an emergency; only the timelock can unpause.</div></div>

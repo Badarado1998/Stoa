@@ -72,7 +72,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {s.logo ? <img src={s.logo} alt="" width={56} height={56} style={{ borderRadius: 999 }} /> : <Ticker symbol={s.symbol} size={56} />}
         <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-          <span style={{ fontFamily: "var(--mono)", fontSize: 13, overflowWrap: "anywhere" }}>{s.address}</span>
+          <span style={{ fontFamily: "var(--mono)", fontSize: 13 }} title={s.address}>{s.address.slice(0, 8)}…{s.address.slice(-6)}</span>
           <span style={{ display: "flex", gap: 8 }}><CopyButton text={s.address} label="Copy address" /><a className="ghost" href={addressUrlOn(ROBINHOOD, s.address)} target="_blank" rel="noopener noreferrer">Explorer</a></span>
         </div>
       </div>
@@ -81,15 +81,15 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {cell("ON-CHAIN PRICE", s.dex ? fmtUsd(s.dex.priceUsd) : "No pool yet", diff != null ? `${diff >= 0 ? "+" : ""}${diff.toFixed(2)}% from Robinhood's price` : undefined)}
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}
       </div>
-      <div className="panel pad" style={{ marginBottom: 16 }}>
-        <div className="lbl">HOW THIS WORKS</div>
+      <details className="panel pad fold-panel" style={{ marginBottom: 16 }}>
+        <summary className="lbl">HOW THIS WORKS</summary>
         <p style={{ marginTop: 8 }}>
           {s.symbol} on Robinhood Chain is a Robinhood Stock Token: an ERC-20 issued by Robinhood Assets (Jersey) Limited that tracks {s.name}. Robinhood&apos;s price follows the underlying shares while the US market, extended hours or the overnight session is open; the on-chain price is what the token trades for in its deepest pool, at any hour.
         </p>
         <p className="note" style={{ marginBottom: 0 }}>
           Stock Tokens are not offered in every country: check Robinhood&apos;s terms for yours. Stoa only routes swaps; nothing here is investment advice. <Link href="/docs/stocks">How Stocks works</Link> · Updated {new Date(updated).toUTCString().slice(17, 22)} UTC.
         </p>
-      </div>
+      </details>
       {s.route && (
         <div className="panel pad" style={{ marginBottom: 16 }}>
           <div className="lbl">HOW TO BUY {s.symbol} ON ROBINHOOD CHAIN</div>

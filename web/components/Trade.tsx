@@ -514,6 +514,11 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         ) : (
           <>
         {amt && quote && (
+          <details className="qsum">
+            <summary>
+              <span className="qs-l"><VenueIcons ids={venueIds(venueName)} />{kind === "wrap" || kind === "unwrap" ? venueName : <>Filled by <b>{venueName}</b></>}</span>
+              <span className="qs-r">{kind !== "wrap" && kind !== "unwrap" && <span style={{ color: quote.impact >= IMPACT_WARN ? "#B4532A" : undefined }}>{quote.impact < 0.01 ? "< 0.01" : quote.impact.toFixed(2)}% impact</span>}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span>
+            </summary>
           <div className="det">
             <span>Rate</span><span>1 {sell.symbol} = {Number(px.toPrecision(6)).toLocaleString("en-US", { maximumSignificantDigits: 6 })} {buy.symbol}</span>
             <span>Filled by</span><span>{venueName}</span>
@@ -524,14 +529,15 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             {cover.on && <><span>Rug Cover premium</span><span>{fmtAmt(cover.premium, 18)} ETH, burned as $STOA</span></>}
             {referrer && <><span>Referred by</span><span>{referrer.slice(0, 6)}…{referrer.slice(-4)}</span></>}
           </div>
+          {quote.route && kind !== "wrap" && kind !== "unwrap" && (
+            <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
+          )}
+          </details>
         )}
         {cover.block}
         {buy.tone === "other" && !isNative(buy) && (buy.name.endsWith("Robinhood Stock Token")
               ? <p className="note">{buy.symbol} is a Robinhood Stock Token, issued by Robinhood Assets (Jersey) Limited. Its pools trade against USDG, so sell USDG for the most direct route. <a href="/stocks">All stock tokens</a></p>
               : <SafetyPanel chain={net.key} token={buy.address} compact />)}
-        {amt && quote?.route && kind !== "wrap" && kind !== "unwrap" && (
-          <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
-        )}
         {amt && quote && quote.impact >= IMPACT_WARN && (
           <div className={quote.impact >= IMPACT_BLOCK ? "err" : "notice"} style={{ marginTop: 12, marginBottom: 0 }}>
             Price impact is {quote.impact.toFixed(1)}%: this trade moves the price a lot because the pool is thin.
@@ -686,6 +692,18 @@ function TokenMenu({ net, tokens, covered, onPick, onImport, onClose }: { net: N
     </div>
   );
   return sheet ? createPortal(<div className="tokbg" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>{body}</div>, document.body) : body;
+}
+
+/** The logos for a "Filled by" name such as "Uniswap V3 → Ramses" */
+function venueIds(name: string): string[] {
+  const n = name.toLowerCase(), out: string[] = [];
+  if (n.includes("stoa") || n.includes("maker")) out.push("stoa");
+  if (n.includes("uniswap")) out.push("uniswap");
+  if (n.includes("aero")) out.push("aero");
+  if (n.includes("ramses")) out.push("ramses");
+  if (n.includes("liquidity book") || /\blb\b/.test(n)) out.push("lb");
+  if (n.includes("pons")) out.push("pons");
+  return out;
 }
 
 /** Venue logos (each venue's own mark, shown to name the venue) beside a row in the venue list */
