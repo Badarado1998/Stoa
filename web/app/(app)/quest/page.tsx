@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import QuestCheck from "@/components/QuestCheck";
-import { QUEST, questDate } from "@/lib/quest";
+import { QUEST, questDate, questSpan } from "@/lib/quest";
 
 export const metadata: Metadata = {
   title: "Stoa Explorer quest",
@@ -24,7 +24,7 @@ export default function QuestPage() {
         Three tasks and two bonuses. {QUEST.winners} winners share {QUEST.pool}, drawn on Galxe.
       </PageHead>
       <div className="panel pad">
-        <div className="rowx"><div className="lbl">THE TASKS</div><span className="chip">{questDate(QUEST.start)} – {questDate(QUEST.end)}</span></div>
+        <div className="rowx"><div className="lbl">THE TASKS</div><span className="chip">{questSpan()}</span></div>
         <ol className="qsteps">
           {steps.map(([n, t, d]) => <li key={t}><span className="qn">{n}</span><span><b>{t}</b><small>{d}</small></span></li>)}
         </ol>
