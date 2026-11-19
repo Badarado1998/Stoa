@@ -6,7 +6,9 @@ import type { Launch } from "@/lib/ponsLaunch";
 import { listedTokens } from "@/lib/tokenInfo";
 import { stockTokens } from "@/lib/stocks";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/check", "/spotlight", "/cover", "/wrapped", "/security", "/guides", "/bridge", "/weekly"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/check", "/spotlight", "/cover", "/wrapped", "/security", "/guides", "/bridge", "/weekly", "/spotlight/projects"];
+/** pages whose numbers change every day */
+const DAILY = new Set(["", "/trade", "/launches", "/stats", "/tokens", "/stocks", "/spotlight", "/token", "/weekly"]);
 /** rebuilt every hour: the token pages of the launches closest to graduation and the latest graduations */
 export const revalidate = 3600;
 
@@ -37,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tokens = [...new Set([CA, ...(await launchPages())])];
   const stocks = (await stockTokens().catch(() => null))?.stocks ?? [];
   return [
-    ...PAGES.map((p) => ({ url: `${base}${p}`, changeFrequency: "weekly" as const, priority: p === "" ? 1 : 0.7 })),
+    ...PAGES.map((p) => ({ url: `${base}${p}`, changeFrequency: DAILY.has(p) ? ("daily" as const) : ("weekly" as const), priority: p === "" ? 1 : p === "/trade" ? 0.9 : 0.7 })),
     ...docPages().map((d) => ({ url: `${base}/docs/${d.slug}`, changeFrequency: "monthly" as const, priority: 0.5 })),
     ...tokens.map((t) => ({ url: `${base}/launches/${t}`, changeFrequency: "hourly" as const, priority: t === CA ? 0.7 : 0.4 })),
     ...stocks.map((s) => ({ url: `${base}/stocks/${s.symbol.toLowerCase()}`, changeFrequency: "daily" as const, priority: s.route ? 0.6 : 0.4 })),

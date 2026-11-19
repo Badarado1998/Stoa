@@ -12,6 +12,17 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "spotlight-projects",
+    date: "2026-11-19",
+    title: "Spotlight for projects",
+    tag: "Robinhood Chain",
+    items: [
+      "A page for projects that want a Spotlight slot: where the winners show, how a week runs, the numbers (from 0.01 ETH, 0.001 ETH entry fee, 1M $STOA of votes to win) and answers to common questions.",
+      "Losing bids are refundable in full once the week is settled; the refund never expires.",
+    ],
+    link: { href: "/spotlight/projects", label: "Spotlight for projects" },
+  },
+  {
     id: "weekly-page",
     date: "2026-11-19",
     title: "This week on Stoa",

@@ -106,7 +106,7 @@ export default function SpotlightBody() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <PageHead eyebrow="SPOTLIGHT · ROBINHOOD CHAIN" title="Projects pay ETH. $STOA holders earn it." action={<Link className="cta" href="/docs/spotlight">How it works</Link>}>
+      <PageHead eyebrow="SPOTLIGHT · ROBINHOOD CHAIN" title="Projects pay ETH. $STOA holders earn it." action={<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="cta" href="/spotlight/projects">For projects</Link><Link className="ghost" href="/docs/spotlight">How it works</Link></div>}>
         Every week projects bid ETH for three sponsored slots on Stoa. $STOA holders lock and vote. The three largest bids that reach the vote quorum win, and 90% of their ETH goes to the holders who voted for them. The other 10% buys $STOA and burns it.
       </PageHead>
 
@@ -510,7 +510,7 @@ function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { 
   const tooBig = value !== undefined && maxBid !== undefined && pot + value > maxBid;
   const closed = phase !== "bids";
   return (
-    <div className="panel pad">
+    <div className="panel pad" id="bid">
       <div className="rowx"><div className="lbl">FOR PROJECTS · BID FOR A SLOT</div><span className="chip">{closed ? (phase === "before" ? "Opens with week 1" : "Bids open again Monday") : "Open"}</span></div>
       <p style={{ marginTop: 10 }}>
         Bid ETH for your token&apos;s place in next week&apos;s Spotlight: the top of Trade&apos;s token list, Launches and Tokens, for a week. If you win, 90% of your bid goes to the $STOA holders who voted for you and 10% is burned. If you lose, take your bid back in full.

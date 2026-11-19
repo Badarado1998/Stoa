@@ -94,7 +94,7 @@ function CurvePanel({ routable }: { routable?: boolean }) {
   return (
     <div className="panel pad">
       <div className="rowx"><div className="lbl">$STOA ON ITS PONS BONDING CURVE</div><span className="chip live">{grad ? "Graduated" : pct === undefined ? "…" : `${pct.toFixed(1)}%`}</span></div>
-      <div style={{ marginTop: 14, height: 12, borderRadius: 999, background: "#E6ECF5", overflow: "hidden" }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ? Math.round(pct) : 0}>
+      <div style={{ marginTop: 14, height: 12, borderRadius: 999, background: "#E6ECF5", overflow: "hidden" }} role="progressbar" aria-label="Bonding curve progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ? Math.round(pct) : 0}>
         <div style={{ width: `${pct ?? 0}%`, height: "100%", borderRadius: 999, background: "var(--accent)", transition: "width .6s ease" }} />
       </div>
       <p style={{ marginTop: 12 }}>
@@ -406,7 +406,7 @@ export default function TokenUtility() {
           <li>Launch wallet (the dev wallet that launched $STOA on Pons) <b>{launchBal === undefined ? "…" : `${big(launchBal)} $STOA`} today; it burned the 22.0M it received</b></li>
         </ul>
         <p style={{ marginTop: 10 }}>
-          fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer">transaction</a>) and keeps at least 0.5% there while the tag is active.
+          fomo&apos;s team tag requires the team to hold at least 0.5% of supply on its fomo account, so the team bought 6.8M $STOA on the Pons curve on 15 November 2026 (<a href={txUrlOn(net, TEAM_BUY_TX)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>transaction</a>) and keeps at least 0.5% there while the tag is active.
         </p>
         <p className="note">Team: <a href={addressUrlOn(net, TEAM_WALLET)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{TEAM_WALLET}</a><br />Launch: <a href={addressUrlOn(net, LAUNCH_WALLET)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--mono)" }}>{LAUNCH_WALLET}</a></p>
       </div>
