@@ -20,6 +20,8 @@ export interface Stock {
   dex: { priceUsd: number; liquidityUsd: number; volume24h: number; change24h: number | null } | null;
   /** Stoa's router quotes a 100 USDG buy right now */
   route: boolean;
+  /** Stoa's Metric adapter has an oracle-priced Metric pool for USDG -> this token, and the router uses that adapter */
+  metric: boolean;
 }
 
 const RH = "https://api.robinhood.com/rhj";
@@ -64,6 +66,23 @@ async function dexMarkets(addrs: string[]): Promise<Map<string, NonNullable<Stoc
   return out;
 }
 
+const metricAbi = parseAbi(["function poolsFor(address tokenIn, address tokenOut) view returns (address[])", "function isAdapter(address) view returns (bool)"]);
+
+/** stock tokens with a Metric pool on Stoa's Metric adapter (USDG -> token), once the router uses that adapter */
+async function metricTokens(addrs: string[]): Promise<Set<string>> {
+  const out = new Set<string>();
+  const adapter = (ROBINHOOD.contracts as { metric?: Address }).metric;
+  const router = ROBINHOOD.contracts.router;
+  if (!adapter || !router || !addrs.length) return out;
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.chain.rpcUrls.default.http[0]), { timeout: 20_000, fetchOptions: { headers: { "user-agent": "curl/8.5.0" } } }) });
+  try {
+    if (!(await c.readContract({ address: router, abi: metricAbi, functionName: "isAdapter", args: [adapter] }))) return out;
+    const r = await c.multicall({ allowFailure: true, contracts: addrs.map((t) => ({ address: adapter, abi: metricAbi, functionName: "poolsFor" as const, args: [ROBINHOOD.stable, t as Address] as const })) });
+    r.forEach((x, j) => { if (x.status === "success" && (x.result as readonly Address[]).length > 0) out.add(lc(addrs[j])); });
+  } catch { /* no Metric tags this time */ }
+  return out;
+}
+
 const quoteAbi = parseAbi(["function quote(address,address,uint256) returns ((uint256 amountOut, address mid, (address venue, bool isPool) leg1, (address venue, bool isPool) leg2))"]);
 
 /** which tokens Stoa's router can buy with 100 USDG right now (eth_call, nothing sent). A quote checks every venue,
@@ -91,8 +110,10 @@ async function load(): Promise<{ stocks: Stock[]; updated: number }> {
   const quotes = new Map<string, Quote>();
   for (const q of prices.quotes ?? []) { const a = onChain(q.deployments); if (a) quotes.set(lc(a), q); }
   const list = (assets.assets ?? []).filter((x) => x.status !== "ASSET_STATUS_INACTIVE" && onChain(x.deployments));
-  const dex = await dexMarkets(list.map((x) => onChain(x.deployments)!));
-  const routes = await routable(list.map((x) => onChain(x.deployments)!).filter((a) => dex.has(lc(a))));
+  const all = list.map((x) => onChain(x.deployments)!);
+  const [dex, metric] = await Promise.all([dexMarkets(all), metricTokens(all)]);
+  // a token with a Metric pool may have no pool DexScreener lists: check its route too
+  const routes = await routable(all.filter((a) => dex.has(lc(a)) || metric.has(lc(a))));
   const stocks = list.map((x): Stock => {
     const address = onChain(x.deployments)!;
     const q = quotes.get(lc(address));
@@ -103,6 +124,7 @@ async function load(): Promise<{ stocks: Stock[]; updated: number }> {
       bid: num(q?.tokenBid), ask: num(q?.tokenAsk), halted: !!q?.isTradingHalt,
       dex: dex.get(lc(address)) ?? null,
       route: routes.has(lc(address)),
+      metric: metric.has(lc(address)),
     };
   });
   // tokens Stoa routes first, then other on-chain markets (deepest first), then the rest by ticker

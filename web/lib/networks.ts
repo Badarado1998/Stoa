@@ -115,7 +115,7 @@ const RH_POPULAR: Token[] = (rhPopular as { symbol: string; address: string; dec
 const rhContracts = {
   router: addr(D.router), fees: addr(D.feeDistributor), v4: addr(D.uniswapV4Adapter), registry: addr(D.makerRegistry),
   safe: addr(D.safe), timelock: addr(D.timelock), buyback: addr(D.stoaBuyback), bonds: addr(D.bondRegistry),
-  spotlight: addr(D.spotlightMarket), cover: addr(D.rugCover), limit: addr(D.limit),
+  spotlight: addr(D.spotlightMarket), cover: addr(D.rugCover), limit: addr(D.limit), metric: addr(D.metricAdapter),
 };
 export const ROBINHOOD: Net = {
   key: "robinhood",

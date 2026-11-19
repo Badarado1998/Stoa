@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default async function StocksPage() {
   const data = await stockTokens().catch(() => null);
-  const rows: StockRow[] = (data?.stocks ?? []).map((s) => ({ symbol: s.symbol, name: s.name, address: s.address, logo: s.logo, ref: mid(s), halted: s.halted, dex: s.dex, route: s.route }));
+  const rows: StockRow[] = (data?.stocks ?? []).map((s) => ({ symbol: s.symbol, name: s.name, address: s.address, logo: s.logo, ref: mid(s), halted: s.halted, dex: s.dex, route: s.route, metric: s.metric }));
   const ld = {
     "@context": "https://schema.org", "@type": "ItemList", name: "Stock tokens on Robinhood Chain",
     itemListElement: rows.filter((r) => r.route).slice(0, 50).map((r, i) => ({ "@type": "ListItem", position: i + 1, name: `${r.symbol} · ${r.name}`, url: `https://stoadex.com/trade?chain=robinhood&buy=${r.address}` })),

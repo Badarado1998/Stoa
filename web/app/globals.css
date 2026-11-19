@@ -655,6 +655,7 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .wchip{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;color:var(--ink);cursor:pointer}
 .wchip img{border-radius:999px;object-fit:cover}
 .star{flex:none}
+.mtag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#E7F0FC;color:#1F5FB0;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em;vertical-align:middle}
 .noroute{display:inline-flex;align-items:center;min-height:36px;padding:0 10px;font-size:12px;color:var(--muted);white-space:nowrap}
 .ticker{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:999px;font-family:var(--mono);font-weight:600;letter-spacing:-.02em;line-height:1}
 .v-stocks{width:86%;display:flex;flex-direction:column;gap:7px}

@@ -4,7 +4,7 @@ On Robinhood Chain, Stoa's router also checks [Metric](https://github.com/Metric
 
 ## When a swap uses Metric
 
-Metric is one more venue next to Uniswap V2, V3 and V4, Aero, Ramses and the Pons curves. On every swap the router asks each venue what you would receive and takes the route that pays the most, after Stoa's fee. A Metric pool is used only when it pays more than the others for your exact amount. The quote screen shows which venue fills the swap.
+Metric is one more venue next to Uniswap V2, V3 and V4, Aero, Ramses and the Pons curves. On every swap the router asks each venue what you would receive and takes the route that pays the most, after Stoa's fee. A Metric pool is used only when it pays more than the others for your exact amount. The quote screen shows which venue fills the swap. On [Stocks](https://stoadex.com/stocks), a **Metric** tag marks the stock tokens that have a Metric pool.
 
 ## How Stoa picks a Metric pool
 

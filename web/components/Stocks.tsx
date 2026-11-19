@@ -8,7 +8,7 @@ import { Ticker } from "./ui";
 
 export interface StockRow {
   symbol: string; name: string; address: string; logo: string | null;
-  ref: number | null; halted: boolean; route: boolean;
+  ref: number | null; halted: boolean; route: boolean; metric?: boolean;
   dex: { priceUsd: number; liquidityUsd: number; volume24h: number; change24h: number | null } | null;
 }
 
@@ -90,7 +90,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
                 <div className="sname">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {r.logo ? <img src={r.logo} alt="" width={30} height={30} loading="lazy" /> : <Ticker symbol={r.symbol} />}
-                  <Link href={`/stocks/${r.symbol.toLowerCase()}`} className="slink"><b>{r.symbol}</b><small>{r.name}</small></Link>
+                  <Link href={`/stocks/${r.symbol.toLowerCase()}`} className="slink"><b>{r.symbol}{r.metric && <span className="mtag" title="Also routed through Metric's oracle-priced pool">Metric</span>}</b><small>{r.name}</small></Link>
                 </div>
                 <div className="sval"><small>Robinhood</small>{r.halted ? <span className="dn">Halted</span> : r.ref ? fmtUsd(r.ref) : "—"}</div>
                 <div className="sval"><small>On-chain</small>{r.dex ? <>{fmtUsd(r.dex.priceUsd)}{diff != null && Math.abs(diff) >= 0.05 && <em className={Math.abs(diff) >= 2 ? "far" : undefined}>{diff > 0 ? "+" : ""}{diff.toFixed(1)}%</em>}</> : <span className="muted">No pool yet</span>}</div>
