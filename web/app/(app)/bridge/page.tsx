@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import BridgePanel from "@/components/BridgePanel";
+import AnyTokenBuy from "@/components/AnyTokenBuy";
 
 const description = "Bridge ETH, USDC or USDT from Base, Arbitrum, Ethereum, Optimism or BNB Chain to Robinhood Chain, then swap on Stoa. Stoa checks every bridge transaction before your wallet opens; you sign in your own wallet and Stoa adds no fee.";
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function BridgePage() {
         <span className="sb-go">Buy $STOA →</span>
       </Link>
       <BridgePanel />
+      <AnyTokenBuy />
       <div className="panel pad" style={{ marginTop: 16 }}>
         <div className="lbl">GOOD TO KNOW</div>
         <ul className="list" style={{ marginTop: 8 }}>

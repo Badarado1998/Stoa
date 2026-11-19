@@ -15,7 +15,7 @@ type Phase =
   | { k: "done"; destTx: string | null; got: bigint | null }
   | { k: "failed"; text: string };
 
-function explain(e: unknown): string {
+export function explain(e: unknown): string {
   if (e instanceof BaseError) {
     if (/User rejected|denied/i.test(e.shortMessage)) return "You rejected the request in your wallet.";
     if (/insufficient funds/i.test(e.shortMessage)) return "Not enough for this and the gas on the source chain.";
@@ -30,12 +30,12 @@ const REQUOTE_TOLERANCE_BPS = 50n;
 const gasReserve = (chainId: number) => (chainId === 1 ? 10n ** 16n : 3n * 10n ** 15n);
 const RH_EXPLORER = "https://robinhoodchain.blockscout.com";
 /** what /status and /receipt need back: the intent, who bought, from which chain, the order id, Stoa's signature */
-type Ticket = { intentId: string; user: string; chainId: number; depositId: string; exp: number; sig: string };
-const ticketOf = (q: AnyQuote, user: string, chainId: number): Ticket =>
+export type Ticket = { intentId: string; user: string; chainId: number; depositId: string; exp: number; sig: string };
+export const ticketOf = (q: AnyQuote, user: string, chainId: number): Ticket =>
   ({ intentId: q.intentId, user, chainId, depositId: depositIdOf(q.transaction.data) ?? "", exp: q.exp ?? 0, sig: q.sig ?? "" });
 /** tell Trustware which source tx filled the intent; retried (409 = the source chain does not show the tx yet), since
  *  without it an ETH route stays pending. The status poll sends it again while the route still reads pending. */
-async function sendReceipt(t: Ticket, txHash: Hash, waits = [0, 3000, 8000, 20000, 45000]) {
+export async function sendReceipt(t: Ticket, txHash: Hash, waits = [0, 3000, 8000, 20000, 45000]) {
   for (const wait of waits) {
     if (wait) await new Promise((r) => setTimeout(r, wait));
     try {
@@ -46,8 +46,8 @@ async function sendReceipt(t: Ticket, txHash: Hash, waits = [0, 3000, 8000, 2000
 }
 /** delivery transactions already counted on this device, so an older transfer is never shown as a new purchase */
 const USED_KEY = "stoa-anychain-delivered";
-function usedDeliveries(): string[] { try { return JSON.parse(localStorage.getItem(USED_KEY) ?? "[]"); } catch { return []; } }
-function markDelivered(h: string) { try { localStorage.setItem(USED_KEY, JSON.stringify([...usedDeliveries(), h.toLowerCase()].slice(-50))); } catch { /* ignore */ } }
+export function usedDeliveries(): string[] { try { return JSON.parse(localStorage.getItem(USED_KEY) ?? "[]"); } catch { return []; } }
+export function markDelivered(h: string) { try { localStorage.setItem(USED_KEY, JSON.stringify([...usedDeliveries(), h.toLowerCase()].slice(-50))); } catch { /* ignore */ } }
 
 /** Buy $STOA from any chain: Trustware routes a deposit from Base, Arbitrum, Ethereum, Optimism or BNB Chain through
  *  Relay into $STOA on Robinhood Chain, to the same address (lib/anychain.ts says what is checked and why it is capped). */
