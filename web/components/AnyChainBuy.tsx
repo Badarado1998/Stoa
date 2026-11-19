@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, erc20Abi, parseEventLogs, parseUnits, zeroAddress, type Hash } from "viem";
 import { NATIVE_ZERO, SOURCES, USDT_MAINNET, sameAddr } from "@/lib/bridge";
-import { ANYCHAIN_PUBLIC, DST_CHAIN, MAX_USD, RELAY_DEPOSITORY, STOA_RH, checkAnyQuote, usdOf, type AnyQuote } from "@/lib/anychain";
+import { ANYCHAIN_PUBLIC, DST_CHAIN, MAX_USD, RELAY_DEPOSITORY, STOA_RH, checkAnyQuote, depositIdOf, usdOf, type AnyQuote } from "@/lib/anychain";
 import { fmt } from "@/lib/swap";
 import { useWalletModal } from "./Providers";
 
 type Phase =
   | { k: "idle" }
   | { k: "signing"; what: string }
-  | { k: "moving"; tx: Hash; intentId: string; sig: string; min: string; since: number; slow?: boolean }
+  | { k: "moving"; tx: Hash; t: Ticket; min: string; since: number; slow?: boolean; unseen?: boolean }
   | { k: "done"; destTx: string | null; got: bigint | null }
   | { k: "failed"; text: string };
 
@@ -29,16 +29,25 @@ const QUOTE_TTL = 45_000;
 const REQUOTE_TOLERANCE_BPS = 50n;
 const gasReserve = (chainId: number) => (chainId === 1 ? 10n ** 16n : 3n * 10n ** 15n);
 const RH_EXPLORER = "https://robinhoodchain.blockscout.com";
-/** tell Trustware which source tx filled the intent; retried, since without it an ETH route stays pending */
-async function sendReceipt(intentId: string, sig: string, txHash: Hash) {
-  for (const wait of [0, 2000, 6000, 15000]) {
+/** what /status and /receipt need back: the intent, who bought, from which chain, the order id, Stoa's signature */
+type Ticket = { intentId: string; user: string; chainId: number; depositId: string; sig: string };
+const ticketOf = (q: AnyQuote, user: string, chainId: number): Ticket =>
+  ({ intentId: q.intentId, user, chainId, depositId: depositIdOf(q.transaction.data) ?? "", sig: q.sig ?? "" });
+/** tell Trustware which source tx filled the intent; retried (409 = the source chain does not show the tx yet), since
+ *  without it an ETH route stays pending. The status poll sends it again while the route still reads pending. */
+async function sendReceipt(t: Ticket, txHash: Hash, waits = [0, 3000, 8000, 20000, 45000]) {
+  for (const wait of waits) {
     if (wait) await new Promise((r) => setTimeout(r, wait));
     try {
-      const r = await fetch("/api/anychain/receipt", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ intentId, txHash, sig }) });
+      const r = await fetch("/api/anychain/receipt", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...t, txHash }) });
       if (r.ok || r.status === 400 || r.status === 403) return;
     } catch { /* retry */ }
   }
 }
+/** delivery transactions already counted on this device, so an older transfer is never shown as a new purchase */
+const USED_KEY = "stoa-anychain-delivered";
+function usedDeliveries(): string[] { try { return JSON.parse(localStorage.getItem(USED_KEY) ?? "[]"); } catch { return []; } }
+function markDelivered(h: string) { try { localStorage.setItem(USED_KEY, JSON.stringify([...usedDeliveries(), h.toLowerCase()].slice(-50))); } catch { /* ignore */ } }
 
 /** Buy $STOA from any chain: Trustware routes a deposit from Base, Arbitrum, Ethereum, Optimism or BNB Chain through
  *  Relay into $STOA on Robinhood Chain, to the same address (lib/anychain.ts says what is checked and why it is capped). */
@@ -105,28 +114,41 @@ function Panel() {
   useEffect(() => {
     if (phase.k !== "moving") return;
     let stop = false;
-    const { intentId, sig, min, since } = phase;
+    const { t, min, since } = phase;
+    const buyer = t.user; // who bought is fixed when the deposit is sent, whatever account is connected later
+    let receiptAt = Date.now();
     const tick = async () => {
       if (stop) return;
       try {
-        const r = await fetch(`/api/anychain/status?intentId=${intentId}&sig=${sig}`);
+        const qs = new URLSearchParams({ intentId: t.intentId, user: t.user, chainId: String(t.chainId), depositId: t.depositId, sig: t.sig });
+        const r = await fetch(`/api/anychain/status?${qs}`);
         const j = await r.json();
         if (stop) return;
-        if (j.status === "success" && typeof j.destTx === "string" && /^0x[0-9a-fA-F]{64}$/.test(j.destTx) && rh && address) {
-          // done only once Robinhood Chain shows the $STOA reaching this wallet, at least the minimum that was shown
-          const rc = await rh.getTransactionReceipt({ hash: j.destTx as Hash }).catch(() => null);
-          const got = rc ? parseEventLogs({ abi: erc20Abi, eventName: "Transfer", logs: rc.logs.filter((l) => sameAddr(l.address, STOA_RH)) })
-            .filter((l) => sameAddr(l.args.to, address)).reduce((a, l) => a + l.args.value, 0n) : 0n;
-          if (got >= BigInt(min)) return setPhase({ k: "done", destTx: j.destTx, got });
+        // still pending: tell Trustware the source tx again now and then (a receipt lost early would leave it pending)
+        if ((j.status === "pending" || j.status === "unknown") && Date.now() - receiptAt > 30_000) {
+          receiptAt = Date.now();
+          setPhase((p) => { if (p.k === "moving") void sendReceipt(p.t, p.tx, [0]); return p; });
         }
-        if (j.status === "failed" || j.status === "expired") return setPhase({ k: "failed", text: "The route reports this purchase failed. Relay refunds deposits it cannot fill on the source chain; check your wallet there." });
+        if (j.status === "success" && typeof j.destTx === "string" && /^0x[0-9a-fA-F]{64}$/.test(j.destTx) && rh) {
+          // done only once Robinhood Chain shows the $STOA reaching the buyer, at least the minimum that was shown, in a
+          // transaction mined after the deposit was sent and not already counted for an earlier purchase
+          const rc = await rh.getTransactionReceipt({ hash: j.destTx as Hash }).catch(() => null);
+          const blk = rc ? await rh.getBlock({ blockNumber: rc.blockNumber }).catch(() => null) : null;
+          const fresh = !!blk && Number(blk.timestamp) * 1000 >= since - 120_000 && !usedDeliveries().includes(j.destTx.toLowerCase());
+          const got = rc && fresh ? parseEventLogs({ abi: erc20Abi, eventName: "Transfer", logs: rc.logs.filter((l) => sameAddr(l.address, STOA_RH)) })
+            .filter((l) => sameAddr(l.args.to, buyer)).reduce((a, l) => a + l.args.value, 0n) : 0n;
+          if (got >= BigInt(min)) { markDelivered(j.destTx); return setPhase({ k: "done", destTx: j.destTx, got }); }
+          // the route says delivered but Robinhood Chain does not show it: say so now, keep checking
+          if (rc || blk) setPhase((p) => (p.k === "moving" && !p.unseen ? { ...p, unseen: true } : p));
+        }
+        if (j.status === "failed" || j.status === "expired") return setPhase({ k: "failed", text: "The route reports this purchase failed. Check the source transaction and your wallet there; if nothing comes back, contact Stoa with the source transaction hash." });
       } catch { /* next tick */ }
       if (Date.now() - since > 45 * 60_000) return setPhase({ k: "failed", text: "Still not confirmed after 45 minutes. Check your wallet on Robinhood Chain before trying again." });
       setTimeout(tick, 4000);
     };
-    const t = setTimeout(tick, 4000);
-    return () => { stop = true; clearTimeout(t); };
-  }, [phase.k === "moving" ? phase.intentId : null, rh, address]); // eslint-disable-line react-hooks/exhaustive-deps
+    const timer = setTimeout(tick, 4000);
+    return () => { stop = true; clearTimeout(timer); };
+  }, [phase.k === "moving" ? phase.t.intentId : null, rh]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function go() {
     if (!quote || !address || !amt || going.current) return;
@@ -166,12 +188,19 @@ function Panel() {
       const t = q.transaction;
       setPhase({ k: "signing", what: `Buy $STOA with ${fmt(amt, sTok.decimals, 4)} ${sTok.symbol}` });
       const tx = await sendTransactionAsync({ to: t.to, data: t.data, value: t.value ? BigInt(t.value) : 0n, chainId: Number(t.chainId), gas: t.gasLimit ? (BigInt(t.gasLimit) * 13n) / 10n : undefined });
-      void sendReceipt(q.intentId, q.sig ?? "", tx);
-      const moving = { k: "moving" as const, tx, intentId: q.intentId, sig: q.sig ?? "", min: q.estimate.toAmountMin, since: Date.now() };
-      // the deposit is sent: from here the page follows it and never offers a second purchase for it
-      const rc = await pub!.waitForTransactionReceipt({ hash: tx, timeout: 180_000 }).catch(() => null);
+      const ticket = ticketOf(q, address, src.chain.id);
+      void sendReceipt(ticket, tx);
+      const moving = { k: "moving" as const, tx, t: ticket, min: q.estimate.toAmountMin, since: Date.now() };
+      // the deposit is sent: from here the page follows it and never offers a second purchase for it. If the wallet
+      // speeds it up, the new hash is the one that counts (and goes to Trustware); if it is cancelled, nothing was bought.
+      let cancelled = false;
+      const rc = await pub!.waitForTransactionReceipt({
+        hash: tx, timeout: 180_000,
+        onReplaced: (r) => { if (r.reason === "cancelled") cancelled = true; else void sendReceipt(ticket, r.transaction.hash); },
+      }).catch(() => null);
+      if (cancelled) throw new Error("You cancelled the deposit in your wallet. Nothing was bought.");
       if (rc && rc.status !== "success") throw new Error(`The transaction failed on ${src.name}. Nothing was sent.`);
-      setPhase(rc ? moving : { ...moving, slow: true });
+      setPhase(rc ? { ...moving, tx: rc.transactionHash } : { ...moving, slow: true });
     } catch (e) { setPhase({ k: "failed", text: explain(e) }); } finally { going.current = false; }
   }
 
@@ -232,6 +261,7 @@ function Panel() {
             <div className="det">
               <span>You receive at least</span><span>{fmt(BigInt(quote.estimate.toAmountMin), 18, 2)} $STOA</span>
               <span>Fees</span><span>{usd(fees) ?? "none"}</span>
+              {impact === null && <><span>Vs Stoa&apos;s price</span><span>can&apos;t read Stoa&apos;s $STOA price right now</span></>}
               {impact !== null && <><span>Vs Stoa&apos;s price</span><span style={impact > 0.05 ? { color: "#B4442E", fontWeight: 600 } : undefined}>{impact > 0 ? `${(impact * 100).toFixed(1)}% less $STOA` : "about the same"}</span></>}
               <span>Arrives in</span><span>{!quote.estimate.etaSeconds || quote.estimate.etaSeconds < 90 ? "about a minute" : `about ${Math.round(quote.estimate.etaSeconds / 60)} minutes`}</span>
               <span>Route</span><span>Relay, via Trustware</span>
@@ -243,7 +273,9 @@ function Panel() {
           {phase.k === "signing" && <div className="notice" style={{ marginTop: 12 }}>{phase.what}. Confirm it in your wallet.</div>}
           {phase.k === "moving" && (
             <div className="notice" style={{ marginTop: 12 }}>
-              {phase.slow ? `Your deposit was sent, but ${src.name} has not confirmed it yet. Do not buy again: this page keeps following it. ` : "Sent. Your $STOA is on its way to Robinhood Chain, to the same address. You can leave this page. "}
+              {phase.unseen
+                ? "The route reports your $STOA as delivered, but Stoa does not see it at your address on Robinhood Chain yet. This page keeps checking. If it does not show up, contact Stoa with the source transaction. "
+                : phase.slow ? `Your deposit was sent, but ${src.name} has not confirmed it yet. Do not buy again: this page keeps following it. ` : "Sent. Your $STOA is on its way to Robinhood Chain, to the same address. You can leave this page. "}
               <a href={`${src.chain.blockExplorers?.default.url}/tx/${phase.tx}`} target="_blank" rel="noopener noreferrer">Source tx ↗</a>
             </div>
           )}

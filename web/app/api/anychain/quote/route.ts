@@ -1,9 +1,9 @@
 import { isAddress, type Address } from "viem";
 import { tw } from "@/lib/trustware";
-import { DST_CHAIN, STOA_RH, checkAnyQuote, sourceOk, type AnyQuote } from "@/lib/anychain";
+import { DST_CHAIN, MAX_USD, STOA_RH, capUsdOf, checkAnyQuote, depositIdOf, sourceOk, type AnyQuote } from "@/lib/anychain";
 import { NATIVE_ZERO, sameAddr } from "@/lib/bridge";
 import { limited } from "@/lib/api";
-import { signIntent, stoaPrices } from "@/lib/anychainServer";
+import { isJson, signTicket, stoaPrices } from "@/lib/anychainServer";
 
 // POST /api/anychain/quote {chainId, token, amount, user}: a Trustware route from a source chain into $STOA on Robinhood
 // Chain, to the user's own address. Only Relay depository routes that pass checkAnyQuote are returned; the browser
@@ -14,6 +14,7 @@ const EVM_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export async function POST(req: Request) {
   const slow = limited(req);
   if (slow) return slow;
+  if (!isJson(req)) return Response.json({ error: "bad request" }, { status: 415 });
   const b = (await req.json().catch(() => null)) as { chainId?: number; token?: string; amount?: string; user?: string } | null;
   const chainId = Number(b?.chainId), token = String(b?.token ?? ""), user = String(b?.user ?? "");
   let amount: bigint;
@@ -23,6 +24,10 @@ export async function POST(req: Request) {
   // Stoa's own prices, read before asking Trustware: the $500 cap and the sanity check use these, never Trustware's
   const px = await stoaPrices();
   if (native && !px.ethUsd) return Response.json({ error: "busy" }, { status: 503 });
+  // over the cap on Stoa's own figure: refused before any intent is created at Trustware
+  const forCap = capUsdOf({ user: user as Address, chainId, token: token as Address, amount }, px.ethUsd);
+  if (forCap === null) return Response.json({ error: "busy" }, { status: 503 });
+  if (forCap > MAX_USD) return Response.json({ error: `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.` }, { status: 422 });
   const r = await tw("/routes/route", {
     method: "POST",
     body: JSON.stringify({
@@ -37,9 +42,11 @@ export async function POST(req: Request) {
   const q: AnyQuote = {
     intentId: d.intentId, expiresAt: d.expiresAt, provider: String(d.route.provider ?? ""), estimate: d.route.estimate,
     transaction: d.route.execution.transaction, approvals: d.route.execution.approvals ?? [],
-    ethUsd: px.ethUsd, stoaPerUsd: px.stoaPerUsd, sig: signIntent(d.intentId),
+    ethUsd: px.ethUsd, stoaPerUsd: px.stoaPerUsd,
   };
   const why = checkAnyQuote(q, { user: user as Address, chainId, token: token as Address, amount });
   if (why) return Response.json({ error: why.startsWith("Buying") ? why : "no checkable route" }, { status: 422 });
+  // Stoa's signature over this intent, this buyer, this chain and the order id the deposit commits to
+  q.sig = signTicket({ intentId: d.intentId, user, chainId, depositId: depositIdOf(q.transaction.data)! });
   return Response.json(q, { headers: { "cache-control": "no-store" } });
 }

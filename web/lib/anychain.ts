@@ -37,6 +37,11 @@ export interface AnyQuote {
 }
 /** the most Stoa's and Trustware's dollar values may differ before a quote is refused */
 const USD_TOLERANCE = 0.05;
+/** The lowest ETH price the $500 cap ever uses. Stoa's ETH price is one router quote; if it ever read low, the cap
+ *  would let more ETH through, so the cap values ETH at no less than this. */
+export const ETH_USD_FLOOR = 1200;
+/** the least toAmountMin may be against toAmount (the figure the impact line uses), in basis points */
+const MIN_VS_OUT_BPS = 9_800n;
 
 /** the purchase's dollar value on Stoa's side: stablecoins from the amount and Stoa's own decimals, ETH at Stoa's own
  *  price. null when it cannot be worked out (no ETH price), which refuses the quote. */
@@ -47,6 +52,21 @@ export function usdOf(want: AnyWant, ethUsd?: number | null): number | null {
   const units = Number(want.amount) / 10 ** t.decimals;
   if (sameAddr(t.address, NATIVE_ZERO)) return ethUsd && ethUsd > 0 ? units * ethUsd : null;
   return units; // USDC, USDT, USDT0: dollars
+}
+
+/** the dollar value the $500 cap uses: like usdOf, but ETH at no less than ETH_USD_FLOOR */
+export function capUsdOf(want: AnyWant, ethUsd?: number | null): number | null {
+  return usdOf(want, ethUsd && ethUsd > 0 ? Math.max(ethUsd, ETH_USD_FLOOR) : null);
+}
+
+/** the 32-byte Relay order id a Depository call commits to, or null when the calldata is not a deposit */
+export function depositIdOf(data: string): `0x${string}` | null {
+  try {
+    const c = decodeFunctionData({ abi: ABI, data: data as `0x${string}` });
+    return (c.functionName === "depositNative" ? c.args[1] : c.args[3]) as `0x${string}`;
+  } catch {
+    return null;
+  }
 }
 
 export interface AnyWant { user: Address; chainId: number; token: Address; amount: bigint }
@@ -65,7 +85,10 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
   if (Number(tx.chainId) !== want.chainId || !sameAddr(tx.to, RELAY_DEPOSITORY)) return bad;
   if (!sourceOk(want.chainId, want.token)) return bad;
   if (BigInt(q.estimate.fromAmount) !== want.amount) return bad;
-  if (BigInt(q.estimate.toAmountMin || "0") <= 0n) return bad;
+  // the minimum must be real and close to the quoted output, since the impact line reads the output
+  let outMin: bigint, out: bigint;
+  try { outMin = BigInt(q.estimate.toAmountMin); out = BigInt(q.estimate.toAmount); } catch { return bad; }
+  if (outMin <= 0n || outMin > out || outMin * 10_000n < out * MIN_VS_OUT_BPS) return bad;
   const value = BigInt(tx.value ?? 0);
   let call: ReturnType<typeof decodeFunctionData<typeof ABI>>;
   try { call = decodeFunctionData({ abi: ABI, data: tx.data }); } catch { return bad; }
@@ -87,9 +110,9 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
     }
   }
   // the cap uses Stoa's own figure; Trustware's, when it sends one, must agree with it
-  const ours = usdOf(want, q.ethUsd);
-  if (ours === null) return "Stoa could not price this purchase right now, so it stopped it before your wallet. Try again in a minute.";
-  if (ours > MAX_USD) return `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
+  const ours = usdOf(want, q.ethUsd), cap = capUsdOf(want, q.ethUsd);
+  if (ours === null || cap === null) return "Stoa could not price this purchase right now, so it stopped it before your wallet. Try again in a minute.";
+  if (cap > MAX_USD) return `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
   if (q.estimate.fromAmountUsd !== undefined && q.estimate.fromAmountUsd !== null) {
     const theirs = Number(q.estimate.fromAmountUsd);
     if (!Number.isFinite(theirs) || theirs <= 0 || Math.abs(theirs - ours) > ours * USD_TOLERANCE) return bad;
