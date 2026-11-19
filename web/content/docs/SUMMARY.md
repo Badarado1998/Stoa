@@ -51,6 +51,7 @@
 * [Router and SDK](router-sdk.md)
 * [API for bots and apps](api.md)
 * [MCP server for AI agents](mcp.md)
+* [Stoa for Autonomo agents](autonomo.md)
 * [LP tokens as collateral](lp-collateral.md)
 * [Liquidation venue](liquidation-venue.md)
 * [Aggregator integration](aggregators.md)
