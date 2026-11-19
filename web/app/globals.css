@@ -838,3 +838,4 @@ details.fold[open] summary{margin-bottom:6px}
 .tb-glyph{display:inline-flex;align-items:center;justify-content:center;background:#EAF1FB;font-size:12px;font-weight:700;color:var(--accent)}
 .tb-sym{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:560px){.tb-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){.movers .panel>.lbl{display:none}.movers .panel>.note:first-of-type{margin-top:0 !important}}
