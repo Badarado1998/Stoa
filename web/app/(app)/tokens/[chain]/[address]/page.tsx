@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import GloamPanel from "@/components/GloamPanel";
+import TokenTabs from "@/components/TokenTabs";
+import { gloamSwapUrl } from "@/lib/gloam";
 import Link from "next/link";
 import { CoverChip } from "@/components/CoverPanel";
 import { notFound, redirect } from "next/navigation";
@@ -58,92 +59,111 @@ export default async function TokenPage({ params }: P) {
     "@context": "https://schema.org", "@type": "FAQPage",
     mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
   };
+  const gloam = net.key === "robinhood" ? gloamSwapUrl(sym) : null;
+  const showSafety = token.tone === "other";
+  const showMarket = net.key === "robinhood" && !/^(USDG|WETH|USDC|USDT)$/.test(sym) && token.address !== "0x0000000000000000000000000000000000000000";
+  const overview = (
+    <>
+      <div className="panel tlist">
+        <div>
+          <div className="k">Contract</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+            <code style={{ fontFamily: "var(--mono)", fontSize: 13, overflowWrap: "anywhere" }}>{token.address.slice(0, 6)}…{token.address.slice(-4)}</code>
+            <span style={{ display: "flex", gap: 8 }}>
+              <CopyButton text={token.address} />
+              <a className="cp" href={`${net.explorer}/token/${token.address}`} target="_blank" rel="noopener noreferrer">Explorer ↗</a>
+            </span>
+          </div>
+        </div>
+        {t?.launchpad === "Pons" && (
+          <Link className="trow" href={`/launches/${token.address}`}>
+            <span><strong>Curve, creator tax and Rug Cover</strong><small>{sym} on Launches</small></span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+          </Link>
+        )}
+        {gloam && (
+          <a className="trow" href={gloam} target="_blank" rel="noopener noreferrer">
+            <span><strong>Trade privately</strong><small>On Gloam, a separate app with its own pools</small></span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
+          </a>
+        )}
+      </div>
+      <div className="notice" style={{ margin: 0 }}>
+        Listed because it trades on {net.name}, not reviewed by Stoa. Anyone can create a token with any name, so check the contract address before you buy.
+      </div>
+      {others.length > 0 && (
+        <>
+          <h2 className="tsec-h">More on {net.name}</h2>
+          <div className="tchips">
+            {others.map((o) => (
+              <Link key={o.token.address} className="ghost tchip" href={`/tokens/${net.key}/${o.token.address}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {o.token.logo && <img src={o.token.logo} alt="" width={20} height={20} loading="lazy" />}{o.token.symbol}
+              </Link>
+            ))}
+            <Link className="ghost" style={{ paddingLeft: 14 }} href="/tokens">All tokens →</Link>
+          </div>
+        </>
+      )}
+      <div className="panel pad tfaq">
+        <div className="lbl">QUESTIONS</div>
+        {faq.map(([q, a]) => (
+          <details key={q}>
+            <summary><h2>{q}</h2></summary>
+            <p className="note" style={{ marginTop: 6, marginBottom: 0 }}>{a}</p>
+          </details>
+        ))}
+      </div>
+    </>
+  );
+  const tabs = [
+    { key: "overview", label: "Overview", body: overview },
+    ...(showSafety ? [{ key: "safety", label: "Safety", body: <SafetyPanel chain={net.key} token={token.address} /> }] : []),
+    ...(showMarket ? [{ key: "market", label: "Market", body: <><CmcPanel token={token.address} note="context only, the price you get is Stoa's quote" /><p className="note" style={{ margin: "0 4px" }}>Price, liquidity, volume and FDV from DexScreener; the route on Stoa is read live from the router. Refreshed every minute.</p></> }] : []),
+    { key: "share", label: "Share", body: <TokenShare chain={net.key} address={token.address} symbol={sym} /> },
+  ];
   return (
     <section className="page">
       <RefKeeper />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
-      <PageHead eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} on Stoa`}
-        action={<div style={{ display: "flex", gap: 8 }}><WatchStar chain={net.key} address={token.address} symbol={sym} logo={token.logo} label /><Link className="cta" href={buy}>Buy {sym}</Link></div>}>
+      <PageHead compact eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} on Stoa`}>
         Stoa compares every venue it routes on {net.name} on every swap and fills where you get the most, for a 2 bps fee.
       </PageHead>
 
-      <div className="grid2">
+      <div className="grid2" style={{ alignItems: "start" }}>
         <div className="panel pad tmain">
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {token.logo ? <img src={token.logo} alt="" width={52} height={52} style={{ borderRadius: 999, objectFit: "cover", background: "#EAF1FB" }} />
-              : <span style={{ width: 52, height: 52, borderRadius: 999, background: "#EAF1FB", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "var(--accent)" }}>{sym.slice(0, 1)}</span>}
-            <div>
-              <div style={{ fontSize: 24, fontWeight: 700 }}>{sym}{net.key === "robinhood" && <CoverChip token={token.address} />}</div>
-              <div className="note" style={{ marginTop: 2 }}>{t?.name && t.name !== sym ? `${t.name} · ` : ""}{net.name}{t?.launchpad ? ` · ${t.launchpad} launch` : ""}</div>
+            {token.logo ? <img src={token.logo} alt="" width={48} height={48} style={{ borderRadius: 999, objectFit: "cover", background: "#EAF1FB", flex: "none" }} />
+              : <span style={{ width: 48, height: 48, flex: "none", borderRadius: 999, background: "#EAF1FB", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "var(--accent)" }}>{sym.slice(0, 1)}</span>}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "var(--ink)" }}>{sym}{net.key === "robinhood" && <CoverChip token={token.address} />}</div>
+              <div className="note" style={{ marginTop: 1 }}>{t?.name && t.name !== sym ? `${t.name} · ` : ""}{net.name}{t?.launchpad ? ` · ${t.launchpad} launch` : ""}</div>
             </div>
+            <WatchStar chain={net.key} address={token.address} symbol={sym} logo={token.logo} />
           </div>
-          <div style={{ marginTop: 18, display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "var(--serif)", fontSize: 40 }}>{priceFmt(t?.priceUsd ?? null)}</span>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "var(--serif)", fontSize: 40, lineHeight: 1, color: "var(--ink)" }}>{priceFmt(t?.priceUsd ?? null)}</span>
             {ch !== null && <span className="chg" style={{ color: ch >= 0 ? "#1E6B41" : "#8A2B20" }}>{ch >= 0 ? "+" : ""}{ch.toFixed(2)}% 24h</span>}
           </div>
-
-          <div className="lbl" style={{ marginTop: 20 }}>RIGHT NOW ON STOA</div>
           {t?.quote ? (
-            <div className="det" style={{ marginTop: 8 }}>
-              <span>You pay</span><span>{t.quote.amountIn} {net.gas}</span>
-              <span>You get</span><span>{t.quote.amountOut} {sym}</span>
-              {t.quote.venues.length > 0 && <><span>Filled by</span><span>{t.quote.venues.join(" → ")}</span></>}
+            <div className="tquote">
+              <span>{t.quote.amountIn} {net.gas} → <b>{t.quote.amountOut} {sym}</b></span>
+              {t.quote.venues.length > 0 && <span className="via">via {t.quote.venues.join(" → ")}</span>}
             </div>
           ) : <p className="note">No route for {sym} on Stoa at this moment. Try again in a minute, or open Trade to check other amounts.</p>}
-
-          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-            <Link className="big pri" href={buy} style={{ flex: "1 1 160px", marginTop: 0, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Buy {sym}</Link>
-            <Link className="big" href={sell} style={{ flex: "1 1 160px", marginTop: 0, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", background: "#fff", border: "1px solid var(--line)", color: "var(--ink)" }}>Sell {sym}</Link>
+          <div className="tbtns">
+            <Link className="b" href={buy}>Buy {sym}</Link>
+            <Link className="s" href={sell}>Sell {sym}</Link>
           </div>
-
-          <div className="lbl" style={{ marginTop: 20 }}>CONTRACT</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-            <code style={{ fontFamily: "var(--mono)", fontSize: 13, overflowWrap: "anywhere" }}>{token.address}</code>
-            <CopyButton text={token.address} />
-            <a href={`${net.explorer}/token/${token.address}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13 }}>Explorer ↗</a>
-          </div>
-          <div className="notice" style={{ marginTop: 16, marginBottom: 0 }}>
-            Listed because it trades on {net.name}. Not reviewed by Stoa: anyone can create a token with any name, so check the contract address before you buy.
-            {t?.launchpad === "Pons" && <> Curve progress, creator tax and Rug Cover: <Link href={`/launches/${token.address}`}>{sym} on Launches</Link>.</>}
+          <div className="tstats">
+            <div><small>Liquidity</small><b>{usdFmt(t?.liquidityUsd ?? null)}</b></div>
+            <div><small>24h volume</small><b>{usdFmt(t?.volume24h ?? null)}</b></div>
+            <div><small>FDV</small><b>{usdFmt(t?.fdvUsd ?? null)}</b></div>
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div className="panel stats3">
-            {([["LIQUIDITY", t?.liquidityUsd], ["24H VOLUME", t?.volume24h], ["FDV", t?.fdvUsd]] as const).map(([l, v]) => (
-              <div key={l}><div className="lbl">{l}</div><span className="v">{usdFmt(v ?? null)}</span></div>
-            ))}
-          </div>
-          {token.tone === "other" && <SafetyPanel chain={net.key} token={token.address} />}
-          {net.key === "robinhood" && <GloamPanel symbol={sym} address={token.address} />}
-          {net.key === "robinhood" && !/^(USDG|WETH|USDC|USDT)$/.test(sym) && token.address !== "0x0000000000000000000000000000000000000000" && <CmcPanel token={token.address} note="context only, the price you get is Stoa's quote" />}
-          <TokenShare chain={net.key} address={token.address} symbol={sym} />
-          {others.length > 0 && (
-            <div className="panel pad">
-              <div className="lbl">MORE TOKENS ON {net.name.toUpperCase()}</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {others.map((o) => (
-                  <Link key={o.token.address} className="ghost tchip" href={`/tokens/${net.key}/${o.token.address}`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {o.token.logo && <img src={o.token.logo} alt="" width={20} height={20} loading="lazy" />}{o.token.symbol}
-                  </Link>
-                ))}
-                <Link className="ghost" href="/tokens">All tokens →</Link>
-              </div>
-            </div>
-          )}
-          <div className="panel pad tfaq">
-            <div className="lbl">QUESTIONS</div>
-            {faq.map(([q, a]) => (
-              <details key={q}>
-                <summary><h2>{q}</h2></summary>
-                <p className="note" style={{ marginTop: 6, marginBottom: 0 }}>{a}</p>
-              </details>
-            ))}
-          </div>
-          <p className="note" style={{ marginTop: 0 }}>Price, liquidity, volume and FDV from DexScreener. The route on Stoa is read live from the router. Refreshed every minute.</p>
-        </div>
+        <TokenTabs label={`${sym} details`} tabs={tabs} />
       </div>
     </section>
   );

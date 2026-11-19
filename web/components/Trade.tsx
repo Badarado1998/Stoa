@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { gloamSwapUrl } from "@/lib/gloam";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
 import { useStoaToken } from "@/lib/stoaToken";
@@ -59,13 +59,14 @@ function useReferrer(self?: string) {
   return ref;
 }
 
-export default function Trade() {
+/** aside: shown first beside the form (on phones, right under it), e.g. the Spotlight banner */
+export default function Trade({ aside }: { aside?: ReactNode } = {}) {
   const net = useNet();
   // a fresh swap form per network: tokens, quotes and balances never mix chains
-  return <TradeOn key={net.key} net={net} />;
+  return <TradeOn key={net.key} net={net} aside={aside} />;
 }
 
-function TradeOn({ net }: { net: Net }) {
+function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const chain = net.chain, CONTRACTS = net.contracts, VENUE_NAMES = net.venues, deployed = net.deployed;
   const WHYPE = net.wrapped, USDC = net.stable, W = net.tokens[1].symbol, G = net.gas;
   const txUrl = (h: string) => txUrlOn(net, h);
@@ -588,12 +589,20 @@ function TradeOn({ net }: { net: Net }) {
         })()}
           </>
         )}
-        <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on whichever venue Stoa routes pays the most for your amount; maker pools come later.`}</p>
+        <p className="note hide-m">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on whichever venue Stoa routes pays the most for your amount; maker pools come later.`}</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {aside}
+        <div className="vrow show-m">
+          <span>Every swap compares</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <VenueIcons ids={[...(net.makers ? ["stoa"] : []), "uniswap", ...(net.makers ? ["aero", "ramses", "lb"] : net.newVenues.map((v) => v.dexId)), ...(net.pons ? ["pons"] : [])]} />
+            <Link href="/docs/how-stoa-works">How it works</Link>
+          </span>
+        </div>
         {net.makers && <PoolDepth />}
-        <div className="panel pad">
+        <div className="panel pad hide-m">
           <div className="lbl">EVERY SWAP ON {net.short.toUpperCase()} CHECKS</div>
           <div className="src">
             {net.makers && <div><span className="vn"><VenueIcons ids={["stoa"]} />Stoa maker pools</span> <em>{CONTRACTS.pool ? "IN ROUTER" : "OPENING SOON"}</em></div>}
@@ -606,7 +615,7 @@ function TradeOn({ net }: { net: Net }) {
           <p className="note">Every swap compares these venues, directly and through {W}, and fills on the one that pays the most.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
         </div>
         {net.key === "robinhood" && (
-          <a className="panel pad" href="/check" style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+          <a className="panel pad hide-m" href="/check" style={{ display: "block", textDecoration: "none", color: "inherit" }}>
             <div className="lbl">NOT SURE ABOUT A TOKEN?</div>
             <p style={{ marginTop: 8 }}>Check it free before you buy: a simulated buy and sell-back, hidden taxes and who holds it. Nothing to sign. <b style={{ color: "var(--accent)" }}>stoadex.com/check →</b></p>
           </a>

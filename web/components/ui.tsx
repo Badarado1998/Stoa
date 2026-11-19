@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import type { Token } from "@/lib/tokens";
 
-export function PageHead({ eyebrow, title, children, action }: { eyebrow: string; title: string; children?: ReactNode; action?: ReactNode }) {
+/** compact: on phones the heading is kept for screen readers and search but not drawn, so the tool comes first */
+export function PageHead({ eyebrow, title, children, action, compact }: { eyebrow: string; title: string; children?: ReactNode; action?: ReactNode; compact?: boolean }) {
   return (
-    <div className="ph">
+    <div className={compact ? "ph ph-c" : "ph"}>
       <div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1>{children && <p>{children}</p>}</div>
       {action}
     </div>

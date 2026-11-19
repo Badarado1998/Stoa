@@ -4,16 +4,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import WalletButton from "./WalletButton";
 import NetSwitch from "./NetSwitch";
+import { NAV_GROUPS } from "@/lib/siteNav";
 
 // the top bar shows what is live on both networks today; everything else (Earn, Curators, Build, Referrals, Wrapped,
 // Docs) is one tap away in the menu, which opens on every screen size
 const TABS = [["/trade", "Trade"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/cover", "Rug Cover"], ["/spotlight", "Spotlight"], ["/pools", "Pools"], ["/token", "$STOA"], ["/portfolio", "Portfolio"]] as const;
-// the menu in four short groups (the same grouping as the footer), two columns, so it fits one phone screen
-const MENU: { h: string; items: [string, string][] }[] = [
-  { h: "Trade", items: [["/trade", "Trade"], ["/bridge", "Bridge in"], ["/stocks", "Stocks"], ["/launches", "Launches"], ["/pools", "Pools"], ["/cover", "Rug Cover"], ["/check", "Token check"], ["/tokens", "Tokens"]] },
-  { h: "$STOA & you", items: [["/token", "$STOA"], ["/spotlight", "Spotlight"], ["/earn", "Earn"], ["/portfolio", "Portfolio"], ["/wrapped", "Wrapped"], ["/referrals", "Referrals"]] },
-  { h: "Learn", items: [["/docs", "Docs"], ["/guides", "Community guides"], ["/", "Walk the Stoa"], ["/build", "Integrate"], ["/curators", "Curators"], ["/security", "Security"], ["/weekly", "This week"], ["/changelog", "Changelog"]] },
-];
+// the menu: every page in the same four groups as the More page and the footer, two columns, so it fits one phone screen
+const MENU = NAV_GROUPS;
 
 export default function Header({ extra }: { extra?: ReactNode }) {
   const path = usePathname();

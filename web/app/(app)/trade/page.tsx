@@ -14,9 +14,8 @@ export const metadata: Metadata = {
 export default function TradePage() {
   return (
     <section className="page">
-      <PageHead eyebrow="I · TRADE" title="Every route, compared">Every swap checks every venue Stoa routes on the network you pick, for your exact amount, and fills where you get the most.</PageHead>
-      <SpotlightBanner />
-      <Suspense><Trade /></Suspense>
+      <PageHead compact eyebrow="I · TRADE" title="Every route, compared">Every swap checks every venue Stoa routes on the network you pick, for your exact amount, and fills where you get the most.</PageHead>
+      <Suspense><Trade aside={<SpotlightBanner />} /></Suspense>
       <AppInstall variant="banner" />
     </section>
   );
