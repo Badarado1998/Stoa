@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
 type F = { h: string; t: string; k: string; d: string; tag?: string; v: React.ReactNode };
 
 const FEATURES: F[] = [
-  { h: "/trade", t: "Swap", k: "TRADE", d: "Every venue Stoa routes, compared for your exact amount, in one block. Your swap fills where you get the most.", v: <VSwap /> },
+  { h: "/trade", t: "Swap", k: "TRADE", d: "Every venue Stoa routes, compared for your exact amount, in one block. Your swap fills on the one that pays the most.", v: <VSwap /> },
   { h: "/stocks", t: "Stock tokens", k: "STOCKS", tag: "Robinhood", d: "Every Robinhood Stock Token with Robinhood's price next to the on-chain price, a swap where Stoa routes it, a watchlist and price alerts.", v: <VStocks /> },
   { h: "/docs/limit-orders", t: "Limit orders", k: "SET A PRICE", tag: "Robinhood", d: "Sell at a price you set. Stoa's keeper fills it through the router when the market gets there, never below your minimum.", v: <VLimit /> },
   { h: "/check", t: "Safety check", k: "BEFORE YOU BUY", tag: "Free", d: "Paste any token address at stoadex.com/check: Stoa simulates the buy and the sell back on the live chain and shows hidden taxes, whether it sells and who holds it. Share the result on X.", v: <VSafety /> },

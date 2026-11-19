@@ -582,7 +582,7 @@ function TradeOn({ net }: { net: Net }) {
         })()}
           </>
         )}
-        <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on the best live venue; maker pools come later.`}</p>
+        <p className="note">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on whichever venue Stoa routes pays the most for your amount; maker pools come later.`}</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

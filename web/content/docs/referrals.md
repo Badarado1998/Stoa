@@ -21,3 +21,7 @@ Earn 10% of the protocol fee on swaps from people you refer.
 | Who can claim | Only your own wallet. The admin cannot take referral earnings |
 
 You cannot refer yourself in the app: a link with your own address is ignored. Earnings are visible on-chain before you claim.
+
+## Top referrers
+
+[Referrals](https://stoadex.com/referrals) ranks referrers by the volume of the swaps their links brought in, on both networks, read from the routers' `Routed` events: swaps, total volume, the last 7 days and an estimate of what each earned (10% of the 2 bps fee, so about 0.002% of the volume). Connect your wallet to see your own row highlighted.

@@ -37,6 +37,8 @@ In [Rug Cover](rug-cover.md), a Pons token's creator bonds ETH behind a promise 
 
 ## Where to track it
 
+The [$STOA page](https://stoadex.com/token) opens with **$STOA at a glance**, read live from the chain: total supply, burned, circulating, $STOA locked by holders (Spotlight, Rug Cover and maker bonds), the team and launch wallets' share, and the next weekly buyback with the fees waiting for it. [This week on Stoa](https://stoadex.com/weekly) shows each week's volume, buybacks, Spotlight and releases.
+
 $STOA is listed on [CoinGecko](https://www.coingecko.com/en/coins/stoa) (since 17 November 2026) and [GeckoTerminal](https://www.geckoterminal.com/robinhood/tokens/0x13e6993417616de724f2b337d65063f229e96718), and its pool is on [DexScreener](https://dexscreener.com/robinhood/0x3cf63de2530870232ec7075aec62ca539031c3c5a17dba5e016771238bf64180). Their supply figures come from the endpoints below.
 
 ## Supply

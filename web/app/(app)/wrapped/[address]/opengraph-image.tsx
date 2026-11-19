@@ -66,7 +66,7 @@ export default async function Image({ params }: { params: Promise<{ address: str
           ) : (
             <div style={{ display: "flex", flexDirection: "column", marginTop: 60 }}>
               <span style={{ fontFamily: "Marcellus", fontSize: 54 }}>No swaps yet.</span>
-              <span style={{ fontSize: 22, color: MUTED, marginTop: 10 }}>The first one fills on the best venue on the network.</span>
+              <span style={{ fontSize: 22, color: MUTED, marginTop: 10 }}>The first one compares every venue Stoa routes.</span>
               {w && w.stoa.held + w.stoa.locked > 0 ? <div style={{ display: "flex", marginTop: 14 }}>{stat("$STOA", num(w.stoa.held + w.stoa.locked))}</div> : null}
             </div>
           )}

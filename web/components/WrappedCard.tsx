@@ -39,7 +39,7 @@ export function WrappedCard({ w }: { w: Wrapped }) {
         ) : (
           <>
             <div className="wr-big" style={{ fontSize: 42 }}>No swaps yet</div>
-            <div className="wr-sub">The first one fills on the best venue on the network.</div>
+            <div className="wr-sub">The first one compares every venue Stoa routes.</div>
           </>
         )}
         <div className="wr-grid">

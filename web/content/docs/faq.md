@@ -31,7 +31,7 @@ The router's guardian can pause swaps at once. It cannot unpause, move funds or 
 
 ### How much volume does Stoa process?
 
-Every swap through a Stoa router is on [Stats](https://stoadex.com/stats), with its transaction, per network and per day. The numbers there are the real ones, small or large. The router went live on Elysium on 12 November 2026 and on Robinhood Chain on 14 November 2026, so it is early.
+Every swap through a Stoa router is on [Stats](https://stoadex.com/stats), with its transaction, per network and per day. The numbers there are the real ones, small or large. The router went live on Elysium on 12 November 2026 and on Robinhood Chain on 14 November 2026, so it is early. [This week on Stoa](https://stoadex.com/weekly) sums up one week at a time, Monday to Sunday UTC.
 
 ### How is it counted?
 
@@ -84,9 +84,9 @@ The only official $STOA is `0x13E6993417616De724F2b337D65063f229e96718` on Robin
 
 2 bps (0.02%) to Stoa, plus the fee of the venue that fills it. 10% of Stoa's fee goes to the referrer if you came through a referral link. Full table: [Fees](fees.md).
 
-### How do I know I get the best price?
+### Does Stoa give me the best price?
 
-Under every quote, the Trade page shows what each venue Stoa routes would give you for the same amount, read live from the chain. The router checks the same venues when you sign, fills on the best one, and reverts if you would get less than your minimum.
+Not always, and Stoa does not claim to. Under every quote, the Trade page shows what each venue Stoa routes would give you for the same amount, read live from the chain. The router checks the same venues when you sign, fills on the one that pays the most, and reverts if you would get less than your minimum.
 
 Stoa compares only the venues it routes (listed in the [Introduction](introduction.md)), sends each swap along one route, and adds its 2 bps fee. An aggregator that splits an order across more venues can give you more, mostly on large orders, so compare when the size matters.
 
