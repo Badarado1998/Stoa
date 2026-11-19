@@ -231,7 +231,7 @@ function Panel() {
         <div>
           <p style={{ fontSize: 20, margin: "10px 0 4px" }}>{phase.got ? `${fmt(phase.got, 18, 2)} $STOA arrived on Robinhood Chain.` : "Your $STOA is on Robinhood Chain."}</p>
           <p className="note" style={{ marginTop: 0 }}>Same wallet address. You can lock it in Spotlight to vote and earn projects&apos; ETH.</p>
-          <Link href="/spotlight" className="big pri" style={{ display: "flex", justifyContent: "center", textDecoration: "none", marginTop: 14 }}>Lock in Spotlight</Link>
+          <Link href="/spotlight" className="big pri" style={{ display: "flex", justifyContent: "center", alignItems: "center", textDecoration: "none", marginTop: 14 }}>Lock in Spotlight</Link>
           {phase.destTx && <p className="note"><a href={`${RH_EXPLORER}/tx/${phase.destTx}`} target="_blank" rel="noopener noreferrer">Delivery on Robinhood Chain ↗</a></p>}
           <button type="button" className="ghost" style={{ marginTop: 8 }} onClick={reset}>Buy more</button>
         </div>
