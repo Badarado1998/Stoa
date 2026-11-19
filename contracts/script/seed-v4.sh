@@ -18,10 +18,12 @@
 # MIN_HOOKLESS_SPACING=N (default 0: off) still refuses hook-less pools with a tick spacing under N.
 # MAX_NEW=N stops after N registrations (0 or unset: no limit), so a long list is worked through over several runs.
 # DRY=1 lists what it would register without sending.
+# STRICT=1 (the Elysium V4AdapterV3 copy): a register that fails, a pair it cannot read or a full pair is an error, and the
+# script exits 1 so the run is seen as unfinished (otherwise a failed send counts as "known or rejected").
 # Usage: RPC=... PRIVATE_KEY=... ADAPTER=0x... [SEED=script/data/v4-seed-pools-4663.json] ./script/seed-v4.sh
 set -uo pipefail
 cd "$(dirname "$0")/.."
-ok=0; known=0; full=0; fail=0; prot=0; narrow=0
+ok=0; known=0; full=0; fail=0; prot=0; narrow=0; sent_fail=0
 max=$(cast call "$ADAPTER" "MAX_KEYS()(uint256)" --rpc-url "$RPC" 2>/dev/null | awk '{print $1}')
 max=${max:-6}
 cap=${MAX_PER_PAIR:-4}; [ "$cap" -lt "$max" ] && max=$cap
@@ -73,8 +75,13 @@ while IFS=' ' read -r c0 c1 fee ts hooks; do
   fi
   if cast send "$ADAPTER" "register((address,address,uint24,int24,address))" "$k" --private-key "$PRIVATE_KEY" --rpc-url "$RPC" >/dev/null 2>&1; then
     ok=$((ok+1)); count[$pair]=$(( ${count[$pair]} + 1 )); keyset[$pair]=$added
+  elif [ -n "${STRICT:-}" ]; then
+    sent_fail=$((sent_fail+1)); echo "::warning::register failed on $ADAPTER: $k"
   else
     known=$((known+1))
   fi
 done < <(jq -r '.[] | "\(.currency0) \(.currency1) \(.fee) \(.tickSpacing) \(.hooks)"' "${SEED:-script/data/v4-seed-pools.json}")
 echo "registered $ok pools, skipped $known known or rejected, $full on full pairs (never evicted), $fail unreadable, $prot protected, $narrow hook-less with tick spacing < $minsp (0: rule off)"
+if [ -n "${STRICT:-}" ] && [ $((sent_fail + fail + full)) -gt 0 ]; then
+  echo "::error::copy unfinished: $sent_fail failed sends, $fail unreadable pairs, $full full pairs"; exit 1
+fi

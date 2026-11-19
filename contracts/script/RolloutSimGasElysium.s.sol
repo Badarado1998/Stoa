@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {console2} from "forge-std/Script.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {StoaRouter} from "../src/StoaRouter.sol";
+import {PoolKey} from "../src/adapters/UniswapV4Adapter.sol";
 import {UniswapV4AdapterV3} from "../src/adapters/UniswapV4AdapterV3.sol";
 import {VenuePackageRobinhood} from "./VenuePackageRobinhood.sol";
 import {SafeRunner, ISafeLite, IMultiSendLite} from "./SafeRunner.sol";
@@ -71,15 +72,30 @@ contract RolloutSimGasElysium is SafeRunner, VenuePackageRobinhood, ElysiumLive 
 
     /// @dev Pairs of the copied seed (the old V4 adapter's keys) with no key on V3 yet. A pair the keeper could not
     ///      register (a key V3 refuses) is fixed by hand before step 3: drop it from the seed or register it.
+    /// Seed keys not registered on V4AdapterV3, compared by pool id, key by key (not "the pair has some key": a pair
+    /// with two keys could miss one, and a pair holding only someone else's pools would count as present). The rollout
+    /// workflow rebuilds the seed and runs the copy again before this is read, so the seed is the keeper's keys as of now.
     function missingV4Keys(address v3) public view returns (uint256 missing) {
         string memory j = vm.readFile("script/data/v4-v3-seed-99901.json");
         UniswapV4AdapterV3 v4 = UniswapV4AdapterV3(payable(v3));
         for (uint256 i;; ++i) {
             string memory k = string.concat("[", vm.toString(i), "]");
             if (!vm.keyExistsJson(j, k)) break;
-            address c0 = vm.parseJsonAddress(j, string.concat(k, ".currency0"));
-            address c1 = vm.parseJsonAddress(j, string.concat(k, ".currency1"));
-            if (v4.keysFor(c0 == address(0) ? v4.whype() : c0, c1).length == 0) ++missing;
+            PoolKey memory want = PoolKey({
+                currency0: vm.parseJsonAddress(j, string.concat(k, ".currency0")),
+                currency1: vm.parseJsonAddress(j, string.concat(k, ".currency1")),
+                fee: uint24(vm.parseJsonUint(j, string.concat(k, ".fee"))),
+                tickSpacing: int24(vm.parseJsonInt(j, string.concat(k, ".tickSpacing"))),
+                hooks: vm.parseJsonAddress(j, string.concat(k, ".hooks"))
+            });
+            bytes32 id = v4.poolId(want);
+            PoolKey[] memory have =
+                v4.keysFor(want.currency0 == address(0) ? v4.whype() : want.currency0, want.currency1);
+            bool found;
+            for (uint256 h; h < have.length && !found; ++h) {
+                found = v4.poolId(have[h]) == id;
+            }
+            if (!found) ++missing;
         }
     }
 

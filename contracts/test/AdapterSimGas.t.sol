@@ -77,8 +77,9 @@ contract AdapterSimGasTest is Test, VenuesRobinhood {
     function _v3Pool(uint24 fee, int24 sp, uint128 liq, bool thin) internal returns (address p) {
         p = IV3FactoryFull(UNI_V3_FACTORY).createPool(address(x), address(y), fee);
         IPoolMint(p).initialize(P1);
-        if (thin) lp.mint(p, -sp, sp, liq); // dust in one tick around the price
-        else {
+        if (thin) {
+            lp.mint(p, -sp, sp, liq); // dust in one tick around the price
+        } else {
             (int24 lo, int24 hi) = _full(sp);
             lp.mint(p, lo, hi, liq);
         }
@@ -143,8 +144,9 @@ contract AdapterSimGasTest is Test, VenuesRobinhood {
 
     function _clPool(int24 sp, uint128 liq, bool thin) internal returns (address p) {
         p = ICLFactoryFull(AERO_CL_FACTORY).createPool(address(x), address(y), sp, P1);
-        if (thin) lp.mint(p, -sp, sp, liq);
-        else {
+        if (thin) {
+            lp.mint(p, -sp, sp, liq);
+        } else {
             (int24 lo, int24 hi) = _full(sp);
             lp.mint(p, lo, hi, liq);
         }
@@ -157,7 +159,8 @@ contract AdapterSimGasTest is Test, VenuesRobinhood {
         _clPool(10, 1e6, true);
         _clPool(50, 1e6, true);
 
-        CLTickSpacingAdapter old = new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), address(this), aeroSpacings());
+        CLTickSpacingAdapter old =
+            new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), address(this), aeroSpacings());
         CLTickSpacingAdapterV2 v2 =
             new CLTickSpacingAdapterV2(ICLTickSpacingFactory(AERO_CL_FACTORY), address(this), aeroSpacings());
         uint256 amt = 1e18;
@@ -183,7 +186,8 @@ contract AdapterSimGasTest is Test, VenuesRobinhood {
 
     function test_fork_cl_ordinaryQuotesUnchanged() public {
         if (!on) return vm.skip(true);
-        CLTickSpacingAdapter old = new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), address(this), aeroSpacings());
+        CLTickSpacingAdapter old =
+            new CLTickSpacingAdapter(ICLTickSpacingFactory(AERO_CL_FACTORY), address(this), aeroSpacings());
         CLTickSpacingAdapterV2 v2 =
             new CLTickSpacingAdapterV2(ICLTickSpacingFactory(AERO_CL_FACTORY), address(this), aeroSpacings());
         uint256[3] memory sizes = [uint256(0.1 ether), 5 ether, 50 ether];
@@ -220,7 +224,9 @@ contract AdapterSimGasRolloutTest is Test, VenuesRobinhood, UpVenueRobinhood, Ve
         address[4] memory ads = [
             address(new UniswapV3AdapterV2(IUniswapV3Factory(UNI_V3_FACTORY), WETH, LIVE_ROUTER)),
             address(new CLTickSpacingAdapterV2(ICLTickSpacingFactory(AERO_CL_FACTORY), LIVE_ROUTER, aeroSpacings())),
-            address(new CLTickSpacingAdapterV2(ICLTickSpacingFactory(RAMSES_CL_FACTORY), LIVE_ROUTER, ramsesSpacings())),
+            address(
+                new CLTickSpacingAdapterV2(ICLTickSpacingFactory(RAMSES_CL_FACTORY), LIVE_ROUTER, ramsesSpacings())
+            ),
             address(new CLTickSpacingAdapterV2(ICLTickSpacingFactory(UP_CL_FACTORY), LIVE_ROUTER, upSpacings()))
         ];
         vm.startPrank(LIVE_TIMELOCK);
@@ -249,8 +255,16 @@ contract AdapterSimGasRolloutTest is Test, VenuesRobinhood, UpVenueRobinhood, Ve
         vm.prank(alice);
         uint256 out = router.swap{value: 1 ether}(
             StoaRouter.SwapParams({
-                tokenIn: address(0), tokenOut: USDG, mid: q.mid, leg1: q.leg1, leg2: q.leg2, amountIn: 1 ether,
-                minOut: q.amountOut * 995 / 1000, to: alice, deadline: block.timestamp + 60, referrer: address(0)
+                tokenIn: address(0),
+                tokenOut: USDG,
+                mid: q.mid,
+                leg1: q.leg1,
+                leg2: q.leg2,
+                amountIn: 1 ether,
+                minOut: q.amountOut * 995 / 1000,
+                to: alice,
+                deadline: block.timestamp + 60,
+                referrer: address(0)
             })
         );
         console2.log("swap out via", q.leg1.venue, out);

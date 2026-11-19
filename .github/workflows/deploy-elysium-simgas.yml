@@ -50,7 +50,7 @@ jobs:
           [ "$(echo "$ME" | tr 'A-F' 'a-f')" = "0x056896d7d62fb4fae30f53d76cb55264f4c5c500" ] \
             || { echo "::error::DEPLOYER_PRIVATE_KEY is not Stoa's Elysium keeper (it must register the V4 keys)"; exit 1; }
 
-      - name: List the old V4 adapter's keys (the keeper's registrations)
+      - name: List the keeper's V4 keys (from its own register transactions, never from the old adapter's list)
         working-directory: contracts/script/data
         run: python3 -I v4_copy_keys_elysium.py
 
@@ -71,7 +71,7 @@ jobs:
           PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
         run: |
           RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="$PK" ADAPTER="$(jq -r .uniswapV4AdapterV3 deployments/99901-simgas.json)" \
-            SEED=script/data/v4-v3-seed-99901.json ./script/seed-v4.sh
+            SEED=script/data/v4-v3-seed-99901.json STRICT=1 ./script/seed-v4.sh
 
       - name: Verify on Sourcify
         if: ${{ inputs.broadcast }}

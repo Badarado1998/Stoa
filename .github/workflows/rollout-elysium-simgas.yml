@@ -7,7 +7,9 @@ name: Elysium governance steps (gas-capped adapters)
 # once every copied V4 pair has a key on V4AdapterV3). When done it points the app and the docs at the new adapters
 # (contracts/script/data/elysium_swap_addresses.py: web/lib/deployments.json, contracts/deployments/99901.json and the
 # Elysium table in contracts.md), commits that, and disables itself.
-# The signer keys reach only the forge step; the commit and the switch-off run in a second job that holds no secret.
+# To stop the rollout midway: disable this workflow first, then cancel from the Safe (a cancelled operation reads as
+# not scheduled, and the next hourly run would schedule it again).
+# The signer keys reach only the steps that sign; the commit and the switch-off run in a second job that holds no secret.
 # Signs as two Safe signers from OWNER_PRIVATE_KEY (0x5A63...03c9) and DEPLOYER_PRIVATE_KEY (0x0568...c500). With only
 # one of them set it approves and the other signer can press the same step on stoadex.com/admin (Elysium).
 on:
@@ -41,6 +43,8 @@ jobs:
           submodules: recursive
           persist-credentials: false
       - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
+        with:
+          version: v1.5.1
 
       - name: Not deployed yet? Then stop the hourly runs
         id: pre
@@ -52,6 +56,20 @@ jobs:
             gh workflow disable rollout-elysium-simgas.yml -R "$GITHUB_REPOSITORY"
             echo "skip=1" >> "$GITHUB_OUTPUT"
           fi
+
+      # Before every run until the swap is done: rebuild the seed from the keeper's own registrations (keys added since
+      # the deploy included) and register what V4AdapterV3 lacks, so step 3's check reads a current, complete seed.
+      - name: Keep V4AdapterV3's keys current (keeper)
+        if: ${{ steps.pre.outputs.skip != '1' }}
+        env:
+          K2: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          [ "$(cast call 0x104752d50ef893da579ad813918269e09ea17dba 'isAdapter(address)(bool)' 0xeb4bec2795ce314d1add4f8b3f2fcfbf38e892e5 --rpc-url "$RPC")" = "true" ] \
+            || { echo "The old V4 adapter is out of the router: nothing to keep current."; exit 0; }
+          [ -n "$K2" ] || { echo "::notice::No keeper key (DEPLOYER_PRIVATE_KEY): V4AdapterV3's keys were not refreshed."; exit 0; }
+          (cd script/data && ELYSIUM_RPC_URL="$RPC" python3 -I v4_copy_keys_elysium.py)
+          RPC="$RPC" PRIVATE_KEY="0x${K2#0x}" ADAPTER="$(jq -r .uniswapV4AdapterV3 deployments/99901-simgas.json)" \
+            SEED=script/data/v4-v3-seed-99901.json STRICT=1 ./script/seed-v4.sh
 
       - name: Next step (if due)
         id: next
