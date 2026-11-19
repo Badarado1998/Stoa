@@ -58,9 +58,6 @@ export default async function TokenPage({ params }: P) {
     "@context": "https://schema.org", "@type": "FAQPage",
     mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
   };
-  const stat = (label: string, v: string) => (
-    <div className="panel pad stat"><div className="lbl">{label}</div><span className="v">{v}</span></div>
-  );
   return (
     <section className="page">
       <RefKeeper />
@@ -71,7 +68,7 @@ export default async function TokenPage({ params }: P) {
       </PageHead>
 
       <div className="grid2">
-        <div className="panel pad">
+        <div className="panel pad hero">
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {token.logo ? <img src={token.logo} alt="" width={52} height={52} style={{ borderRadius: 999, objectFit: "cover", background: "#EAF1FB" }} />
@@ -83,7 +80,7 @@ export default async function TokenPage({ params }: P) {
           </div>
           <div style={{ marginTop: 18, display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--serif)", fontSize: 40 }}>{priceFmt(t?.priceUsd ?? null)}</span>
-            {ch !== null && <span style={{ fontFamily: "var(--mono)", color: ch >= 0 ? "#1E6B41" : "#8A2B20" }}>{ch >= 0 ? "+" : ""}{ch.toFixed(2)}% 24h</span>}
+            {ch !== null && <span className="chg" style={{ color: ch >= 0 ? "#1E6B41" : "#8A2B20" }}>{ch >= 0 ? "+" : ""}{ch.toFixed(2)}% 24h</span>}
           </div>
 
           <div className="lbl" style={{ marginTop: 20 }}>RIGHT NOW ON STOA</div>
@@ -113,10 +110,10 @@ export default async function TokenPage({ params }: P) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div className="grid3" style={{ gap: 12 }}>
-            {stat("LIQUIDITY", usdFmt(t?.liquidityUsd ?? null))}
-            {stat("24H VOLUME", usdFmt(t?.volume24h ?? null))}
-            {stat("FDV", usdFmt(t?.fdvUsd ?? null))}
+          <div className="panel stats3">
+            {([["LIQUIDITY", t?.liquidityUsd], ["24H VOLUME", t?.volume24h], ["FDV", t?.fdvUsd]] as const).map(([l, v]) => (
+              <div key={l}><div className="lbl">{l}</div><span className="v">{usdFmt(v ?? null)}</span></div>
+            ))}
           </div>
           {token.tone === "other" && <SafetyPanel chain={net.key} token={token.address} />}
           {net.key === "robinhood" && <GloamPanel symbol={sym} address={token.address} />}
@@ -126,18 +123,23 @@ export default async function TokenPage({ params }: P) {
             <div className="panel pad">
               <div className="lbl">MORE TOKENS ON {net.name.toUpperCase()}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {others.map((o) => <Link key={o.token.address} className="ghost" style={{ borderColor: "var(--line)", background: "#fff" }} href={`/tokens/${net.key}/${o.token.address}`}>{o.token.symbol}</Link>)}
-                <Link className="ghost" style={{ borderColor: "var(--line)", background: "#fff" }} href="/tokens">All tokens →</Link>
+                {others.map((o) => (
+                  <Link key={o.token.address} className="ghost tchip" href={`/tokens/${net.key}/${o.token.address}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {o.token.logo && <img src={o.token.logo} alt="" width={20} height={20} loading="lazy" />}{o.token.symbol}
+                  </Link>
+                ))}
+                <Link className="ghost" href="/tokens">All tokens →</Link>
               </div>
             </div>
           )}
-          <div className="panel pad">
+          <div className="panel pad faq">
             <div className="lbl">QUESTIONS</div>
             {faq.map(([q, a]) => (
-              <div key={q} style={{ marginTop: 14 }}>
-                <h2 style={{ fontSize: 15, margin: 0 }}>{q}</h2>
-                <p className="note" style={{ marginTop: 4, marginBottom: 0 }}>{a}</p>
-              </div>
+              <details key={q}>
+                <summary><h2>{q}</h2></summary>
+                <p className="note" style={{ marginTop: 6, marginBottom: 0 }}>{a}</p>
+              </details>
             ))}
           </div>
           <p className="note" style={{ marginTop: 0 }}>Price, liquidity, volume and FDV from DexScreener. The route on Stoa is read live from the router. Refreshed every minute.</p>

@@ -22,9 +22,9 @@ button{font:inherit}
 .tabs a:hover{background:#F2F5FA;color:var(--ink)}
 .tabs a.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(30,38,51,.08)}
 .right{display:flex;align-items:center;gap:8px}
-.ghost{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;cursor:pointer}
+.ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;text-decoration:none}
 .ghost:hover{background:#F2F5FA}
-.cta{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.cta{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none}
 .cta:hover{background:var(--accent-d);color:#fff}
 .menu-btn{display:none;width:40px;padding:0;justify-content:center}
 .menu{position:fixed;z-index:30;top:64px;right:14px;width:min(360px,calc(100vw - 28px));background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 8px 8px;box-shadow:0 6px 16px rgba(30,38,51,.12);display:none;flex-direction:column}
@@ -185,7 +185,7 @@ button{font:inherit}
 .det{margin-top:12px;display:grid;grid-template-columns:1fr auto;font-size:13px}
 .det span{padding:7px 0;border-top:1px solid var(--line)}
 .det span:nth-child(odd){color:var(--muted)}
-.det span:nth-child(even){text-align:right;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.det span:nth-child(even){text-align:right;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--ink)}
 .cmp{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .cmp .gain{margin-top:8px;padding:8px 12px;border-radius:10px;background:#EAF6EF;color:#1F7A4D;font-size:13px}
 .seg{display:inline-flex;background:#EEF2F7;border-radius:10px;padding:3px;gap:2px}
@@ -230,7 +230,7 @@ pre.code{margin:0;padding:16px;border-radius:12px;background:#152033;color:#DCE6
 pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .addr{display:flex;align-items:center;gap:8px;justify-content:flex-end}
 .addr code{font-family:var(--mono);font-size:12px;color:var(--ink)}
-.cp{border:1px solid var(--line);background:#fff;border-radius:8px;font-size:12px;padding:5px 9px;cursor:pointer;color:var(--ink)}
+.cp{border:1px solid var(--line);background:#fff;border-radius:10px;font-size:13px;font-weight:500;padding:6px 12px;cursor:pointer;color:var(--ink)}
 .empty{text-align:center;padding:48px 20px}
 .empty h3{margin:12px 0 6px;font-family:var(--serif);font-weight:400;font-size:26px;color:var(--ink)}
 .empty p{margin:0 auto 16px;max-width:420px}
@@ -240,6 +240,10 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .foot .cols{display:flex;gap:48px;flex-wrap:wrap}
 .foot h4,.foot .fh{margin:0 0 10px;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--muted)}
 .foot a{display:block;padding:4px 0;color:var(--ink);font-size:14px}
+.foot a.brand{display:flex;padding:0;margin-bottom:6px}
+.foot .badge{flex-basis:100%;display:flex;justify-content:flex-start;padding-top:20px;border-top:1px solid var(--line)}
+.foot .badge a{padding:0}
+.foot .badge img{height:28px;width:auto;max-width:100%}
 /* wallet modal */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(20,28,40,.45);display:none;align-items:center;justify-content:center;padding:16px}
 .modal.open{display:flex}
@@ -355,7 +359,7 @@ html,body{overflow-x:clip}
 .box .usd{margin-top:4px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
 .stoaca{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .stoaca .addrchip{word-break:break-all}
-.stoaca .cp{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}
+.stoaca .cp{border:1px solid var(--line);background:#fff;border-radius:10px;padding:5px 11px;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
 .heroca{pointer-events:auto;margin-top:14px;display:flex;justify-content:center}
 .heroca .stoaca{justify-content:center;font-size:12.5px;background:#fff;border:1px solid rgba(30,38,51,.08);border-radius:12px;padding:6px 10px;max-width:92vw}
 .heroca .addrchip{font-size:11.5px}
@@ -702,3 +706,20 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .faq summary{cursor:pointer;font-weight:600;color:var(--ink);list-style-position:outside}
 .faq details p{margin:8px 0 0;font-size:14.5px;line-height:1.55}
 .stoaca a .addrchip{color:var(--accent-d)}
+
+/* token page: the main card carries the weight; stats in one row; questions fold */
+.panel.hero{border-color:rgba(47,111,235,.22);box-shadow:0 10px 28px rgba(30,60,120,.08),0 1px 2px rgba(30,38,51,.05)}
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+.stats3>div{padding:14px 16px}
+.stats3>div+div{border-left:1px solid var(--line)}
+.stats3 .v{display:block;margin-top:6px;font-family:var(--serif);font-size:24px;color:var(--ink);white-space:nowrap}
+@media (max-width:420px){.stats3 .v{font-size:20px}.stats3>div{padding:12px}}
+.chg{font-weight:600;font-variant-numeric:tabular-nums;font-size:15px}
+.faq details{border-top:1px solid var(--line);padding:12px 0}
+.faq details:first-of-type{margin-top:8px}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:"+";font-size:18px;color:var(--muted);flex:none}
+.faq details[open] summary:after{content:"−"}
+.faq summary h2{font-size:15px;margin:0;font-weight:600}
+.tchip img{width:20px;height:20px;border-radius:50%;object-fit:cover;background:#EAF1FB}
