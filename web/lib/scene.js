@@ -11,7 +11,9 @@ export const CARD_RANGES = [
 
 export function createScene(canvas, opts = {}) {
 const isMobile = matchMedia("(max-width: 860px)").matches || /Mobi|Android/i.test(navigator.userAgent);
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+// phones: no MSAA (the 1.5x pixel ratio already smooths edges) and about 30 frames a second, to keep the main thread
+// and the battery free; nothing is drawn while the plain section below the walk covers the canvas (setPaused)
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: "high-performance" });
 const DPR = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 1.75);
 renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight, false);
@@ -468,7 +470,8 @@ function camAt(p) {
 
 
 /* ---------- loop ---------- */
-let target = 0, cur = 0, appView = !!opts.appView, needFrame = true, raf = 0, disposed = false;
+let target = 0, cur = 0, appView = !!opts.appView, needFrame = true, raf = 0, disposed = false, paused = false, lastDraw = 0;
+const MIN_FRAME_MS = isMobile ? 30 : 0;
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
   camera.aspect = innerWidth / innerHeight; camera.fov = portrait() ? 62 : 46; camera.updateProjectionMatrix();
@@ -478,8 +481,10 @@ function resize() {
 addEventListener("resize", resize); resize();
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const clock = new THREE.Clock(); let first = true;
-function frame() {
+function frame(now) {
   if (disposed) return;
+  if ((paused && !first) || (MIN_FRAME_MS && now - lastDraw < MIN_FRAME_MS && !first)) { raf = requestAnimationFrame(frame); return; }
+  lastDraw = now;
   const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
   if (appView) {
     if (needFrame) { camera.position.set(30, 18, -20); camera.lookAt(0, 4, -120); sky.position.copy(camera.position); anim.forEach(f => f(t)); renderer.render(scene, camera); needFrame = false; first && opts.onReady?.(); first = false; }
@@ -508,6 +513,7 @@ return {
   setTarget(p) { target = Math.min(Math.max(p, 0), 1); },
   jump(p) { target = cur = p; },
   setAppView(v) { appView = v; needFrame = true; },
+  setPaused(v) { if (paused && !v) clock.getDelta(); paused = !!v; },
   dispose() {
     disposed = true; cancelAnimationFrame(raf); removeEventListener("resize", resize);
     scene.traverse(o => { o.geometry?.dispose?.(); const m = o.material; (Array.isArray(m) ? m : [m]).forEach(x => x?.dispose?.()); });

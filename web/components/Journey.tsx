@@ -8,7 +8,7 @@ import HomeLive from "./HomeLive";
 import Footer from "./Footer";
 
 type Stop = { n: string; l: string; p: number; a: number };
-type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): void; dispose(): void };
+type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): void; setPaused?(v: boolean): void; dispose(): void };
 
 const CARDS: { a: number; b: number; body: React.ReactNode }[] = [
   { a: 0.12, b: 0.225, body: <><div className="k">THE STOA <b>ROBINHOOD CHAIN · ELYSIUM</b></div><h2>A market built like a stoa</h2><p>Every pool is a column. Stoa reads each one on-chain, every block, and shows you what every venue would pay before you sign.</p></> },
@@ -46,7 +46,7 @@ export default function Journey() {
         });
         api.current = s;
         setStops(s.stops);
-        const read = () => { const m = trackEnd(); s.setTarget(m > 0 ? Math.min(1, scrollY / m) : 0); const pw = scrollY > m + innerHeight * 0.25; setPast(pw); document.body.classList.toggle("past-walk", pw); };
+        const read = () => { const m = trackEnd(); s.setTarget(m > 0 ? Math.min(1, scrollY / m) : 0); const pw = scrollY > m + innerHeight * 0.25; setPast(pw); s.setPaused?.(scrollY > m + innerHeight); document.body.classList.toggle("past-walk", pw); };
         addEventListener("scroll", read, { passive: true });
         read();
         (s as SceneApi & { _off?: () => void })._off = () => removeEventListener("scroll", read);
