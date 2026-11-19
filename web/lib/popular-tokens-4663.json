@@ -147,12 +147,6 @@
   "logo": "/tokens/0xe83c85e1ead16fcfe85401e2b337fb4fb5b5cc96.webp"
  },
  {
-  "symbol": "LOBIN",
-  "address": "0x75d874378ae31b33ab9e7a40b4dca96134221111",
-  "decimals": 18,
-  "logo": "/tokens/0x75d874378ae31b33ab9e7a40b4dca96134221111.webp"
- },
- {
   "symbol": "ZENO",
   "address": "0x31ced11f076e45da2508da2db4a2f296021a1e21",
   "decimals": 18,
@@ -241,12 +235,6 @@
   "address": "0x2fc6de9c65a620f918ca7d1191d3afa495ca2898",
   "decimals": 18,
   "logo": "/tokens/0x2fc6de9c65a620f918ca7d1191d3afa495ca2898.webp"
- },
- {
-  "symbol": "SPIN",
-  "address": "0x4497957bacc03d67012dec81b27faece952b1111",
-  "decimals": 18,
-  "logo": "/tokens/0x4497957bacc03d67012dec81b27faece952b1111.webp"
  },
  {
   "symbol": "INTC",
