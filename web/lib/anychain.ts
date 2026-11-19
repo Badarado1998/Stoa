@@ -1,5 +1,6 @@
 import { decodeFunctionData, encodeFunctionData, parseAbi, type Address } from "viem";
 import { NATIVE_ZERO, SOURCES, sameAddr } from "./bridge";
+import { checkRelayOrder, type RelayOrder } from "./relayOrder";
 
 /** Buy $STOA from any chain: Trustware (trustware.io) routes a deposit from Base, Arbitrum, Ethereum, Optimism or BNB
  *  Chain into $STOA on Robinhood Chain. Quotes come through Stoa's server (/api/anychain/*, the Trustware key never
@@ -9,8 +10,9 @@ import { NATIVE_ZERO, SOURCES, sameAddr } from "./bridge";
  *  What Stoa checks before the wallet opens: the call goes to Relay's Depository, as depositNative or depositErc20, the
  *  depositor is the user's own address, and it deposits exactly the token and amount picked; any approval is for that
  *  token, that amount and the Depository only. What it cannot check yet: the recipient, token and minimum on Robinhood
- *  Chain live in Relay's off-chain order, which Trustware does not return. Until it does (Relay's protocol.v2 order data,
- *  checked with getOrderId), each purchase is capped at MAX_USD, valued at Stoa's own prices. */
+ *  Chain live in Relay's off-chain order, which Trustware does not return yet. When a route passes it on, it is checked
+ *  (lib/relayOrder.ts: it must hash to the id in the deposit and pay exactly this buyer); until every route does, each
+ *  purchase is capped at MAX_USD, valued at Stoa's own prices. */
 
 export const STOA_RH = "0x13E6993417616De724F2b337D65063f229e96718" as Address;
 export const DST_CHAIN = 4663;
@@ -34,7 +36,14 @@ export interface TwEstimate { fromAmount: string; fromAmountUsd?: string; toAmou
 export interface AnyQuote {
   intentId: string; expiresAt?: string; provider: string; estimate: TwEstimate; transaction: TwTx; approvals: TwApproval[];
   ethUsd?: number | null; stoaPerUsd?: number | null; sig?: string;
+  /** Relay's order data for the deposit, when the route passes it on. When present it must be exactly this purchase
+   *  (lib/relayOrder.ts: the id it hashes to is the id in the deposit call); a route that sends one that is not is refused. */
+  order?: RelayOrder;
 }
+/** Relay's chain slugs (api.relay.link/chains, protocol.v2.chainId) */
+export const RELAY_SLUG: Record<number, string> = { 1: "ethereum", 8453: "base", 42161: "arbitrum", 10: "optimism", 56: "bnb", 4663: "robinhood" };
+/** the furthest out an order's output deadline may be (Relay's run about 7 days) */
+const ORDER_MAX_DAYS = 8;
 /** the most Stoa's and Trustware's dollar values may differ before a quote is refused */
 const USD_TOLERANCE = 0.05;
 /** The lowest ETH price the $500 cap ever uses. Stoa's ETH price is one router quote; if it ever read low, the cap
@@ -108,6 +117,17 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
     for (const a of q.approvals) {
       if (Number(a.chainId) !== want.chainId || !sameAddr(a.tokenAddress, want.token) || !sameAddr(a.spender, RELAY_DEPOSITORY) || BigInt(a.amount) > want.amount) return bad;
     }
+  }
+  // the delivery side, when the route passes Relay's order data: it must hash to the id in the deposit and pay exactly
+  // the buyer, on Robinhood Chain, in $STOA, at least the minimum shown, with every refund to the buyer
+  if (q.order !== undefined) {
+    const depositId = native ? call.args[1] : call.args[3];
+    const why = checkRelayOrder(q.order, {
+      depositId: depositId as string, user: want.user, fromSlug: RELAY_SLUG[want.chainId] ?? "", toSlug: RELAY_SLUG[DST_CHAIN],
+      currency: native ? NATIVE_ZERO : want.token, amount: want.amount, outCurrency: STOA_RH, minOut: outMin,
+      maxDeadline: Math.floor(Date.now() / 1000) + ORDER_MAX_DAYS * 86_400,
+    });
+    if (why) return bad;
   }
   // the cap uses Stoa's own figure; Trustware's, when it sends one, must agree with it
   const ours = usdOf(want, q.ethUsd), cap = capUsdOf(want, q.ethUsd);

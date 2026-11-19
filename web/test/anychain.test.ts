@@ -59,3 +59,24 @@ test("depositIdOf reads the order id from either deposit call", () => {
   assert.equal(depositIdOf(encodeFunctionData({ abi: ABI, functionName: "depositErc20", args: [user, BASE_USDC, 5n, id] })), id);
   assert.equal(depositIdOf("0x12345678"), null);
 });
+
+test("Relay's order data, when passed on, must be exactly this purchase", async () => {
+  const { readFileSync } = await import("node:fs");
+  const load = (f: string) => JSON.parse(readFileSync(new URL(`./fixtures/${f}`, import.meta.url), "utf8"));
+  const buyer = "0x1111111111111111111111111111111111111111" as Address;
+  for (const [f, ok] of [["relay-eth-honest.json", true], ["relay-eth-other-recipient.json", false]] as const) {
+    const r = load(f);
+    const dep = r.steps.find((s: { id: string }) => s.id === "deposit").items[0].data;
+    const od = r.protocol.v2.orderData;
+    const amount = BigInt(od.inputs[0].payment.amount);
+    const min = BigInt(od.output.payments[0].minimumAmount), exp = BigInt(od.output.payments[0].expectedAmount);
+    const q: AnyQuote = {
+      intentId: "00000000-0000-4000-8000-000000000000", provider: "relay", approvals: [], ethUsd: 3000, stoaPerUsd: 30000,
+      estimate: { fromAmount: amount.toString(), toAmount: (min * 10_000n >= exp * 9_800n ? exp : min).toString(), toAmountMin: min.toString() },
+      transaction: { chainId: 8453, to: RELAY_DEPOSITORY, value: amount.toString(), data: dep.data }, order: od,
+    };
+    // the deposit's depositor is the dummy user in both fixtures; only the order differs
+    const why = checkAnyQuote(q, { user: buyer, chainId: 8453, token: NATIVE_ZERO, amount });
+    if (ok) assert.equal(why, null, f); else assert.notEqual(why, null, f);
+  }
+});

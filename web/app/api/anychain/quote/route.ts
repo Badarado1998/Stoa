@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       fromAmount: amount.toString(), fromAddress: user, toAddress: user, refundAddress: user, slippageBps: 100,
     }),
   });
-  const d = (r.body.data ?? {}) as { intentId?: string; expiresAt?: string; route?: { provider?: string; estimate?: AnyQuote["estimate"]; execution?: { transaction?: AnyQuote["transaction"]; approvals?: AnyQuote["approvals"] } } };
+  const d = (r.body.data ?? {}) as { intentId?: string; expiresAt?: string; route?: { provider?: string; estimate?: AnyQuote["estimate"]; execution?: { transaction?: AnyQuote["transaction"]; approvals?: AnyQuote["approvals"] }; protocol?: { v2?: { orderData?: AnyQuote["order"] } }; orderData?: AnyQuote["order"] } };
   if (!r.ok || !d.intentId || !d.route?.estimate || !d.route.execution?.transaction) {
     return Response.json({ error: r.status === 429 ? "busy" : "no route" }, { status: r.status === 429 ? 429 : 404 });
   }
@@ -44,6 +44,9 @@ export async function POST(req: Request) {
     transaction: d.route.execution.transaction, approvals: d.route.execution.approvals ?? [],
     ethUsd: px.ethUsd, stoaPerUsd: px.stoaPerUsd,
   };
+  // Relay's order data, if Trustware passes it on (asked in trustware-sdk#156): checked in checkAnyQuote
+  const order = d.route.protocol?.v2?.orderData ?? d.route.orderData;
+  if (order) q.order = order;
   const why = checkAnyQuote(q, { user: user as Address, chainId, token: token as Address, amount });
   if (why) return Response.json({ error: why.startsWith("Buying") ? why : "no checkable route" }, { status: 422 });
   // Stoa's signature over this intent, this buyer, this chain and the order id the deposit commits to
