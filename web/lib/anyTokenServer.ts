@@ -7,7 +7,8 @@ import { computeGuard, guardRoute, type Guard } from "./v4guard";
 import { readSafety } from "./safety";
 import { NATIVE_ZERO, sameAddr } from "./bridge";
 import { DST_CHAIN, MAX_USD, capUsdOf, checkAnyQuote, depositIdOf, sourceOk, usdOf, type AnyQuote } from "./anychain";
-import { CROSS_BUY, ETH_SHARE, MIN_OUT_BPS, type AnyTokenQuote } from "./anyToken";
+import { CROSS_BUY, ETH_SHARE, MAX_IMPACT_PCT, MAX_TRIP_LOSS_PCT, MIN_OUT_BPS, type AnyTokenQuote } from "./anyToken";
+import { realTrip, type Route } from "./anyTokenTrip";
 import { TICKET_TTL_S, signTicket, stoaPrices } from "./anychainServer";
 
 /** Buy any Robinhood Chain token from another chain, in one signature.
@@ -16,7 +17,11 @@ import { TICKET_TTL_S, signTicket, stoaPrices } from "./anychainServer";
  *  call to StoaCrossBuy (contracts/src/tools/StoaCrossBuy.sol), which swaps all of it through the Stoa router into the
  *  token for the buyer, or sends the ETH to the buyer if the swap fails (price moved past the minimum, deadline passed,
  *  route gone). Stoa builds that call itself, from its own router quote, and checks the source deposit exactly as for
- *  $STOA (checkAnyQuote). The token gets Stoa's safety check first; a token that fails it is refused. */
+ *  $STOA (checkAnyQuote). Before any route is asked for, the token is checked three ways and refused unless all pass:
+ *  Stoa's safety check must have run and not flagged it; the purchase must not move its price by more than
+ *  MAX_IMPACT_PCT; and the purchase itself, run at the real size with the real call, must leave the buyer's own address
+ *  able to sell and send the token, losing no more than MAX_TRIP_LOSS_PCT on the way back (lib/anyTokenTrip.ts). None of
+ *  this proves the token stays sellable afterwards. */
 
 const EVM_NATIVE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
@@ -56,19 +61,29 @@ export async function anyTokenQuote(a: AnyTokenAsk): Promise<{ q: AnyTokenQuote 
   const safety = await readSafety(ROBINHOOD, tokenOut).catch(() => null);
   if (!safety) return { error: "Stoa could not check this token right now. Try again in a minute.", status: 503 };
   if (safety.verdict === "danger") return { error: `Stoa's safety check flags ${safety.symbol}: ${safety.notes[0] ?? "it may not be sellable"}. Stoa will not buy it from another chain.`, status: 422 };
+  // a check that did not run is not a pass (HEY Research Lab, any-token review, F-2)
+  if (safety.verdict === "unknown") return { error: `Stoa could not test ${safety.symbol}${safety.notes[0] ? `: ${safety.notes[0]}` : ""}. Stoa will not buy an untested token from another chain.`, status: 422 };
 
   // the ETH to deliver: most of the purchase's value, the rest pays the route (Relay works out the exact source amount)
   const fund = native ? (a.amount * BigInt(Math.round(ETH_SHARE * 10_000))) / 10_000n : BigInt(Math.floor((usd * ETH_SHARE) / ethUsd * 1e6)) * 10n ** 12n;
   if (fund <= 0n) return { error: "Amount too small.", status: 422 };
 
   const c = rhClient();
-  let route: { amountOut: bigint; mid: Address; leg1: { venue: Address; isPool: boolean }; leg2: { venue: Address; isPool: boolean } } | null;
-  try {
-    const { result } = await c.simulateContract({ address: ROBINHOOD.contracts.router!, abi: routerAbi, functionName: "quote", args: [ZERO, tokenOut, fund] });
-    const g = await Promise.race([computeGuard(), new Promise<Guard>((_, no) => setTimeout(() => no(new Error("slow")), 6_000))]).catch((): Guard => ({ oldInRouter: true, poisoned: ["*"] }));
-    route = await guardRoute(c as unknown as PublicClient, ROBINHOOD, ZERO, tokenOut, fund, result, g);
-  } catch { route = null; }
-  if (!route || route.amountOut === 0n) return { error: "Stoa has no route to this token on Robinhood Chain right now.", status: 422 };
+  const g = await Promise.race([computeGuard(), new Promise<Guard>((_, no) => setTimeout(() => no(new Error("slow")), 6_000))]).catch((): Guard => ({ oldInRouter: true, poisoned: ["*"] }));
+  const routeOf = async (tin: Address, tout: Address, amt: bigint): Promise<Route | null> => {
+    try {
+      const { result } = await c.simulateContract({ address: ROBINHOOD.contracts.router!, abi: routerAbi, functionName: "quote", args: [tin, tout, amt] });
+      return await guardRoute(c as unknown as PublicClient, ROBINHOOD, tin, tout, amt, result, g);
+    } catch { return null; }
+  };
+  const small = fund / 1000n > 0n ? fund / 1000n : 1n;
+  const [route, probe] = await Promise.all([routeOf(ZERO, tokenOut, fund), routeOf(ZERO, tokenOut, small)]);
+  if (!route || route.amountOut === 0n || !probe || probe.amountOut === 0n) return { error: "Stoa has no route to this token on Robinhood Chain right now.", status: 422 };
+  // price impact: what this size gets per ETH against what a tiny purchase gets
+  const impactPct = Math.max(0, (1 - (Number(route.amountOut) / Number(fund)) / (Number(probe.amountOut) / Number(small))) * 100);
+  if (impactPct > MAX_IMPACT_PCT) return { error: `This purchase would move ${safety.symbol}'s price by about ${impactPct.toFixed(1)}% on Robinhood Chain; the limit is ${MAX_IMPACT_PCT}%. Use a smaller amount.`, status: 422 };
+  // what the tokens bought are worth at the price before the purchase, in dollars
+  const valueUsd = (Number(route.amountOut) * (Number(small) / Number(probe.amountOut)) / 1e18) * ethUsd;
   const minOut = (route.amountOut * BigInt(MIN_OUT_BPS)) / 10_000n;
   const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
   const callData = encodeFunctionData({ abi: buyAbi, functionName: "buy", args: [tokenOut, route.mid, route.leg1, route.leg2, minOut, user, deadline, ZERO] });
@@ -81,12 +96,18 @@ export async function anyTokenQuote(a: AnyTokenAsk): Promise<{ q: AnyTokenQuote 
     gas = (gas * 13n) / 10n;
   } catch { gas = 4_000_000n; }
 
+  // the purchase itself, at the real size, then a sale and a transfer from the buyer's own address (lib/anyTokenTrip.ts)
+  const sell = await routeOf(tokenOut, ZERO, (minOut * 999n) / 1000n);
+  const trip = await realTrip(c as unknown as PublicClient, { user, tokenOut, fund, route, minOut, deadline, gas, sell });
+  if (!trip.ok) return { error: trip.why, status: trip.status };
+  if (trip.lossPct > MAX_TRIP_LOSS_PCT) return { error: `Bought and sold straight back at this size, ${safety.symbol} loses about ${trip.lossPct.toFixed(1)}% (a tax or a thin pool); the limit is ${MAX_TRIP_LOSS_PCT}%. Stoa will not buy it from another chain.`, status: 422 };
+
   const [decimals] = await Promise.all([c.readContract({ address: tokenOut, abi: erc20, functionName: "decimals" }).catch(() => 18)]);
   const r = await tw("/routes/route", {
     method: "POST",
     body: JSON.stringify({
       fromChain: String(a.chainId), toChain: String(DST_CHAIN), fromToken: native ? EVM_NATIVE : a.token, toToken: EVM_NATIVE,
-      fromAmount: a.amount.toString(), fromAddress: user, toAddress: user, slippageBps: 100,
+      fromAmount: a.amount.toString(), fromAddress: user, toAddress: user, refundAddress: user, slippageBps: 100,
       hooks: { postHook: { target: CROSS_BUY, callData, value: fund.toString(), fundToken: EVM_NATIVE, fundAmount: fund.toString(), toFallbackAddress: user, estimatedGas: gas.toString(), description: `Buy ${safety.symbol} on Stoa` } },
     }),
   });
@@ -104,6 +125,7 @@ export async function anyTokenQuote(a: AnyTokenAsk): Promise<{ q: AnyTokenQuote 
     transaction: d.route.execution.transaction, approvals: d.route.execution.approvals ?? [], ethUsd, stoaPerUsd: null,
     tokenOut, symbol: safety.symbol, decimals: Number(decimals), ethFund: fund.toString(), expectedOut: route.amountOut.toString(),
     minOut: minOut.toString(), deadline: Number(deadline), safety: { verdict: safety.verdict, notes: safety.notes.slice(0, 3) },
+    impactPct: Number(impactPct.toFixed(2)), valueUsd: Number(valueUsd.toFixed(2)), tripLossPct: trip.lossPct,
   };
   const why = checkAnyQuote(q, { ...want, amount: paid });
   if (why) return { error: why.startsWith("Buying") ? why : "no checkable route", status: 422 };

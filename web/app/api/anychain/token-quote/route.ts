@@ -22,6 +22,9 @@ export async function POST(req: Request) {
 // Preview deployments only: the same quote over GET (?chainId&token&amount&user&tokenOut), for testing with a browser.
 export async function GET(req: Request) {
   if (process.env.VERCEL_ENV === "production") return Response.json({ error: "not found" }, { status: 404 });
+  // the same limiter as POST (HEY Research Lab, any-token review, N-3)
+  const slow = limited(req);
+  if (slow) return slow;
   const u = new URL(req.url).searchParams;
   let amount: bigint;
   try { amount = BigInt(u.get("amount") ?? ""); } catch { return Response.json({ error: "bad amount" }, { status: 400 }); }

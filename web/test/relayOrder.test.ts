@@ -49,3 +49,16 @@ test("an honest order against another deposit, a lower minimum, a far deadline o
   assert.equal(checkRelayOrder(o, want(honestEth, { amount: 1n })), "input is not what was picked");
   assert.equal(checkRelayOrder(null, want(honestEth)), "no order");
 });
+
+// HEY Research Lab, any-token review, N-4: checked with the edited order's own id, so the new rules are what refuse it
+test("an order with no refund is refused", () => {
+  const o: RelayOrder = structuredClone(honestEth.protocol.v2.orderData);
+  o.inputs[0].refunds = [];
+  assert.equal(checkRelayOrder(o, want(honestEth, { depositId: relayOrderId(o) })), "no refund to the buyer");
+});
+
+test("an order with a fee is refused, even to the zero address", () => {
+  const o: RelayOrder = structuredClone(honestEth.protocol.v2.orderData);
+  o.fees = [{ ...(o.fees[0] ?? {}), recipient: "0x0000000000000000000000000000000000000000", chainId: "base", currency: o.inputs[0].payment.currency, amount: "1" } as RelayOrder["fees"][number]];
+  assert.equal(checkRelayOrder(o, want(honestEth, { depositId: relayOrderId(o) })), "order carries a fee");
+});

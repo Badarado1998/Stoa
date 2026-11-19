@@ -103,6 +103,9 @@ export function checkRelayOrder(o: RelayOrder | null | undefined, w: OrderWant):
   if (o.inputs.length !== 1) return "more than one input";
   const p = o.inputs[0].payment;
   if (p.chainId !== w.fromSlug || lc(p.currency) !== lc(w.currency) || BigInt(p.amount) !== w.amount) return "input is not what was picked";
+  // at least one refund, and every one to the buyer: an empty list would leave the input with nowhere to go back to
+  // (HEY Research Lab, any-token review, N-4)
+  if (!o.inputs[0].refunds?.length) return "no refund to the buyer";
   for (const r of o.inputs[0].refunds) if (lc(r.recipient) !== lc(w.user)) return "a refund goes to someone else";
   if (o.output.chainId !== w.toSlug) return "output on another chain";
   if (o.output.calls.length) return "output makes calls";
@@ -112,6 +115,7 @@ export function checkRelayOrder(o: RelayOrder | null | undefined, w: OrderWant):
   if (lc(out.currency) !== lc(w.outCurrency)) return "output is another token";
   if (BigInt(out.minimumAmount) < w.minOut) return "output minimum is below what was shown";
   if (Number(o.output.deadline) > w.maxDeadline) return "deadline too far out";
-  for (const f of o.fees) if (BigInt(f.amount) > 0n && lc(f.recipient) !== ZERO) return "order carries a fee";
+  // Relay's orders for these routes carry no fees; any non-zero fee is refused, whoever it names (any-token review, N-4)
+  for (const f of o.fees) if (BigInt(f.amount) > 0n) return "order carries a fee";
   return null;
 }

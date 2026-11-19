@@ -4,7 +4,7 @@ import { useAccount, useBalance, usePublicClient, useReadContract, useSendTransa
 import { erc20Abi, isAddress, parseUnits, zeroAddress, type Hash } from "viem";
 import { NATIVE_ZERO, SOURCES, USDT_MAINNET, sameAddr } from "@/lib/bridge";
 import { DST_CHAIN, MAX_USD, RELAY_DEPOSITORY, checkAnyQuote, usdOf } from "@/lib/anychain";
-import { ANYTOKEN_PUBLIC, crossBuyResult, type AnyTokenQuote } from "@/lib/anyToken";
+import { ANYTOKEN_PUBLIC, MAX_IMPACT_PCT, MAX_TRIP_LOSS_PCT, crossBuyResult, type AnyTokenQuote } from "@/lib/anyToken";
 import { fmt } from "@/lib/swap";
 import { useWalletModal } from "./Providers";
 import { explain, markDelivered, sendReceipt, ticketOf, usedDeliveries, type Ticket } from "./AnyChainBuy";
@@ -109,7 +109,7 @@ function Panel() {
           const rc = await rh.getTransactionReceipt({ hash: j.destTx as Hash }).catch(() => null);
           const blk = rc ? await rh.getBlock({ blockNumber: rc.blockNumber }).catch(() => null) : null;
           const fresh = !!blk && Number(blk.timestamp) * 1000 >= (depositAt ?? since) - 120_000 && !usedDeliveries().includes(j.destTx.toLowerCase());
-          const res = rc && fresh ? crossBuyResult(rc.logs, t.user, q.tokenOut) : null;
+          const res = rc && fresh ? crossBuyResult(rc.logs, t.user, q.tokenOut, BigInt(q.ethFund)) : null;
           if (res?.kind === "bought" && res.amount >= BigInt(q.minOut)) { markDelivered(j.destTx); return setPhase({ k: "done", destTx: j.destTx, bought: res.amount, q }); }
           if (res?.kind === "refunded") { markDelivered(j.destTx); return setPhase({ k: "done", destTx: j.destTx, refunded: res.eth, q }); }
           if (rc) setPhase((p) => (p.k === "moving" && !p.unseen ? { ...p, unseen: true } : p));
@@ -220,6 +220,9 @@ function Panel() {
             <div className="det">
               <span>You get about</span><span>{fmt(BigInt(quote.expectedOut), quote.decimals, 4)} {quote.symbol}</span>
               <span>At least</span><span>{fmt(BigInt(quote.minOut), quote.decimals, 4)} {quote.symbol}</span>
+              <span>Worth about</span><span>{usd(quote.valueUsd) ?? "—"}</span>
+              <span>Price impact</span><span>{quote.impactPct < 0.1 ? "under 0.1%" : `${quote.impactPct.toFixed(1)}%`}</span>
+              <span>Sold straight back</span><span>loses about {quote.tripLossPct.toFixed(1)}%</span>
               <span>You pay</span><span>{fmt(paid!, sTok.decimals, 6)} {sTok.symbol}</span>
               <span>Safety check</span><span style={quote.safety.verdict === "caution" ? { color: "#B4442E", fontWeight: 600 } : undefined}>{VERDICT[quote.safety.verdict] ?? quote.safety.verdict}</span>
               <span>Route fees</span><span>{usd(fees) ?? "none"}</span>
@@ -245,7 +248,11 @@ function Panel() {
             Your deposit on {src.name} goes to Relay&apos;s Depository, from your own address, for exactly the amount shown; Stoa checks that before your wallet opens.
             Relay delivers ETH on Robinhood Chain to StoaCrossBuy, which swaps it through the Stoa router into the token for you. If the swap can&apos;t be done
             (the price moved past the minimum, the route is gone, or it is late), the ETH is sent to your wallet on Robinhood Chain instead.
-            Every token gets Stoa&apos;s safety check first, and a flagged token is refused. Purchases are limited to ${MAX_USD} for now. Use a regular wallet.
+            Before you sign, Stoa test-trades the token, then runs this purchase at its real size and sells it straight back from your
+            address, all without sending anything. It refuses a token that fails, that it could not test, that this purchase would move by
+            more than {MAX_IMPACT_PCT}%, or that loses more than {MAX_TRIP_LOSS_PCT}% sold straight back. That catches many bad tokens, not all of
+            them, and a token can change after you buy it: only buy a token you trust. The swap accepts up to 3% less than the quote, for
+            the time the bridge takes. Purchases are limited to ${MAX_USD} for now. Use a regular wallet.
           </p>
         </>
       )}

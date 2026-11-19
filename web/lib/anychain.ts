@@ -132,7 +132,7 @@ export function checkAnyQuote(q: AnyQuote, want: AnyWant): string | null {
   // the cap uses Stoa's own figure; Trustware's, when it sends one, must agree with it
   const ours = usdOf(want, q.ethUsd), cap = capUsdOf(want, q.ethUsd);
   if (ours === null || cap === null) return "Stoa could not price this purchase right now, so it stopped it before your wallet. Try again in a minute.";
-  if (cap > MAX_USD) return `Buying $STOA from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
+  if (cap > MAX_USD) return `Buying from another chain is limited to $${MAX_USD} per purchase for now. Use a smaller amount.`;
   // ETH is valued at Stoa's own router price, so for ETH Trustware's dollar figure is required as a second opinion: a
   // low router read can then never lift the cap on its own
   if (native && (q.estimate.fromAmountUsd === undefined || q.estimate.fromAmountUsd === null)) return bad;

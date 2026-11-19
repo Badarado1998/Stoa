@@ -1,5 +1,5 @@
 import "server-only";
-import { createPublicClient, decodeErrorResult, decodeFunctionResult, encodeFunctionData, erc20Abi, getAddress, http, parseAbi, parseEther, type Address, type Hex } from "viem";
+import { createPublicClient, decodeErrorResult, decodeFunctionResult, encodeFunctionData, erc20Abi, getAddress, http, parseAbi, parseEther, toHex, type Address, type Hex } from "viem";
 import type { Net } from "./networks";
 import { routerAbi } from "./abi";
 import { SAFETY_SIM_CODE } from "./safetySimCode";
@@ -20,8 +20,9 @@ export type Safety = {
 };
 
 const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 20_000 };
-const SIM = "0x5afe5afe5afe5afe5afe5afe5afe5afe5afe5afe" as Address;
-const FROM = "0x000000000000000000000000000000000000c0de" as Address;
+/** a fresh simulator address and caller for every check, so a token cannot single out Stoa's test by address
+ *  (HEY Research Lab, any-token review, F-2) */
+const fresh = (): Address => getAddress(toHex(crypto.getRandomValues(new Uint8Array(20))));
 const simAbi = parseAbi([
   "struct Result { uint256 buyQuoted; uint256 buyGot; uint256 sellQuoted; uint256 sellGot; bool buyOk; bool sellOk; bytes buyError; bytes sellError; }",
   "function check(address router, address token, uint256 amountIn) returns (Result r)",
@@ -56,6 +57,7 @@ async function simulate(net: Net, token: Address): Promise<Safety["test"]> {
   if (!net.contracts.router) return null;
   const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
   const amountIn = net.gas === "ETH" ? parseEther("0.001") : parseEther("0.05");
+  const SIM = fresh(), FROM = fresh();
   const res = await c.call({
     account: FROM, to: SIM,
     data: encodeFunctionData({ abi: simAbi, functionName: "check", args: [net.contracts.router, token, amountIn] }),
@@ -89,7 +91,21 @@ async function top10(net: Net, token: Address, supply: bigint): Promise<number |
   } catch { return null; }
 }
 
-export async function readSafety(net: Net, token: Address): Promise<Safety> {
+/** results kept a short while per token, so repeated quotes do not each run the 60M-gas simulation (any-token review, N-3) */
+const CACHE_MS = 60_000;
+const cache = new Map<string, { at: number; p: Promise<Safety> }>();
+
+export function readSafety(net: Net, token: Address): Promise<Safety> {
+  const k = `${net.key}:${lc(token)}`, now = Date.now(), hit = cache.get(k);
+  if (hit && now - hit.at < CACHE_MS) return hit.p;
+  if (cache.size > 500) for (const [key, v] of cache) if (now - v.at >= CACHE_MS) cache.delete(key);
+  const p = readSafetyNow(net, token);
+  cache.set(k, { at: now, p });
+  p.catch(() => cache.delete(k));
+  return p;
+}
+
+async function readSafetyNow(net: Net, token: Address): Promise<Safety> {
   const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
   const t = getAddress(token);
   const [sym, supply] = await Promise.all([
