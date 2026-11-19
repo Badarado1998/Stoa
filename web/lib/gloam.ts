@@ -18,5 +18,9 @@ export function gloamSwapUrl(symbol: string, amount = 100): string | null {
   const to = gloamSymbol(symbol);
   if (!to) return null;
   const from = to === "USDG" ? "ETH" : "USDG";
-  return `https://www.gloam.trade/app/vault?tab=swap#from=${from}&to=${to}&amount=${from === "ETH" ? 0.05 : amount}`;
+  // chain: Robinhood Chain; p: Stoa's partner link code from Gloam's portal (public, it appears in every link), so swaps
+  // that start here are counted to Stoa there. Left out until the code is set.
+  const code = process.env.NEXT_PUBLIC_GLOAM_LINK_CODE;
+  const p = code && /^[A-Za-z0-9_-]{8,40}$/.test(code) ? `&p=${code}` : "";
+  return `https://www.gloam.trade/app/vault?tab=swap#from=${from}&to=${to}&amount=${from === "ETH" ? 0.05 : amount}&chain=robinhood${p}`;
 }
