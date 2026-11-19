@@ -7,7 +7,8 @@ name: Robinhood governance steps (Safe rounds)
 # - $STOA buyback (script/RolloutBuybackRobinhood.s.sol): 1) schedule, 2) hand the FeeDistributor to StoaBuyback
 # - Pons curves (script/RolloutPonsRobinhood.s.sol, once deployed): same three steps as Aero + Ramses
 # - Metric (script/RolloutMetricRobinhood.s.sol, once deploy-robinhood-metric.yml ran): same three steps
-# - up. (script/RolloutUpRobinhood.s.sol, once deploy-robinhood-up.yml ran): same three steps
+# - up.: its original adapter 0xB408 is not added (script/CancelUpRobinhood.s.sol cancels the two timelock operations
+#   scheduled for it); up. goes in with the adapter update below
 # - V4 adapter swap (script/RolloutV4FixRobinhood.s.sol, once deploy-robinhood-fixes.yml ran): adds UniswapV4AdapterV2
 #   and removes the old V4 adapter in the same final step
 # - UniswapV4AdapterV3 (script/RolloutV4AdapterV3Robinhood.s.sol, once deploy-robinhood-v4v3.yml ran; starts after the
@@ -76,11 +77,11 @@ jobs:
             forge script script/RolloutMetricRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
             want=$((want + 1))
           fi
-          # up. is ON HOLD (contracts/deployments/4663-up.hold) pending an adapter update. Delete the .hold file to resume.
-          if [ -f deployments/4663-up.json ] && [ ! -f deployments/4663-up.hold ]; then  # committed by deploy-robinhood-up.yml
-            forge script script/RolloutUpRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
-            want=$((want + 1))
-          fi
+          # up. goes into the router with the adapter update (RolloutSimGasRobinhood). Its original adapter
+          # (0xB408, deployments/4663-up.json) is not added: cancel the two timelock operations that were scheduled for
+          # it (script/CancelUpRobinhood.s.sol; logs DONE once neither is pending).
+          forge script script/CancelUpRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
+          want=$((want + 1))
           if [ -f deployments/4663-fixes.json ]; then  # committed by deploy-robinhood-fixes.yml
             forge script script/RolloutV4FixRobinhood.s.sol --rpc-url "$RPC" --broadcast --slow 2>&1 | tee -a /tmp/out.txt
             want=$((want + 1))

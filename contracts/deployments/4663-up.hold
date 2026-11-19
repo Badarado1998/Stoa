@@ -1,1 +1,3 @@
-up. rollout held on 19 Nov 2026 pending an adapter update; up. will be added through the updated adapter.
+up.'s original adapter (0xB408…56C3, 4663-up.json) is not added to the router: up. goes in with the adapter update
+(RolloutSimGasRobinhood). The two timelock operations scheduled for 0xB408 are cancelled by script/CancelUpRobinhood.s.sol
+(rollout-robinhood-venues.yml). The rollout workflow no longer runs RolloutUpRobinhood; do not re-add it.
