@@ -60,7 +60,10 @@ export default function HomeLive() {
           ))}
         </div>
         <div className="hl-temple">
-        <div className="hl-ent" data-in><span className="hl-k">HOW IT IS KEPT SAFE</span></div>
+        <div className="hl-ent" data-in>
+          <svg className="pedi" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true"><path d="M2 59 L300 3 L598 59 Z" /><path d="M40 52 L300 12 L560 52" className="fine" /></svg>
+          <span className="hl-k">HOW IT IS KEPT SAFE</span>
+        </div>
         <div className="hl-trust">
           {TRUST.map((t, i) => {
             const st = { "--d": `${i * 90}ms` } as React.CSSProperties;

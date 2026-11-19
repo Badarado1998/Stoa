@@ -878,10 +878,12 @@ details.fold[open] summary{margin-bottom:6px}
 .hl-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:22px;border-right:1px solid rgba(30,38,51,.08);background:repeating-linear-gradient(90deg,#F3F6FB 0 4px,#E3EAF4 4px 5px);}
 .hl-card:after{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(180deg,#E3EAF4,#F3F6FB);border-bottom:1px solid rgba(30,38,51,.08)}
 .hl-k2 span{letter-spacing:.14em}
-.hl-temple{margin-top:56px}
+.hl-temple{margin-top:72px}
 .hl-ent{position:relative;text-align:center;padding:16px 12px 14px;background:#fff;border:1px solid #D6E5FA;border-radius:4px;opacity:0;transform:translateY(12px);transition:opacity .6s ease,transform .6s ease}
 .hl-ent.in{opacity:1;transform:none}
-.hl-ent:before{content:"";position:absolute;left:50%;bottom:100%;transform:translateX(-50%);width:0;height:0;border-left:min(46vw,440px) solid transparent;border-right:min(46vw,440px) solid transparent;border-bottom:34px solid #E9EFF8}
+.pedi{position:absolute;left:-1px;right:-1px;bottom:calc(100% - 1px);width:calc(100% + 2px);height:44px;fill:#fff;stroke:#BFD3F2;stroke-width:1.2;vector-effect:non-scaling-stroke}
+.pedi .fine{fill:none;stroke:#D6E5FA}
+.pedi path{vector-effect:non-scaling-stroke}
 .hl-ent .hl-k{font-size:12px;font-weight:600;letter-spacing:.16em;font-family:var(--sans)}
 .hl-temple .hl-trust{margin-top:10px;gap:10px}
 .hl-temple .hl-trust a{position:relative;border-radius:2px;padding:18px 16px 18px 26px;background:linear-gradient(90deg,#fff 0,#fff 100%)}
@@ -895,7 +897,7 @@ details.fold[open] summary{margin-bottom:6px}
 @media (max-width:860px){
   .hl-card{padding-left:30px !important}
   .hl-card:before{width:14px}
-  .hl-ent:before{border-left-width:calc(50vw - 20px);border-right-width:calc(50vw - 20px);border-bottom-width:24px}
+  .pedi{height:30px}
   .hl-steps i:nth-child(2){width:calc(100% + 10px)}
   .hl-steps i:nth-child(3){width:calc(100% + 20px)}
   /* home hero: the four shortcut chips are in the menu; keep the hero to the address, the status, two buttons */
