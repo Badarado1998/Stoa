@@ -1,6 +1,6 @@
 name: Limit order keeper (Robinhood Chain)
 
-# About every 5 minutes (GitHub may run it later): fills every open limit order whose minimum the router can pay now,
+# Every 5 minutes (each hourly run loops; see below): fills every open limit order whose minimum the router can pay now,
 # along the router's own best route, and returns the deposits of expired orders to their makers. Does nothing until
 # StoaLimit is deployed and the web app ships its address.
 on:
@@ -23,7 +23,7 @@ concurrency:
 jobs:
   keep:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 62
     defaults:
       run:
         working-directory: contracts
@@ -38,5 +38,12 @@ jobs:
         run: |
           set -o pipefail
           test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
-          bash script/limit.sh 2>&1 | tee /tmp/out.txt
-          sed 's/^/- /' /tmp/out.txt >> "$GITHUB_STEP_SUMMARY" || true
+          # GitHub starts scheduled runs about once an hour, not every 5 minutes, so each run checks every 5 minutes
+          # for about 55 minutes (a manual run checks once). The concurrency group keeps one run at a time.
+          passes=$([ "${{ github.event_name }}" = schedule ] && echo 11 || echo 1)
+          for i in $(seq 1 $passes); do
+            echo "pass $i ($(date -u +%H:%M) UTC)" | tee -a /tmp/out.txt
+            bash script/limit.sh 2>&1 | tee -a /tmp/out.txt || echo "pass $i failed; retrying in 5 minutes" | tee -a /tmp/out.txt
+            [ "$i" -lt "$passes" ] && sleep 290
+          done
+          grep -vE '^(logs|status|transactionHash) ' /tmp/out.txt | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true
