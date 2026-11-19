@@ -7,6 +7,9 @@ import { srv } from "@/lib/serverRpc";
 // graduated recently. Read from the chain once a minute for every visitor; Pons' own site is the source for the rest.
 // Not prerendered at build (a slow RPC would fail the deploy); Vercel's CDN caches each answer for a minute instead.
 export const dynamic = "force-dynamic";
+// a stuck RPC must not hold the function for the platform's 300 s: give up after 45 s (the CDN keeps serving the last answer)
+export const maxDuration = 60;
+const DEADLINE_MS = 45_000;
 const CACHE = { "cache-control": "public, s-maxage=60, stale-while-revalidate=300" };
 
 const LAUNCHED = parseAbiItem("event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairToken, uint256 a, uint256 b)");
@@ -25,7 +28,19 @@ const eth = (v: bigint, dp = 4) => (Number(v) / 1e18).toFixed(dp);
 const ua = { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 20_000 };
 
 export async function GET() {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Error("deadline")), DEADLINE_MS); });
   try {
+    return await Promise.race([read(), deadline]);
+  } catch {
+    return Response.json({ error: "Robinhood Chain RPC unavailable, try again shortly", launches: [] }, { status: 503 });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function read(): Promise<Response> {
+  {
     const logsClient = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), ua) });
     const rpc = (ROBINHOOD.chain.rpcUrls.default.http as readonly string[])[0] ?? ROBINHOOD.logsRpc;
     const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(rpc), ua) });
@@ -107,7 +122,5 @@ export async function GET() {
       };
     });
     return Response.json({ updated: new Date().toISOString(), scanned: all.length, ethUsd, launches: out }, { headers: CACHE });
-  } catch {
-    return Response.json({ error: "Robinhood Chain RPC unavailable, try again shortly", launches: [] }, { status: 503 });
   }
 }

@@ -15,7 +15,9 @@ export const wagmiConfig = createConfig({
   multiInjectedProviderDiscovery: true, // MetaMask, Rabby, OKX ... announce themselves (EIP-6963)
   connectors: [
     injected({ shimDisconnect: true }),
-    ...(wc
+    // browser only: WalletConnect sets up its storage (IndexedDB) as soon as the connector is created, which fails
+    // and logs on every server render
+    ...(wc && typeof window !== "undefined"
       ? [walletConnect({ projectId: wc, showQrModal: true, metadata: { name: "Stoa", description: "Swap router on Robinhood Chain and Elysium", url: "https://stoadex.com", icons: ["https://stoadex.com/logo.png"] } })]
       : []),
   ],
