@@ -12,11 +12,11 @@ NEW = json.load(open("contracts/deployments/99901-simgas.json"))
 DAY = sys.argv[1] if len(sys.argv) > 1 else date.today().isoformat()
 WHEN = date.fromisoformat(DAY).strftime("%-d %b %Y")
 SWAP = [  # deployments key, key in 99901-simgas.json, contracts.md label of the old row, label of the new row
-    ("uniswapV3Adapter", "uniswapV3AdapterV2", "UniswapV3Adapter", "UniswapV3AdapterV2 (quote simulations capped)"),
+    ("uniswapV3Adapter", "uniswapV3AdapterV2", "UniswapV3Adapter", "UniswapV3AdapterV2Elysium (quote simulations capped)"),
     ("uniswapV4Adapter", "uniswapV4AdapterV3", "UniswapV4Adapter",
      "UniswapV4AdapterV3 (keeper-only pool registration, no eviction, capped simulations)"),
-    ("aeroAdapter", "aeroAdapterV2", "AeroAdapter", "Aero CLTickSpacingAdapterV2 (quote simulations capped)"),
-    ("ramsesAdapter", "ramsesAdapterV2", "RamsesAdapter", "Ramses CLTickSpacingAdapterV2 (quote simulations capped)"),
+    ("aeroAdapter", "aeroAdapterV2", "AeroAdapter", "Aero CLTickSpacingAdapterV2Elysium (quote simulations capped)"),
+    ("ramsesAdapter", "ramsesAdapterV2", "RamsesAdapter", "Ramses CLTickSpacingAdapterV2Elysium (quote simulations capped)"),
 ]
 EXPLORER = "https://elysium.kinetiq.xyz/address/"
 

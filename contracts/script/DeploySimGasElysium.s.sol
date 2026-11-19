@@ -3,9 +3,11 @@ pragma solidity 0.8.28;
 
 import {Script, console2} from "forge-std/Script.sol";
 import {IUniswapV3Factory} from "../src/adapters/UniswapV3Adapter.sol";
-import {UniswapV3AdapterV2} from "../src/adapters/UniswapV3AdapterV2.sol";
+import {UniswapV3AdapterV2Elysium as UniswapV3AdapterV2} from "../src/adapters/UniswapV3AdapterV2Elysium.sol";
 import {ICLTickSpacingFactory} from "../src/adapters/CLTickSpacingAdapter.sol";
-import {CLTickSpacingAdapterV2} from "../src/adapters/CLTickSpacingAdapterV2.sol";
+import {
+    CLTickSpacingAdapterV2Elysium as CLTickSpacingAdapterV2
+} from "../src/adapters/CLTickSpacingAdapterV2Elysium.sol";
 import {UniswapV4AdapterV3} from "../src/adapters/UniswapV4AdapterV3.sol";
 import {IPoolManager} from "../src/adapters/UniswapV4Adapter.sol";
 import {StoaRouter} from "../src/StoaRouter.sol";
@@ -14,8 +16,8 @@ import {ElysiumLive} from "./RolloutSimGasElysium.s.sol";
 
 /// @notice Deploys the gas-capped adapters (each pool's quote simulation capped at SIM_GAS, as on Robinhood Chain)
 ///         for the live Elysium router and writes deployments/99901-simgas.json:
-///           - UniswapV3AdapterV2 (Uniswap V3, hub WHYPE): replaces UniswapV3Adapter 0x3706…90F5
-///           - CLTickSpacingAdapterV2 for Aero Slipstream and Ramses: replace 0x9C6c…1fD8 and 0x78D5…548B
+///           - UniswapV3AdapterV2Elysium (Uniswap V3, hub WHYPE; SIM_GAS 1.5M): replaces UniswapV3Adapter 0x3706…90F5
+///           - CLTickSpacingAdapterV2Elysium (SIM_GAS 1.5M) for Aero Slipstream and Ramses: replace 0x9C6c…1fD8 and 0x78D5…548B
 ///           - UniswapV4AdapterV3 (as on Robinhood Chain: keeper-only registration, no eviction, SIM_GAS per
 ///             simulation): replaces the first UniswapV4Adapter 0xEB4B…92e5, whose register() is open and evicts.
 ///             Owner the Elysium timelock, keeper Stoa's Elysium keeper (the deployer, which registered every key on
@@ -55,11 +57,11 @@ contract DeploySimGasElysium is Script, VenuesElysium, ElysiumLive {
         require(address(v3.factory()) == UNI_V3_FACTORY && v3.hub() == WHYPE && v3.stoaRouter() == ELY_ROUTER, "v3");
         require(address(aero.factory()) == AERO_CL_FACTORY && aero.stoaRouter() == ELY_ROUTER, "aero");
         require(address(ramses.factory()) == RAMSES_CL_FACTORY && ramses.stoaRouter() == ELY_ROUTER, "ramses");
-        require(v3.SIM_GAS() == 1_000_000 && aero.SIM_GAS() == 1_000_000 && ramses.SIM_GAS() == 1_000_000, "cap");
+        require(v3.SIM_GAS() == 1_500_000 && aero.SIM_GAS() == 1_500_000 && ramses.SIM_GAS() == 1_500_000, "cap");
 
-        console2.log("UniswapV3AdapterV2", address(v3));
-        console2.log("Aero CLTickSpacingAdapterV2", address(aero));
-        console2.log("Ramses CLTickSpacingAdapterV2", address(ramses));
+        console2.log("UniswapV3AdapterV2Elysium", address(v3));
+        console2.log("Aero CLTickSpacingAdapterV2Elysium", address(aero));
+        console2.log("Ramses CLTickSpacingAdapterV2Elysium", address(ramses));
         console2.log("UniswapV4AdapterV3", address(v4));
         vm.serializeAddress("s", "uniswapV3AdapterV2", address(v3));
         vm.serializeAddress("s", "aeroAdapterV2", address(aero));

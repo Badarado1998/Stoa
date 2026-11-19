@@ -19,7 +19,7 @@ runs = 512
 [fmt]
 # deployed and verified on Sourcify byte for byte, or pinned to a CREATE2 address the app ships: keep the source
 # exactly as compiled (SafetySim's bytecode is embedded in web/lib/safetySimCode.ts)
-ignore = ["src/StoaBuyback.sol", "src/StoaLimit.sol", "src/tools/SafetySim.sol"]
+ignore = ["src/StoaBuyback.sol", "src/StoaLimit.sol", "src/tools/SafetySim.sol", "src/adapters/UniswapV3AdapterV2.sol", "src/adapters/CLTickSpacingAdapterV2.sol", "src/adapters/UniswapV3AdapterV2Elysium.sol", "src/adapters/CLTickSpacingAdapterV2Elysium.sol"]
 
 [invariant]
 runs = 64

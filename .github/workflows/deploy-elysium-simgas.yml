@@ -15,8 +15,7 @@ on:
         type: boolean
         default: false
 permissions:
-  contents: write
-  actions: write
+  contents: read
 concurrency:
   group: deploy-elysium
   cancel-in-progress: false
@@ -26,18 +25,22 @@ jobs:
     defaults:
       run:
         working-directory: contracts
+    permissions:
+      contents: read
     env:
       ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
-      PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           version: v1.5.1
 
       - name: Check settings
+        env:
+          PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
         run: |
           test -n "$PK" || { echo "::error::secret DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
           test ! -f deployments/99901-simgas.json || { echo "::error::already deployed (deployments/99901-simgas.json)"; exit 1; }
@@ -55,6 +58,8 @@ jobs:
         run: forge test --match-contract ElysiumSimGas -vv
 
       - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        env:
+          PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
         run: |
           forge script script/DeploySimGasElysium.s.sol --rpc-url "$ELYSIUM_RPC_URL" --private-key "$PK" \
             --slow ${{ inputs.broadcast && '--broadcast' || '' }}
@@ -62,6 +67,8 @@ jobs:
 
       - name: Copy the V4 keys onto UniswapV4AdapterV3 (keeper)
         if: ${{ inputs.broadcast }}
+        env:
+          PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
         run: |
           RPC="$ELYSIUM_RPC_URL" PRIVATE_KEY="$PK" ADAPTER="$(jq -r .uniswapV4AdapterV3 deployments/99901-simgas.json)" \
             SEED=script/data/v4-v3-seed-99901.json ./script/seed-v4.sh
@@ -72,10 +79,10 @@ jobs:
         run: |
           R=0x104752D50ef893da579Ad813918269e09Ea17dbA
           J=deployments/99901-simgas.json
-          forge verify-contract $(jq -r .uniswapV3AdapterV2 $J) src/adapters/UniswapV3AdapterV2.sol:UniswapV3AdapterV2 \
+          forge verify-contract $(jq -r .uniswapV3AdapterV2 $J) src/adapters/UniswapV3AdapterV2Elysium.sol:UniswapV3AdapterV2Elysium \
             --verifier sourcify --chain 99901 --constructor-args $(cast abi-encode "c(address,address,address)" \
             0x1707327F626496A7b5b3872e7E4d2879Df7d7a9f 0xbA876237B0F021A6c6D852d6c26E107997cC5E81 $R) || true
-          cl() { forge verify-contract "$1" src/adapters/CLTickSpacingAdapterV2.sol:CLTickSpacingAdapterV2 \
+          cl() { forge verify-contract "$1" src/adapters/CLTickSpacingAdapterV2Elysium.sol:CLTickSpacingAdapterV2Elysium \
             --verifier sourcify --chain 99901 --constructor-args $(cast abi-encode "c(address,address,int24[])" "$2" $R "$3") || true; }
           cl $(jq -r .aeroAdapterV2 $J) 0xEfd7A089D3057F05189B05f74Ffcf30610c42891 "[1,10,50,100,150,200,250]"
           cl $(jq -r .ramsesAdapterV2 $J) 0x29cd8852FF040CfE74fb20277A121eD1293AFb41 "[1,5,10,50,100,200,300,400,500]"
@@ -86,21 +93,40 @@ jobs:
             0xeBa02cCc1f724Cd098fc20492EF9313e1ED2417B "$HOOKS" 0x056896d7d62fB4faE30f53d76CB55264f4c5c500 \
             $(cast call $R "guardian()(address)" --rpc-url "$ELYSIUM_RPC_URL")) || true
 
-      - name: Commit the addresses (contracts/ only)
+      - name: Keep the addresses for the commit job
         if: ${{ inputs.broadcast }}
-        working-directory: .
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: elysium-simgas
+          path: |
+            contracts/deployments/99901-simgas.json
+            contracts/script/data/v4-v3-seed-99901.json
+
+  # No secret in this job: it commits the two files the deploy wrote and turns the hourly governance runs on.
+  commit:
+    needs: deploy
+    if: ${{ inputs.broadcast }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: elysium-simgas
+          path: contracts
+      - name: Commit the addresses (contracts/ only)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           export GIT_AUTHOR_NAME="StoaDex" GIT_AUTHOR_EMAIL="355140148+StoaDex@users.noreply.github.com"
           git add contracts/deployments/99901-simgas.json contracts/script/data/v4-v3-seed-99901.json
           git commit -m "deploy: gas-capped V3, CL and V4 adapters on Elysium (not routed until the timelock swaps them)"
-          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep $((i * 10)); done
-          exit 1
+          ok=0; for i in 1 2 3; do git pull --rebase && git push && { ok=1; break; }; sleep $((i * 10)); done
+          [ "$ok" = 1 ] || exit 1
 
       - name: Start the hourly governance runs
-        if: ${{ inputs.broadcast }}
-        working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow enable rollout-elysium-simgas.yml -R "$GITHUB_REPOSITORY" || true
