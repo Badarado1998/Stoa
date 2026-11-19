@@ -216,7 +216,7 @@ button{font:inherit}
 .pair{display:flex;align-items:center;gap:10px;font-weight:600}
 .pair .ti+.ti{margin-left:-12px;border:2px solid #fff}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#EEF4FD;color:var(--accent-d);font-size:12px;font-weight:500}
-.stat .v{font-family:var(--serif);font-size:30px;color:var(--ink);margin-top:6px;display:block}
+.stat .v{font-family:var(--sans);font-size:28px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin-top:6px;display:block}
 .stat small{display:block;margin-top:4px;font-size:12px;color:var(--muted)}
 .num{font-family:var(--serif);font-size:15px;letter-spacing:.14em;color:var(--accent)}
 .step h3{margin:10px 0 6px;font-family:var(--serif);font-weight:400;font-size:22px;color:var(--ink)}
@@ -910,3 +910,4 @@ details.fold[open] summary{margin-bottom:6px}
   body:has(.mnav) .foot>div:first-child{display:none}
   body:has(.mnav) .foot .badge{padding-top:0;border-top:0;justify-content:center}
 }
+@media (max-width:860px){.sgrid .stat .v{font-size:20px}}
