@@ -1,5 +1,5 @@
 :root{
-  --ink:#1E2633; --txt:#465061; --muted:#6B7482; --line:rgba(30,38,51,.14);
+  --ink:#1E2633; --txt:#465061; --muted:#5E6775; --line:rgba(30,38,51,.14);
   --accent:#2F6FD6; --accent-d:#1F4FA8; --glass:#4C97F0; --pearl:#F4F1EA;
   --serif:var(--font-serif),'Marcellus',Georgia,serif; --sans:var(--font-sans),'Inter',system-ui,sans-serif; --mono:var(--font-mono),'JetBrains Mono',ui-monospace,monospace;
 }
@@ -144,7 +144,7 @@ button{font:inherit}
 .backdrop.plain{background:#FBFAF7}.backdrop.plain img,.backdrop.plain:after{display:none}
 .page{max-width:1120px;margin:0 auto;animation:rise .45s ease both}
 @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent-d)}
 .ph{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:22px}
 .ph h1{margin:8px 0 6px;font-family:var(--serif);font-weight:400;font-size:clamp(2.1rem,5vw,3.4rem);line-height:1.04;color:var(--ink);letter-spacing:.01em}
 .ph p{margin:0;max-width:560px;font-size:16px;line-height:1.55}
@@ -218,9 +218,10 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .empty h3{margin:12px 0 6px;font-family:var(--serif);font-weight:400;font-size:26px;color:var(--ink)}
 .empty p{margin:0 auto 16px;max-width:420px}
 .note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.note a:not(.cta):not(.chip):not(.go){text-decoration:underline;text-underline-offset:2px}
 .foot{max-width:1120px;margin:56px auto 0;padding:32px 0 40px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:28px;flex-wrap:wrap}
 .foot .cols{display:flex;gap:48px;flex-wrap:wrap}
-.foot h4{margin:0 0 10px;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--muted)}
+.foot h4,.foot .fh{margin:0 0 10px;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--muted)}
 .foot a{display:block;padding:4px 0;color:var(--ink);font-size:14px}
 /* wallet modal */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(20,28,40,.45);display:none;align-items:center;justify-content:center;padding:16px}
@@ -274,7 +275,7 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .tabs a.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(30,38,51,.08)}
 .err{margin-top:10px;padding:10px 12px;border-radius:10px;background:#FDF1F0;border:1px solid #F3D3CF;color:#8A2B20;font-size:13px;word-break:break-word}
 .ok{margin-top:10px;padding:10px 12px;border-radius:10px;background:#EEF8F2;border:1px solid #CBE8D6;color:#1E6B41;font-size:13px}
-.linkbtn{border:0;background:none;padding:0;color:var(--accent);font:inherit;cursor:pointer}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font:inherit;cursor:pointer;min-height:24px}
 .linkbtn:hover{text-decoration:underline}
 .sharecard{margin-top:12px;padding:14px 16px;border-radius:14px;background:#EEF8F2;border:1px solid #CBE8D6}
 .sharecard .lbl{color:#1E6B41}.sharecard a.lbl{text-decoration:none}
@@ -580,7 +581,7 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .wlsym small{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em}
 .wlprice{font-family:var(--mono);font-size:14px;text-align:right;display:flex;flex-direction:column;align-items:flex-end}
 .wlprice small{font-size:11px}
-.up{color:#1E8E4E}.dn{color:#C2413A}
+.up{color:#1A7A43}.dn{color:#B83A33}
 .wlbtns{display:flex;gap:6px}
 .wlbtns .ghost{border-color:var(--line);background:#fff;min-height:36px}
 .alertform{margin-top:10px;display:flex;flex-direction:column;gap:8px}
@@ -613,7 +614,7 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .sval{font-family:var(--mono);font-size:14px;display:flex;flex-direction:column}
 .sval small{display:none}
 .sval em{font-style:normal;font-size:11px;color:var(--muted)}
-.sval em.far{color:#B7791F}
+.sval em.far{color:#93600F}
 .sval .muted{color:var(--muted);font-family:inherit;font-size:12px}
 .sact{display:flex;gap:6px;justify-content:flex-end}
 .sact .cta{min-height:36px}

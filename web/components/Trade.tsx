@@ -462,7 +462,7 @@ function TradeOn({ net }: { net: Net }) {
             <button className={limitMode ? undefined : "on"} type="button" role="tab" aria-selected={!limitMode} onClick={() => setMode("swap")}>Swap</button>
             {limitLive && <button className={limitMode ? "on" : undefined} type="button" role="tab" aria-selected={limitMode} onClick={() => setMode("limit")}>Limit</button>}
           </div>
-          <button className="ghost" type="button" style={{ borderColor: "var(--line)", background: "#fff" }} aria-label="Swap settings" aria-expanded={showSet} onClick={() => setShowSet((s) => !s)}>
+          <button className="ghost" type="button" style={{ borderColor: "var(--line)", background: "#fff" }} aria-label={`Swap settings, slippage ${slip}%`} aria-expanded={showSet} onClick={() => setShowSet((s) => !s)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>{slip}%
           </button>
           <div className={`panel pop${showSet ? " open" : ""}`}>
@@ -492,7 +492,7 @@ function TradeOn({ net }: { net: Net }) {
         <div className="box">
           <div className="row"><span className="lbl" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>BUY{buy.tone === "other" && <WatchStar chain={net.key} address={buy.address} symbol={buy.symbol} logo={buy.logo} via={buy.name.endsWith("Robinhood Stock Token") ? "USDG" : undefined} small />}</span><span className="lbl">BALANCE {bBal !== undefined ? fmt(bBal, buy.decimals, 4) : "—"}</span></div>
           <div className="row" style={{ position: "relative" }}>
-            <span className="out" style={{ fontSize: outTxt.length > 13 ? 20 : outTxt.length > 10 ? 24 : 28, color: quote ? "var(--ink)" : "#AAB2BE" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
+            <span className="out" style={{ fontSize: outTxt.length > 13 ? 20 : outTxt.length > 10 ? 24 : 28, color: quote ? "var(--ink)" : "#6F7886" }} title={quote ? fmt(quote.out, buy.decimals, buy.decimals) : undefined}>
               {quote ? outTxt : quoting && amt ? <i className="sk" style={{ width: 120, height: 22 }} /> : "0.00"}
             </span>
             <TokenBtn t={buy} onClick={() => !busy && setMenu(menu === "buy" ? null : "buy")} />

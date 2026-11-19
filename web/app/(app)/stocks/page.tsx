@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import Stocks, { MarketStatus, type StockRow } from "@/components/Stocks";
+import { session } from "@/lib/marketHours";
 import { mid, stockTokens } from "@/lib/stocks";
 
 export const revalidate = 60;
@@ -24,7 +25,7 @@ export default async function StocksPage() {
   };
   return (
     <section className="page">
-      <PageHead eyebrow="STOCK TOKENS · ROBINHOOD CHAIN" title="Tokenized stocks, on-chain" action={<MarketStatus />}>
+      <PageHead eyebrow="STOCK TOKENS · ROBINHOOD CHAIN" title="Tokenized stocks, on-chain" action={<MarketStatus initial={session()} />}>
         {rows.length ? `${rows.length} Robinhood Stock Tokens, ${rows.filter((r) => r.route).length} of them swappable on Stoa right now,` : "Robinhood Stock Tokens,"} each with Robinhood&apos;s own price next to what it trades for on-chain. Follow the ones you care about with ☆ and set a price alert.
       </PageHead>
       {data ? <Stocks rows={rows} updated={data.updated} /> : (

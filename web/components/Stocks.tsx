@@ -14,9 +14,9 @@ export interface StockRow {
 
 const usd0 = (v: number) => (v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v.toFixed(0)}`);
 
-/** the US session, recomputed every minute in the visitor's browser */
-export function MarketStatus() {
-  const [s, setS] = useState<Session | null>(null);
+/** the US session: rendered on the server (so it paints with the page), then recomputed every minute in the browser */
+export function MarketStatus({ initial }: { initial?: Session }) {
+  const [s, setS] = useState<Session | null>(initial ?? null);
   useEffect(() => { const f = () => setS(session()); f(); const t = setInterval(f, 60_000); return () => clearInterval(t); }, []);
   if (!s) return null;
   return <span className={`mstatus ${s}`}><i aria-hidden="true" />{SESSION_LABEL[s]}</span>;
