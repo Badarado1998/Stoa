@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
+import MirrorSync from "@/components/MirrorSync";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Open source and open data",
   description: "Stoa's code, data and reviews in the open: the source on GitHub and a signed mirror on Twigpine, open datasets on Hugging Face (swaps, Robinhood Stock Token prices, venue quotes, contract releases) with checksums, a public export API, and the independent security review by HEY Research Lab.",
   alternates: { canonical: "/open" },
 };
+
+export const revalidate = 120;
 
 const HF = "https://huggingface.co/datasets/StoaDex/stoa-onchain";
 const VERIFY = "sha256sum data/*.csv data/spotlight.json   # compare with manifest.json";
@@ -39,6 +43,10 @@ export default function OpenPage() {
             <p className="note" style={{ marginBottom: 0 }}>{p.what}</p>
           </a>
         ))}
+
+        <Suspense fallback={<div className="panel pad"><div className="lbl">CODE MIRROR · LIVE CHECK</div><p className="note" style={{ marginBottom: 0 }}>Checking…</p></div>}>
+          <MirrorSync />
+        </Suspense>
 
         <div className="panel" style={{ overflow: "hidden" }}>
           <div className="pad" style={{ paddingBottom: 0 }}><div className="rowx"><div className="lbl">LIVE DASHBOARD · FROM THE DATASETS</div><a href="https://huggingface.co/spaces/StoaDex/stoa-dashboard" target="_blank" rel="noopener noreferrer">Open on Hugging Face →</a></div></div>
