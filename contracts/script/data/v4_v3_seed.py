@@ -7,6 +7,8 @@ whose reference trade (1 ETH or 3,000 USDG) cost more than MAX_REF_GAS (default 
 report, v4-gas-report.json (the daily job runs it first). Without that report nothing is copied. Narrow tick spacing
 alone is no reason to leave a pool out (HEY Research Lab follow-up, F-4). Pons graduation pools come first, then other
 hooked pools, then hook-less ones.
+Also added, first: v4-v3-extra-4663.json, keys V2 cannot list because their hooks are allowed on V3 only (QHooks:
+QHOOKS/WETH on hook 0x0236…60cc, allowed by the timelock on 20 Nov 2026).
 Run from this folder:  python3 -I v4_v3_seed.py   (public RPC, no key)
 """
 import importlib.util
@@ -41,6 +43,12 @@ def main():
                 continue
             out.append(k)
     out.sort(key=lambda k: (k["hooks"] != PONS, k["hooks"] == ZERO))
+    try:
+        extra = json.load(open(os.path.join(HERE, "v4-v3-extra-4663.json")))
+    except (OSError, ValueError):
+        extra = []
+    seen = {json.dumps(k, sort_keys=True) for k in out}
+    out = [k for k in extra if json.dumps(k, sort_keys=True) not in seen] + out
     with open(os.path.join(HERE, "v4-v3-seed-4663.json"), "w") as f:
         json.dump(out, f, indent=1)
     print("wrote", len(out), "keys")

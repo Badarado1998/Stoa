@@ -1,5 +1,12 @@
 [
  {
+  "currency0": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+  "currency1": "0x20429af7ca3b0ce4d99edbaa0693f26c5df05195",
+  "fee": 10000,
+  "tickSpacing": 200,
+  "hooks": "0x023623568f41c032ec2f4bba368dbafc123160cc"
+ },
+ {
   "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x008df4b3e857d06c4603aeb11f267ccd32ce2005",
   "fee": 0,
