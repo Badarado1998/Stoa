@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { fmt } from "@/lib/swap";
 
-type Q = { name: "0x" | "1inch"; out: string };
+type Q = { name: "0x" | "1inch" | "Rialto"; out: string };
 
-/** 0x's and 1inch's quotes for the same amount on Robinhood Chain, next to Stoa's route: a second opinion the trader
+/** 0x's, 1inch's and Rialto's quotes for the same amount on Robinhood Chain, next to Stoa's route: a second opinion the trader
  *  can see. Fetched once per pair and amount (not on every 4-second refresh). Hidden when no aggregator answers. */
 export default function AggregatorCheck({ sell, buy, amt, out, decimals, symbol }: { sell: string; buy: string; amt: bigint; out: bigint; decimals: number; symbol: string }) {
   const [quotes, setQuotes] = useState<Q[] | null>(null);

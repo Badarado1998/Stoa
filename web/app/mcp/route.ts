@@ -1,3 +1,4 @@
+import { aggregatorQuotes, aggregatorsOn } from "@/lib/aggregators";
 import { isAddress } from "viem";
 import { gloamSwapUrl } from "@/lib/gloam";
 import { readSpotlight } from "@/lib/spotlightServer";
@@ -179,6 +180,15 @@ async function callTool(name: string, a: Record<string, unknown>) {
       const body = await r.json().catch(() => ({ error: "bad response" }));
       if (!r.ok) return text(body, true);
       if (name === "build_swap") body.note = "Unsigned. Check tx.to is the Stoa router for this chain, show the user amountOut and minOut, approve first if 'approval' is present, then let the user's wallet sign.";
+      if (name === "build_swap" && str(a.referrer)) body.referrerTerms = "The referrer earns 10% of Stoa's 2 bps fee on-chain (claim on stoadex.com/referrals). Apps whose referrer address brings 10+ different wallets in a UTC month also get a $10 USDG integrator bonus for that month (up to 5 apps; stoadex.com/referrals#integrator-bonus).";
+      if (name === "quote" && (chain ?? "robinhood") === "robinhood" && aggregatorsOn()) {
+        const sell = str(a.sellToken) ?? "", buy = str(a.buyToken) ?? "";
+        const tok = (v: string) => (v === "native" || v === "ETH" ? NATIVE : v);
+        if (isAddress(tok(sell), { strict: false }) && isAddress(tok(buy), { strict: false })) {
+          const others = await aggregatorQuotes(tok(sell), tok(buy), str(a.amount) ?? "0").catch(() => []);
+          if (others.length) body.secondOpinion = { quotes: others, note: "Other routers' quotes for the same amount (raw units of the buy token), for comparison only: Stoa does not route through them." };
+        }
+      }
       return text(body);
     }
     case "safety_check": {
