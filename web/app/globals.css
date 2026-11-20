@@ -901,8 +901,10 @@ details.fold[open] summary{margin-bottom:6px}
   .pedi{height:30px}
   .hl-steps i:nth-child(2){width:calc(100% + 10px)}
   .hl-steps i:nth-child(3){width:calc(100% + 20px)}
-  /* home hero: the four shortcut chips are in the menu; keep the hero to the address, the status, two buttons */
-  .herogo{display:none !important}
+  /* home hero: the shortcuts are one swipeable row, so a buy is one tap from the first screen */
+  .herogo{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;padding:2px 16px;margin:4px -16px 0;scrollbar-width:none}
+  .herogo::-webkit-scrollbar{display:none}
+  .herogo a{flex:none}
 }
 @media (prefers-reduced-motion:reduce){.colo path{stroke-dashoffset:0;transition:none}}
 /* phones with the tab bar: the footer is one quiet line (More has the links, the $STOA address and the socials) */

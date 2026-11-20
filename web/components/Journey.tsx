@@ -7,6 +7,8 @@ import StoaPulse from "./StoaPulse";
 import HomeLive from "./HomeLive";
 import SpotlightBanner from "./SpotlightBanner";
 import Footer from "./Footer";
+import MobileNav from "./MobileNav";
+import { CA as STOA_CA } from "@/lib/stoaAddress";
 
 type Stop = { n: string; l: string; p: number; a: number };
 type SceneApi = { stops: Stop[]; setTarget(p: number): void; jump(p: number): void; setPaused?(v: boolean): void; dispose(): void };
@@ -112,6 +114,7 @@ export default function Journey() {
       )}
       <HomeLive />
       <div className="homefoot"><Footer /></div>
+      <MobileNav />
     </>
   );
 }
@@ -129,9 +132,10 @@ function HeroButtons() {
       <Link className="cta" href="/trade">Trade now</Link>
       <a className="ghost" href="#live">What&apos;s on Stoa ↓</a>
       <div className="herogo" aria-label="Start here">
-        <Link href="/bridge">Bridge in</Link>
+        <Link href={`/trade?chain=robinhood&buy=${STOA_CA}`}>Buy $STOA</Link>
         <Link href="/stocks">Buy stock tokens</Link>
-        <Link href="/launches">Pons launches</Link>
+        <Link href="/trade?chain=robinhood&sell=ETH&buy=USDG">ETH → USDG</Link>
+        <Link href="/bridge">Bridge in</Link>
         <Link href="/check">Check a token</Link>
       </div>
       <div className="herospot"><SpotlightBanner variant="pill" /></div>

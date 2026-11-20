@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import VenueCompare from "./VenueCompare";
 import { track } from "@vercel/analytics";
 import SwapCheck from "./SwapCheck";
+import { RULES, SEASON_START } from "@/lib/pointsScore";
 import { VenueIcons, venueIds } from "./VenueIcons";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
@@ -99,7 +100,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   // the last confirmed swap, offered as a shareable link that carries the trader's referral
-  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
+  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; pts?: number; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
   // the swap funnel, counted without any address, amount or token (privacy: docs/terms-privacy): once per page view
   const tracked = useRef<Set<string>>(new Set());
   const step = (name: string) => { if (tracked.current.has(name)) return; tracked.current.add(name); try { track(name, { chain: net.key }); } catch { /* analytics blocked */ } };
@@ -417,7 +418,12 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
       }
       if (got === undefined) return;
       step("swap_done");
-      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals), check: { sell: s0.address, buy: b0.address, decimals: b0.decimals, paid, got, block: r.blockNumber } });
+      // season points this swap earns, before the daily cap and the round-trip rule (lib/pointsScore)
+      const usdIn = (usdOf(s0)?.usd ?? 0) * Number(formatUnits(paid, s0.decimals));
+      const stable = (t: Token) => t.tone === "usd";
+      const stockSide = [s0, b0].some((t) => t.name.endsWith("Robinhood Stock Token"));
+      const pts = usdIn < RULES.MIN_USD || (stable(s0) && stable(b0)) ? 0 : Math.min(RULES.DAILY_CAP, usdIn * (stockSide ? RULES.STOCK_X : 1));
+      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals), pts, check: { sell: s0.address, buy: b0.address, decimals: b0.decimals, paid, got, block: r.blockNumber } });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
@@ -593,6 +599,9 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             <div className="sharecard">
               <div className="rowx"><span className="lbl">SWAP CONFIRMED</span><a className="lbl" href={txUrl(done.hash)} target="_blank" rel="noopener noreferrer">VIEW ↗</a></div>
               <div className="sc-amt">{done.inTxt} {done.symIn} → <b>{done.outTxt} {done.symOut}</b></div>
+              {done.pts !== undefined && (Date.now() / 1000 >= SEASON_START
+                ? done.pts > 0 && <p className="note" style={{ marginTop: 6 }}><b style={{ color: "var(--accent-d)" }}>+{done.pts.toLocaleString("en-US", { maximumFractionDigits: 1 })} points</b> toward season 1 (before the daily cap). <a href="/points">Your points</a></p>
+                : <p className="note" style={{ marginTop: 6 }}>Points season 1 starts Mon 23 Nov, 00:00 UTC: swaps from then on earn points. <a href="/points">How it works</a></p>)}
               {done.check && done.net === net.key && <SwapCheck net={net} pub={pub} sellToken={done.check.sell} buyToken={done.check.buy} decimals={done.check.decimals} symbol={done.symOut} paid={done.check.paid} got={done.check.got} block={done.check.block} />}
               {done.covered && <p className="note" style={{ marginTop: 4 }}>Covered: if the creator&apos;s wallet drops below its floor before release, claim your ETH on <a href="/cover">Rug Cover</a>.</p>}
               <div className="sc-btns">
