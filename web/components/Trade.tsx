@@ -15,6 +15,7 @@ import { SITE } from "@/lib/chain";
 import { shareOrCopy } from "@/lib/share";
 import { useQuery } from "@tanstack/react-query";
 import VenueCompare from "./VenueCompare";
+import { track } from "@vercel/analytics";
 import SwapCheck from "./SwapCheck";
 import { VenueIcons, venueIds } from "./VenueIcons";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
@@ -99,6 +100,10 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   // the last confirmed swap, offered as a shareable link that carries the trader's referral
   const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
+  // the swap funnel, counted without any address, amount or token (privacy: docs/terms-privacy): once per page view
+  const tracked = useRef<Set<string>>(new Set());
+  const step = (name: string) => { if (tracked.current.has(name)) return; tracked.current.add(name); try { track(name, { chain: net.key }); } catch { /* analytics blocked */ } };
+  useEffect(() => { if (isConnected) step("wallet_connected"); }, [isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
   const [copied, setCopied] = useState(false);
   const [unlimited, setUnlimited] = useState(false); // approve only the swap amount unless the user opts in
   const [ackToken, setAckToken] = useState(false);
@@ -211,6 +216,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
       try {
         const q = await getQuote();
         if (id !== seq.current) return;
+        if (q?.route) step("quote_shown");
         setQuote(q); setNoRoute(!q && (deployed || kind === "wrap" || kind === "unwrap"));
       } catch {
         if (id === seq.current) { setQuote(null); setNoRoute(true); }
@@ -351,6 +357,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
     if (cover.on) {
       if (!cover.ok) return;
       const ok = await run("Covered buy", async () => {
+        step("swap_sent");
         const fresh = await getQuote();
         if (!fresh?.route) throw new Error("No route for this swap right now.");
         if (fresh.impact >= IMPACT_BLOCK && !ackImpact) throw new Error(`Price impact is now ${fresh.impact.toFixed(1)}%. Confirm the high price impact to continue.`);
@@ -373,6 +380,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
           try { const ev = decodeEventLog({ abi: [routedEvent], data: l.data, topics: l.topics }); paid = ev.args.amountIn; got = ev.args.amountOut; break; } catch { /* another event */ }
         }
         cover.refetch();
+        step("swap_done");
         if (got !== undefined) setDone({ hash, net: net.key, symIn: sell.symbol, symOut: buy.symbol, inTxt: fmtAmt(paid, sell.decimals), outTxt: fmtAmt(got, buy.decimals), covered: true });
       }, explainCover);
       if (ok) { setAmount(""); setAckImpact(false); }
@@ -380,6 +388,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
     }
 
     const ok = await run("Swap", async () => {
+      step("swap_sent");
       const fresh = await getQuote(); // re-quote right before signing
       if (!fresh?.route) throw new Error("No route for this swap right now.");
       if (fresh.impact >= IMPACT_BLOCK && !ackImpact) throw new Error(`Price impact is now ${fresh.impact.toFixed(1)}%. Confirm the high price impact to continue.`);
@@ -407,6 +416,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         try { const ev = decodeEventLog({ abi: [routedEvent], data: l.data, topics: l.topics }); paid = ev.args.amountIn; got = ev.args.amountOut; break; } catch { /* another event */ }
       }
       if (got === undefined) return;
+      step("swap_done");
       setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals), check: { sell: s0.address, buy: b0.address, decimals: b0.decimals, paid, got, block: r.blockNumber } });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
