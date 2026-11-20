@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-ai-strategies",
+    date: "2026-11-21",
+    title: "Stoa AI: strategies you type, rug scan, Telegram and a widget for projects",
+    tag: "Robinhood Chain",
+    items: [
+      "Type a strategy like \"buy NVDA with 50 USDG if it drops 5%\": Stoa AI turns it into a limit order you sign. Stoa's keeper fills it once the market pays that price.",
+      "\"Scan my tokens for rug signs\": a failing test sell, the creator wallet sending out supply, a crash or draining liquidity, per token.",
+      "A Stoa AI Telegram bot: /ask in any group, and /watch for rug alerts in a private chat.",
+      "Projects can add Stoa AI for their own token to their site with one line, or to their Telegram group with /settoken.",
+    ],
+    link: { href: "/docs/stoa-ai-for-projects", label: "Stoa AI for projects" },
+  },
+  {
     id: "ask-stoa",
     date: "2026-11-21",
     title: "Ask Stoa: an AI assistant for Robinhood Chain (beta)",

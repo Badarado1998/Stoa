@@ -7,6 +7,18 @@
 - "How far is NVDA from Robinhood's price?": stock tokens next to Robinhood's price.
 - "Who is in Spotlight this week?", and questions about Stoa answered from these docs.
 - "Make me a payment link for 25 USDG": a [Stoa Pay](stoa-pay.md) link, ready to share.
+- "Buy NVDA with 50 USDG if it drops 5%" or "Sell 1000 STOA for ETH if it goes up 20%": a [limit order](limit-orders.md) built from your words, shown as a card you sign. Your deposit waits in Stoa's limit order contract and Stoa's keeper fills it once the market pays that price. A limit order only fills at a better price than now, so it cannot be a stop-loss.
+- "Scan my tokens for rug signs": a rug scan of your connected wallet (see below).
+
+## Rug scan and alerts
+
+The rug scan looks at your tokens other than ETH, WETH, USDG and stock tokens, and flags what it sees right now: a "danger" safety verdict, a test sell that fails, the creator's wallet sending out more than 1% of supply in the last 6 hours (Pons launches), the price falling 30% or more in an hour, or very little liquidity left. These are signals, not certainty: a creator moving tokens can have an ordinary reason.
+
+To get alerts, message the Stoa AI Telegram bot privately: `/watch 0xYourWallet` (your public address only). It scans every 10 minutes and messages you about each new sign, at most once a day per token and sign. `/unwatch` stops it. Alerts never sell anything for you.
+
+## In Telegram
+
+The Stoa AI bot answers in private chats, and in groups when you use `/ask`, mention it, or reply to it. It reads only: for a swap, a limit order or a payment it sends you to stoadex.com/ai, where your own wallet signs. Projects can make it their own assistant: see [Stoa AI for projects](stoa-ai-for-projects.md).
 
 ## What it will not do
 
@@ -18,4 +30,4 @@ Before preparing a buy of a token other than ETH, WETH, USDG or a Robinhood stoc
 
 ## Limits
 
-10 free messages a day. The assistant runs on a third-party AI model through OpenRouter; what you type is sent there to get an answer, with your connected address but nothing else. It can be wrong: check the card before you sign.
+10 free messages a day (on the site, and separately in Telegram). The assistant runs on a third-party AI model through OpenRouter; what you type is sent there to get an answer, with your connected address but nothing else. It can be wrong: check the card before you sign.
