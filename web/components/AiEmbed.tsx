@@ -44,9 +44,9 @@ export default function AiEmbed({ token, symbol, logo, buy }: { token: string; s
         {logo ? <img src={logo} alt="" width={32} height={32} style={{ borderRadius: "50%" }} /> : <Avatar size={32} />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700 }}>{symbol} assistant <span style={{ fontSize: 10.5, fontWeight: 700, color: "#1f4fa8", background: "#eaf1ff", borderRadius: 6, padding: "1px 6px" }}>BETA</span></div>
-          <div style={{ fontSize: 12, color: "var(--muted)" }}>Stoa AI · on-chain data, Robinhood Chain</div>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>Stoa AI · on-chain data</div>
         </div>
-        <a href={buy} target="_blank" rel="noopener noreferrer" className="pri btn" style={{ padding: "7px 12px", fontSize: 13.5 }}>Buy on Stoa ↗</a>
+        <a href={buy} target="_blank" rel="noopener noreferrer" style={{ flex: "none", padding: "8px 12px", fontSize: 13.5, fontWeight: 600, background: "var(--accent)", color: "#fff", borderRadius: 999, textDecoration: "none" }}>Buy on Stoa ↗</a>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         {!msgs.length && (
