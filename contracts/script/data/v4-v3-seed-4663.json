@@ -8,6 +8,13 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x01e6301bc1118be90cc6bc2d1b5c0c44bb883111",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x05ab5974839cbef493a0958751185f1a45fb2a3b",
   "fee": 0,
   "tickSpacing": 200,
@@ -1093,6 +1100,13 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0x61f650264a8ba2ed1ddc7ac4caffa4e807df111c",
+  "fee": 0,
+  "tickSpacing": 200,
+  "hooks": "0xe5e702641ea86f4ae6cc3cdaed2b886f976be044"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0x69156ef2ec33d24efb29c1a2fa84967be618ccbf",
   "fee": 0,
   "tickSpacing": 200,
@@ -1800,6 +1814,13 @@
  },
  {
   "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x79bbf4508b1391af3a0f4b30bb5fc4aa9ab0e07c",
+  "fee": 2500,
+  "tickSpacing": 25,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
   "currency1": "0x7d5afabd12a30ec1e213bbcefaced2ffbde56948",
   "fee": 75,
   "tickSpacing": 1,
@@ -1971,6 +1992,13 @@
   "currency1": "0xc4f730335fb9e439ca5552f7b52b8e638c4245b0",
   "fee": 10000,
   "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xc60ba256b44334a0cd2c7242e98b88f031abb006",
+  "fee": 38000,
+  "tickSpacing": 380,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {
@@ -2878,6 +2906,13 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xacc8de336f5d2366fa7334383d8fab73499f582a",
+  "fee": 50000,
+  "tickSpacing": 500,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xad25ac6c84d497db898fa1e8387bf6af3532a1c4",
   "fee": 1000,
   "tickSpacing": 10,
@@ -3161,6 +3196,13 @@
   "currency1": "0xe8ffd7e24187f72afb08d75b1bb13088a989a791",
   "fee": 19900,
   "tickSpacing": 199,
+  "hooks": "0x0000000000000000000000000000000000000000"
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xe8ffd7e24187f72afb08d75b1bb13088a989a791",
+  "fee": 47780,
+  "tickSpacing": 478,
   "hooks": "0x0000000000000000000000000000000000000000"
  },
  {

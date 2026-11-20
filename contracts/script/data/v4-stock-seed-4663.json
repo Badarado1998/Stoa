@@ -6,7 +6,7 @@
   "tickSpacing": 10,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "AMC",
-  "liquidityUsd": 291845
+  "liquidityUsd": 292686
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -24,7 +24,7 @@
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "ORCL",
-  "liquidityUsd": 110791
+  "liquidityUsd": 110745
  },
  {
   "currency0": "0x5f10a1c971b69e47e059e1dc91901b59b3fb49c3",
@@ -42,7 +42,7 @@
   "tickSpacing": 99,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "NBIS",
-  "liquidityUsd": 99680
+  "liquidityUsd": 99803
  },
  {
   "currency0": "0x117cc2133c37b721f49de2a7a74833232b3b4c0c",
@@ -51,7 +51,7 @@
   "tickSpacing": 1,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "SPY",
-  "liquidityUsd": 91581
+  "liquidityUsd": 91492
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -69,7 +69,7 @@
   "tickSpacing": 101,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "WDC",
-  "liquidityUsd": 30919
+  "liquidityUsd": 30842
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -78,7 +78,7 @@
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "SNOW",
-  "liquidityUsd": 24625
+  "liquidityUsd": 24577
  },
  {
   "currency0": "0x48e39e56acdba37b09020c0b734a613c9a2f100a",
@@ -87,7 +87,7 @@
   "tickSpacing": 71,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "BB",
-  "liquidityUsd": 24373
+  "liquidityUsd": 24350
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -217,20 +217,11 @@
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0xbef75684c43c4ea7bd18dd532a2244674ee8b926",
-  "fee": 10000,
-  "tickSpacing": 100,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "NNE",
-  "liquidityUsd": 2421
- },
- {
-  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0x7f0abef0c07280f82c6a08ead09ded6bae2c13fc",
   "fee": 2000,
   "tickSpacing": 20,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "EWY",
-  "liquidityUsd": 2386
+  "liquidityUsd": 2377
  }
 ]
