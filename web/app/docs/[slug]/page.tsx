@@ -68,6 +68,12 @@ export default async function DocPageView({ params }: { params: Promise<{ slug: 
           <h1>{d.title}</h1>
           <p className="lead" dangerouslySetInnerHTML={{ __html: d.lead }} />
           <div dangerouslySetInnerHTML={{ __html: d.html }} />
+          <div className="panel pad" style={{ margin: "28px 0 8px", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontWeight: 600, marginRight: "auto" }}>Try it on Stoa</span>
+            <Link className="cta" href="/trade?chain=robinhood" prefetch={false}>Swap</Link>
+            <Link className="ghost" href="/stocks" prefetch={false}>Stock tokens</Link>
+            <Link className="ghost" href="/check" prefetch={false}>Check a token</Link>
+          </div>
           <div className="pn">
             {prev && <Link href={`/docs/${prev.slug}`}><small>Previous</small>{prev.title}</Link>}
             {next && <Link className="nx" href={`/docs/${next.slug}`}><small>Next</small>{next.title}</Link>}
