@@ -36,6 +36,8 @@ export const viewport: Viewport = { themeColor: "#EEF2F6", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
+      {/* the footer's HEY Research Lab badge is the largest picture on short pages: open its connection early */}
+      <head><link rel="preconnect" href="https://heyresearch.xyz" /></head>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LD) }} />
         <Providers>{children}</Providers>

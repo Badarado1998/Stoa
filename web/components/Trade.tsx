@@ -676,7 +676,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
           <span>Every swap compares</span>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <VenueIcons ids={[...(net.makers ? ["stoa"] : []), "uniswap", ...(net.makers ? ["aero", "ramses", "lb"] : net.newVenues.map((v) => v.dexId)), ...(net.pons ? ["pons"] : [])]} />
-            <Link href="/docs/how-stoa-works">How it works</Link>
+            <Link href="/docs/how-stoa-works" prefetch={false}>How it works</Link>
           </span>
         </div>
         {net.makers && <PoolDepth />}

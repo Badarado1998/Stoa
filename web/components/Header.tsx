@@ -45,7 +45,7 @@ export default function Header({ extra }: { extra?: ReactNode }) {
   return (
     <>
       <header className={`hdr${solid && path !== "/" ? " solid" : ""}`}>
-        <Link className="brand" href="/"><img src="/logo.png" alt="" /><span>STOA</span></Link>
+        <Link className="brand" href="/" prefetch={false}><img src="/logo.png" alt="" /><span>STOA</span></Link>
         <nav className="tabs" aria-label="Main">
           {TABS.map(([h, l]) => <Link key={h} href={h} className={on(h) ? "on" : undefined}>{l}</Link>)}
         </nav>

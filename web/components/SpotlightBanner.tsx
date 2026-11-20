@@ -36,7 +36,7 @@ export default function SpotlightBanner({ variant = "bar" }: { variant?: "pill" 
   const lockTxt = !locked ? null : `${cmp(locked)} $STOA locked`; // hidden until someone locks
 
   return (
-    <Link href={href} className={`spotban ${variant}`} aria-label={`${text}. ${lockTxt ?? ""} ${cta}`}>
+    <Link href={href} prefetch={false} className={`spotban ${variant}`} aria-label={`${text}. ${lockTxt ?? ""} ${cta}`}>
       <span className="sb-dot" aria-hidden="true" />
       <span className="sb-t">{text}{lockTxt && <small> · {lockTxt}</small>}</span>
       <span className="sb-go">{cta} →</span>
