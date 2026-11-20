@@ -71,12 +71,19 @@ jobs:
           run() { local name="$1"; shift; if ! "$@" >"$RUNNER_TEMP/out.txt" 2>&1; then cat "$RUNNER_TEMP/out.txt"; echo "::error title=$name failed::$(grep -v '^ *[0-9]*: <unknown>' "$RUNNER_TEMP/out.txt" | tail -8 | tr '\n' ' ' | cut -c1-900)"; return 1; fi; cat "$RUNNER_TEMP/out.txt"; }
           DID=$(gl identity show)
           echo "identity: $DID"
-          run register gl register
+          # the identity is registered once; the node rate-limits registering again, so push first and
+          # register only when a push is refused
           gl repo create "$REPO_NAME" --description "Stoa: swap router on Robinhood Chain and Elysium. Mirror of github.com/StoaDex/Stoa, every push signed. stoadex.com" >/dev/null 2>&1 || echo "repo exists"
           git config user.name "$DID"
           git config user.email "$DID@gitlawb"
           git remote add twigpine "gitlawb://$DID/$REPO_NAME"
-          run push git push twigpine HEAD:refs/heads/main --force
+          if ! git push twigpine HEAD:refs/heads/main --force >"$RUNNER_TEMP/p1.txt" 2>&1; then
+            grep -v '<unknown>' "$RUNNER_TEMP/p1.txt" | tail -5
+            gl register >/dev/null 2>&1 || echo "register: not needed or rate-limited"
+            run push git push twigpine HEAD:refs/heads/main --force
+          else
+            cat "$RUNNER_TEMP/p1.txt"
+          fi
           git push twigpine --tags --force >/dev/null 2>&1 || true
           echo "mirrored: https://explorer.twigpine.com/repos/${DID#did:key:}/$REPO_NAME"
           rm -rf "$RUNNER_TEMP/tp"
