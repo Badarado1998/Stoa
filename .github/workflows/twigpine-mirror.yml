@@ -3,8 +3,9 @@ name: Mirror to Twigpine
 # Mirrors this repository to Twigpine (decentralized git: every push is signed with an Ed25519 DID key and gets a
 # certificate) on every push to main, so the code can be checked outside GitHub. The identity comes from one repository
 # secret: TWIGPINE_SEED (any long random text; the Ed25519 key is SHA-256 of it, so the same text always gives the same
-# DID) or TWIGPINE_IDENTITY_PEM (an identity.pem from `gl identity new`). The key is written to a temporary file on the
-# runner and never printed. Without either secret this does nothing.
+# DID) or TWIGPINE_IDENTITY_PEM (an identity.pem from `gl identity new`). Without either, the seed is the existing
+# HF_TOKEN secret (one-way SHA-256, so the key reveals nothing about the token; rotating HF_TOKEN changes the DID unless
+# TWIGPINE_SEED is set). The key is made in its own step and the Twigpine CLI runs without any secret in its environment.
 on:
   push:
     branches: [main]
@@ -22,18 +23,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HAS_KEY: ${{ secrets.TWIGPINE_SEED != '' || secrets.TWIGPINE_IDENTITY_PEM != '' }}
+      HAS_KEY: ${{ secrets.TWIGPINE_SEED != '' || secrets.TWIGPINE_IDENTITY_PEM != '' || secrets.HF_TOKEN != '' }}
       GITLAWB_NODE: https://node.twigpine.com
       TWIGPINE_NODE: https://node.twigpine.com
       REPO_NAME: stoa
     steps:
       - name: Skip without the key
         if: env.HAS_KEY != 'true'
-        run: echo "TWIGPINE_SEED is not set; nothing mirrored."
+        run: echo "No identity secret; nothing mirrored."
       - uses: actions/checkout@v4
         if: env.HAS_KEY == 'true'
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         if: env.HAS_KEY == 'true'
         with:
@@ -41,10 +43,10 @@ jobs:
       - name: Install the Twigpine CLI
         if: env.HAS_KEY == 'true'
         run: npm install -g @gitlawb/gl@0.8.1
-      - name: Mirror
+      - name: Make the signing key
         if: env.HAS_KEY == 'true'
         env:
-          SEED: ${{ secrets.TWIGPINE_SEED }}
+          SEED: ${{ secrets.TWIGPINE_SEED || secrets.HF_TOKEN }}
           PEM: ${{ secrets.TWIGPINE_IDENTITY_PEM }}
         run: |
           umask 077
@@ -61,10 +63,13 @@ jobs:
           k=K.from_private_bytes(hashlib.sha256(b"stoa-twigpine-v1:"+seed).digest())
           open(sys.argv[1],"wb").write(k.private_bytes(s.Encoding.PEM,s.PrivateFormat.PKCS8,s.NoEncryption()))' "$RUNNER_TEMP/tp/identity.pem"
           fi
+      - name: Mirror
+        if: env.HAS_KEY == 'true'
+        run: |
           export GITLAWB_KEY="$RUNNER_TEMP/tp/identity.pem" TWIGPINE_KEY="$RUNNER_TEMP/tp/identity.pem"
           DID=$(gl identity show)
           echo "identity: $DID"
-          gl register >/dev/null
+          gl register
           gl repo create "$REPO_NAME" --description "Stoa: swap router on Robinhood Chain and Elysium. Mirror of github.com/StoaDex/Stoa, every push signed. stoadex.com" >/dev/null 2>&1 || echo "repo exists"
           git config user.name "$DID"
           git config user.email "$DID@gitlawb"
