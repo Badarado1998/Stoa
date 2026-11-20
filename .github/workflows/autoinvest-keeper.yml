@@ -1,0 +1,48 @@
+name: Auto-invest keeper (Robinhood Chain)
+
+# Every 15 minutes (each hourly run loops; see below): runs every StoaAutoInvest buy that is due for plans this keeper
+# runs (script/autoinvest.sh). Does nothing until StoaAutoInvest is deployed and the web app ships its address.
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "Only print what it would do"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "7 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autoinvest-keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 62
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      RPC: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+      DRY: ${{ inputs.dry && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Run due auto-invest buys
+        run: |
+          set -o pipefail
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          # GitHub starts scheduled runs about once an hour, not every 15 minutes, so each run checks every 15 minutes
+          # for about 45 minutes (a manual run checks once). The concurrency group keeps one run at a time.
+          passes=$([ "${{ github.event_name }}" = schedule ] && echo 4 || echo 1)
+          for i in $(seq 1 $passes); do
+            echo "pass $i ($(date -u +%H:%M) UTC)" | tee -a /tmp/out.txt
+            bash script/autoinvest.sh 2>&1 | tee -a /tmp/out.txt || echo "pass $i failed; retrying in 15 minutes" | tee -a /tmp/out.txt
+            [ "$i" -lt "$passes" ] && sleep 890
+          done
+          grep -vE '^(logs|status|transactionHash) ' /tmp/out.txt | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true
