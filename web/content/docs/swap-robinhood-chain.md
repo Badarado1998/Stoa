@@ -24,6 +24,7 @@ You need a little ETH on Robinhood Chain for gas. A swap costs a few cents at mo
 
 1. Pick the token you sell and the token you buy. ETH works directly: the router wraps and unwraps it for you.
 2. Enter the amount. Stoa's router compares every venue it uses on Robinhood Chain, directly and through WETH, and shows the route it found under the quote.
+   Under the details, **Second opinion** shows what other routers (0x and 1inch) quote for the same amount right now, so you can compare. Stoa only shows their prices; your swap always goes through Stoa's router.
 3. Check **Price impact**, **Minimum received** and slippage (0.1%, 0.5% or 1%). If the fill would be worse than your slippage allows, the swap reverts and you only pay gas.
 4. The first time you sell a token, your wallet asks for an approval of **only that amount**.
 5. Confirm. The tokens arrive in the same transaction.
