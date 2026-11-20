@@ -1,7 +1,7 @@
 """Publish Stoa's open dataset to Hugging Face (weekly, .github/workflows/open-data.yml).
 
 Reads the public export API on stoadex.com (/api/v1/export), writes CSV/JSON files with a manifest of SHA-256 checksums
-and a dataset card, and uploads them to the dataset repo HF_REPO (default stoadex/stoa-onchain) with a tag per ISO week
+and a dataset card, and uploads them to the dataset repo HF_REPO (default StoaDex/stoa-onchain) with a tag per ISO week
 (w2026-47). Everything in it is public on-chain data already: swaps through Stoa's routers (Routed events), the Points
 season 1 board and the Spotlight week.
 
@@ -19,7 +19,7 @@ import sys
 import urllib.request
 
 SITE = os.environ.get("STOA_SITE", "https://stoadex.com")
-REPO = os.environ.get("HF_REPO", "stoadex/stoa-onchain")
+REPO = os.environ.get("HF_REPO", "StoaDex/stoa-onchain")
 
 
 def get(set_name):

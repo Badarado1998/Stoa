@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HF_REPO: ${{ vars.HF_REPO || 'stoadex/stoa-onchain' }}
+      HF_REPO: ${{ vars.HF_REPO || 'StoaDex/stoa-onchain' }}
       HAS_TOKEN: ${{ secrets.HF_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4

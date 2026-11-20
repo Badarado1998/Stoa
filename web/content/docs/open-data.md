@@ -1,6 +1,6 @@
 # Open data
 
-Stoa publishes its public on-chain data as an open dataset on Hugging Face: [huggingface.co/datasets/stoadex/stoa-onchain](https://huggingface.co/datasets/stoadex/stoa-onchain). It is updated every Monday at about 04:23 UTC, and each update is tagged with its ISO week (for example `w2026-48`).
+Stoa publishes its public on-chain data as an open dataset on Hugging Face: [huggingface.co/datasets/StoaDex/stoa-onchain](https://huggingface.co/datasets/StoaDex/stoa-onchain). It is updated every Monday at about 04:23 UTC, and each update is tagged with its ISO week (for example `w2026-48`).
 
 ## What is in it
 

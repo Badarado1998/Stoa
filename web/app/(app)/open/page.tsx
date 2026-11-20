@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/open" },
 };
 
-const HF = "https://huggingface.co/datasets/stoadex/stoa-onchain";
+const HF = "https://huggingface.co/datasets/StoaDex/stoa-onchain";
 const VERIFY = "sha256sum data/*.csv data/spotlight.json   # compare with manifest.json";
 
 const PLACES: { name: string; href: string; what: string; tag: string }[] = [
