@@ -10,6 +10,8 @@ import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
 import { weekPrices } from "@/lib/priceHistory";
 import PriceChart from "@/components/PriceChart";
 import { earningsFor, whenTxt } from "@/lib/earnings";
+import { gapHistory } from "@/lib/gapHistory";
+import GapChart from "@/components/GapChart";
 
 export const revalidate = 120;
 
@@ -44,7 +46,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const diff = ref && s.dex ? ((s.dex.priceUsd - ref) / ref) * 100 : null;
   const swap = `/trade?chain=robinhood&sell=USDG&buy=${s.address}`;
   const more = all.filter((x) => x.route && x.address !== s.address).slice(0, 12);
-  const [history, earn] = await Promise.all([s.dex ? weekPrices("robinhood", s.address) : Promise.resolve(null), earningsFor(s.symbol)]);
+  const [history, earn, gaps] = await Promise.all([s.dex ? weekPrices("robinhood", s.address) : Promise.resolve(null), earningsFor(s.symbol), s.dex ? gapHistory(s.address).catch(() => []) : Promise.resolve([])]);
   const cell = (label: string, v: React.ReactNode, sub?: React.ReactNode) => (
     <div className="panel pad"><div className="lbl">{label}</div><div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v}</div>{sub && <div className="note" style={{ marginTop: 4 }}>{sub}</div>}</div>
   );
@@ -93,6 +95,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}
       </div>
       {history && <PriceChart points={history} symbol={s.symbol} source="GeckoTerminal" stock />}
+      {s.dex && <GapChart points={gaps} symbol={s.symbol} />}
       {(earn.next || earn.last) && (
         <div className="panel pad" style={{ marginBottom: 16 }}>
           <div className="lbl">{shortName(s.name).toUpperCase()} EARNINGS</div>

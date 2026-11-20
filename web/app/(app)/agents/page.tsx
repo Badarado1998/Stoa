@@ -21,6 +21,8 @@ const TOOLS: [string, string][] = [
   ["stock_tokens", "Robinhood Stock Tokens: Robinhood's price next to the on-chain price, liquidity, and whether Stoa routes them"],
   ["market_context", "Market context for a trade: BTC and ETH, total market, and up to 5 Robinhood Chain tokens"],
   ["spotlight", "This week's Spotlight: bids, votes, phase and closing times"],
+  ["stock_gaps", "Stock tokens whose on-chain price is furthest from Robinhood's, with a 7-day gap history"],
+  ["open_data", "Stoa's open datasets, and every routed swap, the Points board or venue quotes live"],
   ["list_tokens", "The tokens Stoa lists on a network, with addresses and decimals"],
 ];
 

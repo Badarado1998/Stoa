@@ -20,6 +20,8 @@ It uses the Streamable HTTP transport and is stateless. Every tool is read-only.
 | `market_context` | CoinMarketCap data to put a trade in context: total crypto market cap and 24h change, BTC and ETH prices, Fear and Greed, and for up to 5 Robinhood Chain tokens their price, market cap, liquidity and last 24h of trading. Context only; the price a swap gets is the one `quote` returns |
 | `stock_tokens` | Robinhood Stock Tokens: Robinhood's price next to the on-chain price, liquidity, volume, and whether Stoa routes them |
 | `spotlight` | This week's Spotlight on Robinhood Chain: the phase and closing times, the rules, every candidate with its ETH bid and $STOA votes, last week's winners and the $STOA locked. Sponsored slots, not reviewed |
+| `stock_gaps` | Stock tokens whose on-chain price is furthest from Robinhood's (cheaper or dearer, real liquidity only), and optionally one token's gap every 6 hours for 7 days from Stoa's open dataset. Information, not trading advice |
+| `open_data` | Stoa's open datasets on Hugging Face with links, or live: every routed swap, the Points board, or the venue-quote basket |
 
 Arguments and responses match the [API](api.md): amounts are integers in the token's smallest unit, and `native` means the gas token.
 

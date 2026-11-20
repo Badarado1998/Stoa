@@ -27,6 +27,7 @@ const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(Math.abs(v) < 10 ? 2
 /** Today's movers among stock tokens with a real on-chain market (at least MIN_LIQ of liquidity): the most traded,
  *  the biggest 24h moves on-chain, and the widest gaps from Robinhood's price. Read from the same data as the list. */
 const MIN_LIQ = 10_000;
+const GAP_LIQ = 50_000; // the gap views: pools deep enough that their price means something
 function Movers({ rows }: { rows: StockRow[] }) {
   const [tab, setTab] = useState(0); // phones show one list at a time
   // while the US market is shut, Robinhood's price stays at its last quote and only the on-chain price moves: the gap
@@ -71,11 +72,23 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
   const [q, setQ] = useState("");
   const [all, setAll] = useState(false);
   const [more, setMore] = useState(false); // the first 30 rows until asked
+  // sort: the default order, or by the gap between the on-chain price and Robinhood's (pools with real liquidity only)
+  const [sort, setSort] = useState<"default" | "gap" | "cheaper" | "dearer" | "liquidity" | "volume">("default");
   const routed = rows.filter((r) => r.route).length;
+  const gapOf = (r: StockRow) => (r.ref && r.dex && !r.halted ? ((r.dex.priceUsd - r.ref) / r.ref) * 100 : null);
   const shown = useMemo(() => {
     const k = q.trim().toLowerCase();
-    return rows.filter((r) => (all || k || r.route) && (!k || r.symbol.toLowerCase().includes(k) || r.name.toLowerCase().includes(k) || r.address.toLowerCase() === k));
-  }, [rows, q, all]);
+    let out = rows.filter((r) => (all || k || r.route) && (!k || r.symbol.toLowerCase().includes(k) || r.name.toLowerCase().includes(k) || r.address.toLowerCase() === k));
+    if (sort === "gap" || sort === "cheaper" || sort === "dearer") {
+      // gaps over 25% are almost always a stale or thin pool, not a price: left out of the gap views
+      out = out.filter((r) => r.dex && r.dex.liquidityUsd >= GAP_LIQ && gapOf(r) != null && Math.abs(gapOf(r)!) <= 25);
+      if (sort === "cheaper") out = out.filter((r) => gapOf(r)! < 0).sort((a, b) => gapOf(a)! - gapOf(b)!);
+      else if (sort === "dearer") out = out.filter((r) => gapOf(r)! > 0).sort((a, b) => gapOf(b)! - gapOf(a)!);
+      else out = out.sort((a, b) => Math.abs(gapOf(b)!) - Math.abs(gapOf(a)!));
+    } else if (sort === "liquidity") out = [...out].sort((a, b) => (b.dex?.liquidityUsd ?? 0) - (a.dex?.liquidityUsd ?? 0));
+    else if (sort === "volume") out = [...out].sort((a, b) => (b.dex?.volume24h ?? 0) - (a.dex?.volume24h ?? 0));
+    return out;
+  }, [rows, q, all, sort]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <WatchlistPanel chain="robinhood" />
@@ -86,7 +99,16 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
           <button className="ghost" type="button" aria-pressed={all} onClick={() => setAll((v) => !v)}>
             {all ? `Only those Stoa routes (${routed})` : `Show all ${rows.length}`}
           </button>
+          <select className="ghost" value={sort} onChange={(e) => { setSort(e.target.value as typeof sort); setMore(false); }} aria-label="Sort stock tokens">
+            <option value="default">Sort: default</option>
+            <option value="gap">Widest gap vs Robinhood</option>
+            <option value="cheaper">Cheaper on-chain</option>
+            <option value="dearer">Dearer on-chain</option>
+            <option value="liquidity">Most liquidity</option>
+            <option value="volume">Most 24h volume</option>
+          </select>
         </div>
+        {(sort === "gap" || sort === "cheaper" || sort === "dearer") && <p className="note" style={{ margin: "0 0 8px" }}>Pools with at least $50K liquidity; gaps over 25% (stale or thin pools) left out. Outside US market hours Robinhood&apos;s price follows the overnight session. Not financial advice.</p>}
         <div className="stockhead" aria-hidden="true"><span>Token</span><span>Robinhood price</span><span>On-chain price</span><span>On-chain liquidity</span><span /></div>
         <div className="stocklist">
           {(more || q ? shown : shown.slice(0, 30)).map((r) => {
@@ -108,7 +130,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
               </div>
             );
           })}
-          {!shown.length && <p className="note">No stock token matches “{q}”.</p>}
+          {!shown.length && <p className="note">{q ? <>No stock token matches “{q}”.</> : "No stock token fits this view right now."}</p>}
           {!more && !q && shown.length > 30 && <button type="button" className="ghost" style={{ alignSelf: "center", marginTop: 6 }} onClick={() => setMore(true)}>Show {shown.length - 30} more</button>}
         </div>
         <details className="note fold" style={{ marginBottom: 0 }}>

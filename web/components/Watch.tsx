@@ -1,11 +1,21 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { NETS, netByKey } from "@/lib/networks";
 import { fetchPrices, fmtUsd, usePrices } from "@/lib/prices";
 import type { Token } from "@/lib/tokens";
 import { Ticker } from "./ui";
-import { addAlert, crossed, isWatched, markFired, removeAlert, toggleWatch, useWatch, type PriceAlert, type Watch } from "@/lib/watchlist";
+import { addAlert, alertText, crossed, isWatched, markFired, removeAlert, toggleWatch, useWatch, type PriceAlert, type Watch } from "@/lib/watchlist";
+
+type StockRef = { address: string; referencePriceUsd: number | null; halted: boolean; onChain: { priceUsd: number } | null };
+/** on-chain price vs Robinhood's, in percent, per stock token address (lowercase) */
+async function stockGaps(): Promise<Record<string, number>> {
+  const j = (await (await fetch("/api/v1/stocks")).json()) as { stocks: StockRef[] };
+  const out: Record<string, number> = {};
+  for (const s of j.stocks) if (s.referencePriceUsd && s.onChain?.priceUsd && !s.halted) out[s.address.toLowerCase()] = ((s.onChain.priceUsd - s.referencePriceUsd) / s.referencePriceUsd) * 100;
+  return out;
+}
 
 const tradeHref = (w: { chain: string; address: string; via?: string }) => `/trade?chain=${w.chain}${w.via ? `&sell=${w.via}` : ""}&buy=${w.address}`;
 
@@ -39,19 +49,42 @@ function usePermission() {
   return { p, ask };
 }
 
-function AlertForm({ w, price, onDone }: { w: Watch; price?: number; onDone: () => void }) {
+function AlertForm({ w, price, gap, onDone }: { w: Watch; price?: number; gap?: number; onDone: () => void }) {
+  const [kind, setKind] = useState<"price" | "gap">("price");
+  const [gdir, setGdir] = useState<PriceAlert["dir"]>("below");
   const [v, setV] = useState(price ? String(Number(price.toPrecision(4))) : "");
-  const target = Number(v);
-  const ok = isFinite(target) && target > 0;
-  const dir: PriceAlert["dir"] = price && target < price ? "below" : "above";
+  const [g, setG] = useState("1");
+  const target = Number(kind === "gap" ? g : v);
+  const ok = isFinite(target) && target > 0 && (kind === "price" || target <= 25);
+  const dir: PriceAlert["dir"] = kind === "gap" ? gdir : price && target < price ? "below" : "above";
   return (
-    <form className="alertform" onSubmit={(e) => { e.preventDefault(); if (!ok) return; addAlert({ chain: w.chain, address: w.address, symbol: w.symbol, dir, price: target }); onDone(); }}>
+    <form className="alertform" onSubmit={(e) => { e.preventDefault(); if (!ok) return; addAlert({ chain: w.chain, address: w.address, symbol: w.symbol, dir, price: target, kind }); onDone(); }}>
+      {gap !== undefined && (
+        <div className="seg" role="tablist" style={{ alignSelf: "flex-start" }}>
+          <button type="button" role="tab" className={kind === "price" ? "on" : undefined} aria-selected={kind === "price"} onClick={() => setKind("price")}>Price</button>
+          <button type="button" role="tab" className={kind === "gap" ? "on" : undefined} aria-selected={kind === "gap"} onClick={() => setKind("gap")}>Gap vs Robinhood</button>
+        </div>
+      )}
+      {kind === "gap" ? (
+        <>
+          <label className="note" style={{ margin: 0 }}>Alert when {w.symbol} on-chain is at least this much {gdir === "below" ? "cheaper" : "dearer"} than Robinhood&apos;s price (now {gap! >= 0 ? "+" : ""}{gap!.toFixed(2)}%)</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <select className="ghost" value={gdir} onChange={(e) => setGdir(e.target.value as PriceAlert["dir"])} aria-label="Cheaper or dearer on-chain"><option value="below">Cheaper</option><option value="above">Dearer</option></select>
+            <input inputMode="decimal" autoFocus placeholder="%" value={g} onChange={(e) => setG(e.target.value.replace(/[^0-9.]/g, ""))} aria-label={`Gap in percent for ${w.symbol}`} style={{ width: 90 }} />
+            <button className="cta" type="submit" disabled={!ok}>Set</button>
+            <button className="ghost" type="button" onClick={onDone}>Cancel</button>
+          </div>
+        </>
+      ) : (
+      <>
       <label className="note" style={{ margin: 0 }}>Alert when {w.symbol} is {ok ? dir : "at"}</label>
       <div style={{ display: "flex", gap: 8 }}>
         <input inputMode="decimal" autoFocus placeholder="Price in USD" value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.]/g, ""))} aria-label={`Alert price for ${w.symbol} in USD`} />
         <button className="cta" type="submit" disabled={!ok}>Set</button>
         <button className="ghost" type="button" onClick={onDone}>Cancel</button>
       </div>
+      </>
+      )}
     </form>
   );
 }
@@ -66,6 +99,7 @@ export function WatchlistPanel({ chain, empty }: { chain?: string; empty?: React
   const nets = NETS.filter((n) => n.deployed && (!chain || n.key === chain));
   const getters = Object.fromEntries(nets.map((n) => [n.key, usePrices(n, s.watch.filter((w) => w.chain === n.key).map(asToken))])); // eslint-disable-line react-hooks/rules-of-hooks
   const watch = s.watch.filter((w) => getters[w.chain]);
+  const gaps = useQuery({ queryKey: ["stock-gaps"], queryFn: stockGaps, enabled: watch.some((w) => w.chain === "robinhood"), staleTime: 60_000 }).data;
   if (!mounted) return null;
   if (!watch.length) return empty ? <>{empty}</> : null;
   const alerts = s.alerts.filter((a) => getters[a.chain]);
@@ -94,18 +128,18 @@ export function WatchlistPanel({ chain, empty }: { chain?: string; empty?: React
                   <WatchStar chain={w.chain} address={w.address} symbol={w.symbol} logo={w.logo} via={w.via} />
                 </span>
               </div>
-              {form === id && <AlertForm w={w} price={price?.usd} onDone={() => setForm(null)} />}
+              {form === id && <AlertForm w={w} price={price?.usd} gap={w.chain === "robinhood" ? gaps?.[w.address.toLowerCase()] : undefined} onDone={() => setForm(null)} />}
             </div>
           );
         })}
       </div>
       {alerts.length > 0 && (
         <>
-          <div className="lbl" style={{ marginTop: 16 }}>PRICE ALERTS</div>
+          <div className="lbl" style={{ marginTop: 16 }}>ALERTS</div>
           <div className="wl" style={{ marginTop: 8 }}>
             {alerts.map((a) => (
               <div key={a.id} className="wlalert">
-                <span>{a.symbol} {a.dir} {fmtUsd(a.price)}{a.fired ? <small className="up"> · reached {fmtUsd(a.fired)}</small> : <small> · waiting</small>}</span>
+                <span>{alertText(a, fmtUsd)}{a.fired !== undefined ? <small className="up"> · reached {a.kind === "gap" ? `${a.fired.toFixed(2)}%` : fmtUsd(a.fired)}</small> : <small> · waiting</small>}</span>
                 <button className="ghost" type="button" onClick={() => removeAlert(a.id)} aria-label={`Delete alert ${a.symbol} ${a.dir} ${a.price}`}>Delete</button>
               </div>
             ))}
@@ -113,7 +147,7 @@ export function WatchlistPanel({ chain, empty }: { chain?: string; empty?: React
         </>
       )}
       <p className="note" style={{ marginBottom: 0 }}>
-        Saved in this browser only. Alerts are checked every minute while Stoa is open in a tab or as the installed app; prices come from DexScreener.
+        Saved in this browser only. Alerts are checked every minute while Stoa is open in a tab or as the installed app; prices come from DexScreener, and gap alerts compare them with Robinhood&apos;s price.
         {alerts.length > 0 && p === "denied" && " Notifications are blocked for stoadex.com in your browser settings, so alerts show on the page only."}
       </p>
     </div>
@@ -138,11 +172,13 @@ export function AlertWatcher() {
         for (const n of NETS.filter((x) => x.deployed)) {
           const mine = pending.filter((a) => a.chain === n.key);
           if (!mine.length) continue;
-          const prices = await fetchPrices(n, [...new Set(mine.map((a) => a.address))]).catch(() => ({} as Record<string, { usd: number }>));
+          const priceOnes = mine.filter((a) => a.kind !== "gap"), gapOnes = mine.filter((a) => a.kind === "gap");
+          const prices = priceOnes.length ? await fetchPrices(n, [...new Set(priceOnes.map((a) => a.address))]).catch(() => ({} as Record<string, { usd: number }>)) : {};
+          const gaps = gapOnes.length ? await stockGaps().catch(() => ({} as Record<string, number>)) : {};
           for (const a of mine) {
-            const usd = prices[a.address.toLowerCase()]?.usd;
-            if (!usd || !crossed(a, usd) || !markFired(a.id, usd)) continue;
-            const text = `${a.symbol} is ${a.dir} ${fmtUsd(a.price)}: now ${fmtUsd(usd)}`;
+            const v = a.kind === "gap" ? gaps[a.address.toLowerCase()] : prices[a.address.toLowerCase()]?.usd;
+            if (v === undefined || (a.kind !== "gap" && !v) || !crossed(a, v) || !markFired(a.id, v)) continue;
+            const text = a.kind === "gap" ? `${alertText(a, fmtUsd)}: now ${v >= 0 ? "+" : ""}${v.toFixed(2)}%` : `${a.symbol} is ${a.dir} ${fmtUsd(a.price)}: now ${fmtUsd(v)}`;
             const href = tradeHref({ ...a, via: s.watch.find((w) => w.chain === a.chain && w.address.toLowerCase() === a.address.toLowerCase())?.via });
             setToasts((t) => [...t, { id: a.id, text, href }].slice(-3));
             try {

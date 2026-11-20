@@ -5,7 +5,9 @@ import { useSyncExternalStore } from "react";
  *  Alerts are checked while Stoa is open in a tab or as the installed app (see AlertWatcher). */
 /** via: the token to sell when opening Trade for it (stock tokens trade against USDG) */
 export interface Watch { chain: string; address: string; symbol: string; logo?: string; via?: string; added: number }
-export interface PriceAlert { id: string; chain: string; address: string; symbol: string; dir: "above" | "below"; price: number; created: number; fired?: number; firedAt?: number }
+/** kind "gap" (Robinhood Stock Tokens): price is a percentage; "below" fires when the on-chain price is at least that
+ *  much under Robinhood's price, "above" when it is that much over. fired then holds the gap it saw, in percent. */
+export interface PriceAlert { id: string; chain: string; address: string; symbol: string; dir: "above" | "below"; price: number; created: number; fired?: number; firedAt?: number; kind?: "price" | "gap" }
 interface State { watch: Watch[]; alerts: PriceAlert[] }
 
 const KEY = "stoa.watch.v1";
@@ -81,4 +83,7 @@ export function markFired(id: string, price: number): boolean {
   return true;
 }
 
-export const crossed = (a: PriceAlert, price: number) => (a.dir === "above" ? price >= a.price : price <= a.price);
+export const crossed = (a: PriceAlert, v: number) => (a.kind === "gap" ? (a.dir === "above" ? v >= a.price : v <= -a.price) : a.dir === "above" ? v >= a.price : v <= a.price);
+/** how an alert reads: "TSLA below $350" or "TSLA on-chain 1% cheaper than Robinhood" */
+export const alertText = (a: Pick<PriceAlert, "symbol" | "dir" | "price" | "kind">, usd: (v: number) => string) =>
+  a.kind === "gap" ? `${a.symbol} on-chain ${a.price}% ${a.dir === "below" ? "cheaper" : "dearer"} than Robinhood` : `${a.symbol} ${a.dir} ${usd(a.price)}`;

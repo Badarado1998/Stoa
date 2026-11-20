@@ -1,6 +1,10 @@
 import { isAddress } from "viem";
 import { gloamSwapUrl } from "@/lib/gloam";
 import { readSpotlight } from "@/lib/spotlightServer";
+import { gapHistory } from "@/lib/gapHistory";
+import { readSwaps } from "@/lib/routerStats";
+import { readPoints } from "@/lib/points";
+import { venueSnapshot } from "@/lib/venueSnapshot";
 import { API_HEADERS, apiQuote, limited } from "@/lib/api";
 import { NETS, netByKey } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
@@ -115,6 +119,28 @@ const TOOLS = [
     annotations: ro,
   },
   {
+    name: "stock_gaps",
+    title: "Stock token price gaps",
+    description: "Robinhood Stock Tokens whose on-chain price is furthest from Robinhood's own price right now: cheaper or dearer on-chain, among pools with real liquidity (gaps over 25% are left out as stale pools). Optionally a 7-day history of one token's gap from Stoa's open dataset. Information, not trading advice; outside US market hours Robinhood's price follows the overnight session.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      side: { type: "string", enum: ["any", "cheaper", "dearer"], description: "cheaper: on-chain below Robinhood; dearer: above. Default any." },
+      minLiquidityUsd: { type: "number", description: "Minimum on-chain liquidity, default 50000." },
+      limit: { type: "number", description: "How many, 1 to 20, default 10." },
+      historyFor: { type: "string", description: "Optional ticker (e.g. TSLA): also return its gap every 6 hours for the last 7 days." },
+    } },
+    annotations: ro,
+  },
+  {
+    name: "open_data",
+    title: "Stoa open data",
+    description: "Stoa's public on-chain data: every swap routed through Stoa (newest first), the Points season 1 board, or the venue-quote basket (the same swaps quoted on every Robinhood Chain venue in one block). Also lists the open datasets on Hugging Face with their download links and checksums.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      set: { type: "string", enum: ["datasets", "swaps", "points", "venues"], description: "datasets (default): where the open data lives; swaps; points; venues." },
+      limit: { type: "number", description: "Rows for swaps or points, 1 to 200, default 50." },
+    } },
+    annotations: ro,
+  },
+  {
     name: "spotlight",
     title: "Spotlight this week",
     description: "Stoa Spotlight on Robinhood Chain: projects bid ETH for 3 sponsored slots a week and $STOA holders lock and vote; voters share most of each winning bid. Returns the week, its phase (before_week_1, bids_open, votes_only) and closing times, the rules (quorum, min bid, entry fee), every candidate with its bid and votes, last week's winners and the $STOA locked. Sponsored, not reviewed: run safety_check before buying a Spotlight token.",
@@ -176,6 +202,44 @@ async function callTool(name: string, a: Record<string, unknown>) {
     }
     case "spotlight": {
       try { return text(await readSpotlight()); } catch { return text("Robinhood Chain did not answer, try again shortly", true); }
+    }
+    case "stock_gaps": {
+      const data = await stockTokens().catch(() => null);
+      if (!data) return text("stock data is unavailable right now, try again shortly", true);
+      const side = str(a.side) ?? "any", minLiq = Number(a.minLiquidityUsd ?? 50_000), limit = Math.min(20, Math.max(1, Number(a.limit ?? 10) || 10));
+      const rows = data.stocks.flatMap((s) => {
+        const ref = mid(s);
+        if (!ref || !s.dex || s.halted || s.dex.liquidityUsd < minLiq) return [];
+        const gap = ((s.dex.priceUsd - ref) / ref) * 100;
+        if (Math.abs(gap) > 25 || (side === "cheaper" && gap >= 0) || (side === "dearer" && gap <= 0)) return [];
+        return [{ symbol: s.symbol, name: s.name, address: s.address, robinhoodPriceUsd: ref, onChainPriceUsd: s.dex.priceUsd, gapPct: Number(gap.toFixed(3)), liquidityUsd: s.dex.liquidityUsd, volume24h: s.dex.volume24h, routeOnStoa: s.route }];
+      }).sort((x, y) => Math.abs(y.gapPct) - Math.abs(x.gapPct)).slice(0, limit);
+      let history: unknown = undefined;
+      const hs = str(a.historyFor)?.toUpperCase();
+      if (hs) {
+        const st = data.stocks.find((x) => x.symbol.toUpperCase() === hs);
+        history = st ? (await gapHistory(st.address).catch(() => [])).map((p) => ({ time: new Date(p.t * 1000).toISOString(), robinhoodMidUsd: p.mid, onChainUsd: p.onchain, gapPct: Number(p.gap.toFixed(3)) })) : `no stock token with ticker ${hs}`;
+      }
+      return text({ chain: "robinhood", updated: new Date(data.updated).toISOString(), side, minLiquidityUsd: minLiq, count: rows.length, stocks: rows, history,
+        note: "gapPct: on-chain price vs Robinhood's mid price. A gap is information, not a trade signal: pools move, swaps pay price impact and gas, and outside US market hours Robinhood follows the overnight session. Quote the exact amount with quote before swapping. Not financial advice." });
+    }
+    case "open_data": {
+      const set = str(a.set) ?? "datasets", limit = Math.min(200, Math.max(1, Number(a.limit ?? 50) || 50));
+      if (set === "datasets") return text({
+        datasets: [
+          { name: "stoa-onchain", url: "https://huggingface.co/datasets/StoaDex/stoa-onchain", holds: "every swap through Stoa's routers, daily volume, Points board, Spotlight week; manifest.json with SHA-256", updated: "every 6 hours, tagged weekly" },
+          { name: "robinhood-stock-tokens", url: "https://huggingface.co/datasets/StoaDex/robinhood-stock-tokens", holds: "every Robinhood Stock Token: Robinhood bid/ask vs on-chain price, gap, liquidity, volume", updated: "4 snapshots a day" },
+          { name: "robinhood-chain-venue-quotes", url: "https://huggingface.co/datasets/StoaDex/robinhood-chain-venue-quotes", holds: "a basket of swaps quoted on every venue Stoa routes, in one block", updated: "4 snapshots a day" },
+          { name: "stoa-contracts", url: "https://huggingface.co/datasets/StoaDex/stoa-contracts", holds: "contract source, ABIs, deployments and security docs per release, reproducible tarball with SHA-256", updated: "when the contracts change" },
+        ],
+        api: "https://stoadex.com/api/v1/export?set=swaps|points|spotlight|stocks|venues", license: "CC BY 4.0", page: "https://stoadex.com/open",
+      });
+      try {
+        if (set === "swaps") { const r = (await readSwaps()).slice(0, limit); return text({ set, count: r.length, swaps: r.map((x) => ({ chain: x.chain, time: new Date(x.time * 1000).toISOString(), tx: x.hash, sell: x.symIn, buy: x.symOut, amountIn: x.amountIn, amountOut: x.amountOut, usd: x.usd })) }); }
+        if (set === "points") { const b = await readPoints(); return text({ set, seasonStart: new Date(b.seasonStart * 1000).toISOString(), wallets: b.wallets, top: b.rows.slice(0, limit), note: "Points have no promised value." }); }
+        if (set === "venues") return text({ set, rows: await venueSnapshot(), note: "Each venue alone, one hop, before fees; router_out is Stoa's route after its 2 bps fee. A reading at one block, not a fill." });
+      } catch { return text("the chains did not answer, try again shortly", true); }
+      return text("set must be datasets, swaps, points or venues", true);
     }
     case "stock_tokens": {
       const data = await stockTokens().catch(() => null);
