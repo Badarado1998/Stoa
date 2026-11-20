@@ -10,6 +10,9 @@ export const SPOT_START = Number((rh as { spotlightStart?: number }).spotlightSt
 export const WEEK = 7 * 86400;
 export const BID_WINDOW = 5 * 86400;
 export const SLOTS = 3;
+/** Stoa's own bid in Spotlight for its first weeks (week numbers as shown, from 1), so every week has a bid to vote for.
+ *  Sent from Stoa's wallet like any other bid, for a token named in the weekly post; projects can outbid it. */
+export const HOUSE_BID = { fromWeek: 1, toWeek: 4, eth: 0.03 } as const;
 
 /** tokens the app never shows in Spotlight even if they won (a scam found after the cancel window). Lowercase. */
 export const SPOTLIGHT_HIDDEN: string[] = [];

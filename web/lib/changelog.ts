@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "earn-spotlight",
+    date: "2026-11-20",
+    title: "Earn: lock $STOA, vote, share the winning bids in ETH",
+    tag: "$STOA",
+    items: [
+      "The Earn page now shows the way to earn with $STOA today: lock it in Spotlight, vote, and share 90% of each winning bid in ETH. Live figures: $STOA locked, ETH bid this week, ETH paid to voters and $STOA burned.",
+      "Weeks 1 to 4 of Spotlight carry a 0.03 ETH house bid from Stoa, for a token named in the weekly post. Projects can outbid it.",
+      "Pool vaults stay closed: they come after maker-quoted pools have makers and volume, and after an independent security review of the vault contracts.",
+    ],
+    link: { href: "/earn", label: "Earn" },
+  },
+  {
     id: "v4-adapter-v2-live",
     date: "2026-11-19",
     title: "New Uniswap V4 adapter is live on Robinhood Chain",

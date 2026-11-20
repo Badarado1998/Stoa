@@ -4,7 +4,7 @@ Deposit into a pool vault and earn from the fees traders pay.
 
 {% hint style="warning" %}
 
-Public vaults are not open yet. They launch after the pool contracts are audited, because they hold other people's funds. Until then, pool inventory comes from each pool's curator.
+Public vaults are not open yet. They come after Stoa's maker-quoted pools have makers and volume on Robinhood Chain, and after the vault contracts have had an independent security review, because they hold other people's funds. They will open with deposit caps. Until then, pool inventory comes from each pool's curator. To earn with $STOA today, lock it in Spotlight: see [Earn](/earn).
 
 {% endhint %}
 

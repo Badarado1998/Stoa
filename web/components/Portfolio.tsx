@@ -43,7 +43,7 @@ export default function Portfolio() {
         <div className="panel pad"><div className="lbl">REFERRAL EARNINGS</div>
           <ul className="list">{erc.map((t, i) => (!CORE.has(t.address) && !(refs.data?.[i]?.result as bigint | undefined)) ? null : <li key={t.symbol}>{t.symbol} <b>{CONTRACTS.fees ? fmt((refs.data?.[i]?.result as bigint | undefined) ?? 0n, t.decimals, 6) : "—"}</b></li>)}</ul>
           <Link className="go" href="/referrals">Referrals</Link></div>
-        <div className="panel pad"><div className="lbl">VAULT SHARES</div><p className="note">Vaults open after the audit.</p></div>
+        <div className="panel pad"><div className="lbl">VAULT SHARES</div><p className="note">Pool vaults are not open yet. <a href="/earn">Earn ETH with $STOA</a> in Spotlight today.</p></div>
       </div>
       {address && net.contracts.router && net.deployed && <PnlPanel net={net} address={address} />}
       <div className="panel pad" style={{ gridColumn: "1 / -1", overflowX: "auto" }}><div className="lbl" style={{ marginBottom: 12 }}>YOUR SWAPS</div><SwapHistory /></div>
