@@ -126,7 +126,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           {s.symbol} on Robinhood Chain is a Robinhood Stock Token: an ERC-20 issued by Robinhood Assets (Jersey) Limited that tracks {s.name}. Robinhood&apos;s price follows the underlying shares while the US market, extended hours or the overnight session is open; the on-chain price is what the token trades for in its deepest pool, at any hour.
         </p>
         <p className="note" style={{ marginBottom: 0 }}>
-          Stock Tokens are not offered in every country: check Robinhood&apos;s terms for yours. Stoa only routes swaps; nothing here is investment advice. <Link href="/docs/stocks">How Stocks works</Link> · Updated {new Date(updated).toUTCString().slice(17, 22)} UTC.
+          Stock Tokens are not offered in every country: check Robinhood&apos;s terms for yours. Stoa only routes swaps; nothing here is investment advice. <Link href="/docs/stocks">How Stocks works</Link> · <Link href="/docs/stock-token-price-gap">Why the prices differ</Link> · Updated {new Date(updated).toUTCString().slice(17, 22)} UTC.
         </p>
       </details>
       {s.route && (

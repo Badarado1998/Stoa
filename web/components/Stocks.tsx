@@ -139,7 +139,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
           Robinhood price: the mid of Robinhood&apos;s bid and ask for one token, from the underlying shares (it moves only while the US market, extended hours or the overnight session is open).
           On-chain price: the deepest pool DexScreener lists; the percentage is how far it is from Robinhood&apos;s price.
           Swap appears when Stoa&apos;s router can buy the token with 100 USDG right now; Trade then quotes your exact amount across every venue.
-          Updated {new Date(updated).toUTCString().slice(17, 22)} UTC. <Link href="/docs/stocks">More in the docs</Link>
+          Updated {new Date(updated).toUTCString().slice(17, 22)} UTC. <Link href="/docs/stocks">More in the docs</Link> · <Link href="/docs/stock-token-price-gap">Why on-chain prices differ from Robinhood</Link>
         </details>
       </div>
     </>

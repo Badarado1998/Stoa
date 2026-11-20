@@ -21,6 +21,7 @@ Tokens without Swap have no pool Stoa can use yet. Every day Stoa's keeper looks
 
 - Tap ☆ on Stocks, on a token page or next to the token you buy on Trade. Your watchlist shows on [Portfolio](portfolio.md) and as one-tap chips above the swap form.
 - On any watched token, **Alert** sets a price. The alert fires once, when the on-chain price reaches it, as a message on the page and, if you allow it, a notification on your phone or computer.
+- On a watched stock token, **Alert** can also watch the gap: **Gap vs Robinhood** fires when the on-chain price is at least the percent you set cheaper or dearer than Robinhood's. Why the two prices differ: [Why stock token prices differ from Robinhood](stock-token-price-gap.md).
 - Alerts are checked every minute **while Stoa is open** in a tab or as the installed app. Stoa has no server that watches prices for you.
 - The watchlist and alerts are saved in your browser only. There is no account and nothing is sent to Stoa; another browser or device has its own list.
 

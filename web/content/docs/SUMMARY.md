@@ -12,6 +12,7 @@
 * [How to bridge to Robinhood Chain](bridge-to-robinhood-chain.md)
 * [How to swap on Robinhood Chain](swap-robinhood-chain.md)
 * [How to buy stock tokens on Robinhood Chain](buy-stock-tokens.md)
+* [Why stock token prices differ from Robinhood](stock-token-price-gap.md)
 * [How to check a token on Robinhood Chain](check-token-robinhood-chain.md)
 * [Trade privately with Gloam](private-swaps-gloam.md)
 * [How to set a limit order on Robinhood Chain](limit-order-robinhood-chain.md)
