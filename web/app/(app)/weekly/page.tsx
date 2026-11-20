@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function WeeklyPage() {
   return (
     <section className="page">
-      <PageHead eyebrow="WEEKLY · ON-CHAIN" title="This week on Stoa" action={<Link className="cta" href="/trade">Trade</Link>}>
+      <PageHead eyebrow="WEEKLY · ON-CHAIN" title="This week on Stoa" action={<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="cta" href="/trade">Trade</Link><Link className="ghost" href="/report">State of Robinhood Chain</Link></div>}>
         Monday to Sunday, UTC. Volume, burns and Spotlight are read from the chain; what shipped comes from the changelog.
       </PageHead>
       <WeeklyBody />

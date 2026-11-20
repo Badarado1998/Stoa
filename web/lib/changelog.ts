@@ -12,6 +12,20 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stock-gaps-report",
+    date: "2026-11-20",
+    title: "Stock token gaps everywhere, gap alerts, State of Robinhood Chain",
+    tag: "Robinhood Chain",
+    items: [
+      "Trade: swapping a stock token shows Robinhood's price next to this swap's price per token, and the gap.",
+      "Stocks: sort by the gap against Robinhood (cheaper or dearer on-chain); each stock page has a 7-day chart of the on-chain price against Robinhood's.",
+      "Watchlist: gap alerts, for example when TSLA on-chain is 1% cheaper than Robinhood.",
+      "New report, State of Robinhood Chain: swaps through Stoa, stock token gaps and one swap quoted on every venue, from the open data.",
+      "For AI agents: MCP tools stock_gaps and open_data.",
+    ],
+    link: { href: "/report", label: "Report" },
+  },
+  {
     id: "spotlight-dashboard",
     date: "2026-11-20",
     title: "Your Spotlight at a glance, Points countdown, faster home on phones",
