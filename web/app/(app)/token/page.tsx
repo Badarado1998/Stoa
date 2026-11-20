@@ -7,6 +7,7 @@ import AnyChainBuy from "@/components/AnyChainBuy";
 import { readLocked, readSupply } from "@/lib/stoaSupply";
 import { weekPrices } from "@/lib/priceHistory";
 import PriceChart from "@/components/PriceChart";
+import StoaDashboard from "@/components/StoaDashboard";
 import { CA } from "@/lib/stoaAddress";
 
 const description = "Stoa's protocol fees buy and burn $STOA every week, makers bond it, holders vote in Spotlight to earn projects' ETH bids, and backers lock it behind Rug Cover. Live supply, burns and locks.";
@@ -43,6 +44,7 @@ export default async function TokenPage() {
       </PageHead>
       <StoaCA />
       {history && <PriceChart points={history} symbol="$STOA" source="GeckoTerminal" />}
+      <StoaDashboard />
       <AnyChainBuy />
       <TokenUtility init={init} />
     </section>
