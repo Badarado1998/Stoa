@@ -45,3 +45,18 @@ export const SESSION_LABEL: Record<Session, string> = {
   overnight: "US overnight session",
   closed: "US market closed",
 };
+
+/** The next start of regular hours (9:30 New York) after t, or null if none within 10 days. Regular hours always open
+ *  on a quarter hour in UTC, so stepping in 15-minute steps lands on it exactly. */
+export function nextRegularOpen(t: Date = new Date()): Date | null {
+  const step = 15 * 60_000;
+  let x = Math.ceil(t.getTime() / step) * step;
+  const end = t.getTime() + 10 * 86_400_000;
+  let prev = session(new Date(x - step));
+  for (; x <= end; x += step) {
+    const s = session(new Date(x));
+    if (s === "regular" && prev !== "regular") return new Date(x);
+    prev = s;
+  }
+  return null;
+}
