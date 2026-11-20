@@ -473,7 +473,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   else if (!deployed && kind !== "wrap" && kind !== "unwrap") { label = "Opens at launch"; disabled = true; }
   else if (isPaused && kind !== "wrap" && kind !== "unwrap") { label = "Swaps paused"; disabled = true; }
   else if (sBal !== undefined && amt + (cover.on ? cover.premium : 0n) > sBal) { label = `Not enough ${sell.symbol}`; disabled = true; }
-  else if (quoting && !quote) { label = "Finding the best route…"; disabled = true; }
+  else if (quoting && !quote) { label = "Comparing every route…"; disabled = true; }
   else if (noRoute || !quote) { label = "No route for this pair"; disabled = true; }
   else if (risky && !ackToken) { label = "Confirm the token warning"; disabled = true; }
   else if (quote.impact >= IMPACT_BLOCK && !ackImpact) { label = "Confirm high price impact"; disabled = true; }

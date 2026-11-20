@@ -66,7 +66,7 @@ export function WrappedActions({ w }: { w: Wrapped }) {
   const mine = address && address.toLowerCase() === w.address.toLowerCase();
   const url = `https://stoadex.com/wrapped/${w.address}?ref=${w.address}`;
   const text = w.swaps
-    ? `My Stoa Wrapped: ${usd(w.usd)} routed in ${w.swaps} ${w.swaps === 1 ? "swap" : "swaps"}, each on the best route the router found. ${w.edition} edition 🏛️`
+    ? `My Stoa Wrapped: ${usd(w.usd)} routed in ${w.swaps} ${w.swaps === 1 ? "swap" : "swaps"}, each compared across every venue. ${w.edition} edition 🏛️`
     : "My Stoa Wrapped is waiting for its first swap 🏛️";
   const x = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   return (

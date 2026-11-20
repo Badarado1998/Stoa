@@ -8,7 +8,7 @@ import { findListed, priceFmt, readToken, usdFmt } from "@/lib/tokenInfo";
 export const revalidate = 300;
 export const size = OG_SIZE;
 export const contentType = "image/png";
-export const alt = "A token on Stoa, with its price and best route.";
+export const alt = "A token on Stoa, with its price and the route Stoa finds.";
 
 async function logo(path: string | null): Promise<string | null> {
   if (!path) return null;

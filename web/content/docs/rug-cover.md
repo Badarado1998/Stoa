@@ -70,7 +70,7 @@ Changes go through the 48-hour timelock and apply only to covers opened afterwar
 - **Pause without trapping funds.** The guardian can pause new covers, covered buys and locks. Claims, breaches, releases, unlocks and ETH claims keep working, and backers can take their $STOA out at once during a pause. Only the timelock can unpause.
 - **The burn cannot be sandwiched cheaply.** Only the keeper (or the timelock) spends the burn pot on $STOA, with a minimum output from a fresh quote, the same rule as the weekly buyback and Spotlight.
 - **Beta caps.** At most 1 ETH of bond per token and 20 ETH in all.
-- **Not externally audited.** The contract is covered by unit, attack, fuzz and fork tests and Slither; see the [internal security review](security-review.md). Quotes for an external audit are being collected.
+- **No formal audit yet.** RugCover is in Hey Research Lab's independent security review (since 16 Nov 2026) and is covered by unit, attack, fuzz and fork tests and Slither; see [Security review](security-review.md).
 
 ## Contract
 

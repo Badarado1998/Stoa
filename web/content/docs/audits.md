@@ -2,7 +2,7 @@
 
 Audit status for Stoa contracts.
 
-Stoa contracts have **not been externally audited yet**. The team has published a full [internal security review](security-review.md): no critical or high findings. An external audit is planned before swap and pool caps are raised or vaults open. Reports will be linked on this page.
+Stoa contracts have **no formal audit yet**. Since 16 November 2026, Hey Research Lab has been doing an **independent security review** of RugCover, SpotlightMarket, StoaLimit and StoaRouter; its fixed findings are published on [Security review](security-review.md), next to the team's own internal review (no critical or high findings). A formal audit is planned before swap and pool caps are raised or vaults open. Reports will be linked on this page.
 
 ## What has been done
 

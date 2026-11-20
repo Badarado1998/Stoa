@@ -52,7 +52,7 @@ Every token in the week's race has its own page, `stoadex.com/spotlight/vote/<to
 - **Nobody can take the money.** The contract has no function that sends anyone's ETH or $STOA anywhere except to the holder, the bidder or the burn.
 - **The burn cannot be sandwiched cheaply.** Only the keeper (or the timelock) spends the burn pot, with a minimum output it sets from a fresh quote, the same rule as the weekly buyback.
 - **Team wallets do not take part.** Stoa's team and dev wallets do not lock or vote.
-- **Not externally audited.** The contract is source-verified and covered by unit, attack and fork tests and Slither; see the [internal security review](security-review.md).
+- **No formal audit yet.** SpotlightMarket is in Hey Research Lab's independent security review (since 16 Nov 2026), is source-verified, and is covered by unit, attack and fork tests and Slither; see [Security review](security-review.md).
 
 ## For projects and agents
 

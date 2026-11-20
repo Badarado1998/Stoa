@@ -6,7 +6,7 @@ Short answers to the questions people ask most, each with a link to the full pag
 
 ### Is Stoa audited?
 
-Not externally, not yet. The team published its own [internal security review](security-review.md) in full, findings and fixes included. An external audit is planned before swap caps rise or liquidity vaults open, and its report will be linked on [Audits](audits.md).
+There is no formal audit yet. Since 16 November 2026, Hey Research Lab has been doing an independent security review of RugCover, SpotlightMarket, StoaLimit and StoaRouter: findings come to Stoa first and are published once fixed, on [Security review](security-review.md). The team also published its own internal review in full. A formal audit is planned before swap caps rise or liquidity vaults open, and will be linked on [Audits](audits.md).
 
 ### What has been checked so far?
 

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const w = await readWrapped(address).catch(() => null);
   const title = `Stoa Wrapped · ${short(address)}`;
   const description = w?.swaps
-    ? `${w.swaps} ${w.swaps === 1 ? "swap" : "swaps"} through Stoa, each on the best route the router found. ${w.edition} edition.`
+    ? `${w.swaps} ${w.swaps === 1 ? "swap" : "swaps"} through Stoa, each compared across every venue the router uses. ${w.edition} edition.`
     : "A Stoa Wrapped card, read from the chain.";
   return {
     title, description, robots: { index: false },

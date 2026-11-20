@@ -7,7 +7,7 @@ import { listedTokens } from "@/lib/tokenInfo";
 import SpotlightStrip from "@/components/SpotlightStrip";
 import { CoveredStrip } from "@/components/CoverPanel";
 
-const description = "Every token Stoa lists on Robinhood Chain and Elysium, each with its live price and Stoa's best route for it.";
+const description = "Every token Stoa lists on Robinhood Chain and Elysium, each with its live price and the route Stoa finds for it.";
 export const metadata: Metadata = {
   alternates: { canonical: "/tokens" },
   title: "Tokens",
@@ -22,7 +22,7 @@ export default function TokensPage() {
   return (
     <section className="page">
       <PageHead eyebrow="TOKENS" title="Tokens on Stoa" action={<Link className="cta" href="/trade">Trade</Link>}>
-        Every token Stoa lists, by network. Each page shows the live price and the best route on Stoa right now. Listed tokens are not reviewed by Stoa: check the contract address before you buy.
+        Every token Stoa lists, by network. Each page shows the live price and the route Stoa finds right now. Listed tokens are not reviewed by Stoa: check the contract address before you buy.
       </PageHead>
       <SpotlightStrip />
       <CoveredStrip />
