@@ -193,6 +193,67 @@ def rank(ps, tin, tout, sizes, current=()):
             "lossBps": round(loss(order), 3)}
 
 
+# ---------------------------------------------------------------- end-to-end check through Stoa's router
+# The probe above stops at the payment callback, so it never meets the payment itself. On 20 Nov 2026 every Metric
+# swap that pays in USDG reverted through the router while the probe and the quoter were fine. So each direction is
+# also run end to end before it is listed: in one eth_simulateV1 batch a fresh address with no code gets the input
+# token (wrapping ETH, or buying it through the router on any venue), approves the router and swaps through the
+# MetricAdapter alone. A direction that does not complete gets an empty list, which stops it in the adapter.
+ROUTER = "0x2f2804fad735a38015650f32f95ad5e08d6b3ee5"
+QUOTE_SEL, SWAP_SEL, APPROVE_SEL, DEPOSIT_SEL = "b6466384", "8ccfa2ca", "095ea7b3", "d0e30db0"
+ZERO = "0x" + "0" * 40
+
+
+def _swap_data(tin, tout, mid, l1, l2, amount, to, deadline):
+    return "0x" + SWAP_SEL + addr(tin) + addr(tout) + addr(mid) + addr(l1[0]) + word(int(l1[1])) + addr(l2[0]) + word(int(l2[1])) \
+        + word(amount) + word(1) + addr(to) + word(deadline) + addr(ZERO)
+
+
+def end_to_end(adapter, tin, tout, amount, usd_per_weth):
+    """True when `amount` of tin swaps to tout through the router and the MetricAdapter alone; None when it could not
+    be tested (no way to get the input token)."""
+    who = "0x" + os.urandom(20).hex()
+    deadline = int(time.time()) + 3600
+    eth = 10**18 * 400 // max(int(usd_per_weth), 1)  # about $400 of ETH: enough to buy the input of a $50-$300 test
+    calls = []
+    if tin == WETH:
+        calls.append({"from": who, "to": WETH, "value": hex(amount), "data": "0x" + DEPOSIT_SEL})
+    else:
+        try:
+            q = rpc("eth_call", [{"to": ROUTER, "data": "0x" + QUOTE_SEL + addr(ZERO) + addr(tin) + word(eth)}, "latest"])[2:]
+        except Exception:
+            return None
+        w = [q[i:i + 64] for i in range(0, len(q), 64)]
+        if len(w) < 6 or int(w[0], 16) < amount:
+            return None
+        mid, l1, l2 = "0x" + w[1][-40:], ("0x" + w[2][-40:], int(w[3], 16)), ("0x" + w[4][-40:], int(w[5], 16))
+        calls.append({"from": who, "to": ROUTER, "value": hex(eth), "gas": hex(8_000_000),
+                      "data": _swap_data(ZERO, tin, mid, l1, l2, eth, who, deadline)})
+    calls.append({"from": who, "to": tin, "data": "0x" + APPROVE_SEL + addr(ROUTER) + word(amount)})
+    calls.append({"from": who, "to": ROUTER, "gas": hex(8_000_000),
+                  "data": _swap_data(tin, tout, ZERO, (adapter, 0), (ZERO, 0), amount, who, deadline)})
+    try:
+        r = rpc("eth_simulateV1", [{"blockStateCalls": [{"stateOverrides": {who: {"balance": hex(10**21)}}, "calls": calls}],
+                                    "validation": False}, "latest"])
+        st = [c["status"] for c in r[0]["calls"]]
+    except Exception:
+        return None
+    if any(x != "0x1" for x in st[:-1]):
+        return None
+    return st[-1] == "0x1"
+
+
+
+def gate(row, adapter, usd_per_weth):
+    """Empty the list of a direction that does not complete end to end; keep it when it could not be tested."""
+    if not row["pools"]:
+        return
+    ok = end_to_end(adapter, row["tokenIn"], row["tokenOut"], row["sizes"][0], usd_per_weth)
+    row["endToEnd"] = ok
+    if ok is False:
+        print("  end to end failed:", row["tokenIn"][:10], "->", row["tokenOut"][:10], "- list emptied")
+        row["pools"] = []
+
 def main():
     head = int(rpc("eth_blockNumber", []), 16)
     pools = []
@@ -220,6 +281,7 @@ def main():
         fwd = rank(ps, base, other, sizes, current_list(adapter, base, other))
         if not fwd:
             continue
+        gate(fwd, adapter, usd_per_weth)
         out.append(fwd)
         # the other way: the sizes in the other token are what the best pool gave for the base sizes
         back_sizes = [max(fwd["best"][k], 1) for k in range(len(sizes))]
@@ -229,6 +291,7 @@ def main():
             back_sizes = [b0 * s // s0 for s in sizes]
         back = rank(ps, other, base, back_sizes, current_list(adapter, other, base))
         if back:
+            gate(back, adapter, usd_per_weth)
             out.append(back)
         print(t0[:10], t1[:10], "pools", len(ps), "->", len(fwd["pools"]), "<-", len(back["pools"]) if back else 0)
     here = os.path.dirname(os.path.abspath(__file__))
