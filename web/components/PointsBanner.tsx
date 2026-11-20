@@ -15,7 +15,7 @@ export default function PointsBanner({ variant = "bar" }: { variant?: "pill" | "
     : (variant === "pill" ? "Points season 1 is live" : "Points season 1 is live: swaps and referrals earn points");
   return (
     <Link href="/points" prefetch={false} className={`spotban ${variant}`} aria-label={`${text}. ${before ? "How it works" : "See the board"}`}>
-      <span className="sb-dot" aria-hidden="true" style={{ background: "#1f9d55", boxShadow: "0 0 0 4px rgba(31,157,85,.15)" }} />
+      <span className="sb-dot" aria-hidden="true" style={{ background: "#15803d", boxShadow: "0 0 0 4px rgba(31,157,85,.15)" }} />
       <span className="sb-t">{text}</span>
       <span className="sb-go">{before ? "How it works" : "See the board"} →</span>
     </Link>

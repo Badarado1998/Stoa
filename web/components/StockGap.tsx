@@ -39,7 +39,7 @@ export default function StockGap({ sell, buy, amtIn, out, usdOf, onLimit }: {
     <div className="note" style={{ margin: "8px 0 0", display: "flex", flexWrap: "wrap", gap: "2px 10px", alignItems: "baseline" }}>
       <span>Robinhood: <b>{usd(ref.referencePriceUsd)}</b></span>
       <span>This swap: <b>{usd(px)}</b> per {stock.symbol}</span>
-      <span style={{ color: big ? (worse ? "#c2412d" : "#1f9d55") : "var(--muted)", fontWeight: big ? 600 : 400 }}>
+      <span style={{ color: big ? (worse ? "#c2412d" : "#15803d") : "var(--muted)", fontWeight: big ? 600 : 400 }}>
         {Math.abs(gap) < 0.01 ? "same as Robinhood" : `${Math.abs(gap).toFixed(2)}% ${gap > 0 ? "above" : "below"} Robinhood`}
       </span>
       {ref.halted && <span style={{ color: "#c2412d" }}>Trading is halted on Robinhood</span>}

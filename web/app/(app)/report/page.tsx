@@ -32,7 +32,7 @@ export default async function ReportPage() {
       <div className="grid2" style={{ marginBottom: 16 }}>
         <div className="panel pad">
           <div className="lbl">CHEAPER ON-CHAIN NOW</div>
-          <ul className="list">{r.stocks.cheaper.map((x) => <li key={x.symbol}><Link href={`/stocks/${x.symbol.toLowerCase()}`}>{x.symbol}</Link><b style={{ color: "#1f9d55" }}>{pct(x.gap)}</b></li>)}{!r.stocks.cheaper.length && <li>None right now</li>}</ul>
+          <ul className="list">{r.stocks.cheaper.map((x) => <li key={x.symbol}><Link href={`/stocks/${x.symbol.toLowerCase()}`}>{x.symbol}</Link><b style={{ color: "#15803d" }}>{pct(x.gap)}</b></li>)}{!r.stocks.cheaper.length && <li>None right now</li>}</ul>
         </div>
         <div className="panel pad">
           <div className="lbl">DEARER ON-CHAIN NOW</div>

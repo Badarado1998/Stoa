@@ -237,7 +237,7 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .empty h3{margin:12px 0 6px;font-family:var(--serif);font-weight:400;font-size:26px;color:var(--ink)}
 .empty p{margin:0 auto 16px;max-width:420px}
 .note{font-size:13.5px;line-height:1.5;color:var(--muted);margin-top:10px}
-.note a:not(.cta):not(.chip):not(.go){text-decoration:underline;text-underline-offset:2px}
+.note a:not(.cta):not(.chip):not(.go){text-decoration:underline;text-underline-offset:2px;color:var(--accent-d)}
 .foot{max-width:1120px;margin:56px auto 0;padding:32px 0 40px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:28px;flex-wrap:wrap}
 .foot .cols{display:flex;gap:48px;flex-wrap:wrap}
 .foot h4,.foot .fh{margin:0 0 10px;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--muted)}
