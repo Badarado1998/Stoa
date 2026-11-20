@@ -47,3 +47,40 @@ export function score(swaps: StatSwap[], stocks: Set<string>): Map<string, Point
   return out;
 }
 
+
+export type Flag = { address: string; points: number; rank: number; flags: string[] };
+
+/** Patterns worth a human look before a season's board is trusted (not applied automatically; never published):
+ *  repeated round trips, referrers and referred wallets that refer each other, referrers whose referred wallets only
+ *  make tiny swaps, wallets made only of minimum-size swaps, and wallets at the daily cap on many days. */
+export function review(swaps: StatSwap[], stocks: Set<string>): Flag[] {
+  const rows = [...score(swaps, stocks).values()].filter((r) => r.points > 0).sort((a, b) => b.points - a.points);
+  const rank = new Map(rows.map((r, i) => [r.address, i + 1]));
+  const pts = new Map(rows.map((r) => [r.address, r.points]));
+  const season = [...swaps].filter((x) => x.time >= SEASON_START && x.trader && x.trader !== ZERO && !EXCLUDED.has(x.trader)).sort((a, b) => a.time - b.time);
+  const flags = new Map<string, Set<string>>();
+  const add = (a: string, f: string) => { let s = flags.get(a); if (!s) { s = new Set(); flags.set(a, s); } s.add(f); };
+  const last = new Map<string, number>(), trips = new Map<string, number>();
+  const usdBy = new Map<string, number[]>(), refOf = new Map<string, Set<string>>(), days = new Map<string, Map<number, number>>();
+  for (const x of season) {
+    const t = x.trader!, kIn = lc(x.tokenIn), kOut = lc(x.tokenOut);
+    const back = last.get(`${t}|${kOut}|${kIn}`);
+    if (back !== undefined && x.time - back <= RULES.ROUND_TRIP_S) trips.set(t, (trips.get(t) ?? 0) + 1);
+    last.set(`${t}|${kIn}|${kOut}`, x.time);
+    const u = x.usd ?? 0;
+    usdBy.set(t, [...(usdBy.get(t) ?? []), u]);
+    const d = Math.floor(x.time / 86400), dm = days.get(t) ?? new Map<number, number>();
+    dm.set(d, (dm.get(d) ?? 0) + u * (stocks.has(kIn) || stocks.has(kOut) ? RULES.STOCK_X : 1)); days.set(t, dm);
+    if (x.referrer && x.referrer !== ZERO && x.referrer !== t) { const s = refOf.get(x.referrer) ?? new Set<string>(); s.add(t); refOf.set(x.referrer, s); }
+  }
+  for (const [t, n] of trips) if (n >= 3) add(t, `${n} round trips within an hour`);
+  for (const [r, kids] of refOf) for (const k of kids) if (refOf.get(k)?.has(r)) { add(r, `refers ${k.slice(0, 8)}… and is referred by it`); add(k, `refers ${r.slice(0, 8)}… and is referred by it`); }
+  for (const [r, kids] of refOf) {
+    const tiny = [...kids].filter((k) => (usdBy.get(k) ?? []).every((u) => u < 5));
+    if (kids.size >= 5 && tiny.length / kids.size >= 0.8) add(r, `${tiny.length} of ${kids.size} referred wallets only made swaps under $5`);
+  }
+  for (const [t, us] of usdBy) if (us.length >= 10 && us.every((u) => u >= RULES.MIN_USD && u < 3)) add(t, `${us.length} swaps, all between $${RULES.MIN_USD} and $3`);
+  for (const [t, dm] of days) { const capped = [...dm.values()].filter((v) => v >= RULES.DAILY_CAP).length; if (capped >= 3) add(t, `at the daily cap on ${capped} days`); }
+  return [...flags.entries()].map(([address, f]) => ({ address, points: pts.get(address) ?? 0, rank: rank.get(address) ?? 0, flags: [...f] }))
+    .sort((a, b) => b.points - a.points);
+}

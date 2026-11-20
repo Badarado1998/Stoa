@@ -33,3 +33,15 @@ test("points: daily cap, referral share, no self-referral, stable-to-stable earn
   assert.equal(m.get(B)!.refPoints, 0);
   assert.equal(m.get(B)!.swaps, 1);
 });
+
+import { review } from "../lib/pointsScore.ts";
+test("review: flags repeated round trips and mutual referrals", () => {
+  const s = [
+    sw(0, A, USDG, X, 50), sw(60, A, X, USDG, 50), sw(120, A, USDG, X, 50), sw(180, A, X, USDG, 50), sw(240, A, USDG, X, 50), sw(300, A, X, USDG, 50),
+    sw(400, B, ETH, X, 20, { referrer: R }), sw(500, R, ETH, X, 20, { referrer: B }),
+  ];
+  const f = review(s, new Set());
+  assert.ok(f.find((x) => x.address === A)?.flags.some((t) => t.includes("round trips")));
+  assert.ok(f.find((x) => x.address === B)?.flags.some((t) => t.includes("referred by it")));
+  assert.ok(f.find((x) => x.address === R)?.flags.some((t) => t.includes("referred by it")));
+});

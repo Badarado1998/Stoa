@@ -1,5 +1,13 @@
 "use client";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+// panels that show only after a quote, a token pick or a tab change load on demand, so the swap box itself is ready sooner
+const VenueCompare = dynamic(() => import("./VenueCompare"), { ssr: false });
+const SwapCheck = dynamic(() => import("./SwapCheck"), { ssr: false });
+const PoolDepth = dynamic(() => import("./PoolDepth"), { ssr: false });
+const SafetyPanel = dynamic(() => import("./SafetyPanel"), { ssr: false });
+const CmcPanel = dynamic(() => import("./CmcPanel"), { ssr: false });
+const LimitPanel = dynamic(() => import("./LimitPanel"), { ssr: false });
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
@@ -14,20 +22,14 @@ import { ERROR_TEXT, erc20Abi, ponsAdapterAbi, ponsCurveAbi, routedEvent, router
 import { SITE } from "@/lib/chain";
 import { shareOrCopy } from "@/lib/share";
 import { useQuery } from "@tanstack/react-query";
-import VenueCompare from "./VenueCompare";
 import { track } from "@vercel/analytics";
-import SwapCheck from "./SwapCheck";
 import { RULES, SEASON_START } from "@/lib/pointsScore";
 import { VenueIcons, venueIds } from "./VenueIcons";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
 import { SpotlightPicks } from "./SpotlightStrip";
 import { TokenIcon } from "./ui";
-import PoolDepth from "./PoolDepth";
 import { useCoverOffer } from "./CoverTrade";
-import SafetyPanel from "./SafetyPanel";
-import CmcPanel from "./CmcPanel";
-import LimitPanel from "./LimitPanel";
 import { WatchStar } from "./Watch";
 import { session as usSession } from "@/lib/marketHours";
 import { useWatch } from "@/lib/watchlist";
@@ -100,7 +102,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   // the last confirmed swap, offered as a shareable link that carries the trader's referral
-  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; pts?: number; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
+  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; pts?: number; watch?: { address: string; symbol: string; logo?: string; via?: string }; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
   // the swap funnel, counted without any address, amount or token (privacy: docs/terms-privacy): once per page view
   const tracked = useRef<Set<string>>(new Set());
   const step = (name: string) => { if (tracked.current.has(name)) return; tracked.current.add(name); try { track(name, { chain: net.key }); } catch { /* analytics blocked */ } };
@@ -433,7 +435,8 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
       const stable = (t: Token) => t.tone === "usd";
       const stockSide = [s0, b0].some((t) => t.name.endsWith("Robinhood Stock Token"));
       const pts = usdIn < RULES.MIN_USD || (stable(s0) && stable(b0)) ? 0 : Math.min(RULES.DAILY_CAP, usdIn * (stockSide ? RULES.STOCK_X : 1));
-      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals), pts, check: { sell: s0.address, buy: b0.address, decimals: b0.decimals, paid, got, block: r.blockNumber } });
+      const watch = b0.tone === "other" && !isNative(b0) ? { address: b0.address, symbol: b0.symbol, logo: b0.logo, via: b0.name.endsWith("Robinhood Stock Token") ? "USDG" : undefined } : undefined;
+      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals), pts, watch, check: { sell: s0.address, buy: b0.address, decimals: b0.decimals, paid, got, block: r.blockNumber } });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
@@ -623,6 +626,12 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
               {done.pts !== undefined && (Date.now() / 1000 >= SEASON_START
                 ? done.pts > 0 && <p className="note" style={{ marginTop: 6 }}><b style={{ color: "var(--accent-d)" }}>+{done.pts.toLocaleString("en-US", { maximumFractionDigits: 1 })} points</b> toward season 1 (before the daily cap). <a href="/points">Your points</a></p>
                 : <p className="note" style={{ marginTop: 6 }}>Points season 1 starts Mon 23 Nov, 00:00 UTC: swaps from then on earn points. <a href="/points">How it works</a></p>)}
+              {done.watch && done.net === net.key && (
+                <div className="note" style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <WatchStar chain={net.key} address={done.watch.address} symbol={done.watch.symbol} logo={done.watch.logo} via={done.watch.via} label small />
+                  <span>Follow {done.watch.symbol} and set a price alert in your <a href="/portfolio">watchlist</a>.</span>
+                </div>
+              )}
               {done.check && done.net === net.key && <SwapCheck net={net} pub={pub} sellToken={done.check.sell} buyToken={done.check.buy} decimals={done.check.decimals} symbol={done.symOut} paid={done.check.paid} got={done.check.got} block={done.check.block} />}
               {done.covered && <p className="note" style={{ marginTop: 4 }}>Covered: if the creator&apos;s wallet drops below its floor before release, claim your ETH on <a href="/cover">Rug Cover</a>.</p>}
               <div className="sc-btns">
