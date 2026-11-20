@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, decodeFunctionData, type Address, type Hash, type Hex } from "viem";
+import { BaseError, decodeFunctionData, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import { erc20Abi, routerAbi } from "@/lib/abi";
 import { ROBINHOOD } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
 import { requestUrl, type PayRequest } from "@/lib/pay";
+import { LIMIT, LIMIT_ERRORS, limitAbi } from "@/lib/limit";
 import CopyButton from "./CopyButton";
 import { useWalletModal } from "./Providers";
 
@@ -21,16 +22,22 @@ type SwapData = {
   tx: { to: Address; data: Hex; value: string }; approval: { token: Address; spender: Address; amount: string } | null;
 };
 
+type LimitData = {
+  summary: { sell: { symbol: string; address: Address; amount: string }; buy: { symbol: string; address: Address; now: string; atLeast: string }; when: string; pct: number; expiryDays: number; priceNow: number; priceAt: number };
+  order: { limit: Address; tokenIn: Address; tokenOut: Address; amountIn: string; minOut: string; expirySeconds: number };
+};
+
 const GROUPS: { label: string; items: string[] }[] = [
   { label: "Trade", items: ["Swap 0.01 ETH to USDG", "Quote 10 USDG to STOA"] },
-  { label: "Check", items: ["Is STOA safe to buy?", "Are any of my tokens risky?"] },
+  { label: "Strategies", items: ["Buy NVDA with 50 USDG if it drops 5%", "Sell 1000 STOA for ETH if it goes up 20%"] },
+  { label: "Check", items: ["Scan my tokens for rug signs", "Is STOA safe to buy?"] },
   { label: "Stocks", items: ["How far is NVDA from Robinhood's price?", "Which stock tokens are furthest from Robinhood?"] },
   { label: "Pay", items: ["Make me a payment link for 25 USDG", "Make a link to get paid 50 USDG in NVDA"] },
   { label: "Learn", items: ["How do I bridge to Robinhood Chain?", "What is Spotlight?"] },
 ];
 
 /** **bold** only; everything else stays plain text (no HTML from the model ever reaches the page) */
-function Rich({ text }: { text: string }) {
+export function Rich({ text }: { text: string }) {
   return <>{text.replace(/^#{1,6}\s+/gm, "").split(/\*\*/).map((p, i) => (i % 2 ? <b key={i}>{p}</b> : <span key={i}>{p}</span>))}</>;
 }
 
@@ -105,6 +112,74 @@ function SwapCard({ d }: { d: SwapData }) {
   );
 }
 
+/** a strategy as a StoaLimit order: the deposit waits in the contract until the market pays the price */
+function LimitCard({ d }: { d: LimitData }) {
+  const { address, isConnected, chainId } = useAccount();
+  const { open } = useWalletModal();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+  const pub = usePublicClient({ chainId: RH });
+  const [st, setSt] = useState<{ k: "idle" | "busy" | "done" | "failed"; text?: string; tx?: Hash }>({ k: "idle" });
+  const s = d.summary, o = d.order;
+  const native = lc(o.tokenIn) === lc(NATIVE);
+  const px = (v: number) => v.toLocaleString("en-US", { maximumSignificantDigits: 6 });
+  const what = s.when === "buy_price_drops" ? `when ${s.buy.symbol} is ${s.pct}% cheaper` : `when ${s.sell.symbol} is worth ${s.pct}% more`;
+
+  function check(): string | null {
+    if (!address) return "Connect your wallet first.";
+    if (!LIMIT || lc(o.limit) !== lc(LIMIT)) return "This is not Stoa's limit order contract.";
+    if (lc(o.tokenIn) !== lc(s.sell.address) || lc(o.tokenOut) !== lc(s.buy.address)) return "The order does not match the card.";
+    if (BigInt(o.amountIn) <= 0n || BigInt(o.minOut) <= 0n || ![86_400, 7 * 86_400, 30 * 86_400].includes(o.expirySeconds)) return "This order is not valid.";
+    return null;
+  }
+
+  async function place() {
+    const why = check();
+    if (why) { setSt({ k: "failed", text: why }); return; }
+    try {
+      if (chainId !== RH) { setSt({ k: "busy", text: "Switch to Robinhood Chain…" }); await switchChainAsync({ chainId: RH }); }
+      const amt = BigInt(o.amountIn);
+      if (!native) {
+        const have = await pub!.readContract({ address: o.tokenIn, abi: erc20Abi, functionName: "allowance", args: [address!, LIMIT!] }) as bigint;
+        if (have < amt) {
+          setSt({ k: "busy", text: `Approve ${s.sell.symbol} in your wallet…` });
+          const a = await writeContractAsync({ address: o.tokenIn, abi: erc20Abi, functionName: "approve", args: [LIMIT!, amt], chainId: RH });
+          await pub!.waitForTransactionReceipt({ hash: a });
+        }
+      }
+      setSt({ k: "busy", text: "Confirm the order in your wallet…" });
+      // from the chain's clock, a little short so "30 days" stays inside the contract's maximum
+      const now = (await pub!.getBlock()).timestamp;
+      const tx = await writeContractAsync({ address: LIMIT!, abi: limitAbi, functionName: "create", args: [o.tokenIn, o.tokenOut, amt, BigInt(o.minOut), now + BigInt(o.expirySeconds - 300), zeroAddress], value: native ? amt : 0n, chainId: RH });
+      setSt({ k: "busy", text: "Waiting for Robinhood Chain…" });
+      const rc = await pub!.waitForTransactionReceipt({ hash: tx });
+      setSt(rc.status === "success" ? { k: "done", tx } : { k: "failed", text: "The order did not go through." });
+    } catch (e) {
+      const name = e instanceof BaseError ? (e.walk() as { data?: { errorName?: string } })?.data?.errorName : undefined;
+      setSt({ k: "failed", text: (name && LIMIT_ERRORS[name]) || explain(e) });
+    }
+  }
+
+  return (
+    <div className="box" style={{ marginTop: 8 }}>
+      <div className="lbl">LIMIT ORDER · ROBINHOOD CHAIN</div>
+      <div style={{ fontSize: 17, fontWeight: 600, margin: "6px 0" }}>{s.sell.amount} {s.sell.symbol} → at least {s.buy.atLeast} {s.buy.symbol}</div>
+      <div className="note">Fills {what}: {s.when === "buy_price_drops" ? `1 ${s.buy.symbol} = ${px(s.priceAt)} ${s.sell.symbol} (now ${px(s.priceNow)})` : `1 ${s.sell.symbol} = ${px(1 / s.priceAt)} ${s.buy.symbol} (now ${px(1 / s.priceNow)})`}. Expires in {s.expiryDays} day{s.expiryDays > 1 ? "s" : ""}.</div>
+      {st.k === "done" ? (
+        <p style={{ marginTop: 8 }}>Order placed. <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">See it ↗</a> · <a href="/trade?chain=robinhood&mode=limit">Track or cancel</a></p>
+      ) : (
+        <>
+          {st.k === "failed" && <div className="notice" style={{ marginTop: 8 }}>{st.text}</div>}
+          <button type="button" className="pri" style={{ marginTop: 10, width: "100%" }} disabled={st.k === "busy"} onClick={() => (isConnected ? place() : open())}>
+            {!isConnected ? "Connect wallet" : st.k === "busy" ? st.text : "Place limit order"}
+          </button>
+          <div className="note" style={{ marginTop: 6 }}>Your {s.sell.symbol} waits in Stoa&apos;s limit order contract. Stoa&apos;s keeper fills it once the market pays this price, about every 5 minutes. Cancel any time.</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function LinkCard({ url, title }: { url: string; title: string }) {
   return (
     <div className="box" style={{ marginTop: 8 }}>
@@ -117,6 +192,7 @@ function LinkCard({ url, title }: { url: string; title: string }) {
 
 function ActionView({ a }: { a: Action }) {
   if (a.tool === "prepare_swap") return <SwapCard d={a.data as unknown as SwapData} />;
+  if (a.tool === "prepare_limit_order") return <LimitCard d={a.data as unknown as LimitData} />;
   if (a.tool === "create_payment_link" && typeof a.data.url === "string" && a.data.url.startsWith("https://stoadex.com/pay?")) return <LinkCard url={a.data.url} title="PAYMENT LINK" />;
   if (a.tool === "pay_payment_link" && a.data.request) {
     const url = requestUrl("https://stoadex.com", a.data.request as PayRequest);
@@ -144,7 +220,7 @@ const VERDICT: Record<string, { bg: string; fg: string; label: string }> = {
 };
 const Badge = ({ v }: { v?: string }) => { const s = VERDICT[v ?? ""] ?? null; return s ? <span style={{ background: s.bg, color: s.fg, borderRadius: 999, padding: "2px 8px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>{s.label}</span> : null; };
 
-function Avatar({ size = 30 }: { size?: number }) {
+export function Avatar({ size = 30 }: { size?: number }) {
   return (
     <div aria-hidden style={{ width: size, height: size, borderRadius: "50%", flex: "none", padding: 2, background: "conic-gradient(from 200deg,#2F6FD6,#7cc4ff,#c9b6ff,#2F6FD6)" }}>
       <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: "#fff", display: "grid", placeItems: "center" }}>
@@ -155,7 +231,7 @@ function Avatar({ size = 30 }: { size?: number }) {
   );
 }
 
-function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
+export function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
   const box: React.CSSProperties = { background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: "12px 14px", marginTop: 8 };
   if (c.kind === "safety") {
     const d = c.data as { symbol?: string; token?: string; verdict?: string; test?: { buyOk: boolean; sellOk: boolean; buyTaxPct: number | null; sellTaxPct: number | null; roundTripPct: number | null } | null; creatorPct?: number | null; top10Pct?: number | null };
@@ -194,6 +270,22 @@ function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
             <span><b>{h.symbol}</b> <span className="note" style={{ margin: 0 }}>{h.amount}</span></span>
             <span style={{ display: "flex", gap: 6, alignItems: "center" }}>{h.verdict && h.verdict !== "ok" && <Badge v={h.verdict} />}<span>{usd(h.usd)}</span>{h.ch24 !== null && <span style={{ fontSize: 12, color: h.ch24 >= 0 ? "#15803d" : "#c2412d" }}>{h.ch24 >= 0 ? "+" : ""}{h.ch24.toFixed(1)}%</span>}</span>
           </button>
+        ))}
+      </div>
+    );
+  }
+  if (c.kind === "rug") {
+    const d = c.data as { scanned: number; tokens: { symbol: string; address: string; usd: number | null; flags: { level: string; text: string }[] }[] };
+    const bad = d.tokens.filter((t) => t.flags.length);
+    return (
+      <div style={box}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span className="lbl">RUG SCAN</span><span className="note" style={{ margin: 0 }}>{d.scanned} token{d.scanned === 1 ? "" : "s"} checked</span></div>
+        {!bad.length && <div style={{ marginTop: 6 }}>No rug signs right now.</div>}
+        {bad.map((t) => (
+          <div key={t.address} style={{ padding: "8px 0", borderTop: "1px solid #eef1f5" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><b>{t.symbol}</b><span>{usd(t.usd)}</span></div>
+            {t.flags.map((f, k) => <div key={k} style={{ fontSize: 13.5, color: f.level === "high" ? "#c2412d" : "#b45309", marginTop: 3 }}>{f.level === "high" ? "● " : "○ "}{f.text}</div>)}
+          </div>
         ))}
       </div>
     );
@@ -263,11 +355,35 @@ function Welcome({ brief, ask, connected, connect }: { brief: Brief | null; ask:
   );
 }
 
-const Dots = () => (
+export const Dots = () => (
   <span aria-label="Thinking" style={{ display: "inline-flex", gap: 4, padding: "4px 0" }}>
     {[0, 1, 2].map((i) => <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#9aa6bb", animation: `stoaDot 1.2s ${i * 0.15}s infinite ease-in-out` }} />)}
   </span>
 );
+
+export type ChatEv = { t: string; d?: string; kind?: string; data?: unknown; tool?: string; items?: string[]; left?: number };
+/** POST /api/ai/chat and hand each streamed event to `on`; a refused request arrives as one error event */
+export async function streamChat(body: object, on: (ev: ChatEv) => void) {
+  const r = await fetch("/api/ai/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok || !r.body) {
+    const j = await r.json().catch(() => ({}));
+    on({ t: "error", d: j.error ?? "The assistant could not answer right now.", left: j.left });
+    return;
+  }
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i: number;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i); buf = buf.slice(i + 1);
+      if (!line.trim()) continue;
+      try { on(JSON.parse(line)); } catch { /* skip */ }
+    }
+  }
+}
 
 export default function AiChat() {
   const { address, isConnected } = useAccount();
@@ -297,34 +413,15 @@ export default function AiChat() {
     setBusy(true);
     const patch = (f: (m: AMsg) => AMsg) => setMsgs((cur) => cur.map((m, i) => (i === idx && m.role === "assistant" ? f(m) : m)));
     try {
-      const r = await fetch("/api/ai/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: address, messages: history.map((m) => ({ role: m.role, content: m.content })) }) });
-      if (!r.ok || !r.body) {
-        const j = await r.json().catch(() => ({}));
-        if (typeof j.left === "number") setLeft(j.left);
-        patch((m) => ({ ...m, streaming: false, error: j.error ?? "The assistant could not answer right now." }));
-        return;
-      }
-      const reader = r.body.getReader(), dec = new TextDecoder();
-      let buf = "";
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let i: number;
-        while ((i = buf.indexOf("\n")) >= 0) {
-          const line = buf.slice(0, i); buf = buf.slice(i + 1);
-          if (!line.trim()) continue;
-          let ev: { t: string; d?: string; kind?: string; data?: unknown; tool?: string; items?: string[]; left?: number };
-          try { ev = JSON.parse(line); } catch { continue; }
-          if (ev.t === "text") patch((m) => ({ ...m, content: m.content + (ev.d ?? ""), status: undefined }));
-          else if (ev.t === "status") patch((m) => ({ ...m, status: ev.d }));
-          else if (ev.t === "card") patch((m) => ({ ...m, cards: [...m.cards, { kind: ev.kind!, data: ev.data as Card["data"] }] }));
-          else if (ev.t === "action") patch((m) => ({ ...m, actions: [...m.actions, { tool: ev.tool!, data: ev.data as Record<string, unknown> }] }));
-          else if (ev.t === "suggest") patch((m) => ({ ...m, suggest: ev.items }));
-          else if (ev.t === "error") { patch((m) => ({ ...m, error: ev.d })); if (typeof ev.left === "number") setLeft(ev.left); }
-          else if (ev.t === "done" && typeof ev.left === "number") setLeft(ev.left);
-        }
-      }
+      await streamChat({ wallet: address, messages: history.map((m) => ({ role: m.role, content: m.content })) }, (ev) => {
+        if (ev.t === "text") patch((m) => ({ ...m, content: m.content + (ev.d ?? ""), status: undefined }));
+        else if (ev.t === "status") patch((m) => ({ ...m, status: ev.d }));
+        else if (ev.t === "card") patch((m) => ({ ...m, cards: [...m.cards, { kind: ev.kind!, data: ev.data as Card["data"] }] }));
+        else if (ev.t === "action") patch((m) => ({ ...m, actions: [...m.actions, { tool: ev.tool!, data: ev.data as Record<string, unknown> }] }));
+        else if (ev.t === "suggest") patch((m) => ({ ...m, suggest: ev.items }));
+        else if (ev.t === "error") { patch((m) => ({ ...m, error: ev.d })); if (typeof ev.left === "number") setLeft(ev.left); }
+        else if (ev.t === "done" && typeof ev.left === "number") setLeft(ev.left);
+      });
     } catch { patch((m) => ({ ...m, error: "The assistant could not answer right now." })); }
     finally { patch((m) => ({ ...m, streaming: false, status: undefined })); setBusy(false); }
   }

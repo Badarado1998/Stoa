@@ -10,6 +10,8 @@ import { stockTokens } from "./stocks";
 import { TOOLS as MCP_TOOLS, callTool as mcpCall } from "./mcpTools";
 import { walletSnapshot } from "./aiBrief";
 import { curveOf } from "./ponsLaunch";
+import { rugScan } from "./rugScan";
+import { LIMIT_ADDR, limitPaused } from "./limitServer";
 
 /** Tools for Stoa's AI assistant (app/api/ai/chat). Amounts are human ("0.01", "25"), tokens by symbol or address;
  *  everything resolves on Robinhood Chain. Transactions are only ever built, never signed or sent: the browser shows
@@ -67,6 +69,44 @@ async function swapLike(a: Record<string, unknown>, wallet: Address | null, buil
   return build ? { summary, tx: j.tx, approval: j.approval ?? null, chainId: ROBINHOOD.chain.id, note: "Shown to the user as a card with a Sign button; their wallet signs it." } : { summary };
 }
 
+/** "buy NVDA if it drops 5%" / "sell STOA if it rises 20%" as a StoaLimit order: deposit `amount` of `sell`, receive at
+ *  least `minOut` of `buy`, filled by Stoa's keeper once the market pays it. Only a better price than now: a limit
+ *  order that fills at a worse price would fill at once, so it can never be a stop-loss. */
+async function limitOrder(a: Record<string, unknown>, wallet: Address | null) {
+  if (!LIMIT_ADDR) return { error: "Limit orders are not live on Robinhood Chain." };
+  if (!wallet) return { error: "No wallet connected. Ask the user to connect a wallet first." };
+  const [sell, buy] = await Promise.all([resolveToken(String(a.sell ?? "")), resolveToken(String(a.buy ?? ""))]);
+  if (!sell || !buy) return { error: `Unknown token: ${!sell ? a.sell : a.buy}. Use find_token, or a token address.` };
+  if (lc(sell.address) === lc(buy.address)) return { error: "Pick two different tokens." };
+  let amount: bigint;
+  try { amount = parseUnits(String(a.amount ?? ""), sell.decimals); } catch { return { error: "amount must be a number, like 100" }; }
+  if (amount <= 0n) return { error: "amount must be above 0" };
+  const when = String(a.when ?? ""), pct = Number(a.pct);
+  if (when !== "buy_price_drops" && when !== "sell_price_rises") return { error: 'when must be "buy_price_drops" or "sell_price_rises". A stop-loss ("sell if it drops") is not possible with a limit order.' };
+  if (!(pct > 0) || pct > (when === "buy_price_drops" ? 90 : 1000)) return { error: when === "buy_price_drops" ? "pct must be between 0 and 90" : "pct must be between 0 and 1000" };
+  const days = [1, 7, 30].includes(Number(a.expiryDays)) ? Number(a.expiryDays) : 7;
+  if (await limitPaused()) return { error: "Limit orders are paused for safety right now. Swaps still work." };
+  const r = await apiQuote({ chain: "robinhood", sellToken: sell.address === NATIVE ? "native" : sell.address, buyToken: buy.address === NATIVE ? "native" : buy.address, amount: amount.toString(), slippageBps: "50" });
+  const j = (await r.json()) as { amountOut?: string; error?: string };
+  if (!r.ok || !j.amountOut) return { error: j.error ?? "No route right now, so there is no market price to start from." };
+  const now = BigInt(j.amountOut);
+  // buy_price_drops X%: the buy token costs (1 - X) as much, so the same deposit buys 1 / (1 - X) times as many
+  const minOut = when === "buy_price_drops" ? (now * 1_000_000n) / BigInt(Math.round((1 - pct / 100) * 1_000_000)) : (now * BigInt(Math.round((1 + pct / 100) * 1_000_000))) / 1_000_000n;
+  const price = (out: bigint) => Number(formatUnits(amount, sell.decimals)) / Number(formatUnits(out, buy.decimals));
+  return {
+    summary: {
+      sell: { symbol: sell.symbol, address: sell.address, decimals: sell.decimals, amount: fmt(amount, sell.decimals) },
+      buy: { symbol: buy.symbol, address: buy.address, decimals: buy.decimals, now: fmt(now, buy.decimals), atLeast: fmt(minOut, buy.decimals) },
+      when, pct, expiryDays: days,
+      // what one buy token costs in sell tokens now, and at the order's price
+      priceNow: price(now), priceAt: price(minOut),
+    },
+    order: { limit: LIMIT_ADDR, tokenIn: sell.address, tokenOut: buy.address, amountIn: amount.toString(), minOut: minOut.toString(), expirySeconds: days * 86_400 },
+    chainId: ROBINHOOD.chain.id,
+    note: "Shown to the user as a card with a Place order button; their wallet signs. Stoa's keeper checks about every 5 minutes and fills it once the market pays at least minOut; it can be cancelled any time on the Trade page.",
+  };
+}
+
 let DOCS: { slug: string; title: string; text: string }[] | null = null;
 function docs() {
   if (DOCS) return DOCS;
@@ -95,6 +135,8 @@ const OWN = [
   { name: "find_token", description: "Look up a token on Robinhood Chain by symbol or address: its address, symbol and decimals. Listed is not reviewed; run safety_check before a buy.", parameters: { type: "object", required: ["query"], properties: { query: { type: "string" } } } },
   { name: "quote", description: "Quote a swap on Robinhood Chain through Stoa's router, which compares every venue it routes: about how much comes out, at least how much (after slippage), price impact and route. Read-only.", parameters: { type: "object", required: ["sell", "buy", "amount"], properties: { sell: tokenArg("Token to sell"), buy: tokenArg("Token to buy"), amount: { type: "string", description: "Amount to sell, in whole tokens, e.g. \"0.01\" or \"25\"." }, slippagePct: { type: "number", description: "Max slippage in percent. Default 0.5." } } } },
   { name: "prepare_swap", description: "Build the swap for the user's connected wallet, after a quote. It is shown to the user as a card with a Sign button: nothing happens until their wallet signs. Use when the user asks to swap, buy or sell.", parameters: { type: "object", required: ["sell", "buy", "amount"], properties: { sell: tokenArg("Token to sell"), buy: tokenArg("Token to buy"), amount: { type: "string", description: "Amount to sell, in whole tokens." }, slippagePct: { type: "number", description: "Max slippage in percent. Default 0.5." } } } },
+  { name: "prepare_limit_order", description: "Turn a price strategy into a limit order for the connected wallet, e.g. \"buy NVDA with 100 USDG if it drops 5%\" (sell USDG, buy NVDA, when buy_price_drops, pct 5) or \"sell 1000 STOA for ETH if it goes up 20%\" (sell STOA, buy ETH, when sell_price_rises, pct 20). The deposit waits in Stoa's limit order contract; Stoa's keeper fills it once the market pays the price. It only works for a better price than now: it cannot be a stop-loss. Shown as a card the user signs.", parameters: { type: "object", required: ["sell", "buy", "amount", "when", "pct"], properties: { sell: tokenArg("Token deposited (paid)"), buy: tokenArg("Token received"), amount: { type: "string", description: "Amount of the sell token, in whole tokens." }, when: { type: "string", enum: ["buy_price_drops", "sell_price_rises"], description: "buy_price_drops: fill when the buy token gets pct% cheaper. sell_price_rises: fill when the sell token is worth pct% more." }, pct: { type: "number", description: "The move in percent, e.g. 5." }, expiryDays: { type: "number", enum: [1, 7, 30], description: "Default 7." } } } },
+  { name: "rug_scan", description: "Scan the connected wallet's tokens (other than ETH, WETH, USDG and stock tokens) for signs of a rug pull right now: safety verdict, a failing test sell, the creator wallet sending out supply in the last 6 hours, a price crash in the last hour or day, very low liquidity. Read-only.", parameters: { type: "object", properties: {} } },
   { name: "my_wallet", description: "The connected wallet's holdings on Robinhood Chain: each token, amount, USD value, 24h change, and Stoa's safety verdict for the larger tokens other than ETH, WETH and USDG.", parameters: { type: "object", properties: {} } },
   { name: "search_docs", description: "Search Stoa's docs (fees, bridging, limit orders, Spotlight, Rug Cover, $STOA, Stoa Pay, API, safety). Returns excerpts with links.", parameters: { type: "object", required: ["query"], properties: { query: { type: "string" } } } },
 ];
@@ -112,6 +154,8 @@ export async function runAiTool(name: string, a: Record<string, unknown>, wallet
     case "quote": return swapLike(a, wallet, false);
     case "prepare_swap": return swapLike(a, wallet, true);
     case "search_docs": return searchDocs(String(a.query ?? ""));
+    case "prepare_limit_order": return limitOrder(a, wallet);
+    case "rug_scan": return wallet ? rugScan(wallet) : { error: "No wallet connected. Ask the user to connect a wallet first." };
     case "my_wallet": return wallet ? walletSnapshot(wallet) : { error: "No wallet connected. Ask the user to connect a wallet first." };
   }
   if (!FROM_MCP.includes(name)) return { error: `unknown tool ${name}` };
