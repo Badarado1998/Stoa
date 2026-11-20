@@ -563,7 +563,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             {menu === "buy" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
-          {quote && amt !== undefined && !limitMode && <StockGap sell={sell} buy={buy} amtIn={amt} out={quote.out} usdOf={usdOf} />}
+          {quote && amt !== undefined && !limitMode && <StockGap sell={sell} buy={buy} amtIn={amt} out={quote.out} usdOf={usdOf} onLimit={limitLive ? (pct) => { setLimitStart(Number(pct.toFixed(3))); setMode("limit"); } : undefined} />}
         </div>
         <MarketNote tokens={[sell, buy]} />
         {net.key === "robinhood" && !isNative(buy) && !/^(USDG|WETH|USDC|USDT)$/.test(buy.symbol) && <CmcPanel token={buy.address} />}

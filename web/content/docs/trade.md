@@ -78,4 +78,4 @@ Every swap on Robinhood Chain needs a little ETH for gas (cents). A wallet witho
 
 ## Stock tokens: Robinhood price vs this swap
 
-When you swap into or out of a Robinhood Stock Token, the swap box shows Robinhood's own price for one token (from the underlying shares) next to the price your swap works out to, and how far apart they are. Outside US market hours Robinhood's price follows the overnight session, so the gap is often wider then. It is information, not advice.
+When you swap into or out of a Robinhood Stock Token, the swap box shows Robinhood's own price for one token (from the underlying shares) next to the price your swap works out to, and how far apart they are. Outside US market hours Robinhood's price follows the overnight session, so the gap is often wider then. When buying costs more than Robinhood's price (or selling pays less) by 0.3% or more, a button opens the Limit tab with the price set at Robinhood's, so the order fills only if the on-chain price comes to it. It is information, not advice.

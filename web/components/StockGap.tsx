@@ -10,8 +10,10 @@ const usd = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits
 /** For a swap into or out of a Robinhood Stock Token: Robinhood's own price for one token next to the price this swap
  *  works out to (the other side valued in USD), and how far apart they are. Robinhood's price comes from the underlying
  *  shares (/api/v1/stocks); outside US market hours it follows the overnight session. Shows nothing for other tokens. */
-export default function StockGap({ sell, buy, amtIn, out, usdOf }: {
+export default function StockGap({ sell, buy, amtIn, out, usdOf, onLimit }: {
   sell: Token; buy: Token; amtIn: bigint; out: bigint; usdOf: (t?: Token) => { usd: number } | undefined;
+  /** opens the Limit tab priced this % above the market rate (more of the token you get): set when limit orders work here */
+  onLimit?: (startPct: number) => void;
 }) {
   const stockSide = isStock(buy) ? "buy" : isStock(sell) ? "sell" : null;
   const refs = useQuery({
@@ -41,6 +43,14 @@ export default function StockGap({ sell, buy, amtIn, out, usdOf }: {
         {Math.abs(gap) < 0.01 ? "same as Robinhood" : `${Math.abs(gap).toFixed(2)}% ${gap > 0 ? "above" : "below"} Robinhood`}
       </span>
       {ref.halted && <span style={{ color: "#c2412d" }}>Trading is halted on Robinhood</span>}
+      {onLimit && worse && Math.abs(gap) >= 0.3 && !ref.halted && (
+        // a limit order at Robinhood's price: buying, the tokens you get rise by the gap; selling, the USD you get rises
+        // by Robinhood's price over this one
+        <button type="button" className="ghost" style={{ padding: "4px 10px", fontSize: 13 }}
+          onClick={() => onLimit(stockSide === "buy" ? gap : (ref.referencePriceUsd! / px - 1) * 100)}>
+          {stockSide === "buy" ? "Buy" : "Sell"} at Robinhood&apos;s price with a limit order
+        </button>
+      )}
     </div>
   );
 }
