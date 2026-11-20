@@ -6,6 +6,14 @@ import { PageHead } from "@/components/ui";
 import CopyButton from "@/components/CopyButton";
 import { ethTxt, readVote, stoaTxt, utcTxt } from "@/lib/spotlightVote";
 import { CA as STOA_CA } from "@/lib/stoaAddress";
+import { unstable_cache } from "next/cache";
+import { readSafety } from "@/lib/safety";
+import { ROBINHOOD } from "@/lib/networks";
+import type { Address } from "viem";
+
+// the free safety check (simulated buy and sell-back, taxes, holders) for the candidate, kept 10 minutes
+const safetyOf = unstable_cache(async (t: string) => readSafety(ROBINHOOD, t as Address), ["spotlight-vote-safety"], { revalidate: 600 });
+const TONE = { ok: ["#15803d", "#E9F7EF", "Passed the safety check"], caution: ["#B45309", "#FFF5E5", "Check with care"], danger: ["#B42318", "#FDECEA", "Failed the safety check"], unknown: ["#475467", "#F2F4F7", "Could not be fully checked"] } as const;
 
 // /spotlight/vote/<token>: a Spotlight candidate's own page, for projects to share with their community: its bid, its
 // votes against the quorum, and how to lock $STOA and vote for it. Read from SpotlightMarket.
@@ -35,6 +43,7 @@ export default async function VotePage({ params }: P) {
     </section>
   );
   const pct = v.quorumStoa > 0 ? Math.min(100, (v.votesStoa / v.quorumStoa) * 100) : 0;
+  const safety = await safetyOf(v.token.toLowerCase()).catch(() => null);
   const share = `Vote for $${v.symbol} in @StoaDEX Spotlight week ${v.week}: ${ethTxt(v.bidEth)} ETH bid, ${v.toVotersPct}% goes to the $STOA holders who vote for it if it wins. Votes close ${utcTxt(v.votesCloseAt)}.`;
   return (
     <section className="page">
@@ -49,6 +58,18 @@ export default async function VotePage({ params }: P) {
           <div role="progressbar" aria-label="Votes toward the quorum" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} style={{ height: 8, borderRadius: 8, background: "rgba(47,111,214,.12)", marginTop: 10, overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} /></div></div>
         <div className="panel pad"><div className="lbl">STATUS</div><div style={{ fontSize: 22, fontWeight: 600, marginTop: 8 }}>{v.canceled ? "Canceled" : v.winning ? `Winning now (top ${v.slots})` : pct < 100 ? "Needs votes" : `Outside the top ${v.slots}`}</div><p className="note" style={{ marginBottom: 0 }}>Votes close {utcTxt(v.votesCloseAt)}</p></div>
       </div>
+      {safety && (
+        <div className="panel pad" style={{ marginBottom: 16, borderColor: TONE[safety.verdict][0] }}>
+          <div className="rowx"><div className="lbl">SAFETY CHECK · {v.symbol.toUpperCase()}</div><span className="chip" style={{ background: TONE[safety.verdict][1], color: TONE[safety.verdict][0] }}>{TONE[safety.verdict][2]}</span></div>
+          <ul className="list">
+            <li><span>Test buy and sell-back</span><b>{!safety.test || (!safety.test.buyOk && safety.test.why) ? "not tested" : `${safety.test.buyOk ? "buy works" : "buy fails"} · ${safety.test.sellOk ? "sell works" : "sell fails"}`}</b></li>
+            <li><span>Tax on buy / sell</span><b>{safety.test?.buyTaxPct != null ? `${safety.test.buyTaxPct.toFixed(1)}%` : "—"} / {safety.test?.sellTaxPct != null ? `${safety.test.sellTaxPct.toFixed(1)}%` : "—"}</b></li>
+            <li><span>Top 10 holders</span><b>{safety.top10Pct != null ? `${safety.top10Pct.toFixed(1)}%` : "—"}</b></li>
+          </ul>
+          {safety.notes.length > 0 && <p className="note">{safety.notes.join(" ")}</p>}
+          <p className="note" style={{ marginBottom: 0 }}>A simulation on the live chain, nothing sent; it cannot prove a token is safe. <Link href={`/check/robinhood/${v.token}`}>Full check</Link></p>
+        </div>
+      )}
       <div className="panel pad" style={{ marginBottom: 16 }}>
         <div className="lbl">HOW TO VOTE FOR {v.symbol.toUpperCase()}</div>
         <ol style={{ margin: "10px 0 14px", paddingLeft: 20, lineHeight: 1.7 }}>

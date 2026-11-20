@@ -17,7 +17,7 @@ const EXCLUDED = new Set(["0xbf666e8d054935170b9f09127247905a975b3b80", "0xa1a49
 const ZERO = "0x0000000000000000000000000000000000000000";
 const lc = (a: string) => a.toLowerCase();
 
-export type PointsRow = { address: string; points: number; swapPoints: number; refPoints: number; swaps: number };
+export type PointsRow = { address: string; points: number; swapPoints: number; refPoints: number; swaps: number; refSwaps?: number };
 export type PointsBoard = { seasonStart: number; updated: number; wallets: number; total: number; rows: PointsRow[] };
 
 /** `from`: count swaps from this time (the season start; earlier for the pre-season preview) */
@@ -42,7 +42,7 @@ export function score(swaps: StatSwap[], stocks: Set<string>, from: number = SEA
     day.set(dk, used + pts);
     const r = row(t); r.swapPoints += pts; r.swaps++;
     const ref = x.referrer;
-    if (ref && ref !== ZERO && ref !== t && !EXCLUDED.has(ref) && pts > 0) row(ref).refPoints += pts * RULES.REF_SHARE;
+    if (ref && ref !== ZERO && ref !== t && !EXCLUDED.has(ref) && pts > 0) { const rr = row(ref); rr.refPoints += pts * RULES.REF_SHARE; rr.refSwaps = (rr.refSwaps ?? 0) + 1; }
   }
   for (const r of out.values()) r.points = Math.round((r.swapPoints + r.refPoints) * 10) / 10;
   return out;
