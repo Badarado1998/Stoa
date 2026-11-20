@@ -75,7 +75,8 @@ jobs:
           git add -A
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "status $(date -u '+%Y-%m-%d %H:%M') UTC"
           git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" status-data:status-data
-          echo "published"      - name: Open, update or close the uptime issue
+          echo "published"
+      - name: Open, update or close the uptime issue
         env:
           GH_TOKEN: ${{ github.token }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
