@@ -75,3 +75,7 @@ A [Metric](metric.md) pool prices from its oracle and can refuse a swap for a mo
 ## No gas yet
 
 Every swap on Robinhood Chain needs a little ETH for gas (cents). A wallet without any, or without enough of what it sells, gets a link to [bridge funds in](bridge-to-robinhood-chain.md).
+
+## Stock tokens: Robinhood price vs this swap
+
+When you swap into or out of a Robinhood Stock Token, the swap box shows Robinhood's own price for one token (from the underlying shares) next to the price your swap works out to, and how far apart they are. Outside US market hours Robinhood's price follows the overnight session, so the gap is often wider then. It is information, not advice.
