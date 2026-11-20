@@ -52,10 +52,13 @@ export default function PointsMine() {
             </ul>
           ) : <p className="note">No points yet this season. Swap on Stoa, or share your referral link from Referrals.</p>}
           {q.data.row && address && (
-            <p className="note" style={{ marginBottom: 0 }}>
-              <a href={`https://x.com/intent/post?text=${encodeURIComponent(`${q.data.points.toLocaleString("en-US", { maximumFractionDigits: 0 })} points and rank ${q.data.rank} in @StoaDEX Points season 1. Swap, refer, climb:`)}&url=${encodeURIComponent(`https://stoadex.com/points/${address}`)}`} target="_blank" rel="noopener noreferrer">Share your rank on X ↗</a>
-              {" · "}<a href={`/points/${address}`}>Your card</a>
-            </p>
+            <>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+              <a className="cta" href={`https://x.com/intent/post?text=${encodeURIComponent(`${q.data.points.toLocaleString("en-US", { maximumFractionDigits: 0 })} points, rank ${q.data.rank} of ${q.data.wallets} in @StoaDEX Points season 1. Swap through my card:`)}&url=${encodeURIComponent(`https://stoadex.com/points/${address.toLowerCase()}`)}`} target="_blank" rel="noopener noreferrer">Share your card on X ↗</a>
+              <a href={`/points/${address.toLowerCase()}`}>See your card</a>
+            </div>
+            <p className="note" style={{ marginBottom: 0 }}>Anyone who swaps through your card counts as your referral, so sharing it earns you referral points.</p>
+            </>
           )}
         </>
       )}

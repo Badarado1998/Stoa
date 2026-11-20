@@ -45,7 +45,10 @@ export default async function WalletPoints({ params }: P) {
           </ul>
         </div>
       )}
-      <div className="panel pad"><Link className="cta" href="/trade">Swap on Stoa</Link> <Link className="ghost" href="/points">How points work</Link></div>
+      <div className="panel pad">
+        <Link className="cta" href={`/trade?ref=${address.toLowerCase()}`}>Swap through this card</Link> <Link className="ghost" href="/points">How points work</Link>
+        <p className="note" style={{ marginBottom: 0 }}>Swaps made after tapping the button count as referrals for {short(address)}. You still earn your own points as usual.</p>
+      </div>
     </section>
   );
 }
