@@ -15,6 +15,7 @@ import { SITE } from "@/lib/chain";
 import { shareOrCopy } from "@/lib/share";
 import { useQuery } from "@tanstack/react-query";
 import VenueCompare from "./VenueCompare";
+import SwapCheck from "./SwapCheck";
 import { VenueIcons, venueIds } from "./VenueIcons";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
@@ -97,7 +98,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
   // the last confirmed swap, offered as a shareable link that carries the trader's referral
-  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean } | null>(null);
+  const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
   const [copied, setCopied] = useState(false);
   const [unlimited, setUnlimited] = useState(false); // approve only the swap amount unless the user opts in
   const [ackToken, setAckToken] = useState(false);
@@ -406,7 +407,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         try { const ev = decodeEventLog({ abi: [routedEvent], data: l.data, topics: l.topics }); paid = ev.args.amountIn; got = ev.args.amountOut; break; } catch { /* another event */ }
       }
       if (got === undefined) return;
-      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals) });
+      setDone({ hash, net: net.key, symIn: s0.symbol, symOut: b0.symbol, inTxt: fmtAmt(paid, s0.decimals), outTxt: fmtAmt(got, b0.decimals), check: { sell: s0.address, buy: b0.address, decimals: b0.decimals, paid, got, block: r.blockNumber } });
     });
     if (ok) { setAmount(""); setAckImpact(false); }
   }
@@ -582,6 +583,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             <div className="sharecard">
               <div className="rowx"><span className="lbl">SWAP CONFIRMED</span><a className="lbl" href={txUrl(done.hash)} target="_blank" rel="noopener noreferrer">VIEW ↗</a></div>
               <div className="sc-amt">{done.inTxt} {done.symIn} → <b>{done.outTxt} {done.symOut}</b></div>
+              {done.check && done.net === net.key && <SwapCheck net={net} pub={pub} sellToken={done.check.sell} buyToken={done.check.buy} decimals={done.check.decimals} symbol={done.symOut} paid={done.check.paid} got={done.check.got} block={done.check.block} />}
               {done.covered && <p className="note" style={{ marginTop: 4 }}>Covered: if the creator&apos;s wallet drops below its floor before release, claim your ETH on <a href="/cover">Rug Cover</a>.</p>}
               <div className="sc-btns">
                 <a className="sc-x" href={post} target="_blank" rel="noopener noreferrer">Share on X</a>

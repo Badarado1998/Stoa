@@ -12,6 +12,8 @@ import TokenShare from "@/components/TokenShare";
 import SafetyPanel from "@/components/SafetyPanel";
 import CmcPanel from "@/components/CmcPanel";
 import { findListed, isStoa, listedTokens, priceFmt, readToken, usdFmt } from "@/lib/tokenInfo";
+import { weekPrices } from "@/lib/priceHistory";
+import PriceChart from "@/components/PriceChart";
 
 // /tokens/<chain>/<address>: one listed token, its market and Stoa's best route for it right now.
 // Rendered on first visit, then kept a minute.
@@ -69,8 +71,11 @@ export default async function TokenPage({ params }: P) {
   const gloam = net.key === "robinhood" ? gloamSwapUrl(sym) : null;
   const showSafety = token.tone === "other";
   const showMarket = net.key === "robinhood" && !/^(USDG|WETH|USDC|USDT)$/.test(sym) && token.address !== "0x0000000000000000000000000000000000000000";
+  // the week's on-chain price, Robinhood Chain only (GeckoTerminal); stablecoins and ETH itself have nothing to show
+  const history = showMarket ? await weekPrices("robinhood", token.address).catch(() => null) : null;
   const overview = (
     <>
+      {history && <PriceChart points={history} symbol={sym} source="GeckoTerminal" />}
       <div className="panel tlist">
         <div>
           <div className="k">Contract</div>

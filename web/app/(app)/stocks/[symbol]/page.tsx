@@ -91,7 +91,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {cell("ON-CHAIN PRICE", s.dex ? fmtUsd(s.dex.priceUsd) : "No pool yet", diff != null ? `${diff >= 0 ? "+" : ""}${diff.toFixed(2)}% from Robinhood's price` : undefined)}
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}
       </div>
-      {history && <PriceChart points={history} symbol={s.symbol} source="GeckoTerminal" />}
+      {history && <PriceChart points={history} symbol={s.symbol} source="GeckoTerminal" stock />}
       <details className="panel pad fold-panel" style={{ marginBottom: 16 }}>
         <summary className="lbl">HOW THIS WORKS</summary>
         <p style={{ marginTop: 8 }}>

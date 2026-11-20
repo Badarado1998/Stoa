@@ -122,6 +122,27 @@ export default function StatsBody() {
         </div>
       </div>
 
+      <div className="rowx" style={{ margin: "24px 0 10px" }}>
+        <div className="lbl">TOP TRADERS · THIS WEEK</div>
+        <span className="note" style={{ margin: 0 }}>{s?.traders ? `from ${new Date(s.traders.weekStart * 1000).toUTCString().slice(5, 11)} UTC` : ""}</span>
+      </div>
+      <div className="panel" style={{ overflow: "hidden" }}>
+        <table className="tbl">
+          <thead><tr><th style={{ width: 36 }}>#</th><th>WALLET</th><th style={{ textAlign: "right" }}>SWAPS</th><th style={{ textAlign: "right" }}>VOLUME</th></tr></thead>
+          <tbody>
+            {s ? (s.traders?.list.length ? s.traders.list.map((t, i) => (
+              <tr key={t.address}>
+                <td style={{ fontFamily: "var(--num)", color: "var(--muted)" }}>{i + 1}</td>
+                <td style={{ fontFamily: "var(--mono)", fontSize: 13 }}><a href={`/wrapped/${t.address}`}>{t.address.slice(0, 6)}…{t.address.slice(-4)}</a></td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{t.swaps}</td>
+                <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{usd(t.usd)}</td>
+              </tr>
+            )) : <tr><td colSpan={4} className="note">No swaps this week yet.</td></tr>) : <tr><td colSpan={4}><Sk w={220} /></td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <p className="note" style={{ margin: "8px 2px 0" }}>Wallets that received the output of swaps routed through Stoa, ranked by value. Resets every Monday 00:00 UTC. No prizes; just the board.</p>
+
       <div className="lbl" style={{ margin: "24px 0 10px" }}>LATEST SWAPS</div>
       <div className="panel" style={{ overflow: "hidden", marginBottom: 16 }}>
         <table className="tbl">

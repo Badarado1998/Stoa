@@ -468,9 +468,19 @@ function Claims({ e }: { e: number }) {
       return pairs.map(([x, t], i) => ({ epoch: x, token: t, amount: amts[i] as bigint })).filter((c) => c.amount > 0n);
     },
   });
-  const { busy, send, note } = useSend(() => void q.refetch());
+  const { busy, send, note } = useSend(() => { void q.refetch(); void earned.refetch(); });
+  // everything this wallet has earned (claimed or not), for the share card
+  const earned = useQuery({
+    queryKey: ["spot-earned", address, e],
+    enabled: !!address && e >= 1,
+    refetchInterval: 120_000,
+    queryFn: async () => ((await (await fetch(`/api/spotlight/earned?address=${address}`)).json()) as { eth?: number }).eth ?? 0,
+  });
   const list = q.data ?? [];
   if (!address || e < 1) return null;
+  const won = earned.data ?? 0;
+  const shareUrl = `https://stoadex.com/spotlight/earned/${address}`;
+  const shareText = `I've earned ${won.toLocaleString("en-US", { maximumFractionDigits: won < 1 ? 4 : 3 })} ETH voting with $STOA in @StoaDEX Spotlight. Projects pay ETH, holders earn it.`;
   const total = list.reduce((a, c) => a + c.amount, 0n);
   return (
     <div className="panel pad">
@@ -484,6 +494,13 @@ function Claims({ e }: { e: number }) {
               args: [list.map((c) => BigInt(c.epoch)), list.map((c) => c.token), address], chainId: net.chain.id,
             }))}>{busy ? "Claiming…" : `Claim ${eth(total)} ETH`}</button>
           </>}
+      {won > 0 && (
+        <p className="note" style={{ marginTop: 12, marginBottom: 0 }}>
+          You have earned <b>{won.toLocaleString("en-US", { maximumFractionDigits: won < 1 ? 5 : 3 })} ETH</b> in Spotlight so far.{" "}
+          <a href={`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer">Share it on X ↗</a>
+          {" · "}<Link href={`/spotlight/earned/${address}`}>Your card</Link>
+        </p>
+      )}
       {note}
     </div>
   );

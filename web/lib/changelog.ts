@@ -12,6 +12,20 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "status-leaderboard-swapcheck",
+    date: "2026-11-20",
+    title: "Status page, weekly top traders, a check after every swap, Spotlight cards",
+    tag: "Both chains",
+    items: [
+      "stoadex.com/status checks Stoa live every minute: swaps on Robinhood Chain and Elysium, limit orders, Rug Cover, Spotlight, keeper gas, the Uniswap V4 pool guard and the price feeds.",
+      "Stats shows the top 10 wallets by volume this week, from Monday 00:00 UTC. No prizes, just the board.",
+      "After a swap, Trade shows what the best single venue quoted for the same amount just before it, next to what you received, whichever way that goes.",
+      "Spotlight voters get a shareable card with the ETH they have earned, at /spotlight/earned/<wallet>, and a Share on X link next to their claims.",
+      "Token pages and the $STOA page show the on-chain price over the last 7 days.",
+    ],
+    link: { href: "/status", label: "Status" },
+  },
+  {
     id: "widget-stock-charts-calc",
     date: "2026-11-20",
     title: "Swap widget, 7-day charts on stock pages, Spotlight earnings estimate",

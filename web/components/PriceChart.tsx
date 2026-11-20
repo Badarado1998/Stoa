@@ -5,7 +5,7 @@ const usd = (v: number) => (v >= 1 ? "$" + v.toLocaleString("en-US", { minimumFr
 const day = (t: number) => new Date(t * 1000).toUTCString().slice(5, 11);
 
 /** a plain line of the on-chain price over the week, drawn on the server: no chart library, nothing to load */
-export default function PriceChart({ points, symbol, source }: { points: PricePoint[]; symbol: string; source: string }) {
+export default function PriceChart({ points, symbol, source, stock }: { points: PricePoint[]; symbol: string; source: string; stock?: boolean }) {
   const cs = points.map((p) => p.c);
   const lo = Math.min(...cs), hi = Math.max(...cs);
   const span = hi - lo || hi * 0.01 || 1;
@@ -38,7 +38,7 @@ export default function PriceChart({ points, symbol, source }: { points: PricePo
         <span>Low {usd(lo)} · High {usd(hi)}</span>
         <span>{day(t1)}</span>
       </div>
-      <figcaption className="note" style={{ marginBottom: 0 }}>4-hour closes in its deepest on-chain pool, UTC, from {source}. On-chain trades happen at any hour, so this line moves while the US market is closed too.</figcaption>
+      <figcaption className="note" style={{ marginBottom: 0 }}>4-hour closes in its deepest on-chain pool, UTC, from {source}.{stock ? " On-chain trades happen at any hour, so this line moves while the US market is closed too." : " Past prices say nothing about where it goes next."}</figcaption>
     </figure>
   );
 }

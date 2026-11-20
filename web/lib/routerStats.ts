@@ -16,6 +16,8 @@ export interface StatSwap {
   amountIn: number; amountOut: number; usd: number | null;
   /** the referrer the swap paid (zero address when none) */
   referrer?: string;
+  /** who received the output (the trader; a limit order or helper contract still pays out to its owner) */
+  trader?: string;
 }
 export interface ChainStats {
   key: Net["key"]; name: string; explorer: string; router: string;
@@ -23,6 +25,7 @@ export interface ChainStats {
 }
 export interface DayStats { date: string; chains: Record<string, { swaps: number; usd: number }> }
 export interface ReferrerStats { address: string; chains: string[]; swaps: number; usd: number; usd7d: number }
+export interface TraderStats { address: string; swaps: number; usd: number }
 export interface TopToken { chain: Net["key"]; token: string; symbol: string; buys: number; usd: number }
 export interface RouterStats {
   updated: number; chains: ChainStats[]; days: DayStats[]; recent: StatSwap[];
@@ -32,6 +35,8 @@ export interface RouterStats {
   topBought24h: TopToken[];
   /** referrers ranked by the volume of the swaps they referred (top 25) */
   referrers: ReferrerStats[];
+  /** wallets ranked by the dollar value they swapped this UTC week (from Monday 00:00 UTC), top 10. No prizes. */
+  traders: { weekStart: number; list: TraderStats[] };
   total: { swaps: number; usdAll: number; usd7d: number; usd24h: number };
 }
 
@@ -117,6 +122,7 @@ async function chainSwaps(net: Net): Promise<{ swaps: StatSwap[]; ok: boolean }>
       chain: net.key, hash: l.transactionHash!, time: stamp(l) || times.get(l.blockNumber!) || 0,
       tokenIn: l.args.tokenIn!, tokenOut: l.args.tokenOut!, symIn: mIn.symbol, symOut: mOut.symbol, amountIn, amountOut, usd,
       referrer: l.args.referrer ? lc(l.args.referrer) : undefined,
+      trader: l.args.to ? lc(l.args.to) : undefined,
     } satisfies StatSwap;
   });
   return { swaps, ok: true };
@@ -164,7 +170,17 @@ export async function readRouterStats(): Promise<RouterStats> {
     refs.set(x.referrer, r);
   }
   const referrers = [...refs.values()].sort((a, b) => b.usd - a.usd || b.swaps - a.swaps).slice(0, 25);
-  const strip = (x: StatSwap) => { const { referrer, ...rest } = x; void referrer; return rest; };
+  // this UTC week's traders: 1970-01-01 was a Thursday, so weeks starting Monday are offset by 4 days
+  const weekStart = Math.floor((now - 4 * 86400) / (7 * 86400)) * 7 * 86400 + 4 * 86400;
+  const tr = new Map<string, TraderStats>();
+  for (const x of all) {
+    if (x.time < weekStart || !x.trader || x.trader === ZERO) continue;
+    const t = tr.get(x.trader) ?? { address: x.trader, swaps: 0, usd: 0 };
+    t.swaps++; t.usd += x.usd ?? 0;
+    tr.set(x.trader, t);
+  }
+  const traders = { weekStart, list: [...tr.values()].sort((a, b) => b.usd - a.usd || b.swaps - a.swaps).slice(0, 10) };
+  const strip = (x: StatSwap) => { const { referrer, trader, ...rest } = x; void referrer; void trader; return rest; };
   const day = all.filter((x) => x.time >= now - 86400);
   const largest24h = day.filter((x) => x.usd !== null).sort((a, b) => (b.usd ?? 0) - (a.usd ?? 0)).slice(0, 10).map(strip);
   // the gas token, its wrapped form and stablecoins are what people pay with, not what they buy into
@@ -179,7 +195,7 @@ export async function readRouterStats(): Promise<RouterStats> {
   }
   const topBought24h = [...bought.values()].sort((a, b) => b.usd - a.usd || b.buys - a.buys).slice(0, 8);
   return {
-    updated: now, chains, days, recent: all.slice(0, 20).map(strip), largest24h, topBought24h, referrers,
+    updated: now, chains, days, recent: all.slice(0, 20).map(strip), largest24h, topBought24h, referrers, traders,
     total: { swaps: all.length, usdAll: sum(all), usd7d: sum(all, now - 7 * 86400), usd24h: sum(all, now - 86400) },
   };
 }

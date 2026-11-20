@@ -5,6 +5,9 @@ import StoaCA from "@/components/StoaCA";
 import TokenUtility from "@/components/TokenUtility";
 import AnyChainBuy from "@/components/AnyChainBuy";
 import { readLocked, readSupply } from "@/lib/stoaSupply";
+import { weekPrices } from "@/lib/priceHistory";
+import PriceChart from "@/components/PriceChart";
+import { CA } from "@/lib/stoaAddress";
 
 const description = "Stoa's protocol fees buy and burn $STOA every week, makers bond it, holders vote in Spotlight to earn projects' ETH bids, and backers lock it behind Rug Cover. Live supply, burns and locks.";
 export const metadata: Metadata = {
@@ -32,13 +35,14 @@ async function initial() {
 }
 
 export default async function TokenPage() {
-  const init = await initial();
+  const [init, history] = await Promise.all([initial(), weekPrices("robinhood", CA).catch(() => null)]);
   return (
     <section className="page">
       <PageHead eyebrow="$STOA · ROBINHOOD CHAIN" title="What $STOA does" action={<Link className="cta" href="/trade?chain=robinhood">Trade</Link>}>
         Four jobs, all enforced by contracts: Stoa&apos;s protocol fees buy $STOA and burn it, makers bond $STOA to quote Stoa pools, holders vote in Spotlight to earn the ETH projects bid, and backers lock it behind Rug Cover.
       </PageHead>
       <StoaCA />
+      {history && <PriceChart points={history} symbol="$STOA" source="GeckoTerminal" />}
       <AnyChainBuy />
       <TokenUtility init={init} />
     </section>
