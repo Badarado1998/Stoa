@@ -29,3 +29,18 @@ You cannot refer yourself in the app: a link with your own address is ignored. E
 ## Top referrers
 
 [Referrals](https://stoadex.com/referrals) ranks referrers by the volume of the swaps their links brought in, on both networks, read from the routers' `Routed` events: swaps, total volume, the last 7 days and an estimate of what each earned (10% of the 2 bps fee, so about 0.002% of the volume). Connect your wallet to see your own row highlighted.
+
+## Integrator bonus
+
+From December 2026, apps that send swaps through Stoa get a monthly bonus on top of the 10% share.
+
+| Item | Detail |
+| --- | --- |
+| Who | Anyone whose bot, wallet, widget, agent or app names their address as `referrer` |
+| Test | At least 10 different wallets swap $1 or more through your address in a UTC month. Your own wallet does not count |
+| Bonus | $10 USDG for that month |
+| Slots | Up to 5 integrators a month, ranked by wallets, then volume |
+| Paid | By Stoa on Robinhood Chain in the first week of the next month, after a check for wash trading |
+| Where to see it | The **Wallets · month** column on [Referrals](https://stoadex.com/referrals) |
+
+The bonus is paid from Stoa's treasury, not by a contract: the board shows who qualifies, and the payment transactions are public on Robinhood Chain.

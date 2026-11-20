@@ -33,6 +33,11 @@ const USED: { name: string; href: string; what: string }[] = [
   { name: "Autonomo", href: "https://autonomo.fun", what: "Stoa's Token Safety Check and Swap Quote as paid agent APIs ($0.01 a call, x402)" },
 ];
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+const BOUNTIES: { t: string; b: string }[] = [
+  { t: "Telegram bot", b: "A bot in a public group that answers /quote and /check for any Robinhood Chain token, using Stoa's HTTP API or MCP server, and links each quote to a swap on Stoa." },
+  { t: "Swap widget on a token's site", b: "Stoa's swap widget or buy card live on the website of a token that trades on Robinhood Chain, added by you with the project's agreement." },
+  { t: "Public dashboard", b: "A public dashboard of Stoa's swaps on Robinhood Chain (volume, traders, routes per venue) built from on-chain data on Dune, Blockscout or your own site, with its queries shared." },
+];
 
 const SOL = `// 1. off-chain: route = router.quote(USDC, WHYPE, 250e6)  (eth_call)
 // 2. on-chain: follow the route with your limits
@@ -91,9 +96,18 @@ export default function BuildPage() {
           </div>
         ))}
       </div>
+      <div id="bounties" className="panel pad" style={{ marginBottom: 20 }}>
+        <div className="rowx"><div className="lbl">BUILD BOUNTIES · $150 IN USDG</div><span className="chip">Open until Sun 20 Dec 2026, 23:59 UTC</span></div>
+        <p style={{ marginTop: 10 }}>Three bounties of $50 each, paid in USDG on Robinhood Chain to the first working entry for each one.</p>
+        <ol className="list" style={{ marginTop: 8, paddingLeft: 18 }}>
+          {BOUNTIES.map((b) => <li key={b.t} style={{ marginBottom: 8 }}><b>{b.t}.</b> {b.b}</li>)}
+        </ol>
+        <p className="note" style={{ marginTop: 8 }}>To count, it has to be live and public, its code open on GitHub, and every swap it sends has to name your address as <code>referrer</code>, so you also earn the referrer share. Stoa checks each entry before paying; one bounty per person. No wash trading: entries that inflate swaps are not paid.</p>
+        <a className="go" href="https://github.com/StoaDex/Stoa/issues/new?title=Bounty%3A%20&labels=bounty" target="_blank" rel="noopener noreferrer">Submit on GitHub</a>
+      </div>
       <div className="panel pad" style={{ marginBottom: 20 }}>
         <div className="rowx"><div className="lbl">EARN 10% AS A REFERRER</div><Link className="note" style={{ marginTop: 0 }} href="/docs/referrals">Docs →</Link></div>
-        <p style={{ marginTop: 10 }}>Name your address as <code>referrer</code> and you earn 10% of Stoa&apos;s 2 bps fee on every swap you send: about $0.02 per $1,000 swapped, in the token the trader received. It works the same in the buy card, the API, the MCP server&apos;s <code>build_swap</code> and the router&apos;s <code>swap</code>. Earnings are booked to your address in the FeeDistributor contract on-chain, and only your wallet can claim them on <Link href="/referrals">Referrals</Link>.</p>
+        <p style={{ marginTop: 10 }}>Name your address as <code>referrer</code> and you earn 10% of Stoa&apos;s 2 bps fee on every swap you send: about $0.02 per $1,000 swapped, in the token the trader received. It works the same in the buy card, the API, the MCP server&apos;s <code>build_swap</code> and the router&apos;s <code>swap</code>. Earnings are booked to your address in the FeeDistributor contract on-chain, and only your wallet can claim them on <Link href="/referrals">Referrals</Link>. Bring 10 or more different wallets in a month and you also get a <Link href="/referrals#integrator-bonus">$10 USDG integrator bonus</Link> for that month.</p>
       </div>
       <div className="panel pad" style={{ marginBottom: 20 }}>
         <div className="lbl">USED BY</div>

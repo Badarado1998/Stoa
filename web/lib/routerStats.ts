@@ -24,7 +24,11 @@ export interface ChainStats {
   swaps: number; swaps24h: number; usdAll: number; usd7d: number; usd24h: number; first: number | null; unpriced: number; ok: boolean;
 }
 export interface DayStats { date: string; chains: Record<string, { swaps: number; usd: number }> }
-export interface ReferrerStats { address: string; chains: string[]; swaps: number; usd: number; usd7d: number }
+export interface ReferrerStats {
+  address: string; chains: string[]; swaps: number; usd: number; usd7d: number;
+  /** distinct wallets (not the referrer itself) that swapped $1 or more through it this UTC month: the integrator bonus test */
+  walletsMonth: number;
+}
 export interface TraderStats { address: string; swaps: number; usd: number }
 export interface TopToken { chain: Net["key"]; token: string; symbol: string; buys: number; usd: number }
 export interface RouterStats {
@@ -169,14 +173,21 @@ export async function readRouterStats(): Promise<RouterStats> {
   // referrers: every swap that paid one, grouped by referrer and ranked by referred volume
   const ZERO = "0x0000000000000000000000000000000000000000";
   const refs = new Map<string, ReferrerStats>();
+  const monthWallets = new Map<string, Set<string>>();
+  const d0 = new Date(now * 1000), monthStart = Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), 1) / 1000;
   for (const x of all) {
     if (!x.referrer || x.referrer === ZERO) continue;
-    const r = refs.get(x.referrer) ?? { address: x.referrer, chains: [], swaps: 0, usd: 0, usd7d: 0 };
+    const r = refs.get(x.referrer) ?? { address: x.referrer, chains: [], swaps: 0, usd: 0, usd7d: 0, walletsMonth: 0 };
     r.swaps++; r.usd += x.usd ?? 0;
     if (x.time >= now - 7 * 86400) r.usd7d += x.usd ?? 0;
     if (!r.chains.includes(x.chain)) r.chains.push(x.chain);
+    if (x.time >= monthStart && x.trader && x.trader !== x.referrer && (x.usd ?? 0) >= 1) {
+      const w = monthWallets.get(x.referrer) ?? new Set<string>();
+      w.add(x.trader); monthWallets.set(x.referrer, w);
+    }
     refs.set(x.referrer, r);
   }
+  for (const [a, w] of monthWallets) { const r = refs.get(a); if (r) r.walletsMonth = w.size; }
   const referrers = [...refs.values()].sort((a, b) => b.usd - a.usd || b.swaps - a.swaps).slice(0, 25);
   // this UTC week's traders: 1970-01-01 was a Thursday, so weeks starting Monday are offset by 4 days
   const weekStart = Math.floor((now - 4 * 86400) / (7 * 86400)) * 7 * 86400 + 4 * 86400;
