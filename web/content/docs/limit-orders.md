@@ -33,3 +33,7 @@ Your deposit waits in the **StoaLimitV2** contract. About every 5 minutes, Stoa'
 `StoaLimitV2` on Robinhood Chain: [`0xE42b3B429417182E8621F0d19A9a1dAdC31D1C12`](https://robinhoodchain.blockscout.com/address/0xE42b3B429417182E8621F0d19A9a1dAdC31D1C12), live since 16 November 2026. It is owned by the 48-hour timelock, with the router's guardian (who can pause new orders and fills, never cancels) and the buyback keeper. Nobody, owner included, can move a deposit anywhere but to its maker or through the router to its maker. Source: [contracts/src/StoaLimitV2.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/StoaLimitV2.sol).
 
 It replaces the first contract, [`0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3`](https://robinhoodchain.blockscout.com/address/0xf570F16D9dBcf6FF5fF8F2b6dF321ca4Fa4355B3), which capped open orders at 1,000 across all wallets: anyone could fill that cap with dust orders from new wallets and block new orders (reported by Hey Research Lab in the [independent security review](security-review.md)). StoaLimitV2 has no such cap. The first contract never had an order.
+
+## Buy if cheaper
+
+Each stock token's page on [Stocks](https://stoadex.com/stocks) has **Buy if 5% cheaper** and **Buy if 10% cheaper**. They open the Limit tab for 50 USDG with the price set 5% or 10% below the on-chain price now; change the amount or price before you place it. Any link can do the same with `&mode=limit&dip=5` on a Trade link.

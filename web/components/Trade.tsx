@@ -126,6 +126,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   // Limit tab (Robinhood Chain, once StoaLimit is deployed)
   const limitLive = useLimitLive() && net.key === "robinhood";
   const [mode, setMode] = useState<"swap" | "limit">("swap");
+  const [limitStart, setLimitStart] = useState(0); // % above market a limit price starts at (?mode=limit&dip=5)
   const limitMode = limitLive && mode === "limit";
 
   // balances
@@ -158,7 +159,10 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   });
   const newVenuesLive = net.newVenues.length > 0 && net.newVenues.every((_, i) => newLive.data?.[i]?.result === true);
   const ponsLive = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "isAdapter", args: [net.pons ?? zeroAddress], chainId: chain.id, query: { enabled: deployed && !!net.pons, refetchInterval: 60_000 } }).data === true;
-  const risky = (sell.tone === "other" || buy.tone === "other") && kind !== "wrap" && kind !== "unwrap";
+  // a Robinhood Stock Token is named only when its address is on Robinhood's own list (addCustom), so it is not an
+  // unknown import: no "check the address" step for it
+  const unknown = (t: Token) => t.tone === "other" && !t.name.endsWith("Robinhood Stock Token");
+  const risky = (unknown(sell) || unknown(buy)) && kind !== "wrap" && kind !== "unwrap";
   const tokenWarning = risky && (
     <div className="notice" style={{ marginTop: 12, marginBottom: 0 }}>
       This token was imported by address and is not verified by Stoa. Anyone can create a token with any name. Check the address before you trade.
@@ -297,6 +301,10 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
     if (s.address === b.address) b = s.address === net.tokens[0].address ? net.tokens[2] : net.tokens[0];
     setSell(s); setBuy(b);
     // &amount=25 prefills the sell side (the embed widget passes what the visitor typed); never more than 18 decimals
+    // &mode=limit opens the Limit tab; &dip=5 starts its price where the token you buy is 5% cheaper than now
+    if (p.get("mode") === "limit") setMode("limit");
+    const dip = Number(p.get("dip"));
+    if (dip > 0 && dip < 50) setLimitStart((1 / (1 - dip / 100) - 1) * 100);
     const a = p.get("amount")?.trim();
     if (a && /^\d{1,15}(\.\d{1,18})?$/.test(a) && Number(a) > 0) setAmount(a);
     (async () => { for (const [side, v] of custom) await addCustom(v, side); })();
@@ -563,7 +571,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             {buy.tone === "other" && !isNative(buy) && (buy.name.endsWith("Robinhood Stock Token")
               ? <p className="note">{buy.symbol} is a Robinhood Stock Token, issued by Robinhood Assets (Jersey) Limited. Its pools trade against USDG, so sell USDG for the most direct route. <a href="/stocks">All stock tokens</a></p>
               : <SafetyPanel chain={net.key} token={buy.address} compact />)}
-            <LimitPanel net={net} sell={sell} buy={buy} amt={amt} marketOut={quote?.out} sBal={sBal} referrer={referrer} tokens={tokens} warning={tokenWarning} gate={risky && !ackToken ? "Confirm the token warning" : undefined} />
+            <LimitPanel startPct={limitStart} net={net} sell={sell} buy={buy} amt={amt} marketOut={quote?.out} sBal={sBal} referrer={referrer} tokens={tokens} warning={tokenWarning} gate={risky && !ackToken ? "Confirm the token warning" : undefined} />
           </>
         ) : (
           <>

@@ -25,8 +25,10 @@ function explain(e: unknown): string {
 
 /** The Limit tab on Trade (Robinhood Chain): sell the amount above for at least a price you set. The deposit sits in
  *  the StoaLimit contract until Stoa's keeper fills it through the router or you cancel. */
-export default function LimitPanel({ net, sell, buy, amt, marketOut, sBal, referrer, tokens, warning, gate }: {
+export default function LimitPanel({ net, sell, buy, amt, marketOut, sBal, referrer, tokens, warning, gate, startPct = 0 }: {
   net: Net; sell: Token; buy: Token; amt?: bigint; marketOut?: bigint; sBal?: bigint; referrer?: Address; tokens: Token[];
+  /** where the price starts, in % above the market rate (more of `buy` per `sell`): a "buy the dip" link sets it */
+  startPct?: number;
   /** the unverified-token notice from Trade, and the label to show until it is confirmed */
   warning?: ReactNode; gate?: string;
 }) {
@@ -45,7 +47,7 @@ export default function LimitPanel({ net, sell, buy, amt, marketOut, sBal, refer
   const [forPair, setForPair] = useState(pair);
   if (forPair !== pair) { setForPair(pair); setTouched(false); setPriceTxt(""); }
   // start from the market price; the user moves it
-  useEffect(() => { if (!touched && market > 0) setPriceTxt(String(Number(market.toPrecision(6)))); }, [market, touched, pair]);
+  useEffect(() => { if (!touched && market > 0) setPriceTxt(String(Number((market * (1 + startPct / 100)).toPrecision(6)))); }, [market, touched, pair, startPct]);
   const price = Number(priceTxt);
   const minOut = useMemo(() => {
     if (!amt || !(price > 0)) return undefined;

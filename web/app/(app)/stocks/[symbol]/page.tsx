@@ -107,7 +107,12 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <ol style={{ margin: "10px 0 0", paddingLeft: 22, display: "grid", gap: 10, lineHeight: 1.5, overflowWrap: "anywhere" }}>
             {steps.map(([n, t]) => <li key={n}><b>{n}.</b> {t}</li>)}
           </ol>
-          <p style={{ marginTop: 12, marginBottom: 0 }}><Link className="cta" href={swap}>Swap USDG to {s.symbol}</Link></p>
+          <p style={{ marginTop: 12, marginBottom: 0, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Link className="cta" href={swap}>Swap USDG to {s.symbol}</Link>
+            <Link className="ghost" href={`${swap}&amount=50&mode=limit&dip=5`}>Buy if 5% cheaper</Link>
+            <Link className="ghost" href={`${swap}&amount=50&mode=limit&dip=10`}>Buy if 10% cheaper</Link>
+          </p>
+          <p className="note" style={{ marginBottom: 0 }}>The two limit buttons open a limit order priced 5% or 10% below the on-chain price now. Your USDG waits in Stoa&apos;s limit order contract and fills only if the pool trades there; cancel any time. <Link href="/docs/limit-orders">How limit orders work</Link></p>
         </div>
       )}
       <div className="panel pad" style={{ marginBottom: 16 }}>
