@@ -12,6 +12,20 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-pay",
+    date: "2026-11-21",
+    title: "Stoa Pay: get paid in USDG with a link",
+    tag: "Robinhood Chain",
+    items: [
+      "Create a payment link for any amount up to 10,000 USDG, with a note and a QR code. Nothing is stored: the link is the request.",
+      "The payer can use USDG, ETH, a stock token or any token Stoa routes on Robinhood Chain; a swap pays the requester directly, with the amount asked as its minimum.",
+      "Or pay with ETH on Base, Arbitrum, Optimism or Ethereum through Relay, up to 500 USDG; Stoa checks Relay's order pays exactly the requester before the wallet opens.",
+      "Stock swaps outside US market hours now show the session, when regular hours open (UTC), and a warning when the swap is on the costly side of Robinhood's price.",
+      "HTTP API: /api/v1/quote takes an optional recipient.",
+    ],
+    link: { href: "/pay", label: "Open Stoa Pay" },
+  },
+  {
     id: "builders-makers-anychain-stocks",
     date: "2026-11-20",
     title: "Buy stocks from another chain, a second opinion on every quote, programs for builders and makers",

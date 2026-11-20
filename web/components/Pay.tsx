@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAccount, usePublicClient, useReadContract, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, useBalance, usePublicClient, useReadContract, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, decodeFunctionData, erc20Abi as viemErc20, isAddress, parseUnits, type Address, type Hash, type Hex } from "viem";
 import { erc20Abi, routerAbi } from "@/lib/abi";
 import { ROBINHOOD } from "@/lib/networks";
 import { NATIVE, type Token } from "@/lib/tokens";
 import { NOTE_MAX, PAY_MAX_USDG, readRequest, requestUrl, type PayRequest } from "@/lib/pay";
 import { fmt } from "@/lib/swap";
+import { SOURCES } from "@/lib/bridge";
+import { PAY_CROSS_MAX_USDG, PAY_SOURCES, checkPayCross, type PayCrossQuote } from "@/lib/payAnychain";
 import CopyButton from "./CopyButton";
 import { useWalletModal } from "./Providers";
 
@@ -55,6 +57,19 @@ export default function Pay() {
   return req ? <PayRequestView req={req} /> : <CreateRequest malformed={!!malformed} />;
 }
 
+function Qr({ text }: { text: string }) {
+  const [svg, setSvg] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    import("qrcode").then((Q) => Q.toString(text, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#111827", light: "#ffffff" } }))
+      .then((v) => { if (live) setSvg(v); }).catch(() => setSvg(null));
+    return () => { live = false; };
+  }, [text]);
+  if (!svg) return null;
+  // the SVG is generated locally from the link Stoa just built
+  return <div aria-label="QR code of the payment link" role="img" style={{ width: 200, height: 200, background: "#fff", borderRadius: 12, padding: 8, border: "1px solid var(--line, #e5e7eb)" }} dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
 function CreateRequest({ malformed }: { malformed: boolean }) {
   const { address } = useAccount();
   const { open: openWallet } = useWalletModal();
@@ -90,6 +105,7 @@ function CreateRequest({ malformed }: { malformed: boolean }) {
         <div style={{ marginTop: 14 }}>
           <div className="lbl">YOUR LINK</div>
           <div className="mono" style={{ wordBreak: "break-all", fontSize: 13, margin: "6px 0 10px" }}>{url}</div>
+          <div style={{ margin: "4px 0 12px" }}><Qr text={url} /></div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <CopyButton text={url} label="Copy link" />
             {typeof navigator !== "undefined" && "share" in navigator && <button type="button" className="ghost" onClick={share}>Share</button>}
@@ -112,6 +128,7 @@ function PayRequestView({ req }: { req: PayRequest }) {
   const { writeContractAsync } = useWriteContract();
   const pub = usePublicClient({ chainId: RH });
   const [tokenAddr, setTokenAddr] = useState<string>(USDG);
+  const [src, setSrc] = useState<number>(RH);
   const token = PAY_WITH.find((t) => lc(t.address) === lc(tokenAddr)) ?? PAY_WITH.find((t) => lc(t.address) === lc(USDG))!;
   const isUsdg = lc(token.address) === lc(USDG);
   const raw = parseUnits(req.amount, 6);
@@ -145,11 +162,11 @@ function PayRequestView({ req }: { req: PayRequest }) {
   const seq = useRef(0);
   useEffect(() => {
     setQuote(null); setQErr(null);
-    if (isUsdg || !address || phase.k === "busy" || phase.k === "done") { setLoading(false); return; }
+    if (isUsdg || !address || src !== RH || phase.k === "busy" || phase.k === "done") { setLoading(false); return; }
     const my = ++seq.current;
     setLoading(true);
     fetchQuote().then((q) => { if (my === seq.current) setQuote(q); }).catch((e) => { if (my === seq.current) setQErr((e as Error).message); }).finally(() => { if (my === seq.current) setLoading(false); });
-  }, [tokenAddr, address]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tokenAddr, address, src]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const need = isUsdg ? raw : quote ? BigInt(quote.amountIn) : undefined;
   const short_ = need !== undefined && balance !== undefined && need > balance;
@@ -215,6 +232,14 @@ function PayRequestView({ req }: { req: PayRequest }) {
       <div className="note" style={{ marginTop: 6 }}>To <span className="mono" style={{ wordBreak: "break-all" }}>{req.to}</span> <CopyButton text={req.to} label="Copy" /></div>
       <p className="note" style={{ marginTop: 6 }}>Check this address with the person who sent you the link. Stoa does not know who it belongs to.</p>
 
+      <div className="lbl" style={{ marginTop: 14 }}>PAY FROM</div>
+      <div className="seg" role="tablist" aria-label="Pay from" style={{ marginTop: 6, flexWrap: "wrap" }}>
+        {[RH, ...PAY_SOURCES].map((id) => (
+          <button key={id} type="button" role="tab" aria-selected={src === id} className={src === id ? "on" : undefined} disabled={phase.k === "busy"}
+            onClick={() => { setPhase({ k: "idle" }); setSrc(id); }}>{id === RH ? "Robinhood Chain" : SOURCES.find((x) => x.chain.id === id)?.name}</button>
+        ))}
+      </div>
+      {src === RH ? (<>
       <div className="lbl" style={{ marginTop: 14 }}>PAY WITH</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
         {PAY_WITH.slice(0, 2).map((t) => (
@@ -237,6 +262,107 @@ function PayRequestView({ req }: { req: PayRequest }) {
       {phase.k === "failed" && <div className="notice" style={{ marginTop: 10 }}>{phase.text}</div>}
       <button type="button" className="big pri" style={{ marginTop: 12, width: "100%" }} disabled={disabled} onClick={() => (isConnected ? pay() : openWallet())}>{label}</button>
       <p className="note" style={{ marginTop: 8 }}>{isUsdg ? "A plain USDG transfer." : `If the price moves before it lands so that they would get less than ${req.amount} USDG, the swap does not go through and you keep your ${token.symbol}. Any extra goes to them.`} Payments on-chain cannot be reversed.</p>
+      </>) : <PayCross req={req} chainId={src} />}
     </div>
+  );
+}
+
+type CrossPhase = { k: "idle" } | { k: "busy"; text: string } | { k: "moving"; tx: Hash; id: string; since: number } | { k: "done"; id: string } | { k: "failed"; text: string };
+
+/** Pay the same request with ETH on another chain; Relay pays the USDG on Robinhood Chain (lib/payAnychain.ts). */
+function PayCross({ req, chainId }: { req: PayRequest; chainId: number }) {
+  const { address, isConnected, chainId: walletChain } = useAccount();
+  const { open: openWallet } = useWalletModal();
+  const { switchChainAsync } = useSwitchChain();
+  const { sendTransactionAsync } = useSendTransaction();
+  const srcInfo = SOURCES.find((x) => x.chain.id === chainId)!;
+  const raw = parseUnits(req.amount, 6);
+  const over = Number(req.amount) > PAY_CROSS_MAX_USDG;
+  const bal = useBalance({ address, chainId, query: { enabled: !!address } });
+  const [quote, setQuote] = useState<(PayCrossQuote & { at: number }) | null>(null);
+  const [qErr, setQErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<CrossPhase>({ k: "idle" });
+  const self = !!address && lc(address) === lc(req.to);
+
+  async function fetchQuote() {
+    const r = await fetch("/api/pay/crosschain", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chainId, payer: address, to: req.to, amount: raw.toString() }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(typeof j.error === "string" ? j.error : "No route from this chain right now.");
+    const why = checkPayCross(j as PayCrossQuote, { chainId, payer: address!, to: req.to, amount: raw });
+    if (why) throw new Error(why);
+    return { ...(j as PayCrossQuote), at: Date.now() };
+  }
+
+  const seq = useRef(0);
+  useEffect(() => {
+    setQuote(null); setQErr(null);
+    if (!address || over || self) { setLoading(false); return; }
+    const my = ++seq.current;
+    setLoading(true);
+    fetchQuote().then((q) => { if (my === seq.current) setQuote(q); }).catch((e) => { if (my === seq.current) setQErr((e as Error).message); }).finally(() => { if (my === seq.current) setLoading(false); });
+  }, [address, chainId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (phase.k !== "moving") return;
+    let stop = false;
+    const { id, since } = phase;
+    const tick = async () => {
+      if (stop) return;
+      const s = await fetch(`https://api.relay.link/intents/status/v3?requestId=${id}`).then((r) => r.json()).catch(() => null) as { status?: string } | null;
+      if (s?.status === "success") { setPhase({ k: "done", id }); return; }
+      if (s?.status === "refund" || s?.status === "failure") { setPhase({ k: "failed", text: "Relay could not deliver this payment, so it refunds your ETH. Nothing reached the requester." }); return; }
+      if (Date.now() - since > 45 * 60_000) { setPhase({ k: "failed", text: "This is taking much longer than usual. Follow it on relay.link with your transaction." }); return; }
+      setTimeout(tick, 4000);
+    };
+    void tick();
+    return () => { stop = true; };
+  }, [phase]);
+
+  async function go() {
+    if (!quote || !address) return;
+    try {
+      let q = quote;
+      if (Date.now() - q.at > 30_000) { setPhase({ k: "busy", text: "Refreshing the price…" }); q = await fetchQuote(); setQuote(q); }
+      if (walletChain !== chainId) { setPhase({ k: "busy", text: `Switch to ${srcInfo.name} in your wallet…` }); await switchChainAsync({ chainId }); }
+      setPhase({ k: "busy", text: "Confirm the payment in your wallet…" });
+      const tx = await sendTransactionAsync({ chainId, to: q.tx.to, data: q.tx.data, value: BigInt(q.tx.value) });
+      setPhase({ k: "moving", tx, id: q.requestId, since: Date.now() });
+    } catch (e) { setPhase({ k: "failed", text: explain(e) }); }
+  }
+
+  if (phase.k === "done") {
+    return (
+      <div style={{ marginTop: 12 }}>
+        <p style={{ fontSize: 20, margin: "6px 0" }}>Paid: {req.amount} USDG reached {short(req.to)} on Robinhood Chain.</p>
+        <a className="note" href={`https://relay.link/transaction/${phase.id}`} target="_blank" rel="noopener noreferrer">See it on Relay ↗</a>
+      </div>
+    );
+  }
+  const pay = quote ? BigInt(quote.tx.value) : undefined;
+  const short_ = pay !== undefined && bal.data !== undefined && pay > bal.data.value;
+  let label = `Pay ${req.amount} USDG`;
+  if (!isConnected) label = "Connect wallet";
+  else if (self) label = "This is your own request";
+  else if (over) label = `Up to ${PAY_CROSS_MAX_USDG} USDG from another chain`;
+  else if (loading) label = "Finding the route…";
+  else if (qErr) label = "No route";
+  else if (short_) label = `Not enough ETH on ${srcInfo.name}`;
+  else if (phase.k === "busy") label = phase.text;
+  else if (phase.k === "moving") label = "On its way…";
+  return (
+    <>
+      <div className="det" style={{ marginTop: 12 }}>
+        <span>You pay on {srcInfo.name}</span><span>{quote ? `${fmt(BigInt(quote.tx.value), 18, 6)} ETH${quote.inUsd ? ` (~$${quote.inUsd.toFixed(2)})` : ""}` : "…"}</span>
+        <span>They receive</span><span>{req.amount} USDG on Robinhood Chain</span>
+        {bal.data && <><span>Your ETH on {srcInfo.name}</span><span>{fmt(bal.data.value, 18, 5)}</span></>}
+        <span>Delivery</span><span>{quote?.etaSeconds && quote.etaSeconds < 120 ? "usually under a minute, via Relay" : "a few minutes, via Relay"}</span>
+      </div>
+      {qErr && <div className="notice" style={{ marginTop: 10 }}>{qErr}</div>}
+      {phase.k === "failed" && <div className="notice" style={{ marginTop: 10 }}>{phase.text}</div>}
+      {phase.k === "moving" && <p className="note" style={{ marginTop: 10 }}>Sent. Relay is paying {req.amount} USDG to {short(req.to)} on Robinhood Chain. <a href={`https://relay.link/transaction/${phase.id}`} target="_blank" rel="noopener noreferrer">Follow it on Relay ↗</a></p>}
+      <button type="button" className="big pri" style={{ marginTop: 12, width: "100%" }} disabled={isConnected && (self || over || !quote || loading || short_ || phase.k === "busy" || phase.k === "moving")} onClick={() => (isConnected ? go() : openWallet())}>{label}</button>
+      <p className="note" style={{ marginTop: 8 }}>Stoa checks Relay&apos;s order before your wallet opens: it pays exactly this address at least {req.amount} USDG on Robinhood Chain, and any refund comes back to you. Up to {PAY_CROSS_MAX_USDG} USDG from another chain for now. Payments cannot be reversed.</p>
+    </>
   );
 }

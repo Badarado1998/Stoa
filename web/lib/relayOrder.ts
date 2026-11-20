@@ -78,8 +78,10 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 export interface OrderWant {
   /** the id in the deposit call */
   depositId: string;
-  /** the buyer: the only recipient of the output and of every refund */
+  /** the buyer: the only recipient of every refund, and of the output unless recipient is set */
   user: string;
+  /** who gets the output when it is not the buyer (Stoa Pay: the person who asked to be paid) */
+  recipient?: string;
   /** Relay chain slugs, e.g. "base" and "robinhood" */
   fromSlug: string;
   toSlug: string;
@@ -103,12 +105,18 @@ export function checkRelayOrder(o: RelayOrder | null | undefined, w: OrderWant):
   if (o.inputs.length !== 1) return "more than one input";
   const p = o.inputs[0].payment;
   if (p.chainId !== w.fromSlug || lc(p.currency) !== lc(w.currency) || BigInt(p.amount) !== w.amount) return "input is not what was picked";
-  for (const r of o.inputs[0].refunds) if (lc(r.recipient) !== lc(w.user)) return "a refund goes to someone else";
+  for (const r of o.inputs[0].refunds) {
+    if (lc(r.recipient) === lc(w.user)) continue;
+    // Stoa Pay: Relay may settle on the destination chain by paying the requester in the output token; that is still
+    // the payment going where it was asked to
+    if (w.recipient && lc(r.recipient) === lc(w.recipient) && r.chainId === w.toSlug && lc(r.currency) === lc(w.outCurrency)) continue;
+    return "a refund goes to someone else";
+  }
   if (o.output.chainId !== w.toSlug) return "output on another chain";
   if (o.output.calls.length) return "output makes calls";
   if (o.output.payments.length !== 1) return "more than one output payment";
   const out = o.output.payments[0];
-  if (lc(out.recipient) !== lc(w.user)) return "output goes to someone else";
+  if (lc(out.recipient) !== lc(w.recipient ?? w.user)) return "output goes to someone else";
   if (lc(out.currency) !== lc(w.outCurrency)) return "output is another token";
   if (BigInt(out.minimumAmount) < w.minOut) return "output minimum is below what was shown";
   if (Number(o.output.deadline) > w.maxDeadline) return "deadline too far out";

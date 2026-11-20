@@ -32,6 +32,7 @@
 * [Stock tokens](stocks.md)
 * [Metric pools](metric.md)
 * [Limit orders](limit-orders.md)
+* [Stoa Pay](stoa-pay.md)
 * [Provide liquidity](provide-liquidity.md)
 * [LP tokens](lp-tokens.md)
 * [Portfolio](portfolio.md)

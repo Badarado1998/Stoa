@@ -1,0 +1,57 @@
+{
+ "tx": {
+  "chainId": 8453,
+  "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+  "data": "0x49290c1c00000000000000000000000000000000000000000000000000000000000b0b01563796c86df2b7650569c84368c86be18f7261f1518e39b1cd240501e2b09930",
+  "value": "15509886451847051"
+ },
+ "order": {
+  "version": "v1",
+  "solverChainId": "base",
+  "solver": "0xf70da97812cb96acdf810712aa562db8dfa3dbef",
+  "salt": "0x245789e248b0a0aec5c27cf4e66dda5d9e5d9d7eb9cae399f60b62c8e1c6488c",
+  "inputs": [
+   {
+    "payment": {
+     "chainId": "base",
+     "currency": "0x0000000000000000000000000000000000000000",
+     "amount": "15509886451847051",
+     "weight": "1"
+    },
+    "refunds": [
+     {
+      "chainId": "base",
+      "recipient": "0x00000000000000000000000000000000000b0b01",
+      "currency": "0x0000000000000000000000000000000000000000",
+      "minimumAmount": "0",
+      "deadline": 1795815998,
+      "extraData": "0x0000000000000000000000000729e2a4716d9f7dd17858d5d504426d228697f7"
+     },
+     {
+      "chainId": "robinhood",
+      "recipient": "0x893f754C451fe7Edf459eb24abEF473190101446",
+      "currency": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "minimumAmount": "0",
+      "deadline": 1795815998,
+      "extraData": "0x0000000000000000000000000729e2a4716d9f7dd17858d5d504426d228697f7"
+     }
+    ]
+   }
+  ],
+  "output": {
+   "chainId": "robinhood",
+   "payments": [
+    {
+     "recipient": "0x893f754C451fe7Edf459eb24abEF473190101446",
+     "currency": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+     "minimumAmount": "25000000",
+     "expectedAmount": "25000000"
+    }
+   ],
+   "calls": [],
+   "deadline": 1795815998,
+   "extraData": "0x0000000000000000000000000729e2a4716d9f7dd17858d5d504426d228697f7"
+  },
+  "fees": []
+ }
+}

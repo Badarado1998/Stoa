@@ -14,6 +14,7 @@ Base URL: `https://stoadex.com/api/v1`. Building an AI agent? Use the [MCP serve
 | `amount` | yes | amount to sell, in the sell token's smallest unit (wei) |
 | `slippageBps` | no | how far below the quote the swap may fill, in basis points; default 50 (0.5%), at most 5000 |
 | `taker` | no | the wallet that sends the swap and receives the tokens; when set, the response includes the transaction |
+| `recipient` | no | who receives the tokens instead of the taker (needs `taker`); used by [Stoa Pay](stoa-pay.md) |
 | `referrer` | no | the address that earns the referral share of Stoa's fee |
 | `deadlineSeconds` | no | how long the transaction stays valid; default 120, from 15 to 1800 |
 
