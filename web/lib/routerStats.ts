@@ -23,8 +23,13 @@ export interface ChainStats {
 }
 export interface DayStats { date: string; chains: Record<string, { swaps: number; usd: number }> }
 export interface ReferrerStats { address: string; chains: string[]; swaps: number; usd: number; usd7d: number }
+export interface TopToken { chain: Net["key"]; token: string; symbol: string; buys: number; usd: number }
 export interface RouterStats {
   updated: number; chains: ChainStats[]; days: DayStats[]; recent: StatSwap[];
+  /** the largest priced swaps of the last 24 hours (top 10) */
+  largest24h: StatSwap[];
+  /** tokens bought most through Stoa in the last 24 hours, by dollar value, the gas token and stablecoins left out */
+  topBought24h: TopToken[];
   /** referrers ranked by the volume of the swaps they referred (top 25) */
   referrers: ReferrerStats[];
   total: { swaps: number; usdAll: number; usd7d: number; usd24h: number };
@@ -159,8 +164,22 @@ export async function readRouterStats(): Promise<RouterStats> {
     refs.set(x.referrer, r);
   }
   const referrers = [...refs.values()].sort((a, b) => b.usd - a.usd || b.swaps - a.swaps).slice(0, 25);
+  const strip = (x: StatSwap) => { const { referrer, ...rest } = x; void referrer; return rest; };
+  const day = all.filter((x) => x.time >= now - 86400);
+  const largest24h = day.filter((x) => x.usd !== null).sort((a, b) => (b.usd ?? 0) - (a.usd ?? 0)).slice(0, 10).map(strip);
+  // the gas token, its wrapped form and stablecoins are what people pay with, not what they buy into
+  const plain = new Set(["eth", "weth", "hype", "whype", "usdg", "usdc", "usdt", "usdt0", "usde", "usdh"]);
+  const bought = new Map<string, TopToken>();
+  for (const x of day) {
+    if (plain.has(x.symOut.toLowerCase())) continue;
+    const k = `${x.chain}:${x.tokenOut.toLowerCase()}`;
+    const t = bought.get(k) ?? { chain: x.chain, token: x.tokenOut, symbol: x.symOut, buys: 0, usd: 0 };
+    t.buys++; t.usd += x.usd ?? 0;
+    bought.set(k, t);
+  }
+  const topBought24h = [...bought.values()].sort((a, b) => b.usd - a.usd || b.buys - a.buys).slice(0, 8);
   return {
-    updated: now, chains, days, recent: all.slice(0, 20).map((x) => { const { referrer, ...rest } = x; void referrer; return rest; }), referrers,
+    updated: now, chains, days, recent: all.slice(0, 20).map(strip), largest24h, topBought24h, referrers,
     total: { swaps: all.length, usdAll: sum(all), usd7d: sum(all, now - 7 * 86400), usd24h: sum(all, now - 86400) },
   };
 }

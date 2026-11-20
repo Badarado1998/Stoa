@@ -82,6 +82,46 @@ export default function StatsBody() {
         </table>
       </div>
 
+      <div className="grid2" style={{ marginTop: 24, alignItems: "start" }}>
+        <div>
+          <div className="lbl" style={{ marginBottom: 10 }}>MOST BOUGHT · LAST 24H</div>
+          <div className="panel" style={{ overflow: "hidden" }}>
+            <table className="tbl">
+              <thead><tr><th>TOKEN</th><th style={{ textAlign: "right" }}>BUYS</th><th style={{ textAlign: "right" }}>VALUE</th></tr></thead>
+              <tbody>
+                {s ? (s.topBought24h?.length ? s.topBought24h.map((t) => (
+                  <tr key={`${t.chain}:${t.token}`}>
+                    <td><a href={`/tokens/${t.chain}/${t.token}`}>{t.symbol}</a> <span className="note hm" style={{ margin: 0 }}>{short(s.chains.find((c) => c.key === t.chain)?.name ?? t.chain)}</span></td>
+                    <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{t.buys}</td>
+                    <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{t.usd ? usd(t.usd) : "—"}</td>
+                  </tr>
+                )) : <tr><td colSpan={3} className="note">Nothing bought in the last 24 hours yet.</td></tr>) : <tr><td colSpan={3}><Sk w={200} /></td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div className="lbl" style={{ marginBottom: 10 }}>LARGEST SWAPS · LAST 24H</div>
+          <div className="panel" style={{ overflow: "hidden" }}>
+            <table className="tbl">
+              <thead><tr><th>SOLD</th><th>BOUGHT</th><th style={{ textAlign: "right" }}>VALUE</th></tr></thead>
+              <tbody>
+                {s ? (s.largest24h?.length ? s.largest24h.map((x) => {
+                  const c = s.chains.find((y) => y.key === x.chain);
+                  return (
+                    <tr key={x.hash}>
+                      <td style={{ fontFamily: "var(--num)" }}>{amt(x.amountIn)} {x.symIn}</td>
+                      <td style={{ fontFamily: "var(--num)" }}>{amt(x.amountOut)} {x.symOut}</td>
+                      <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{c ? <a href={`${c.explorer}/tx/${x.hash}`} target="_blank" rel="noopener noreferrer">{usd(x.usd ?? 0)}</a> : usd(x.usd ?? 0)}</td>
+                    </tr>
+                  );
+                }) : <tr><td colSpan={3} className="note">No priced swaps in the last 24 hours yet.</td></tr>) : <tr><td colSpan={3}><Sk w={200} /></td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div className="lbl" style={{ margin: "24px 0 10px" }}>LATEST SWAPS</div>
       <div className="panel" style={{ overflow: "hidden", marginBottom: 16 }}>
         <table className="tbl">
