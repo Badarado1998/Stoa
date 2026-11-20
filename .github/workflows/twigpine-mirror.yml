@@ -1,9 +1,10 @@
 name: Mirror to Twigpine
 
 # Mirrors this repository to Twigpine (decentralized git: every push is signed with an Ed25519 DID key and gets a
-# certificate) on every push to main, so the code can be checked outside GitHub. The identity key is the repository
-# secret TWIGPINE_IDENTITY_PEM (the contents of identity.pem from `gl identity new`); it is written to a temporary file
-# on the runner and never printed. Without the secret this does nothing.
+# certificate) on every push to main, so the code can be checked outside GitHub. The identity comes from one repository
+# secret: TWIGPINE_SEED (any long random text; the Ed25519 key is SHA-256 of it, so the same text always gives the same
+# DID) or TWIGPINE_IDENTITY_PEM (an identity.pem from `gl identity new`). The key is written to a temporary file on the
+# runner and never printed. Without either secret this does nothing.
 on:
   push:
     branches: [main]
@@ -21,13 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HAS_KEY: ${{ secrets.TWIGPINE_IDENTITY_PEM != '' }}
+      HAS_KEY: ${{ secrets.TWIGPINE_SEED != '' || secrets.TWIGPINE_IDENTITY_PEM != '' }}
       GITLAWB_NODE: https://node.twigpine.com
+      TWIGPINE_NODE: https://node.twigpine.com
       REPO_NAME: stoa
     steps:
       - name: Skip without the key
         if: env.HAS_KEY != 'true'
-        run: echo "TWIGPINE_IDENTITY_PEM is not set; nothing mirrored."
+        run: echo "TWIGPINE_SEED is not set; nothing mirrored."
       - uses: actions/checkout@v4
         if: env.HAS_KEY == 'true'
         with:
@@ -42,12 +44,24 @@ jobs:
       - name: Mirror
         if: env.HAS_KEY == 'true'
         env:
+          SEED: ${{ secrets.TWIGPINE_SEED }}
           PEM: ${{ secrets.TWIGPINE_IDENTITY_PEM }}
         run: |
           umask 077
           mkdir -p "$RUNNER_TEMP/tp"
-          printf '%s\n' "$PEM" > "$RUNNER_TEMP/tp/identity.pem"
-          export GITLAWB_KEY="$RUNNER_TEMP/tp/identity.pem"
+          if [ -n "$PEM" ]; then
+            printf '%s\n' "$PEM" > "$RUNNER_TEMP/tp/identity.pem"
+          else
+            python3 -c "import cryptography" 2>/dev/null || pip install --quiet --break-system-packages cryptography
+            python3 -c 'import hashlib,os,sys
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K
+          from cryptography.hazmat.primitives import serialization as s
+          seed=os.environ["SEED"].strip().encode()
+          if len(seed)<32: sys.exit("TWIGPINE_SEED must be at least 32 characters")
+          k=K.from_private_bytes(hashlib.sha256(b"stoa-twigpine-v1:"+seed).digest())
+          open(sys.argv[1],"wb").write(k.private_bytes(s.Encoding.PEM,s.PrivateFormat.PKCS8,s.NoEncryption()))' "$RUNNER_TEMP/tp/identity.pem"
+          fi
+          export GITLAWB_KEY="$RUNNER_TEMP/tp/identity.pem" TWIGPINE_KEY="$RUNNER_TEMP/tp/identity.pem"
           DID=$(gl identity show)
           echo "identity: $DID"
           gl register >/dev/null
