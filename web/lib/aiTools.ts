@@ -9,6 +9,7 @@ import { srv } from "./serverRpc";
 import { stockTokens } from "./stocks";
 import { TOOLS as MCP_TOOLS, callTool as mcpCall } from "./mcpTools";
 import { walletSnapshot } from "./aiBrief";
+import { curveOf } from "./ponsLaunch";
 
 /** Tools for Stoa's AI assistant (app/api/ai/chat). Amounts are human ("0.01", "25"), tokens by symbol or address;
  *  everything resolves on Robinhood Chain. Transactions are only ever built, never signed or sent: the browser shows
@@ -128,5 +129,11 @@ export async function runAiTool(name: string, a: Record<string, unknown>, wallet
   }
   const out = await mcpCall(name, args) as { structuredContent?: unknown; content?: { text: string }[]; isError?: boolean } | null;
   if (!out) return { error: "tool failed" };
-  return out.structuredContent ?? out.content?.[0]?.text ?? null;
+  const res = out.structuredContent ?? out.content?.[0]?.text ?? null;
+  // a Pons launch trades in pools that charge 2.8% on each buy and sell: a ~5.6% round trip is that fee, not thin liquidity
+  if (name === "safety_check" && res && typeof res === "object" && typeof args.token === "string") {
+    const curve = await curveOf(getAddress(args.token)).catch(() => null);
+    if (curve) (res as Record<string, unknown>).poolFee = "Launched on Pons: its pools charge a 2.8% Pons fee on every buy and every sell, so the test round trip loses about 5.6% from that fee alone. Do not call that thin liquidity.";
+  }
+  return res;
 }
