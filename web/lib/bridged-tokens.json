@@ -21,18 +21,18 @@
   "hyperevm": "0x9FDBdA0A5e284c32744D2f17Ee5c74B284993463"
  },
  {
-  "symbol": "UETH",
-  "name": "Unit Ethereum",
-  "address": "0x7A66A75fe41Bc26867C17fe1bc7D1C076EBd4eCd",
-  "decimals": 18,
-  "hyperevm": "0xBe6727B535545C67d5cAa73dEa54865B92CF7907"
- },
- {
   "symbol": "RAM",
   "name": "Ramses",
   "address": "0x2ea9E66Adb86b0Ed71f79ab2e81a31147eDc3215",
   "decimals": 18,
   "hyperevm": "0x555570a286F15EbDFE42B66eDE2f724Aa1AB5555"
+ },
+ {
+  "symbol": "UETH",
+  "name": "Unit Ethereum",
+  "address": "0x7A66A75fe41Bc26867C17fe1bc7D1C076EBd4eCd",
+  "decimals": 18,
+  "hyperevm": "0xBe6727B535545C67d5cAa73dEa54865B92CF7907"
  },
  {
   "symbol": "kHYPE",
@@ -47,13 +47,6 @@
   "address": "0x437c847644ff22Cbcf0eA56896aA25504Aad93b4",
   "decimals": 18,
   "hyperevm": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540"
- },
- {
-  "symbol": "EQMU",
-  "name": "EQX Tokenized MU",
-  "address": "0x85854E22a602FFF395240d0739D42E51f542018a",
-  "decimals": 8,
-  "hyperevm": "0x9164Fd5f67FE4188Ff79675182183512bC37d66D"
  },
  {
   "symbol": "wQQQx",
@@ -77,17 +70,17 @@
   "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD"
  },
  {
-  "symbol": "EQTSLA",
-  "name": "EQX Tokenized TSLA",
-  "address": "0x7559191F12413d122493Fe43dE6d0B4544C6579F",
-  "decimals": 8,
-  "hyperevm": "0x883DAd2Aa97175c0D1569E1de61204ac47b2b8fb"
- },
- {
   "symbol": "PURR",
   "name": "Purr",
   "address": "0x46b131573Ca7c2674b652BbeB7FC16D530396aEC",
   "decimals": 18,
   "hyperevm": "0x9b498C3c8A0b8CD8BA1D9851d40D186F1872b44E"
+ },
+ {
+  "symbol": "EQTSLA",
+  "name": "EQX Tokenized TSLA",
+  "address": "0x7559191F12413d122493Fe43dE6d0B4544C6579F",
+  "decimals": 8,
+  "hyperevm": "0x883DAd2Aa97175c0D1569E1de61204ac47b2b8fb"
  }
 ]
