@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs" alt="Next.js 15">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-2B7A3D" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/audit-not%20yet-B54708" alt="Not audited yet">
+  <a href="https://explorer.twigpine.com/repos/z6Mkogs4MbcB3pBnpQygxpgWtt6LTJSCbmpiBhRBHgHvnMRt/stoa"><img src="https://img.shields.io/badge/Twigpine-signed%20mirror-2f6b3a" alt="Signed mirror on Twigpine"></a>
 </p>
 
 <p align="center">

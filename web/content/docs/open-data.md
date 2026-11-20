@@ -9,6 +9,10 @@ Stoa publishes its public on-chain data as an open dataset on Hugging Face: [hug
 - [StoaDex/stoa-contracts](https://huggingface.co/datasets/StoaDex/stoa-contracts): contract source, ABIs, deployed addresses and security documents as one reproducible archive per release, with SHA-256 checksums and the Git commit. A new release only when any of it changes.
 - [Dashboard](https://huggingface.co/spaces/StoaDex/stoa-dashboard): volume, stock token gaps and venue quotes, read from the datasets.
 
+## Signed code mirror
+
+The source is also mirrored to [Twigpine](https://explorer.twigpine.com/repos/z6Mkogs4MbcB3pBnpQygxpgWtt6LTJSCbmpiBhRBHgHvnMRt/stoa), a decentralized git network, on every push to `main`. Each push is signed with Stoa's Ed25519 key, `did:key:z6Mkogs4MbcB3pBnpQygxpgWtt6LTJSCbmpiBhRBHgHvnMRt`, so you can check the code matches without relying on GitHub. Clone it with `git clone https://node.gitlawb.com/z6Mkogs4MbcB3pBnpQygxpgWtt6LTJSCbmpiBhRBHgHvnMRt/stoa.git`.
+
 ## What is in stoa-onchain
 
 | File | What it holds |

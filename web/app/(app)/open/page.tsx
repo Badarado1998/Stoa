@@ -5,7 +5,7 @@ import CopyButton from "@/components/CopyButton";
 
 export const metadata: Metadata = {
   title: "Open source and open data",
-  description: "Stoa's code, data and reviews in the open: the source on GitHub, open datasets on Hugging Face (swaps, Robinhood Stock Token prices, venue quotes, contract releases) with checksums, a public export API, and the independent security review by HEY Research Lab.",
+  description: "Stoa's code, data and reviews in the open: the source on GitHub and a signed mirror on Twigpine, open datasets on Hugging Face (swaps, Robinhood Stock Token prices, venue quotes, contract releases) with checksums, a public export API, and the independent security review by HEY Research Lab.",
   alternates: { canonical: "/open" },
 };
 
@@ -14,6 +14,7 @@ const VERIFY = "sha256sum data/*.csv data/spotlight.json   # compare with manife
 
 const PLACES: { name: string; href: string; what: string; tag: string }[] = [
   { name: "Source code on GitHub", href: "https://github.com/StoaDex/Stoa", what: "Contracts, the web app, the SDK, the agent tools and every automation that runs Stoa, in one public repository.", tag: "CODE" },
+  { name: "Signed mirror on Twigpine", href: "https://explorer.twigpine.com/repos/z6Mkogs4MbcB3pBnpQygxpgWtt6LTJSCbmpiBhRBHgHvnMRt/stoa", what: "The same code mirrored to Twigpine, a decentralized git network, on every push to main. Each push is signed with Stoa's own key, so the copy can be checked without trusting GitHub.", tag: "MIRROR" },
   { name: "Stoa on-chain dataset", href: HF, what: "Every swap routed through Stoa, a daily summary, the Points board and the Spotlight week. Refreshed every 6 hours, tagged every week, with a manifest of SHA-256 checksums.", tag: "DATA" },
   { name: "Robinhood Stock Tokens dataset", href: "https://huggingface.co/datasets/StoaDex/robinhood-stock-tokens", what: "Every Robinhood Stock Token four times a day: Robinhood's own bid and ask next to the deepest on-chain price, the gap, liquidity and volume.", tag: "DATA" },
   { name: "Venue quotes dataset", href: "https://huggingface.co/datasets/StoaDex/robinhood-chain-venue-quotes", what: "The same swaps (ETH, USDG, $STOA, stock tokens, several sizes) quoted on every venue Stoa routes, all in one block, four times a day.", tag: "DATA" },
