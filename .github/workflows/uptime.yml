@@ -3,14 +3,16 @@ name: Uptime check
 # Every 15 minutes: is stoadex.com up and can the router quote? Checks the home page, Trade, a live router quote
 # (0.01 ETH -> USDG on Robinhood Chain), the stock list and the Spotlight API. A check that fails twice, 20 s apart, opens an issue
 # labelled "uptime" (GitHub emails the repo owner); while it stays down, one comment an hour; when everything passes
-# again, the issue is closed with a note. Read-only: it sends nothing on-chain.
+# again, the issue is closed with a note. Each run is also counted in status.json (30 days of daily counts and incidents,
+# data/status/record.py), published to the status-data branch every hour and whenever an incident starts or ends, and
+# shown on stoadex.com/status. Read-only on-chain: it sends nothing.
 on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # only to publish status.json on the status-data branch
   issues: write
 
 concurrency:
@@ -22,6 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: data/status
+          persist-credentials: false
+      - name: Restore the status history
+        uses: actions/cache/restore@v4
+        with:
+          path: status.json
+          key: uptime-status-${{ github.run_id }}
+          restore-keys: uptime-status-
       - name: Check the site and the APIs
         id: run
         run: |
@@ -30,10 +42,10 @@ jobs:
             for i in 1 2; do
               body=$(curl -sS -m 25 -A "stoa-uptime/1" -w '\n%{http_code}' "$2" 2>/dev/null) && code=$(echo "$body" | tail -n1) || code=000
               json=$(echo "$body" | sed '$d')
-              if [ "$code" = "200" ] && { [ -z "$3" ] || echo "$json" | jq -e "$3" >/dev/null 2>&1; }; then echo "ok   $1"; return; fi
+              if [ "$code" = "200" ] && { [ -z "$3" ] || echo "$json" | jq -e "$3" >/dev/null 2>&1; }; then echo "ok   $1"; printf 'ok\t%s\n' "$1" >> results.txt; return; fi
               sleep 20
             done
-            echo "FAIL $1 (HTTP $code)"; fail="$fail\n- $1: HTTP $code, $2"
+            echo "FAIL $1 (HTTP $code)"; fail="$fail\n- $1: HTTP $code, $2"; printf 'fail\t%s\n' "$1" >> results.txt
           }
           check "Home page" "https://stoadex.com/" ""
           check "Trade page" "https://stoadex.com/trade" ""
@@ -41,7 +53,31 @@ jobs:
           check "Stock tokens API" "https://stoadex.com/api/v1/stocks" '(.stocks | length) > 0'
           check "Spotlight API" "https://stoadex.com/api/v1/spotlight" '.week >= 1'
           printf "%b" "$fail" > fail.txt
-      - name: Open, update or close the uptime issue
+      - name: Count this run
+        id: rec
+        run: python3 -I data/status/record.py results.txt status.json "$GITHUB_OUTPUT"
+      - name: Save the status history
+        uses: actions/cache/save@v4
+        with:
+          path: status.json
+          key: uptime-status-${{ github.run_id }}
+      - name: Publish status.json (hourly, or when an incident starts or ends)
+        if: steps.rec.outputs.changed == '1' || github.event_name == 'workflow_dispatch' || github.event.schedule == '*/15 * * * *'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ "${{ steps.rec.outputs.changed }}" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(date -u +%M)" -lt 15 ] || { echo "not this quarter"; exit 0; }
+          d=$(mktemp -d); cd "$d"
+          git init -q -b status-data
+          mkdir -p web
+          cp "$GITHUB_WORKSPACE/status.json" status.json
+          # this branch only holds data: no Vercel deployments for it
+          printf '{"git":{"deploymentEnabled":{"status-data":false}}}\n' > web/vercel.json
+          printf 'Uptime data for stoadex.com/status, written by .github/workflows/uptime.yml. Not code.\n' > README.md
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "status $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" status-data:status-data
+          echo "published"      - name: Open, update or close the uptime issue
         env:
           GH_TOKEN: ${{ github.token }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

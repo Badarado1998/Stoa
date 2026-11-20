@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import { runChecks, type Level } from "@/lib/statusChecks";
+import UptimeHistory from "@/components/UptimeHistory";
 
 export const metadata: Metadata = {
   title: "Status",
@@ -30,6 +31,7 @@ export default async function StatusPage() {
           <div className="note" style={{ margin: 0 }}>Checked {new Date(at).toUTCString().slice(17, 22)} UTC, {new Date(at).toUTCString().slice(5, 16)}</div>
         </div>
       </div>
+      <UptimeHistory />
       {groups.map((g) => (
         <div key={g} className="panel pad" style={{ marginBottom: 16 }}>
           <div className="lbl">{g.toUpperCase()}</div>
@@ -52,7 +54,7 @@ export default async function StatusPage() {
       <div className="panel pad">
         <div className="lbl">ABOUT THESE CHECKS</div>
         <p style={{ marginTop: 8 }}>
-          Each swap check reads the router&apos;s pause switch and asks it for a quote (0.01 ETH to USDG on Robinhood Chain, 1 HYPE to USDC on Elysium), with nothing sent. A separate monitor runs the same checks every hour and alerts the team.
+          Each swap check reads the router&apos;s pause switch and asks it for a quote (0.01 ETH to USDG on Robinhood Chain, 1 HYPE to USDC on Elysium), with nothing sent. An outside monitor also checks the site, Trade, a live quote and the APIs every 15 minutes; its record is the uptime above.
         </p>
         <p className="note" style={{ marginBottom: 0 }}>
           Who controls each contract, the timelock and the reviews: <Link href="/security">Security status</Link>. Problems: <a href="https://t.me/StoaDexChat" target="_blank" rel="noopener noreferrer">Telegram</a> or <a href="https://x.com/StoaDEX" target="_blank" rel="noopener noreferrer">@StoaDEX</a>.
