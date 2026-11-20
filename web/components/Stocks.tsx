@@ -37,7 +37,7 @@ function Movers({ rows }: { rows: StockRow[] }) {
   useEffect(() => { const f = () => setClosed(session() === "closed"); f(); const t = setInterval(f, 60_000); return () => clearInterval(t); }, []);
   const liquid = rows.filter((r) => r.dex && r.dex.liquidityUsd >= MIN_LIQ);
   if (liquid.length < 3) return null;
-  const gap = (r: StockRow) => (r.ref && r.dex ? ((r.dex.priceUsd - r.ref) / r.ref) * 100 : null);
+  const gap = (r: StockRow) => (r.ref && r.dex && !r.halted ? ((r.dex.priceUsd - r.ref) / r.ref) * 100 : null);
   const lists: { h: string; sub: string; items: { r: StockRow; v: string; tone?: string }[] }[] = [
     { h: "Most traded", sub: "24h on-chain volume", items: [...liquid].sort((a, b) => b.dex!.volume24h - a.dex!.volume24h).slice(0, 5).map((r) => ({ r, v: usd0(r.dex!.volume24h) })) },
     { h: "Biggest moves", sub: "24h on-chain change", items: liquid.filter((r) => r.dex!.change24h != null).sort((a, b) => Math.abs(b.dex!.change24h!) - Math.abs(a.dex!.change24h!)).slice(0, 5).map((r) => ({ r, v: pct(r.dex!.change24h!), tone: r.dex!.change24h! >= 0 ? "up" : "dn" })) },
@@ -113,7 +113,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
         <div className="stockhead" aria-hidden="true"><span>Token</span><span>Robinhood price</span><span>On-chain price</span><span>On-chain liquidity</span><span /></div>
         <div className="stocklist">
           {(more || q ? shown : shown.slice(0, 30)).map((r) => {
-            const diff = r.ref && r.dex ? (r.dex.priceUsd - r.ref) / r.ref * 100 : null;
+            const diff = r.ref && r.dex && !r.halted ? (r.dex.priceUsd - r.ref) / r.ref * 100 : null;
             return (
               <div key={r.address} className="stock">
                 <div className="sname">

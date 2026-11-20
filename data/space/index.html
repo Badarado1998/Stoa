@@ -93,9 +93,9 @@ get("stoa-onchain", "data/daily.csv").then((d) => {
 
 get("robinhood-stock-tokens", "latest.csv").then((s) => {
   el("#k-stocks").textContent = f$(s.length);
-  const rows = s.filter((x) => +x.liquidity_usd >= 50000 && +x.volume24h_usd >= 100 && x.gap_pct !== "" && Math.abs(+x.gap_pct) <= 25).sort((a, b) => Math.abs(+b.gap_pct) - Math.abs(+a.gap_pct)).slice(0, 12);
+  const rows = s.filter((x) => +x.liquidity_usd >= 50000 && +x.volume24h_usd >= 100 && x.halted !== "True" && x.gap_pct !== "" && Math.abs(+x.gap_pct) <= 25).sort((a, b) => Math.abs(+b.gap_pct) - Math.abs(+a.gap_pct)).slice(0, 12);
   el("#stocks tbody").innerHTML = rows.map((x) => { const mid = (+x.robinhood_bid + +x.robinhood_ask) / 2, g = +x.gap_pct; return `<tr><td><b>${esc(x.symbol)}</b> <span class="note">${esc(x.name)}</span></td><td>$${f$(mid, 2)}</td><td>$${f$(+x.onchain_price, 2)}</td><td class="${g > 0 ? "up" : "down"}">${g > 0 ? "+" : ""}${f$(g, 2)}%</td><td>${usd(+x.liquidity_usd)}</td><td>${usd(+x.volume24h_usd)}</td></tr>`; }).join("");
-  if (s[0]) el("#st-note").textContent = `Largest gaps among tokens with at least $50,000 of on-chain liquidity. Pools that barely trade (under $100 in 24h) and gaps over 25% keep stale prices; they stay in the dataset but are left out here. Snapshot ${s[0].snapshot_utc.replace("T", " ").replace("Z", " UTC")}.`;
+  if (s[0]) el("#st-note").textContent = `Largest gaps among tokens with at least $50,000 of on-chain liquidity. Pools that barely trade (under $100 in 24h), tokens halted on Robinhood and gaps over 25% give stale prices; they stay in the dataset but are left out here. Snapshot ${s[0].snapshot_utc.replace("T", " ").replace("Z", " UTC")}.`;
 }).catch(() => { el("#k-stocks").textContent = "—"; el("#st-note").textContent = "Stock data not available yet."; });
 
 get("robinhood-chain-venue-quotes", "latest.csv").then((v) => {
