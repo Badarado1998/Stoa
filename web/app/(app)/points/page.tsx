@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import PointsMine from "@/components/PointsMine";
+import PointsBoard from "@/components/PointsBoard";
 import { RULES, SEASON_START, readPoints } from "@/lib/points";
 
 export const metadata: Metadata = {
@@ -11,8 +12,6 @@ export const metadata: Metadata = {
 };
 export const revalidate = 300;
 
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
-const n = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 1 });
 
 export default async function PointsPage() {
   const b = await readPoints().catch(() => null);
@@ -41,21 +40,9 @@ export default async function PointsPage() {
       </div>
       <div className="panel" style={{ overflow: "hidden" }}>
         <div className="rowx" style={{ padding: "16px 18px 0" }}><div className="lbl">LEADERBOARD</div><span className="note" style={{ margin: 0 }}>{b ? `${b.wallets} wallets` : ""}</span></div>
-        <table className="tbl" style={{ marginTop: 8 }}>
-          <thead><tr><th style={{ width: 40 }}>#</th><th>WALLET</th><th className="hm" style={{ textAlign: "right" }}>SWAPS</th><th style={{ textAlign: "right" }}>POINTS</th></tr></thead>
-          <tbody>
-            {!b ? <tr><td colSpan={4} className="note">The chains did not answer. Try again in a minute.</td></tr>
-              : b.rows.length === 0 ? <tr><td colSpan={4} className="note">{started ? "No points yet this season." : `Nothing yet: points count from ${start}, 00:00 UTC.`}</td></tr>
-              : b.rows.slice(0, 50).map((r, i) => (
-                <tr key={r.address}>
-                  <td style={{ fontFamily: "var(--num)", color: "var(--muted)" }}>{i + 1}</td>
-                  <td style={{ fontFamily: "var(--mono)", fontSize: 13 }}><a href={`/wrapped/${r.address}`}>{short(r.address)}</a></td>
-                  <td className="hm" style={{ textAlign: "right", fontFamily: "var(--num)" }}>{r.swaps}</td>
-                  <td style={{ textAlign: "right", fontFamily: "var(--num)" }}>{n(r.points)}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+        {!b ? <p className="note" style={{ padding: "0 18px 16px" }}>The chains did not answer. Try again in a minute.</p>
+          : <PointsBoard rows={b.rows.slice(0, 500)} stockX={RULES.STOCK_X} showMoves={started && Date.now() / 1000 >= SEASON_START + 86400}
+              empty={started ? "No points yet this season." : `Nothing yet: points count from ${start}, 00:00 UTC.`} />}
       </div>
       <p className="note" style={{ marginTop: 10 }}>Stoa can change these rules during the season; changes are written on this page with their date. Not financial advice.</p>
     </section>
