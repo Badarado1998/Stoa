@@ -128,6 +128,14 @@ async function chainSwaps(net: Net): Promise<{ swaps: StatSwap[]; ok: boolean }>
   return { swaps, ok: true };
 }
 
+/** every swap on every chain, newest first, with its trader and referrer (server only; for points and stats) */
+export async function readSwaps(): Promise<StatSwap[]> {
+  const nets = NETS.filter((n) => n.contracts.router && n.deployed);
+  const res = await Promise.all(nets.map((n) => chainSwaps(n).catch(() => ({ swaps: [] as StatSwap[], ok: false }))));
+  if (res.every((r) => !r.ok)) throw new Error("no chain answered");
+  return res.flatMap((r) => r.swaps).sort((a, b) => b.time - a.time);
+}
+
 export async function readRouterStats(): Promise<RouterStats> {
   const nets = NETS.filter((n) => n.contracts.router && n.deployed);
   const res = await Promise.all(nets.map((n) => chainSwaps(n).catch(() => ({ swaps: [] as StatSwap[], ok: false }))));
