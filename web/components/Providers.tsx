@@ -4,8 +4,10 @@ import { WagmiProvider, useAccount, useSwitchChain } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "@/lib/wagmi";
 import { ROBINHOOD, netById, netByKey, type Net } from "@/lib/networks";
-import WalletModal from "./WalletModal";
-import { AlertWatcher } from "./Watch";
+import dynamic from "next/dynamic";
+// the wallet picker and the price-alert watcher are not needed for the first paint: they load after it
+const WalletModal = dynamic(() => import("./WalletModal"), { ssr: false });
+const AlertWatcher = dynamic(() => import("./Watch").then((m) => m.AlertWatcher), { ssr: false });
 
 const WalletCtx = createContext<{ open: () => void }>({ open: () => {} });
 export const useWalletModal = () => useContext(WalletCtx);
@@ -49,7 +51,7 @@ export default function Providers({ children }: { children: ReactNode }) {
         <NetProvider>
           <WalletCtx.Provider value={{ open: () => setOpen(true) }}>
             {children}
-            <WalletModal open={open} onClose={() => setOpen(false)} />
+            {open && <WalletModal open={open} onClose={() => setOpen(false)} />}
             <AlertWatcher />
           </WalletCtx.Provider>
         </NetProvider>
