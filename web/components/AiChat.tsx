@@ -137,7 +137,7 @@ type Brief = {
 const usd = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `$${v.toLocaleString("en-US", { maximumFractionDigits: v < 10 ? 2 : 0 })}`);
 const shortA = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const VERDICT: Record<string, { bg: string; fg: string; label: string }> = {
-  ok: { bg: "#e7f6ee", fg: "#15803d", label: "Safe check: ok" },
+  ok: { bg: "#e7f6ee", fg: "#15803d", label: "Safety: ok" },
   caution: { bg: "#fff4e0", fg: "#b45309", label: "Caution" },
   danger: { bg: "#fde8e6", fg: "#c2412d", label: "Danger" },
   unknown: { bg: "#eef1f5", fg: "#5e6775", label: "Unknown" },
@@ -352,7 +352,7 @@ export default function AiChat() {
         </div>
         {isConnected && address
           ? <span className="mono" style={{ fontSize: 12.5, background: "#f3f6fb", borderRadius: 999, padding: "5px 10px" }}>{shortA(address)}</span>
-          : <button type="button" className="ghost" style={{ minHeight: 34, fontSize: 13 }} onClick={() => connect()}>Connect</button>}
+          : null}
       </div>
       <div className="ab">
         {!msgs.length && <Welcome brief={brief} ask={(q) => void send(q)} connected={isConnected} connect={() => connect()} />}
