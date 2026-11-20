@@ -44,6 +44,9 @@ export default function Journey() {
     // first paint or the first tap
     const idle = (f: () => void) => ("requestIdleCallback" in window ? (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 300));
     idle(async () => {
+      // no 3D walk where it would crawl: no GPU (software WebGL such as SwiftShader or llvmpipe) or Data Saver on.
+      // The plain hero below has the same text and buttons.
+      if (slowGL()) { if (alive) { setFailed(true); setReady(true); } return; }
       try {
         const { createScene } = await import("@/lib/scene");
         if (!alive || !canvas.current) return;
@@ -188,4 +191,18 @@ function SoundButton() {
       <span className="hide-m">{on ? "Sound on" : "Sound off"}</span>
     </button>
   );
+}
+
+/** True when the 3D walk should be skipped: Data Saver, no WebGL, or WebGL drawn in software rather than on a GPU. */
+function slowGL(): boolean {
+  try {
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return true;
+    const c = document.createElement("canvas");
+    const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null;
+    if (!gl) return true;
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    const r = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(r);
+  } catch { return true; }
 }

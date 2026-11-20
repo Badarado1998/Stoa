@@ -217,7 +217,7 @@ function LockCounter({ quorum, started, race }: { quorum?: bigint; started: bool
         ))}
       </div>
       <p className="note" style={{ marginTop: 10 }}>
-        Each winning token needs {stoaN(need)} $STOA of votes. {v === undefined ? "" : slots >= SLOTS
+        Each winning token needs {stoaN(need)} $STOA of votes. {v === undefined ? <span style={{ visibility: "hidden" }}>0.00M more locked $STOA lets the first slot be won.</span> : slots >= SLOTS
           ? "Enough $STOA is locked to fill all three slots."
           : `${stoaN(toNext)} more locked $STOA ${slots === 0 ? "lets the first slot be won" : `opens slot ${slots + 1}`}.`}{" "}
         Holders split their votes across tokens, so this is the most that can win, not a promise. Without votes, bids are refunded and nobody earns.

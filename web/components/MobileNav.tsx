@@ -25,7 +25,7 @@ export default function MobileNav() {
               : i.h === "/more" ? <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>
               : <path d={i.d} />}
           </svg>
-          <span>{i.l}</span>
+          <span>{i.l}{i.h === "/more" && <span className="sr-only"> pages and tools</span>}</span>
         </Link>
       ))}
     </nav>
