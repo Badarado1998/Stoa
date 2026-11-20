@@ -30,6 +30,12 @@ export default function PnlPanel({ net, address }: { net: Net; address: string }
         <div className="lbl">PROFIT AND LOSS · SWAPS THROUGH STOA ON {net.short.toUpperCase()}</div>
         {p && p.rows.length > 0 && <span className="chip" style={{ color: color(p.realized + p.unrealized) }}>{g(p.realized + p.unrealized)} {p.gas}{usd(p.realized + p.unrealized)}</span>}
       </div>
+      {p && p.rows.length > 0 && (
+        <p className="note" style={{ margin: "6px 0 0" }}>
+          <a href={`https://x.com/intent/post?text=${encodeURIComponent(`My P&L from swaps on @StoaDEX (${net.name}): ${g(p.realized + p.unrealized)} ${p.gas}. Every route compared on every swap.`)}&url=${encodeURIComponent(`https://stoadex.com/pnl/${net.key}/${address}`)}`} target="_blank" rel="noopener noreferrer">Share your P&amp;L on X ↗</a>
+          {" · "}<a href={`/pnl/${net.key}/${address}`}>Card</a>
+        </p>
+      )}
       {q.isLoading ? <p className="note">Reading your swaps…</p>
         : q.isError ? <p className="note">Could not read your swaps right now. Try again in a minute.</p>
         : !p?.rows.length ? <p className="note">No token bought through Stoa on {net.name} yet. Buy one on <Link href="/trade">Trade</Link> and its profit and loss shows here.</p>

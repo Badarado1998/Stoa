@@ -4,6 +4,7 @@ import { PageHead } from "@/components/ui";
 import Stocks, { MarketStatus, type StockRow } from "@/components/Stocks";
 import { session } from "@/lib/marketHours";
 import { mid, stockTokens } from "@/lib/stocks";
+import { earningsWeek, whenTxt } from "@/lib/earnings";
 
 export const revalidate = 60;
 
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
 
 export default async function StocksPage() {
   const data = await stockTokens().catch(() => null);
+  const week = data ? await earningsWeek(data.stocks.filter((s) => s.route).map((s) => s.symbol)) : [];
   const rows: StockRow[] = (data?.stocks ?? []).map((s) => ({ symbol: s.symbol, name: s.name, address: s.address, logo: s.logo, ref: mid(s), halted: s.halted, dex: s.dex, route: s.route, metric: s.metric }));
   const ld = {
     "@context": "https://schema.org", "@type": "ItemList", name: "Stock tokens on Robinhood Chain",
@@ -28,6 +30,15 @@ export default async function StocksPage() {
       <PageHead eyebrow="STOCK TOKENS · ROBINHOOD CHAIN" title="Tokenized stocks, on-chain" action={<MarketStatus initial={session()} />}>
         {rows.length ? `${rows.length} Robinhood Stock Tokens, ${rows.filter((r) => r.route).length} of them swappable on Stoa right now,` : "Robinhood Stock Tokens,"} each with Robinhood&apos;s own price next to what it trades for on-chain. Follow the ones you care about with ☆ and set a price alert.
       </PageHead>
+      {week.length > 0 && (
+        <div className="panel pad" style={{ marginBottom: 16 }}>
+          <div className="lbl">EARNINGS IN THE NEXT 7 DAYS</div>
+          <ul className="list">
+            {week.slice(0, 8).map((w) => <li key={w.symbol}><Link href={`/stocks/${w.symbol.toLowerCase()}`}>{w.symbol}</Link><b>{whenTxt(w.report)}{w.report.verified ? "" : " (expected)"}</b></li>)}
+          </ul>
+          <p className="note" style={{ marginBottom: 0 }}>Stock tokens Stoa routes. Prices often move most around a report. Dates from Robinhood&apos;s market data.</p>
+        </div>
+      )}
       {data ? <Stocks rows={rows} updated={data.updated} /> : (
         <div className="panel pad"><p style={{ margin: 0 }}>Robinhood&apos;s stock token list did not load just now. Try again in a minute, or go to <Link href="/trade?chain=robinhood">Trade</Link>.</p></div>
       )}

@@ -30,7 +30,7 @@ export async function weekPrices(network: string, token: string): Promise<PriceP
   const o = await gt<Ohlcv>(`${network}/pools/${best.a}/ohlcv/hour?aggregate=4&limit=42&currency=usd&token=${token.toLowerCase()}`);
   const pts = (o?.data?.attributes?.ohlcv_list ?? [])
     .map((r) => ({ t: Number(r[0]), c: Number(r[4]) }))
-    .filter((p) => isFinite(p.t) && isFinite(p.c) && p.c > 0)
+    .filter((p) => isFinite(p.t) && isFinite(p.c) && p.c > 0 && p.t >= Date.now() / 1000 - 7 * 86400) // a quiet pool's last candles can be weeks old
     .sort((a, b) => a.t - b.t);
   return pts.length >= 6 ? pts : null;
 }

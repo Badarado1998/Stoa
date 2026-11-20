@@ -9,6 +9,7 @@ import { mid, shortName, stockBySymbol } from "@/lib/stocks";
 import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
 import { weekPrices } from "@/lib/priceHistory";
 import PriceChart from "@/components/PriceChart";
+import { earningsFor, whenTxt } from "@/lib/earnings";
 
 export const revalidate = 120;
 
@@ -43,7 +44,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const diff = ref && s.dex ? ((s.dex.priceUsd - ref) / ref) * 100 : null;
   const swap = `/trade?chain=robinhood&sell=USDG&buy=${s.address}`;
   const more = all.filter((x) => x.route && x.address !== s.address).slice(0, 12);
-  const history = s.dex ? await weekPrices("robinhood", s.address) : null;
+  const [history, earn] = await Promise.all([s.dex ? weekPrices("robinhood", s.address) : Promise.resolve(null), earningsFor(s.symbol)]);
   const cell = (label: string, v: React.ReactNode, sub?: React.ReactNode) => (
     <div className="panel pad"><div className="lbl">{label}</div><div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v}</div>{sub && <div className="note" style={{ marginTop: 4 }}>{sub}</div>}</div>
   );
@@ -92,6 +93,17 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}
       </div>
       {history && <PriceChart points={history} symbol={s.symbol} source="GeckoTerminal" stock />}
+      {(earn.next || earn.last) && (
+        <div className="panel pad" style={{ marginBottom: 16 }}>
+          <div className="lbl">{shortName(s.name).toUpperCase()} EARNINGS</div>
+          <ul className="list">
+            {earn.next && <li><span>Next report{earn.next.verified ? "" : " (expected)"}</span><b>{whenTxt(earn.next)}</b></li>}
+            {earn.next?.estimate != null && <li><span>EPS estimate</span><b>${earn.next.estimate.toFixed(2)}</b></li>}
+            {earn.last && <li><span>Last report · Q{earn.last.quarter} {earn.last.year}</span><b>EPS ${earn.last.actual!.toFixed(2)}{earn.last.estimate != null ? ` vs $${earn.last.estimate.toFixed(2)} expected` : ""}</b></li>}
+          </ul>
+          <p className="note" style={{ marginBottom: 0 }}>Prices often move most around a report. The token trades on-chain at any hour, the shares don&apos;t: check the gap to Robinhood&apos;s price before you swap. Dates from Robinhood&apos;s market data; not investment advice.</p>
+        </div>
+      )}
       <details className="panel pad fold-panel" style={{ marginBottom: 16 }}>
         <summary className="lbl">HOW THIS WORKS</summary>
         <p style={{ marginTop: 8 }}>

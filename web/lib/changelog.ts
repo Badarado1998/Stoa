@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "earnings-pnl-dip",
+    date: "2026-11-20",
+    title: "Earnings dates on stock pages, P&L cards, buy-if-cheaper limit orders",
+    tag: "Robinhood Chain",
+    items: [
+      "Each stock token page shows the company's next earnings report (and whether the date is confirmed) and the last result against the estimate; Stocks lists the reports in the next 7 days. Dates from Robinhood's market data.",
+      "Buy if 5% cheaper / 10% cheaper on stock pages open a limit order priced below the on-chain price now. Robinhood-listed stock tokens no longer ask you to confirm an unknown import.",
+      "Portfolio: Share your P&L on X, with a card of your profit and loss from swaps through Stoa.",
+      "Trade: when a Metric route cannot fill for a moment, the swap goes through the best route without Metric instead.",
+    ],
+    link: { href: "/stocks", label: "Stocks" },
+  },
+  {
     id: "trade-quick-amounts-invites-agents",
     date: "2026-11-20",
     title: "Quick amounts on Trade, invite cards, Stoa for AI agents",
