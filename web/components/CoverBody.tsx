@@ -371,6 +371,8 @@ function CreatorPanel({ live, paused, params, onDone }: { live: boolean; paused:
   else if (!isCreator) why = `Only the wallet that launched $${sym} on Pons (${short(creator)}) can open its cover.`;
   else if (openTerm) why = `$${sym} already has an open cover (term ${latest![0]}).`;
   else if (!params) why = "Reading the rules…";
+  // RugCover stores the floor as uint128: a balance above that would be cut short, so the app refuses it (PR #6)
+  else if (bal > 2n ** 128n - 1n) why = `This wallet's $${sym} balance is larger than Rug Cover can record as a floor, so a cover cannot be opened for it.`;
   else if (bal === 0n || bal * 10_000n < supply * BigInt(params.minFloorBps)) why = `Your wallet holds ${pct(bal, supply)}% of $${sym}. A cover needs at least ${params.minFloorBps / 100}% of supply in the creator wallet.`;
   else if (bond !== undefined && (bond < params.minBond || bond > params.maxBond)) why = `The bond must be between ${eth(params.minBond, 3)} and ${eth(params.maxBond, 3)} ETH during the beta.`;
   else if (bond !== undefined && totalBonds + bond > params.maxTotalBonds) why = `Rug Cover holds ${eth(totalBonds, 2)} of its ${eth(params.maxTotalBonds, 0)} ETH beta limit. Try a smaller bond.`;

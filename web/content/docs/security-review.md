@@ -4,6 +4,14 @@ A review of the deployed contracts by the Stoa team, published in full. **This i
 
 **Independent security review under way.** Since 16 November 2026, [Hey Research Lab](https://x.com/HeyResearch) is reviewing RugCover, SpotlightMarket, StoaLimit and StoaRouter at commit [`c524b82`](https://github.com/StoaDex/Stoa/tree/c524b82/contracts), the code the live contracts run. It is a review, not an audit. Findings come to Stoa privately first, with a test, and are published here once fixed. The scope, build steps and known issues are in [contracts/AUDIT.md](https://github.com/StoaDex/Stoa/blob/main/contracts/AUDIT.md).
 
+## Update, 20 November 2026: RugCover floor above uint128
+
+### I-19 A creator balance above 2^128 would store a truncated floor
+
+**Status: not reachable; hardened in the app; fix in the next RugCover version.** Severity: Informational. Reported in a public pull request (#6) on 20 November 2026 by [kiranoye94-cmd](https://github.com/kiranoye94-cmd), with a Foundry test pair.
+
+`RugCover.open()` stores the creator's balance as the floor with `uint128(bal)` and no upper bound. A balance at or above 2^128 (about 3.4e38 in the token's smallest units) would be cut short, so the creator could later sell down to the stored value without the term counting as breached. It needs a Pons token whose creator holds more than 2^128 units. Every Pons launch so far (75 on 20 November 2026) has a supply of 1e27, more than 300 billion times smaller, so no live term can reach it. **Hardening:** the Rug Cover page refuses to open a cover for such a balance. **Fix:** `open()` rejects a balance above `type(uint128).max` in the next RugCover version, which goes through review and the timelock like every contract change. Further reports of this root cause are duplicates.
+
 ## Update, 18 November 2026: website and API report
 
 Reported privately on 18 November 2026 by [Radenlingga](https://github.com/Radenlingga). No contract or user funds were affected.
