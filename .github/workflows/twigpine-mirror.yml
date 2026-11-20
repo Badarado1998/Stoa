@@ -67,14 +67,16 @@ jobs:
         if: env.HAS_KEY == 'true'
         run: |
           export GITLAWB_KEY="$RUNNER_TEMP/tp/identity.pem" TWIGPINE_KEY="$RUNNER_TEMP/tp/identity.pem"
+          # each step's output goes to the log; on failure its last lines also become an annotation (no secrets in it)
+          run() { local name="$1"; shift; if ! "$@" >"$RUNNER_TEMP/out.txt" 2>&1; then cat "$RUNNER_TEMP/out.txt"; echo "::error title=$name failed::$(grep -v '^ *[0-9]*: <unknown>' "$RUNNER_TEMP/out.txt" | tail -8 | tr '\n' ' ' | cut -c1-900)"; return 1; fi; cat "$RUNNER_TEMP/out.txt"; }
           DID=$(gl identity show)
           echo "identity: $DID"
-          gl register
+          run register gl register
           gl repo create "$REPO_NAME" --description "Stoa: swap router on Robinhood Chain and Elysium. Mirror of github.com/StoaDex/Stoa, every push signed. stoadex.com" >/dev/null 2>&1 || echo "repo exists"
           git config user.name "$DID"
           git config user.email "$DID@gitlawb"
           git remote add twigpine "gitlawb://$DID/$REPO_NAME"
-          git push twigpine HEAD:refs/heads/main --force
-          git push twigpine --tags --force || true
+          run push git push twigpine HEAD:refs/heads/main --force
+          git push twigpine --tags --force >/dev/null 2>&1 || true
           echo "mirrored: https://explorer.twigpine.com/repos/${DID#did:key:}/$REPO_NAME"
           rm -rf "$RUNNER_TEMP/tp"
