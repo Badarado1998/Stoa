@@ -20,13 +20,14 @@ const lc = (a: string) => a.toLowerCase();
 export type PointsRow = { address: string; points: number; swapPoints: number; refPoints: number; swaps: number };
 export type PointsBoard = { seasonStart: number; updated: number; wallets: number; total: number; rows: PointsRow[] };
 
-export function score(swaps: StatSwap[], stocks: Set<string>): Map<string, PointsRow> {
+/** `from`: count swaps from this time (the season start; earlier for the pre-season preview) */
+export function score(swaps: StatSwap[], stocks: Set<string>, from: number = SEASON_START): Map<string, PointsRow> {
   const out = new Map<string, PointsRow>();
   const row = (a: string) => { let r = out.get(a); if (!r) { r = { address: a, points: 0, swapPoints: 0, refPoints: 0, swaps: 0 }; out.set(a, r); } return r; };
   const day = new Map<string, number>(); // wallet|utc day -> points so far
   const last = new Map<string, number>(); // wallet|tokenIn|tokenOut -> time of that swap
   for (const x of [...swaps].sort((a, b) => a.time - b.time)) {
-    if (x.time < SEASON_START || !x.trader || x.trader === ZERO || EXCLUDED.has(x.trader)) continue;
+    if (x.time < from || !x.trader || x.trader === ZERO || EXCLUDED.has(x.trader)) continue;
     const usd = x.usd ?? 0;
     if (usd < RULES.MIN_USD) continue;
     if (STABLE.has(x.symIn.toLowerCase()) && STABLE.has(x.symOut.toLowerCase())) continue;

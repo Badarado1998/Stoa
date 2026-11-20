@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { useWalletModal } from "./Providers";
+import { SEASON_START } from "@/lib/pointsScore";
 
 type Mine = { rank: number | null; points: number; wallets: number; row: { swapPoints: number; refPoints: number; swaps: number } | null };
 
@@ -15,6 +16,14 @@ export default function PointsMine() {
     refetchInterval: 120_000,
     queryFn: async () => (await (await fetch(`/api/points?address=${address}`)).json()) as Mine,
   });
+  // before the season: what the same rules give this wallet's swaps over the last 7 days (shown as a preview, not points)
+  const pre = typeof window !== "undefined" && Date.now() / 1000 < SEASON_START;
+  const pv = useQuery({
+    queryKey: ["points-preview", address],
+    enabled: !!address && pre,
+    refetchInterval: 300_000,
+    queryFn: async () => (await (await fetch(`/api/points?address=${address}&preview=1`)).json()) as Mine,
+  });
   const n = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 1 });
   return (
     <div className="panel pad">
@@ -23,6 +32,15 @@ export default function PointsMine() {
         <>
           <p className="note">Connect a wallet to see your points and rank.</p>
           <button className="cta" type="button" onClick={open}>Connect wallet</button>
+        </>
+      ) : pre ? (
+        <>
+          <div style={{ fontFamily: "var(--num)", fontSize: 32, marginTop: 6 }}>{pv.data ? n(pv.data.points) : "…"}<small style={{ fontSize: 14, color: "var(--muted)" }}> preview points{pv.data?.rank ? ` · would rank ${pv.data.rank} of ${pv.data.wallets}` : ""}</small></div>
+          <p className="note">
+            What your swaps of the last 7 days would have earned under the season 1 rules. A preview only: nothing counts until the season starts Mon 23 Nov, 00:00 UTC.
+            {pv.data && !pv.data.row ? " No swaps through Stoa from this wallet in the last 7 days." : ""}
+          </p>
+          {pv.data?.row && <ul className="list"><li>From your swaps <b>{n(pv.data.row.swapPoints)} · {pv.data.row.swaps} {pv.data.row.swaps === 1 ? "swap" : "swaps"}</b></li><li>From swaps you referred <b>{n(pv.data.row.refPoints)}</b></li></ul>}
         </>
       ) : !q.data ? <p className="note">Loading…</p> : (
         <>
