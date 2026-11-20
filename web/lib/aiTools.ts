@@ -8,6 +8,7 @@ import { NATIVE } from "./tokens";
 import { srv } from "./serverRpc";
 import { stockTokens } from "./stocks";
 import { TOOLS as MCP_TOOLS, callTool as mcpCall } from "./mcpTools";
+import { walletSnapshot } from "./aiBrief";
 
 /** Tools for Stoa's AI assistant (app/api/ai/chat). Amounts are human ("0.01", "25"), tokens by symbol or address;
  *  everything resolves on Robinhood Chain. Transactions are only ever built, never signed or sent: the browser shows
@@ -93,6 +94,7 @@ const OWN = [
   { name: "find_token", description: "Look up a token on Robinhood Chain by symbol or address: its address, symbol and decimals. Listed is not reviewed; run safety_check before a buy.", parameters: { type: "object", required: ["query"], properties: { query: { type: "string" } } } },
   { name: "quote", description: "Quote a swap on Robinhood Chain through Stoa's router, which compares every venue it routes: about how much comes out, at least how much (after slippage), price impact and route. Read-only.", parameters: { type: "object", required: ["sell", "buy", "amount"], properties: { sell: tokenArg("Token to sell"), buy: tokenArg("Token to buy"), amount: { type: "string", description: "Amount to sell, in whole tokens, e.g. \"0.01\" or \"25\"." }, slippagePct: { type: "number", description: "Max slippage in percent. Default 0.5." } } } },
   { name: "prepare_swap", description: "Build the swap for the user's connected wallet, after a quote. It is shown to the user as a card with a Sign button: nothing happens until their wallet signs. Use when the user asks to swap, buy or sell.", parameters: { type: "object", required: ["sell", "buy", "amount"], properties: { sell: tokenArg("Token to sell"), buy: tokenArg("Token to buy"), amount: { type: "string", description: "Amount to sell, in whole tokens." }, slippagePct: { type: "number", description: "Max slippage in percent. Default 0.5." } } } },
+  { name: "my_wallet", description: "The connected wallet's holdings on Robinhood Chain: each token, amount, USD value, 24h change, and Stoa's safety verdict for the larger tokens other than ETH, WETH and USDG.", parameters: { type: "object", properties: {} } },
   { name: "search_docs", description: "Search Stoa's docs (fees, bridging, limit orders, Spotlight, Rug Cover, $STOA, Stoa Pay, API, safety). Returns excerpts with links.", parameters: { type: "object", required: ["query"], properties: { query: { type: "string" } } } },
 ];
 const FROM_MCP = ["safety_check", "stock_tokens", "stock_gaps", "spotlight", "market_context", "create_payment_link", "pay_payment_link", "payment_status"];
@@ -109,6 +111,7 @@ export async function runAiTool(name: string, a: Record<string, unknown>, wallet
     case "quote": return swapLike(a, wallet, false);
     case "prepare_swap": return swapLike(a, wallet, true);
     case "search_docs": return searchDocs(String(a.query ?? ""));
+    case "my_wallet": return wallet ? walletSnapshot(wallet) : { error: "No wallet connected. Ask the user to connect a wallet first." };
   }
   if (!FROM_MCP.includes(name)) return { error: `unknown tool ${name}` };
   const args = { ...a };

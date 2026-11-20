@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import AiChat from "@/components/AiChat";
-import { PageHead } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Ask Stoa: an AI assistant for Robinhood Chain",
@@ -10,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function AiPage() {
   return (
-    <section className="page">
-      <PageHead compact eyebrow="ASK STOA · BETA" title="Ask in plain words">Swaps, token checks, stock tokens and payment links on Robinhood Chain. It prepares; you sign in your own wallet.</PageHead>
+    <section className="page" style={{ paddingTop: 12 }}>
+      <h1 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Stoa AI: ask in plain words</h1>
       <AiChat />
     </section>
   );
