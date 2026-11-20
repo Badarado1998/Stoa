@@ -29,16 +29,22 @@ const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(Math.abs(v) < 10 ? 2
 const MIN_LIQ = 10_000;
 function Movers({ rows }: { rows: StockRow[] }) {
   const [tab, setTab] = useState(0); // phones show one list at a time
+  // while the US market is shut, Robinhood's price stays at its last quote and only the on-chain price moves: the gap
+  // between them is then the news, so it leads
+  const [closed, setClosed] = useState(false);
+  useEffect(() => { const f = () => setClosed(session() === "closed"); f(); const t = setInterval(f, 60_000); return () => clearInterval(t); }, []);
   const liquid = rows.filter((r) => r.dex && r.dex.liquidityUsd >= MIN_LIQ);
   if (liquid.length < 3) return null;
   const gap = (r: StockRow) => (r.ref && r.dex ? ((r.dex.priceUsd - r.ref) / r.ref) * 100 : null);
   const lists: { h: string; sub: string; items: { r: StockRow; v: string; tone?: string }[] }[] = [
     { h: "Most traded", sub: "24h on-chain volume", items: [...liquid].sort((a, b) => b.dex!.volume24h - a.dex!.volume24h).slice(0, 5).map((r) => ({ r, v: usd0(r.dex!.volume24h) })) },
     { h: "Biggest moves", sub: "24h on-chain change", items: liquid.filter((r) => r.dex!.change24h != null).sort((a, b) => Math.abs(b.dex!.change24h!) - Math.abs(a.dex!.change24h!)).slice(0, 5).map((r) => ({ r, v: pct(r.dex!.change24h!), tone: r.dex!.change24h! >= 0 ? "up" : "dn" })) },
-    { h: "Widest gaps", sub: "on-chain vs Robinhood", items: liquid.filter((r) => gap(r) != null).sort((a, b) => Math.abs(gap(b)!) - Math.abs(gap(a)!)).slice(0, 5).map((r) => ({ r, v: pct(gap(r)!) })) },
+    { h: closed ? "Gaps while closed" : "Widest gaps", sub: closed ? "on-chain vs Robinhood's last quote" : "on-chain vs Robinhood", items: liquid.filter((r) => gap(r) != null).sort((a, b) => Math.abs(gap(b)!) - Math.abs(gap(a)!)).slice(0, 5).map((r) => ({ r, v: pct(gap(r)!) })) },
   ];
+  if (closed) lists.unshift(lists.pop()!);
   return (
     <div className="movers">
+      {closed && <p className="note" style={{ gridColumn: "1 / -1", margin: "0 0 4px" }}>The US market is closed. Stock tokens still trade on-chain, so their prices can drift from Robinhood&apos;s last quote until the market opens.</p>}
       <div className="seg mtabs show-m" role="tablist" aria-label="Movers">
         {lists.filter((l) => l.items.length).map((l, i) => (
           <button key={l.h} type="button" role="tab" aria-selected={tab === i} className={tab === i ? "on" : undefined} onClick={() => setTab(i)}>{l.h}</button>
