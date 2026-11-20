@@ -4,7 +4,7 @@ Swap tokens on Robinhood Chain or Elysium, on the best route Stoa finds across t
 
 1. Open [Trade](https://stoadex.com/trade) and pick a network with the button at the top right: **Elysium** (chain 99901) or **Robinhood Chain** (chain 4663). A first visit opens on Robinhood Chain; if your wallet is already on one of them, the app follows it. A direct link to Robinhood Chain: [stoadex.com/trade?chain=robinhood](https://stoadex.com/trade?chain=robinhood).
 2. Pick the token to sell and the token to buy. The native coin works directly (HYPE on Elysium, ETH on Robinhood Chain); the router wraps and unwraps it for you.
-3. Enter an amount. The router compares every venue it uses on that network, directly and through the wrapped native token (WHYPE or WETH), and shows the route it found.
+3. Enter an amount, or tap a quick amount under **You sell** (round sizes before you connect; 25%, 50% or Max of your balance after). **Max** keeps a little of the gas token back for the swap's own gas. The router compares every venue it uses on that network, directly and through the wrapped native token (WHYPE or WETH), and shows the route it found.
 4. Check the rate, route and slippage, then confirm in your wallet.
 
 | Network | Venues checked on every swap |
@@ -62,4 +62,16 @@ A Pons token trades on its own bonding curve until it graduates to a Uniswap V4 
 
 ## Links to a pair
 
-A swap link can pick the network and both tokens: `stoadex.com/trade?chain=robinhood&sell=ETH&buy=0x…`. `sell` and `buy` take a ticker from the list or a token address. A token that is not on the list is imported by address and shows the unverified-token check before you can swap.
+A swap link can pick the network and both tokens: `stoadex.com/trade?chain=robinhood&sell=ETH&buy=0x…`. `sell` and `buy` take a ticker from the list or a token address. A token that is not on the list is imported by address and shows the unverified-token check before you can swap. Add `&amount=25` to fill in the amount too.
+
+## After a swap
+
+The confirmation shows what you paid and got, what the best single venue quoted for the same amount just before your swap, the [Points](points.md) the swap earned, and, for a token you bought, a ☆ to follow it and set a price alert in your watchlist.
+
+## When Metric cannot fill
+
+A [Metric](metric.md) pool prices from its oracle and can refuse a swap for a moment between oracle updates. When the route goes through Metric and the swap would fail, Trade swaps on the best route without Metric instead and says so.
+
+## No gas yet
+
+Every swap on Robinhood Chain needs a little ETH for gas (cents). A wallet without any, or without enough of what it sells, gets a link to [bridge funds in](bridge-to-robinhood-chain.md).

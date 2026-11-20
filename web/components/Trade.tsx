@@ -408,16 +408,31 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
       setQuote(fresh);
       const min = minOut(fresh.out, slip);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_S);
-      const p = swapParams(sell, buy, fresh.route, amt, min, address!, deadline, referrer ?? zeroAddress);
+      let p = swapParams(sell, buy, fresh.route, amt, min, address!, deadline, referrer ?? zeroAddress);
       const value = kind === "hypeIn" ? amt : undefined;
       // Gas limit with headroom. Venue adapters pick their pool by simulating swaps inside try/catch, so the node's
       // estimate is the bare minimum for the current block: a price move before inclusion can need a little more and
       // the swap would run out of gas. 30% + 50k on top; only the gas actually used is paid.
       let gas: bigint | undefined;
-      try {
+      const estimate = async () => {
         const est = await pub!.estimateContractGas({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, account: address! });
-        gas = (est * 13n) / 10n + 50_000n;
-      } catch { /* let the wallet estimate; a revert shows up there */ }
+        return (est * 13n) / 10n + 50_000n;
+      };
+      try { gas = await estimate(); } catch {
+        // a Metric pool quotes from its oracle but can refuse the swap for a moment between oracle updates: when the
+        // route goes through Metric and would fail, swap on the best route without it instead of failing in the wallet
+        const metric = (net.contracts as { metric?: Address }).metric?.toLowerCase();
+        const legs = [fresh.route.leg1.venue, fresh.route.leg2.venue].map((v) => v.toLowerCase());
+        if (metric && legs.includes(metric) && pub) {
+          const alt = await routeWithoutOldV4(pub, net, sell.address, buy.address, amt, [metric]).catch(() => null);
+          if (alt && alt.amountOut > 0n) {
+            p = swapParams(sell, buy, alt, amt, minOut(alt.amountOut, slip), address!, deadline, referrer ?? zeroAddress);
+            try { gas = await estimate(); } catch { /* the wallet estimates; a revert shows up there */ }
+            setQuote({ ...fresh, route: alt, out: alt.amountOut });
+            setMsg({ ok: true, text: `Metric could not fill this right now: routed via ${describeRoute(alt, VENUE_NAMES, W)} instead.` });
+          }
+        }
+      }
       if (!sameForm(form, live.current)) throw new Error(FORM_CHANGED);
       return writeContractAsync({ address: CONTRACTS.router!, abi: routerAbi, functionName: "swap", args: [p], value, gas, chainId: chain.id });
     }, (r, hash) => {

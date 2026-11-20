@@ -103,3 +103,7 @@ No. Connect any EVM wallet. There is no sign-up and no deposit.
 ### How do I reach the team?
 
 DM [@StoaDEX](https://x.com/StoaDEX) on X. See [Contact](contact.md).
+
+## Is Stoa working right now?
+
+[stoadex.com/status](https://stoadex.com/status) checks it every minute: swaps on both networks, limit orders, Rug Cover, Spotlight, the keeper's gas, the Uniswap V4 pool guard and the price feeds.

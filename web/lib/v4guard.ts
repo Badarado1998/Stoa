@@ -97,11 +97,14 @@ export function usesPoisoned(route: Route, sell: string, buy: string, g: Guard):
  * The router's best route without the old V4 adapter: the best other venue directly, or through the wrapped native
  * token, as the router itself would pick (net of its fee). Null if no other venue has a route.
  */
-export async function routeWithoutOldV4(pub: PublicClient, net: Net, sell: Address, buy: Address, amount: bigint): Promise<Route | null> {
+/** The best route from every venue in the router except the ones in `skip` (always the old V4 adapter): each venue's own
+ *  quote, direct or through the wrapped gas token. Used when the router's pick cannot be used. */
+export async function routeWithoutOldV4(pub: PublicClient, net: Net, sell: Address, buy: Address, amount: bigint, skip: string[] = []): Promise<Route | null> {
   const router = net.contracts.router!;
   const idx = Array.from({ length: 16 }, (_, i) => BigInt(i));
   const listed = await pub.multicall({ contracts: idx.map((i) => ({ address: router, abi, functionName: "adapters" as const, args: [i] as const })), allowFailure: true });
-  const venues = listed.map((r) => r.result as Address | undefined).filter((a): a is Address => !!a && lc(a) !== OLD_V4);
+  const out = new Set([OLD_V4, ...skip.map(lc)]);
+  const venues = listed.map((r) => r.result as Address | undefined).filter((a): a is Address => !!a && !out.has(lc(a)));
   if (!venues.length) return null;
   const a = (lc(sell) === ZERO ? net.wrapped : sell) as Address;
   const b = (lc(buy) === ZERO ? net.wrapped : buy) as Address;

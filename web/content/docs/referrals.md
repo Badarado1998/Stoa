@@ -20,6 +20,10 @@ Earn 10% of the protocol fee on swaps from people you refer.
 | Minimum | None |
 | Who can claim | Only your own wallet. The admin cannot take referral earnings |
 
+## Invite card
+
+On [Referrals](https://stoadex.com/referrals), **Post on X** or **Copy invite link** shares `stoadex.com/r/<your wallet>`. It works like your referral link (the visitor's browser remembers you) and, when posted, shows an invite image with your short address. Swaps made through it also give you 10% of their [Points](points.md).
+
 You cannot refer yourself in the app: a link with your own address is ignored. Earnings are visible on-chain before you claim.
 
 ## Top referrers
