@@ -1,6 +1,6 @@
 # Stoa contracts: audit guide
 
-Stoa ([stoadex.com](https://stoadex.com)) is a best-price swap router with maker-quoted pools, live on Robinhood Chain (4663) and Elysium (99901). Every swap is quoted against every allowlisted venue and filled where the trader gets the most, for a 2 bps protocol fee. Three products sit on top of the router and hold user funds: Spotlight (weekly ETH bids paid to $STOA voters), Rug Cover (creator ETH bonds that pay covered buyers if the creator dumps) and limit orders.
+Stoa ([stoadex.com](https://stoadex.com)) is a swap router with maker-quoted pools, live on Robinhood Chain (4663) and Elysium (99901). Every swap is quoted against every allowlisted venue and filled where the trader gets the most, for a 2 bps protocol fee. Three products sit on top of the router and hold user funds: Spotlight (weekly ETH bids paid to $STOA voters), Rug Cover (creator ETH bonds that pay covered buyers if the creator dumps) and limit orders.
 
 No contract is upgradeable. Every contract is owned by a 48-hour OpenZeppelin `TimelockController` that only a 2-of-3 Safe can use. Known issues are in [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the full internal review is at [stoadex.com/docs/security-review](https://stoadex.com/docs/security-review).
 

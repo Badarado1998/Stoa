@@ -1,8 +1,15 @@
 # Open data
 
-Stoa publishes its public on-chain data as an open dataset on Hugging Face: [huggingface.co/datasets/StoaDex/stoa-onchain](https://huggingface.co/datasets/StoaDex/stoa-onchain). It is updated every Monday at about 04:23 UTC, and each update is tagged with its ISO week (for example `w2026-48`).
+Stoa publishes its public on-chain data as an open dataset on Hugging Face: [huggingface.co/datasets/StoaDex/stoa-onchain](https://huggingface.co/datasets/StoaDex/stoa-onchain). It is refreshed every 6 hours (00:23, 06:23, 12:23 and 18:23 UTC), and each week is tagged with its ISO week (for example `w2026-48`).
 
-## What is in it
+## Other datasets and the dashboard
+
+- [StoaDex/robinhood-stock-tokens](https://huggingface.co/datasets/StoaDex/robinhood-stock-tokens): every Robinhood Stock Token four times a day, Robinhood's bid and ask next to the deepest on-chain price, the gap, liquidity and volume. One file per UTC day.
+- [StoaDex/robinhood-chain-venue-quotes](https://huggingface.co/datasets/StoaDex/robinhood-chain-venue-quotes): a fixed basket of swaps quoted on every venue Stoa's router uses, all in one block, four times a day. Each venue alone, one hop, before fees, next to what Stoa's router returns after its 2 bps fee.
+- [StoaDex/stoa-contracts](https://huggingface.co/datasets/StoaDex/stoa-contracts): contract source, ABIs, deployed addresses and security documents as one reproducible archive per release, with SHA-256 checksums and the Git commit. A new release only when any of it changes.
+- [Dashboard](https://huggingface.co/spaces/StoaDex/stoa-dashboard): volume, stock token gaps and venue quotes, read from the datasets.
+
+## What is in stoa-onchain
 
 | File | What it holds |
 | --- | --- |
@@ -27,11 +34,13 @@ The same data is available live, without a key, from `https://stoadex.com/api/v1
 - `?set=swaps`: every routed swap, oldest first
 - `?set=points`: the Points season 1 board
 - `?set=spotlight`: the Spotlight week in progress
+- `?set=stocks`: every Robinhood Stock Token, Robinhood's price next to the on-chain price
+- `?set=venues`: the venue-quote basket, read now (not cached)
 
-Responses are cached for an hour.
+The first four are cached for an hour.
 
 ## How it is built
 
-A weekly GitHub Actions job (`.github/workflows/open-data.yml`) runs `data/hf_publish.py`: it reads the export API, writes the files and the manifest, and uploads them to Hugging Face. The code for both is in the [public repository](https://github.com/StoaDex/Stoa). The dataset is licensed CC BY 4.0.
+A GitHub Actions job every 6 hours (`.github/workflows/open-data.yml`) runs `data/hf_publish.py`: it reads the export API, writes the files and the manifest, and uploads them to Hugging Face. The code for both is in the [public repository](https://github.com/StoaDex/Stoa). The dataset is licensed CC BY 4.0.
 
 Not financial advice. Points have no promised value.

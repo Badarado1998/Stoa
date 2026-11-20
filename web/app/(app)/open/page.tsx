@@ -5,7 +5,7 @@ import CopyButton from "@/components/CopyButton";
 
 export const metadata: Metadata = {
   title: "Open source and open data",
-  description: "Stoa's code, data and reviews in the open: the source on GitHub, every routed swap as a weekly dataset on Hugging Face with checksums, a public export API, and the independent security review by HEY Research Lab.",
+  description: "Stoa's code, data and reviews in the open: the source on GitHub, open datasets on Hugging Face (swaps, Robinhood Stock Token prices, venue quotes, contract releases) with checksums, a public export API, and the independent security review by HEY Research Lab.",
   alternates: { canonical: "/open" },
 };
 
@@ -14,8 +14,12 @@ const VERIFY = "sha256sum data/*.csv data/spotlight.json   # compare with manife
 
 const PLACES: { name: string; href: string; what: string; tag: string }[] = [
   { name: "Source code on GitHub", href: "https://github.com/StoaDex/Stoa", what: "Contracts, the web app, the SDK, the agent tools and every automation that runs Stoa, in one public repository.", tag: "CODE" },
-  { name: "Open dataset on Hugging Face", href: HF, what: "Every swap routed through Stoa, a daily summary, the Points board and the Spotlight week. Updated every Monday, each update tagged with its week, with a manifest of SHA-256 checksums.", tag: "DATA" },
-  { name: "Export API", href: "/api/v1/export?set=swaps", what: "The same data live, as JSON: set=swaps, set=points or set=spotlight. No key, cached for an hour.", tag: "API" },
+  { name: "Stoa on-chain dataset", href: HF, what: "Every swap routed through Stoa, a daily summary, the Points board and the Spotlight week. Refreshed every 6 hours, tagged every week, with a manifest of SHA-256 checksums.", tag: "DATA" },
+  { name: "Robinhood Stock Tokens dataset", href: "https://huggingface.co/datasets/StoaDex/robinhood-stock-tokens", what: "Every Robinhood Stock Token four times a day: Robinhood's own bid and ask next to the deepest on-chain price, the gap, liquidity and volume.", tag: "DATA" },
+  { name: "Venue quotes dataset", href: "https://huggingface.co/datasets/StoaDex/robinhood-chain-venue-quotes", what: "The same swaps (ETH, USDG, $STOA, stock tokens, several sizes) quoted on every venue Stoa routes, all in one block, four times a day.", tag: "DATA" },
+  { name: "Contract release archive", href: "https://huggingface.co/datasets/StoaDex/stoa-contracts", what: "Contract source, ABIs, deployed addresses and security documents as one reproducible archive per release, with SHA-256 checksums and the Git commit it was built from.", tag: "RELEASES" },
+  { name: "Dashboard on Hugging Face", href: "https://huggingface.co/spaces/StoaDex/stoa-dashboard", what: "Volume through Stoa, the largest stock token gaps and live venue quotes, read straight from the datasets.", tag: "DASHBOARD" },
+  { name: "Export API", href: "/api/v1/export?set=swaps", what: "The data live, as JSON: set=swaps, points, spotlight, stocks or venues. No key.", tag: "API" },
   { name: "Independent security review by HEY Research Lab", href: "https://heyresearch.xyz/project/stoa", what: "Reviews of Stoa's contracts and their follow-ups, by an outside lab. Findings and fixes are tracked on Security status.", tag: "REVIEW" },
 ];
 
