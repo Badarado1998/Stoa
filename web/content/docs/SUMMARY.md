@@ -69,6 +69,7 @@
 * [Admin and permissions](admin.md)
 * [Risks and safeguards](risks.md)
 * [Security reports](bug-bounty.md)
+* [Open data](open-data.md)
 
 ## Legal
 

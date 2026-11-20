@@ -1,0 +1,39 @@
+name: Open data to Hugging Face
+
+# Every Monday 04:23 UTC, after the Spotlight week is settled: publishes Stoa's public on-chain data (swaps through the
+# routers, daily summary, Points board, Spotlight week) to the Hugging Face dataset HF_REPO, tagged with the ISO week.
+# Needs the repository secret HF_TOKEN (a write token for the organization). Without it, it only builds the files.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: open-data
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_REPO: ${{ vars.HF_REPO || 'stoadex/stoa-onchain' }}
+      HAS_TOKEN: ${{ secrets.HF_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the files
+        if: env.HAS_TOKEN != 'true'
+        run: python3 -I data/hf_publish.py --out hf-out
+      - name: Build and publish
+        if: env.HAS_TOKEN == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          pip install --quiet "huggingface_hub>=0.26,<1"
+          python3 -I data/hf_publish.py --out hf-out --push

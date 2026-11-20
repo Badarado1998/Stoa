@@ -6,7 +6,7 @@ import type { Launch } from "@/lib/ponsLaunch";
 import { listedTokens } from "@/lib/tokenInfo";
 import { stockTokens } from "@/lib/stocks";
 
-const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/check", "/spotlight", "/cover", "/wrapped", "/security", "/guides", "/bridge", "/weekly", "/spotlight/projects", "/build/widget", "/status", "/points", "/agents"];
+const PAGES = ["", "/trade", "/pools", "/earn", "/curators", "/token", "/build", "/referrals", "/changelog", "/launches", "/stats", "/tokens", "/stocks", "/check", "/spotlight", "/cover", "/wrapped", "/security", "/guides", "/bridge", "/weekly", "/spotlight/projects", "/build/widget", "/status", "/points", "/agents", "/open"];
 /** pages whose numbers change every day */
 const DAILY = new Set(["", "/trade", "/launches", "/stats", "/tokens", "/stocks", "/spotlight", "/token", "/weekly"]);
 /** rebuilt every hour: the token pages of the launches closest to graduation and the latest graduations */
