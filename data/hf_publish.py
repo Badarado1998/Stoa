@@ -38,6 +38,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 NOW = dt.datetime.now(dt.timezone.utc)
 STAMP = NOW.strftime("%Y-%m-%dT%H:%M:%SZ")
 DAY = NOW.strftime("%Y-%m-%d")
+BADGES = ("[![Website](https://img.shields.io/badge/stoadex.com-live-2f6fd6)](https://stoadex.com) "
+          "[![HEY Research Lab](https://heyresearch.xyz/api/badge/stoa?style=pill)](https://heyresearch.xyz/project/stoa?utm_source=badge&utm_medium=hf) "
+          "[![Source](https://img.shields.io/badge/GitHub-StoaDex%2FStoa-1e2633?logo=github)](https://github.com/StoaDex/Stoa) "
+          "[![X](https://img.shields.io/badge/X-@StoaDEX-1e2633?logo=x)](https://x.com/StoaDEX)")
 LINKS = "[stoadex.com](https://stoadex.com) · [source](https://github.com/StoaDex/Stoa) · [docs](https://stoadex.com/docs/open-data) · [X @StoaDEX](https://x.com/StoaDEX)"
 
 
@@ -100,6 +104,8 @@ configs:
 
 # Stoa on-chain data
 
+{badges}
+
 Open data from [Stoa](https://stoadex.com), the swap router on Robinhood Chain and Elysium: every swap routed through
 Stoa, a daily summary, the Points season 1 board and the Spotlight week. Refreshed every 6 hours; each week is tagged
 with its ISO week (for example `w2026-48`).
@@ -159,7 +165,7 @@ def onchain():
     rows = {"data/swaps.csv": len(swaps), "data/daily.csv": len(daily), "data/points_s1.csv": len(prow)}
     man = {"generated": STAMP, "source": SITE + "/api/v1/export", "rows": rows, "sha256": {p: sha(b) for p, b in files.items()}}
     files["manifest.json"] = json.dumps(man, indent=1) + "\n"
-    files["README.md"] = ONCHAIN_CARD.replace("{site}", SITE).replace("{links}", LINKS).replace("{generated}", STAMP).replace("{swaps}", str(len(swaps))).replace("{wallets}", str(len(prow)))
+    files["README.md"] = ONCHAIN_CARD.replace("{site}", SITE).replace("{badges}", BADGES).replace("{links}", LINKS).replace("{generated}", STAMP).replace("{swaps}", str(len(swaps))).replace("{wallets}", str(len(prow)))
     y, w, _ = NOW.isocalendar()
     return {"repo": f"{OWNER}/stoa-onchain", "kind": "dataset", "files": files, "tag": f"w{y}-{w:02d}", "msg": f"Update {STAMP}: {len(swaps)} swaps"}
 
@@ -186,6 +192,8 @@ configs:
 ---
 
 # Robinhood Stock Tokens: Robinhood price vs on-chain price
+
+{badges}
 
 Every Robinhood Stock Token on Robinhood Chain, four times a day: Robinhood's own bid and ask for one token (from the
 underlying shares) next to the price of the deepest on-chain pool, the gap between them, on-chain liquidity and
@@ -225,6 +233,8 @@ configs:
 
 # Robinhood Chain venue quotes
 
+{badges}
+
 Four times a day, a fixed basket of swaps on Robinhood Chain (ETH↔USDG, ETH→STOA and USDG→ stock tokens such as
 TSLA, NVDA and SPCX, at a few sizes) quoted on every venue [Stoa](https://stoadex.com)'s router uses (Uniswap V2, V3,
 V4, Aero, Ramses, Pons curves, Metric), all in the same block. It shows how deep each venue is for the same trade and
@@ -250,13 +260,13 @@ A venue quote is a reading at one block, not a fill: prices move and a real swap
 def stocks():
     d = get("stocks")
     rows = [{**r, "snapshot_utc": STAMP} for r in d["rows"]]
-    return snapshot(f"{OWNER}/robinhood-stock-tokens", rows, STOCK_COLS, STOCK_CARD.replace("{links}", LINKS))
+    return snapshot(f"{OWNER}/robinhood-stock-tokens", rows, STOCK_COLS, STOCK_CARD.replace("{badges}", BADGES).replace("{links}", LINKS))
 
 
 def venues():
     d = get("venues")
     rows = [{**r, "snapshot_utc": iso(r["time"])} for r in d["rows"]]
-    return snapshot(f"{OWNER}/robinhood-chain-venue-quotes", rows, VENUE_COLS, VENUE_CARD.replace("{links}", LINKS))
+    return snapshot(f"{OWNER}/robinhood-chain-venue-quotes", rows, VENUE_COLS, VENUE_CARD.replace("{badges}", BADGES).replace("{links}", LINKS))
 
 
 # ---------- contracts release archive ----------
@@ -267,6 +277,8 @@ tags: [solidity, smart-contracts, defi, robinhood-chain, elysium, security]
 ---
 
 # Stoa contracts: release archive
+
+{badges}
 
 Every release of [Stoa](https://stoadex.com)'s smart contracts as one reproducible archive: the Solidity source, the
 compiled ABIs, the deployed addresses on Robinhood Chain (4663) and Elysium (99901), and the security documents
@@ -290,6 +302,11 @@ gives the same `archive_sha256`.
 
 {links}
 """
+
+
+def rel_card(rel):
+    lines = "\n".join(f"- `{r['tag']}` · {r['released']} · commit [`{r['commit'][:7]}`](https://github.com/StoaDex/Stoa/commit/{r['commit']}) · archive SHA-256 `{r['archive_sha256'][:16]}…`" for r in rel)
+    return REL_CARD.replace("{releases}", lines or "None yet.").replace("{badges}", BADGES).replace("{links}", LINKS)
 
 
 def _git(*a):
@@ -327,7 +344,12 @@ def contracts():
     if prev:
         try:
             if json.loads(prev).get("content_sha256") == content_sha:
-                return None  # nothing changed since the last release
+                # nothing changed since the last release: only keep the card current
+                try:
+                    rel = json.loads(existing(repo, "releases.json") or "[]")
+                except ValueError:
+                    rel = []
+                return {"repo": repo, "kind": "dataset", "files": {"README.md": rel_card(rel)}, "msg": "Card update"}
         except ValueError:
             pass
     commit = _git("rev-parse", "HEAD")
@@ -349,13 +371,12 @@ def contracts():
     except ValueError:
         rel = []
     rel = [{"tag": tag, "released": STAMP, "commit": commit, "archive_sha256": man["archive_sha256"]}] + rel
-    lines = "\n".join(f"- `{r['tag']}` · {r['released']} · commit [`{r['commit'][:7]}`](https://github.com/StoaDex/Stoa/commit/{r['commit']}) · archive SHA-256 `{r['archive_sha256'][:16]}…`" for r in rel)
     files = {
         f"releases/{tag}/stoa-contracts.tar.gz": tar,
         f"releases/{tag}/manifest.json": json.dumps(man, indent=1) + "\n",
         "latest.json": json.dumps(man, indent=1) + "\n",
         "releases.json": json.dumps(rel, indent=1) + "\n",
-        "README.md": REL_CARD.replace("{releases}", lines).replace("{links}", LINKS),
+        "README.md": rel_card(rel),
     }
     return {"repo": repo, "kind": "dataset", "files": files, "tag": tag, "msg": f"Release {tag}"}
 
