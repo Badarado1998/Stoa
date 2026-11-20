@@ -12,6 +12,7 @@ import PriceChart from "@/components/PriceChart";
 import { earningsFor, whenTxt } from "@/lib/earnings";
 import { gapHistory } from "@/lib/gapHistory";
 import GapChart from "@/components/GapChart";
+import StockAnyChainBuy from "@/components/StockAnyChainBuy";
 
 export const revalidate = 120;
 
@@ -129,6 +130,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           Stock Tokens are not offered in every country: check Robinhood&apos;s terms for yours. Stoa only routes swaps; nothing here is investment advice. <Link href="/docs/stocks">How Stocks works</Link> · <Link href="/docs/stock-token-price-gap">Why the prices differ</Link> · Updated {new Date(updated).toUTCString().slice(17, 22)} UTC.
         </p>
       </details>
+      {s.route && !s.halted && <StockAnyChainBuy stock={s.address as `0x${string}`} symbol={s.symbol} />}
       {s.route && (
         <div className="panel pad" style={{ marginBottom: 16 }}>
           <div className="lbl">HOW TO BUY {s.symbol} ON ROBINHOOD CHAIN</div>

@@ -115,3 +115,48 @@ export function checkRelayOrder(o: RelayOrder | null | undefined, w: OrderWant):
   for (const f of o.fees) if (BigInt(f.amount) > 0n && lc(f.recipient) !== ZERO) return "order carries a fee";
   return null;
 }
+
+/** Relay's receiver on the destination chain for orders that make a call: it takes the output and runs the call. The same
+ *  contract at the same address on Base and Robinhood Chain (seen in every call order, Nov 2026). Pinned, so an order
+ *  that pays anyone else is refused. */
+export const RELAY_CALL_RECEIVER = "0x0729e2a4716d9f7dd17858d5d504426d228697f7";
+
+export interface CallOrderWant {
+  depositId: string;
+  /** the buyer: every refund goes here */
+  user: string;
+  fromSlug: string;
+  toSlug: string;
+  /** the native coin paid in on the source chain, exactly */
+  amount: bigint;
+  /** the one call the output must make, and the native value it carries */
+  call: { to: string; data: string; value: bigint };
+  maxDeadline: number;
+}
+
+/** null when a call order pays the native coin to Relay's receiver and makes exactly the call Stoa built (the buy on
+ *  StoaCrossBuy, which sends the token to the buyer or the ETH back to them); otherwise why it is refused */
+export function checkRelayCallOrder(o: RelayOrder | null | undefined, w: CallOrderWant): string | null {
+  if (!o || typeof o !== "object") return "no order";
+  let id: string;
+  try { id = relayOrderId(o); } catch { return "order does not hash"; }
+  if (lc(id) !== lc(w.depositId)) return "order is not the one the deposit commits to";
+  if (lc(o.solver) !== RELAY_SOLVER) return "unknown solver";
+  if (o.inputs.length !== 1) return "more than one input";
+  const p = o.inputs[0].payment;
+  if (p.chainId !== w.fromSlug || lc(p.currency) !== ZERO || BigInt(p.amount) !== w.amount) return "input is not what was picked";
+  if (!o.inputs[0].refunds.length) return "no refund path";
+  for (const r of o.inputs[0].refunds) if (lc(r.recipient) !== lc(w.user)) return "a refund goes to someone else";
+  if (o.output.chainId !== w.toSlug) return "output on another chain";
+  if (o.output.payments.length !== 1) return "more than one output payment";
+  const out = o.output.payments[0];
+  if (lc(out.recipient) !== RELAY_CALL_RECEIVER || lc(out.currency) !== ZERO || BigInt(out.minimumAmount) < w.call.value) return "output is not the call's funding";
+  if (o.output.calls.length !== 1) return "not exactly one call";
+  // a call is encoded as (address to, (bytes data), uint256 value); compared byte for byte with Stoa's own encoding
+  let want: Hex;
+  try { want = encodeAbiParameters([{ type: "address" }, { type: "tuple", components: [{ type: "bytes" }] }, { type: "uint256" }], [w.call.to as Address, [w.call.data as Hex], w.call.value]); } catch { return "call does not encode"; }
+  if (lc(o.output.calls[0]) !== lc(want)) return "call is not the one Stoa built";
+  if (Number(o.output.deadline) > w.maxDeadline) return "deadline too far out";
+  for (const f of o.fees) if (BigInt(f.amount) > 0n && lc(f.recipient) !== ZERO) return "order carries a fee";
+  return null;
+}

@@ -92,3 +92,22 @@ export async function stoaPrices(): Promise<{ ethUsd: number | null; stoaPerUsd:
   }
   return { ethUsd, stoaPerUsd };
 }
+
+const decimalsAbi = parseAbi(["function decimals() view returns (uint8)"]);
+/** ETH -> token on Robinhood Chain through Stoa's router, behind the same V4 guard as every other Stoa quote, plus the
+ *  token's decimals. null when there is no route. */
+export async function ethToTokenRoute(token: Address, ethIn: bigint) {
+  const rpc = (ROBINHOOD.chain.rpcUrls.default.http as readonly string[])[0] ?? ROBINHOOD.logsRpc;
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(rpc), { fetchOptions: { headers: { "user-agent": "curl/8.5.0" } }, timeout: 8_000 }) });
+  const router = ROBINHOOD.contracts.router!;
+  const [q, g, d] = await Promise.allSettled([
+    c.simulateContract({ address: router, abi: routerAbi, functionName: "quote", args: [ZERO, token, ethIn] }),
+    guardFast(),
+    c.readContract({ address: token, abi: decimalsAbi, functionName: "decimals" }),
+  ]);
+  if (q.status !== "fulfilled" || d.status !== "fulfilled") return null;
+  const guard: Guard = g.status === "fulfilled" ? g.value : { oldInRouter: true, poisoned: ["*"] };
+  const r = await guardRoute(c as unknown as PublicClient, ROBINHOOD, ZERO, token, ethIn, q.value.result, guard).catch(() => null);
+  if (!r || r.amountOut <= 0n) return null;
+  return { route: r, decimals: Number(d.value) };
+}

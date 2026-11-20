@@ -28,3 +28,13 @@ Tokens without Swap have no pool Stoa can use yet. Every day Stoa's keeper looks
 ## For apps
 
 [stoadex.com/api/v1/stocks](https://stoadex.com/api/v1/stocks) returns the same list as JSON: each token's address, Robinhood's price, its deepest on-chain pool and whether Stoa routes it. It updates every couple of minutes. See [API for bots and apps](api.md).
+
+## Buy from another chain
+
+Each stock page has **Buy with ETH from another chain**: pay with ETH on Base, Arbitrum, Optimism or Ethereum and the stock token arrives in the same wallet on Robinhood Chain, in one transaction.
+
+1. You deposit ETH into Relay's Depository on the source chain.
+2. Relay delivers ETH on Robinhood Chain to StoaCrossBuy with a call to `buy`, which swaps it through Stoa's router into the stock token and sends it to you.
+3. If the price moved past the minimum shown, the swap does not happen and the ETH goes to your wallet on Robinhood Chain instead.
+
+Before your wallet opens, Stoa checks the deposit and Relay's order: the order must hash to the id in the deposit, every refund must go to you, and the only call on Robinhood Chain must be the buy Stoa built, for your address, that token and at least the minimum shown. Up to $500 per purchase. Smart-contract wallets are refused, since the same address on Robinhood Chain may not be theirs.
