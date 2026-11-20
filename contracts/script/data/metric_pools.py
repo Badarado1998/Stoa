@@ -194,14 +194,68 @@ def rank(ps, tin, tout, sizes, current=()):
 
 
 # ---------------------------------------------------------------- end-to-end check through Stoa's router
-# The probe above stops at the payment callback, so it never meets the payment itself. On 20 Nov 2026 every Metric
-# swap that pays in USDG reverted through the router while the probe and the quoter were fine. So each direction is
-# also run end to end before it is listed: in one eth_simulateV1 batch a fresh address with no code gets the input
-# token (wrapping ETH, or buying it through the router on any venue), approves the router and swaps through the
-# MetricAdapter alone. A direction that does not complete gets an empty list, which stops it in the adapter.
+# The probe above stops at the payment callback, so it never meets the payment itself, so each direction is also run
+# end to end through the router and the MetricAdapter alone before it is listed.
+# How (changed 20 Nov 2026): a plain eth_call of router.swap from a fresh address whose input-token balance and router
+# allowance are set with a state override (the storage slots are found by trial, below). The first version ran a
+# multi-call eth_simulateV1 batch that bought the input first; on this RPC that batch fails Metric swaps on and off
+# while the very same swap as an eth_call, on a mainnet fork and straight against the pool succeeds, so it emptied
+# directions that work. When no slot can be found the batch below is still the fallback.
 ROUTER = "0x2f2804fad735a38015650f32f95ad5e08d6b3ee5"
 QUOTE_SEL, SWAP_SEL, APPROVE_SEL, DEPOSIT_SEL = "b6466384", "8ccfa2ca", "095ea7b3", "d0e30db0"
+BALANCE_SEL, ALLOWANCE_SEL = "70a08231", "dd62ed3e"
 ZERO = "0x" + "0" * 40
+MAGIC = 0x5704A1234567
+# mapping roots to try: Solidity slots 0-60, and OpenZeppelin ERC20Upgradeable's ERC-7201 namespace (balances, allowances)
+OZ7201 = 0x52c63247e1f47db19d5ce0460030c497f067ca4cebf71ba98eeadabe20bace00
+_slots = {}
+
+
+def _keccak(hexdata):
+    return rpc("web3_sha3", ["0x" + hexdata])
+
+
+def _map_slot(key_hex40, root):
+    """Solidity mapping slot: keccak(key . root)"""
+    return _keccak(key_hex40.rjust(64, "0") + format(root, "064x"))
+
+
+def _call_with(state, to, data):
+    try:
+        return rpc("eth_call", [{"to": to, "data": data}, "latest", state])
+    except Exception:
+        return None
+
+
+def _find_slots(token, who):
+    """(balance slot of `who`, allowance slot of who->ROUTER) for `token`, found by setting a candidate slot to MAGIC
+    and reading it back through the token's own view. None when no candidate matches."""
+    token = token.lower()
+    if token in _slots:
+        roots = _slots[token]
+    else:
+        roots = None
+        for root in list(range(0, 61)) + [OZ7201]:
+            slot = _map_slot(who[2:], root)
+            r = _call_with({token: {"stateDiff": {slot: "0x" + format(MAGIC, "064x")}}}, token, "0x" + BALANCE_SEL + addr(who))
+            if r and int(r, 16) == MAGIC:
+                bal_root = root
+                break
+        else:
+            _slots[token] = None
+            return None
+        for root in list(range(0, 61)) + [OZ7201 + 1]:
+            inner = _map_slot(who[2:], root)
+            slot = _keccak(ROUTER[2:].rjust(64, "0") + inner[2:])
+            r = _call_with({token: {"stateDiff": {slot: "0x" + format(MAGIC, "064x")}}}, token, "0x" + ALLOWANCE_SEL + addr(who) + addr(ROUTER))
+            if r and int(r, 16) == MAGIC:
+                roots = (bal_root, root)
+                break
+        _slots[token] = roots
+    if not roots:
+        return None
+    inner = _map_slot(who[2:], roots[1])
+    return _map_slot(who[2:], roots[0]), _keccak(ROUTER[2:].rjust(64, "0") + inner[2:])
 
 
 def _swap_data(tin, tout, mid, l1, l2, amount, to, deadline):
@@ -209,8 +263,33 @@ def _swap_data(tin, tout, mid, l1, l2, amount, to, deadline):
         + word(amount) + word(1) + addr(to) + word(deadline) + addr(ZERO)
 
 
+def _end_to_end_call(adapter, tin, tout, amount):
+    """True/False from one eth_call of the swap with the input given by a state override; None if no slots were found."""
+    who = "0x" + os.urandom(20).hex()
+    slots = _find_slots(tin, who)
+    if not slots:
+        return None
+    state = {who: {"balance": hex(10**21)}, tin: {"stateDiff": {slots[0]: "0x" + format(amount, "064x"), slots[1]: "0x" + "f" * 64}}}
+    data = _swap_data(tin, tout, ZERO, (adapter, 0), (ZERO, 0), amount, who, int(time.time()) + 3600)
+    for attempt in range(2):  # a Metric oracle can be between updates for a moment: one retry
+        try:
+            if rpc("eth_call", [{"from": who, "to": ROUTER, "gas": hex(8_000_000), "data": data}, "latest", state]) is not None:
+                return True
+        except Exception:
+            pass
+        time.sleep(3)
+    return False
+
+
 def end_to_end(adapter, tin, tout, amount, usd_per_weth):
-    """True when `amount` of tin swaps to tout through the router and the MetricAdapter alone; None when it could not
+    ok = _end_to_end_call(adapter, tin, tout, amount)
+    if ok is not None:
+        return ok
+    return _end_to_end_batch(adapter, tin, tout, amount, usd_per_weth)
+
+
+def _end_to_end_batch(adapter, tin, tout, amount, usd_per_weth):
+    """The fallback: True when `amount` of tin swaps to tout through the router and the MetricAdapter alone; None when it could not
     be tested (no way to get the input token)."""
     who = "0x" + os.urandom(20).hex()
     deadline = int(time.time()) + 3600
