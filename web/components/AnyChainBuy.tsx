@@ -238,8 +238,8 @@ function Panel() {
       ) : (
         <>
           <p className="note" style={{ marginTop: 6 }}>Pay with ETH or stablecoins on another chain; $STOA arrives in the same wallet on Robinhood Chain.</p>
-          <div className="seg" role="tablist" style={{ marginTop: 8, flexWrap: "wrap" }}>
-            {SOURCES.map((s) => <button key={s.key} type="button" className={s.key === src.key ? "on" : undefined} disabled={busy} onClick={() => { setSrcKey(s.key); setSTokAddr(s.tokens[0].address); }}>{s.name}</button>)}
+          <div className="seg" role="tablist" aria-label="Pay from" style={{ marginTop: 8, flexWrap: "wrap" }}>
+            {SOURCES.map((s) => <button key={s.key} type="button" role="tab" aria-selected={s.key === src.key} className={s.key === src.key ? "on" : undefined} disabled={busy} onClick={() => { setSrcKey(s.key); setSTokAddr(s.tokens[0].address); }}>{s.name}</button>)}
           </div>
           <div className="box" style={{ marginTop: 12 }}>
             <div className="row"><label className="lbl" htmlFor="aamt">YOU PAY</label>

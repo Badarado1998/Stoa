@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 export const revalidate = 60;
 
-const COLOR: Record<Level, string> = { ok: "#1E8A4C", warn: "#C98A0B", down: "#C0392B" };
+const COLOR: Record<Level, string> = { ok: "#15803d", warn: "#a16207", down: "#b91c1c" };
 const WORD: Record<Level, string> = { ok: "Working", warn: "Degraded", down: "Down" };
 
 export default async function StatusPage() {

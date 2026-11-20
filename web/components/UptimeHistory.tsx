@@ -28,7 +28,7 @@ export default async function UptimeHistory() {
         {days.map((k) => {
           const d = s.days[k];
           const p = d ? d.okRuns / d.runs : null;
-          const bg = p === null ? "var(--line, #e5e7eb)" : p >= 0.999 ? "#1E8A4C" : p >= 0.97 ? "#C98A0B" : "#C0392B";
+          const bg = p === null ? "var(--line, #e5e7eb)" : p >= 0.999 ? "#15803d" : p >= 0.97 ? "#a16207" : "#b91c1c";
           return <span key={k} title={d ? `${k}: ${d.okRuns}/${d.runs} runs passed` : `${k}: no data`} style={{ flex: 1, borderRadius: 3, background: bg, opacity: p === null ? 0.5 : 1 }} />;
         })}
       </div>
@@ -39,7 +39,7 @@ export default async function UptimeHistory() {
           {inc.map((i) => (
             <li key={i.start} style={{ alignItems: "flex-start" }}>
               <span style={{ minWidth: 0 }}>{i.checks.join(", ")}<small style={{ display: "block", color: "var(--muted)" }}>{when(i.start)}{i.end ? ` · about ${dur(i.start, i.end)}` : " · ongoing"}</small></span>
-              <b style={{ color: i.end ? "#1E8A4C" : "#C0392B", whiteSpace: "nowrap" }}>{i.end ? "Resolved" : "Ongoing"}</b>
+              <b style={{ color: i.end ? "#15803d" : "#b91c1c", whiteSpace: "nowrap" }}>{i.end ? "Resolved" : "Ongoing"}</b>
             </li>
           ))}
         </ul>
