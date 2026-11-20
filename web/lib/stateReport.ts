@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { readSwaps } from "./routerStats";
 import { mid, stockTokens } from "./stocks";
 import { readSpotlight } from "./spotlightServer";
+import { isStalePool, STALE_VOLUME_USD } from "./stockGap";
 
 const HF = "https://huggingface.co/datasets/StoaDex";
 const lc = (a: string) => a.toLowerCase();
@@ -40,14 +41,14 @@ async function load(): Promise<StateReport> {
   const pairs = new Map<string, { pair: string; swaps: number; usd: number }>();
   for (const s of week) { if (s.symIn === s.symOut) continue; /* two tokens sharing a symbol: not a readable pair */ const k = `${s.symIn} → ${s.symOut}`; const p = pairs.get(k) ?? { pair: k, swaps: 0, usd: 0 }; p.swaps++; p.usd += s.usd ?? 0; pairs.set(k, p); }
   // stock gaps now
-  const live = (st?.stocks ?? []).flatMap((s) => { const m = mid(s); if (!m || !s.dex || s.halted || s.dex.liquidityUsd < 50_000) return []; const g = ((s.dex.priceUsd - m) / m) * 100; return Math.abs(g) <= 25 ? [{ symbol: s.symbol, gap: g }] : []; });
+  const live = (st?.stocks ?? []).flatMap((s) => { const m = mid(s); if (!m || !s.dex || s.halted || s.dex.liquidityUsd < 50_000 || isStalePool(s.dex)) return []; const g = ((s.dex.priceUsd - m) / m) * 100; return Math.abs(g) <= 25 ? [{ symbol: s.symbol, gap: g }] : []; });
   // the week from the dataset: median absolute gap over every snapshot of liquid tokens
   const days = Array.from({ length: 7 }, (_, i) => new Date((now - i * 86400) * 1000).toISOString().slice(0, 10));
   const files = await Promise.all(days.map((d) => get(`robinhood-stock-tokens/resolve/main/data/${d.slice(0, 7)}/${d}.csv`)));
   const wk: number[] = []; const snaps = new Set<string>();
   for (const f of files) for (const r of f ? csv(f) : []) {
     const b = Number(r.robinhood_bid), a = Number(r.robinhood_ask), o = Number(r.onchain_price), l = Number(r.liquidity_usd);
-    if (!(b > 0 && a > 0 && o > 0) || l < 50_000 || r.halted === "True") continue;
+    if (!(b > 0 && a > 0 && o > 0) || l < 50_000 || r.halted === "True" || !(Number(r.volume24h_usd) >= STALE_VOLUME_USD)) continue;
     const g = ((o - (a + b) / 2) / ((a + b) / 2)) * 100;
     if (Math.abs(g) > 25) continue;
     wk.push(Math.abs(g)); snaps.add(r.snapshot_utc);

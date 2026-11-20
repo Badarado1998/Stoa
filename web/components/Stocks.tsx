@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { isStalePool } from "@/lib/stockGap";
 import { fmtUsd } from "@/lib/prices";
 import { SESSION_LABEL, session, type Session } from "@/lib/marketHours";
 import { WatchStar, WatchlistPanel } from "./Watch";
@@ -40,7 +41,7 @@ function Movers({ rows }: { rows: StockRow[] }) {
   const lists: { h: string; sub: string; items: { r: StockRow; v: string; tone?: string }[] }[] = [
     { h: "Most traded", sub: "24h on-chain volume", items: [...liquid].sort((a, b) => b.dex!.volume24h - a.dex!.volume24h).slice(0, 5).map((r) => ({ r, v: usd0(r.dex!.volume24h) })) },
     { h: "Biggest moves", sub: "24h on-chain change", items: liquid.filter((r) => r.dex!.change24h != null).sort((a, b) => Math.abs(b.dex!.change24h!) - Math.abs(a.dex!.change24h!)).slice(0, 5).map((r) => ({ r, v: pct(r.dex!.change24h!), tone: r.dex!.change24h! >= 0 ? "up" : "dn" })) },
-    { h: closed ? "Gaps while closed" : "Widest gaps", sub: closed ? "on-chain vs Robinhood's last quote" : "on-chain vs Robinhood", items: liquid.filter((r) => gap(r) != null).sort((a, b) => Math.abs(gap(b)!) - Math.abs(gap(a)!)).slice(0, 5).map((r) => ({ r, v: pct(gap(r)!) })) },
+    { h: closed ? "Gaps while closed" : "Widest gaps", sub: closed ? "on-chain vs Robinhood's last quote" : "on-chain vs Robinhood", items: liquid.filter((r) => gap(r) != null && !isStalePool(r.dex)).sort((a, b) => Math.abs(gap(b)!) - Math.abs(gap(a)!)).slice(0, 5).map((r) => ({ r, v: pct(gap(r)!) })) },
   ];
   if (closed) lists.unshift(lists.pop()!);
   return (
@@ -81,7 +82,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
     let out = rows.filter((r) => (all || k || r.route) && (!k || r.symbol.toLowerCase().includes(k) || r.name.toLowerCase().includes(k) || r.address.toLowerCase() === k));
     if (sort === "gap" || sort === "cheaper" || sort === "dearer") {
       // gaps over 25% are almost always a stale or thin pool, not a price: left out of the gap views
-      out = out.filter((r) => r.dex && r.dex.liquidityUsd >= GAP_LIQ && gapOf(r) != null && Math.abs(gapOf(r)!) <= 25);
+      out = out.filter((r) => r.dex && r.dex.liquidityUsd >= GAP_LIQ && !isStalePool(r.dex) && gapOf(r) != null && Math.abs(gapOf(r)!) <= 25);
       if (sort === "cheaper") out = out.filter((r) => gapOf(r)! < 0).sort((a, b) => gapOf(a)! - gapOf(b)!);
       else if (sort === "dearer") out = out.filter((r) => gapOf(r)! > 0).sort((a, b) => gapOf(b)! - gapOf(a)!);
       else out = out.sort((a, b) => Math.abs(gapOf(b)!) - Math.abs(gapOf(a)!));
@@ -108,7 +109,7 @@ export default function Stocks({ rows, updated }: { rows: StockRow[]; updated: n
             <option value="volume">Most 24h volume</option>
           </select>
         </div>
-        {(sort === "gap" || sort === "cheaper" || sort === "dearer") && <p className="note" style={{ margin: "0 0 8px" }}>Pools with at least $50K liquidity; gaps over 25% (stale or thin pools) left out. Outside US market hours Robinhood&apos;s price follows the overnight session. Not financial advice.</p>}
+        {(sort === "gap" || sort === "cheaper" || sort === "dearer") && <p className="note" style={{ margin: "0 0 8px" }}>Pools with at least $50K liquidity that traded at least $100 in 24h; gaps over 25% left out. Outside US market hours Robinhood&apos;s price follows the overnight session. Not financial advice.</p>}
         <div className="stockhead" aria-hidden="true"><span>Token</span><span>Robinhood price</span><span>On-chain price</span><span>On-chain liquidity</span><span /></div>
         <div className="stocklist">
           {(more || q ? shown : shown.slice(0, 30)).map((r) => {

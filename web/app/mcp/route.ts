@@ -10,6 +10,7 @@ import { NETS, netByKey } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
 import { readSafety } from "@/lib/safety";
 import { mid, stockTokens } from "@/lib/stocks";
+import { isStalePool } from "@/lib/stockGap";
 import { bridgeQuote } from "@/lib/bridgeQuote";
 import { marketContext } from "@/lib/cmc";
 
@@ -121,7 +122,7 @@ const TOOLS = [
   {
     name: "stock_gaps",
     title: "Stock token price gaps",
-    description: "Robinhood Stock Tokens whose on-chain price is furthest from Robinhood's own price right now: cheaper or dearer on-chain, among pools with real liquidity (gaps over 25% are left out as stale pools). Optionally a 7-day history of one token's gap from Stoa's open dataset. Information, not trading advice; outside US market hours Robinhood's price follows the overnight session.",
+    description: "Robinhood Stock Tokens whose on-chain price is furthest from Robinhood's own price right now: cheaper or dearer on-chain, among pools with real liquidity that actually trade (pools with under $100 of 24h volume and gaps over 25% are left out as stale). Optionally a 7-day history of one token's gap from Stoa's open dataset. Information, not trading advice; outside US market hours Robinhood's price follows the overnight session.",
     inputSchema: { type: "object", additionalProperties: false, properties: {
       side: { type: "string", enum: ["any", "cheaper", "dearer"], description: "cheaper: on-chain below Robinhood; dearer: above. Default any." },
       minLiquidityUsd: { type: "number", description: "Minimum on-chain liquidity, default 50000." },
@@ -209,7 +210,7 @@ async function callTool(name: string, a: Record<string, unknown>) {
       const side = str(a.side) ?? "any", minLiq = Number(a.minLiquidityUsd ?? 50_000), limit = Math.min(20, Math.max(1, Number(a.limit ?? 10) || 10));
       const rows = data.stocks.flatMap((s) => {
         const ref = mid(s);
-        if (!ref || !s.dex || s.halted || s.dex.liquidityUsd < minLiq) return [];
+        if (!ref || !s.dex || s.halted || s.dex.liquidityUsd < minLiq || isStalePool(s.dex)) return [];
         const gap = ((s.dex.priceUsd - ref) / ref) * 100;
         if (Math.abs(gap) > 25 || (side === "cheaper" && gap >= 0) || (side === "dearer" && gap <= 0)) return [];
         return [{ symbol: s.symbol, name: s.name, address: s.address, robinhoodPriceUsd: ref, onChainPriceUsd: s.dex.priceUsd, gapPct: Number(gap.toFixed(3)), liquidityUsd: s.dex.liquidityUsd, volume24h: s.dex.volume24h, routeOnStoa: s.route }];
