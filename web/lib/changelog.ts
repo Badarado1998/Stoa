@@ -18,7 +18,7 @@ export const CHANGES: Change[] = [
     tag: "Robinhood Chain",
     items: [
       "Stock pages: buy a stock token with ETH from Base, Arbitrum, Optimism or Ethereum in one transaction, through Relay and StoaCrossBuy. If the price moves past your minimum, the ETH arrives on Robinhood Chain instead.",
-      "Trade and the MCP quote tool: 0x's, 1inch's and Rialto's quotes for the same amount shown next to Stoa's route, once their keys are set.",
+      "Trade and the MCP quote tool: 0x's and 1inch's quotes for the same amount shown next to Stoa's route (Second opinion).",
       "Build bounties: three $50 USDG bounties until 20 Dec (Telegram bot, swap widget on a token's site, public dashboard).",
       "Integrator bonus from December: $10 USDG a month for each app that brings 10 or more wallets, up to 5 a month.",
       "New page for market makers: how to quote on Robinhood Chain through a Stoa pool.",
