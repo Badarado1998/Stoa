@@ -1,0 +1,61 @@
+name: Mirror to Twigpine
+
+# Mirrors this repository to Twigpine (decentralized git: every push is signed with an Ed25519 DID key and gets a
+# certificate) on every push to main, so the code can be checked outside GitHub. The identity key is the repository
+# secret TWIGPINE_IDENTITY_PEM (the contents of identity.pem from `gl identity new`); it is written to a temporary file
+# on the runner and never printed. Without the secret this does nothing.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: twigpine-mirror
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HAS_KEY: ${{ secrets.TWIGPINE_IDENTITY_PEM != '' }}
+      GITLAWB_NODE: https://node.twigpine.com
+      REPO_NAME: stoa
+    steps:
+      - name: Skip without the key
+        if: env.HAS_KEY != 'true'
+        run: echo "TWIGPINE_IDENTITY_PEM is not set; nothing mirrored."
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          node-version: "22"
+      - name: Install the Twigpine CLI
+        if: env.HAS_KEY == 'true'
+        run: npm install -g @gitlawb/gl@0.8.1
+      - name: Mirror
+        if: env.HAS_KEY == 'true'
+        env:
+          PEM: ${{ secrets.TWIGPINE_IDENTITY_PEM }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/tp"
+          printf '%s\n' "$PEM" > "$RUNNER_TEMP/tp/identity.pem"
+          export GITLAWB_KEY="$RUNNER_TEMP/tp/identity.pem"
+          DID=$(gl identity show)
+          echo "identity: $DID"
+          gl register >/dev/null
+          gl repo create "$REPO_NAME" --description "Stoa: swap router on Robinhood Chain and Elysium. Mirror of github.com/StoaDex/Stoa, every push signed. stoadex.com" >/dev/null 2>&1 || echo "repo exists"
+          git config user.name "$DID"
+          git config user.email "$DID@gitlawb"
+          git remote add twigpine "gitlawb://$DID/$REPO_NAME"
+          git push twigpine HEAD:refs/heads/main --force
+          git push twigpine --tags --force || true
+          echo "mirrored: https://explorer.twigpine.com/repos/${DID#did:key:}/$REPO_NAME"
+          rm -rf "$RUNNER_TEMP/tp"
