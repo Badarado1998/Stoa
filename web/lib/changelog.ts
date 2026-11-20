@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "ask-stoa",
+    date: "2026-11-21",
+    title: "Ask Stoa: an AI assistant for Robinhood Chain (beta)",
+    tag: "Robinhood Chain",
+    items: [
+      "Ask in plain words, in any language: quotes and swaps, token safety checks, stock tokens against Robinhood's price, Spotlight, Stoa Pay links, and the docs.",
+      "Swaps come back as a card that your own wallet signs; the browser checks the swap goes through Stoa's router and pays your wallet before it opens.",
+      "10 free messages a day while in beta.",
+    ],
+    link: { href: "/ai", label: "Ask Stoa" },
+  },
+  {
     id: "stoa-pay",
     date: "2026-11-21",
     title: "Stoa Pay: get paid in USDG with a link",

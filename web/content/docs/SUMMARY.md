@@ -33,6 +33,7 @@
 * [Metric pools](metric.md)
 * [Limit orders](limit-orders.md)
 * [Stoa Pay](stoa-pay.md)
+* [Ask Stoa (AI)](ask-stoa.md)
 * [Provide liquidity](provide-liquidity.md)
 * [LP tokens](lp-tokens.md)
 * [Portfolio](portfolio.md)
