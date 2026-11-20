@@ -16,7 +16,19 @@ export async function GET() {
     { command: "settoken", description: "Admins: make me this project's assistant" },
     { command: "help", description: "What I can do" },
   ] });
-  await tg("setMyShortDescription", { short_description: "Stoa AI (early beta): ask Robinhood Chain anything. Safety checks, quotes, stock gaps, rug alerts. Not financial advice." });
+  await tg("setMyName", { name: "Stoa AI" });
+  await tg("setMyShortDescription", { short_description: "Ask Robinhood Chain anything: token safety checks, quotes, stock gaps, rug alerts. Early beta · stoadex.com/ai" });
+  await tg("setMyDescription", { description: `Stoa AI is the assistant of Stoa, the swap router on Robinhood Chain. Early beta.
+
+Ask in plain words, in any language:
+• Is this token safe?
+• Quote 0.01 ETH to USDG
+• Which stock tokens are furthest from Robinhood?
+
+/watch 0xYourWallet for rug alerts on your tokens.
+Projects: add me to your group and send /settoken 0xYourToken.
+
+I only read and never ask for keys or seed phrases. To trade, use stoadex.com/ai, where your own wallet signs. Not financial advice.` });
   const me = await tgMe();
   return Response.json({ ok: hook === true, webhook: hook === true, commands: cmds === true, bot: me ? `@${me.username}` : null });
 }
