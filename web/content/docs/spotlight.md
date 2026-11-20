@@ -39,6 +39,10 @@ Parameter changes go through the 48-hour timelock and apply from the following w
 - A project whose token did not win, or was canceled, takes its bid back in full from the same page. The entry fee stays in the burn pot.
 - Claims and refunds never expire. Rounding leaves at most a few wei per token behind.
 
+## Share a candidate
+
+Every token in the week's race has its own page, `stoadex.com/spotlight/vote/<token address>`, with its bid, its votes against the quorum, how to vote for it and a share card for X and Telegram. Projects can share it with their community; the Share link next to each token in the race table and the bid panel lead there.
+
 ## Safety
 
 - **Sponsored, not reviewed.** Every slot says "Sponsored" and links here. Stoa does not review the projects: a winning token can still go to zero.

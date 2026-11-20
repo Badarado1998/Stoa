@@ -419,7 +419,7 @@ function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<s
                   <td style={{ fontFamily: "var(--num)" }}>{eth(c.pot)} ETH</td>
                   <td className="hm" style={{ fontFamily: "var(--num)" }}>{stoaN(c.votes)}</td>
                   <td className="hm" style={{ fontFamily: "var(--num)" }}>{perM(c) === undefined ? "—" : `${eth(perM(c), 5)} ETH`}</td>
-                  <td><span className="chip" style={leading.has(k) ? undefined : { background: "#F2F4F7", color: "var(--muted)" }}>{status}</span></td>
+                  <td><span className="chip" style={leading.has(k) ? undefined : { background: "#F2F4F7", color: "var(--muted)" }}>{status}</span>{!c.canceled && <Link className="note" style={{ display: "block", marginTop: 4 }} href={`/spotlight/vote/${k}`}>Share</Link>}</td>
                   {isConnected && <td>{c.canceled ? "—" : <input className="inp" style={{ margin: 0, width: 130 }} inputMode="numeric" placeholder="0" value={edit[k] ?? ""} onChange={(x) => setEdit({ ...edit, [k]: x.target.value.replace(/[^0-9]/g, "") })} aria-label={`Your votes for ${meta[k]?.symbol ?? c.token}`} />}</td>}
                 </tr>
               );
@@ -635,6 +635,7 @@ function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { 
         <>
           <input className="inp" placeholder="Token address (0x…)" value={token} onChange={(x) => setToken(x.target.value.trim())} />
           <input className="inp" inputMode="decimal" placeholder={`Bid in ETH${isNew && minBid ? ` (at least ${eth(minBid, 4)})` : ""}`} value={amt} onChange={(x) => setAmt(x.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, ""))} />
+          {valid && !isNew && <p className="note" style={{ marginTop: 8 }}>This token is in this week&apos;s race. Share its page so your community can lock $STOA and vote for it: <Link href={`/spotlight/vote/${token.toLowerCase()}`}>stoadex.com/spotlight/vote/…</Link></p>}
           {isStoa && <p className="err" style={{ marginTop: 8 }}>$STOA itself cannot bid.</p>}
           {tooSmall && <p className="err" style={{ marginTop: 8 }}>A token&apos;s first bid must be at least {eth(minBid, 4)} ETH.</p>}
           {tooBig && <p className="err" style={{ marginTop: 8 }}>That passes this week&apos;s cap of {eth(maxBid, 2)} ETH for one token.</p>}
