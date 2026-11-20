@@ -132,7 +132,7 @@ export default function CoverBody() {
           <li>The price falling because other holders sell <b>Not a rug by this rule</b></li>
           <li>Buys made without cover, or before the cover opened <b>Only covered buys on Stoa</b></li>
         </ul>
-        <p className="note">Rug Cover is a contract with fixed rules, not insurance: it pays what its rules say from the creator&apos;s bond, and nothing else. It has not had an external audit. During the beta, bonds are capped at {params ? eth(params.maxBond, 2) : "1"} ETH per token. <Link href="/docs/rug-cover">Read the rules</Link>.</p>
+        <p className="note">Rug Cover is a contract with fixed rules, not insurance: it pays what its rules say from the creator&apos;s bond, and nothing else. It has no formal audit yet; it is in Hey Research Lab&apos;s independent security review. During the beta, bonds are capped at {params ? eth(params.maxBond, 2) : "1"} ETH per token. <Link href="/docs/rug-cover">Read the rules</Link>.</p>
       </div>
     </>
   );
