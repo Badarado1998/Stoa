@@ -62,6 +62,93 @@ function standing(ep: SpotEpoch) {
   return { rows: [...ranked.slice(0, ep.params.slots), ...rest], leading };
 }
 
+type Pub = NonNullable<ReturnType<typeof usePublicClient>>;
+/** ETH a wallet can claim now: every settled week, every token it voted for, the contract's own claimable() */
+async function readClaims(pub: Pub, who: Address, e: number) {
+  const eps = Array.from({ length: e }, (_, i) => i);
+  const voted = await pub.multicall({ contracts: eps.map((x) => ({ address: SPOT!, abi: spotlightAbi, functionName: "votedTokens", args: [BigInt(x), who] })), allowFailure: false });
+  const pairs = eps.flatMap((x, i) => (voted[i] as unknown as Address[]).map((t) => [x, t] as const));
+  if (!pairs.length) return [];
+  const amts = await pub.multicall({ contracts: pairs.map(([x, t]) => ({ address: SPOT!, abi: spotlightAbi, functionName: "claimable", args: [BigInt(x), t, who] })), allowFailure: false });
+  return pairs.map(([x, t], i) => ({ epoch: x, token: t, amount: amts[i] as bigint })).filter((c) => c.amount > 0n);
+}
+
+/** One panel with where a connected voter stands: $STOA locked and unlocking, votes cast this week and what they
+ *  would earn if voting closed now, ETH ready to claim, and the one next step that matters. Links down to the full
+ *  lock, vote and claim panels. */
+const V = { fontFamily: "var(--num)", fontSize: 17, overflowWrap: "anywhere" as const, lineHeight: 1.25 };
+const U = { fontSize: 12, color: "var(--muted)" };
+function MyDashboard({ ep, meta, mine, started, race }: { ep?: SpotEpoch; meta?: Record<string, SpotTokenMeta>; mine: Record<string, bigint>; started: boolean; race: number }) {
+  const pub = usePublicClient({ chainId: net.chain.id });
+  const { address } = useAccount();
+  const me = address ?? zeroAddress;
+  const r = useReadContracts({
+    contracts: [
+      { address: SPOT!, abi: spotlightAbi, functionName: "accounts", args: [me], chainId: net.chain.id },
+      { address: SPOT!, abi: spotlightAbi, functionName: "availableVotes", args: [me], chainId: net.chain.id },
+      { address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [me], chainId: net.chain.id },
+    ] as const,
+    query: { enabled: !!address, refetchInterval: 15_000 },
+  });
+  const e = race; // weeks before this one are the ones that can be settled and claimed
+  const claims = useQuery({ queryKey: ["spot-claims", address, e], enabled: !!pub && !!address && e >= 1, refetchInterval: 60_000, queryFn: () => readClaims(pub!, address!, e) });
+  if (!address) return null;
+  const acct = r.data?.[0]?.result as readonly [bigint, bigint, bigint] | undefined;
+  const avail = r.data?.[1]?.result as bigint | undefined;
+  const bal = r.data?.[2]?.result as bigint | undefined;
+  const [active, pending, unlockAt] = acct ?? [0n, 0n, 0n];
+  const now = Math.floor(Date.now() / 1000);
+  const cast = Object.values(mine).reduce((a, v) => a + v, 0n);
+  // what this week's votes earn if voting closed right now: only tokens that would win, pot after the burn cut,
+  // split by votes (the contract's payout formula)
+  const lead = ep ? standing(ep).leading : new Set<string>();
+  const picks = ep ? Object.entries(mine).filter(([, v]) => v > 0n).map(([t, v]) => {
+    const c = ep.candidates.find((x) => x.token.toLowerCase() === t);
+    const win = !!c && lead.has(t);
+    const est = c && win && c.votes > 0n ? ((c.pot - (c.pot * BigInt(ep.params.cutBps)) / 10_000n) * v) / c.votes : 0n;
+    return { t, v, win, est, sym: meta?.[t]?.symbol ?? short(t) };
+  }) : [];
+  const estTotal = picks.reduce((a, p) => a + p.est, 0n);
+  const claimTotal = (claims.data ?? []).reduce((a, c) => a + c.amount, 0n);
+  const loading = r.isLoading;
+
+  let next: { text: string; href: string; cta: string } | null = null;
+  if (claimTotal > 0n) next = { text: `${eth(claimTotal)} ETH is ready to claim.`, href: "#claims", cta: "Claim" };
+  else if (active === 0n && (bal ?? 0n) > 0n) next = { text: `You hold ${stoaN(bal)} $STOA that is not locked: locked $STOA is what votes.`, href: "#lock", cta: "Lock $STOA" };
+  else if (active === 0n) next = { text: "This wallet has no $STOA yet: buy some, then lock it to vote.", href: `/trade?chain=robinhood&sell=ETH&buy=${STOA}`, cta: "Buy $STOA" };
+  else if (started && (avail ?? 0n) > 0n) next = { text: `${stoaN(avail)} of your votes are not cast this week.`, href: "#race", cta: "Vote" };
+  else if (!started) next = { text: `Your votes are ready. Voting opens ${utc(SPOT_START)}.`, href: "/docs/spotlight", cta: "How voting works" };
+  else if (pending > 0n && unlockAt > 0n && Number(unlockAt) <= now) next = { text: `${stoaN(pending)} $STOA has finished unlocking.`, href: "#lock", cta: "Withdraw" };
+
+  return (
+    <div className="panel pad" id="mine">
+      <div className="rowx"><div className="lbl">YOUR SPOTLIGHT</div><span className="chip">{short(address)}</span></div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", marginTop: 10, gap: 10 }}>
+        <div><div className="note" style={{ margin: 0 }}>Locked</div><div style={V}>{loading ? <Sk w={70} /> : <>{stoaN(active)} <small style={U}>$STOA</small></>}</div>
+          {pending > 0n && <div className="note" style={{ margin: 0 }}>{stoaN(pending)} unlocking · {Number(unlockAt) <= now ? "ready" : `from ${utc(Number(unlockAt))}`}</div>}</div>
+        <div><div className="note" style={{ margin: 0 }}>{started ? `Voted · week ${race + 1}` : "Votes ready"}</div><div style={V}>{loading ? <Sk w={70} /> : <>{stoaN(started ? cast : active)} <small style={U}>$STOA</small></>}</div>
+          {started && avail !== undefined && avail > 0n && <div className="note" style={{ margin: 0 }}>{stoaN(avail)} not cast yet</div>}</div>
+        <div><div className="note" style={{ margin: 0 }}>To claim</div><div style={V}>{e >= 1 && claims.isLoading ? <Sk w={60} /> : <>{e < 1 ? "0" : eth(claimTotal)} <small style={U}>ETH</small></>}</div>
+          {e >= 1 && <div className="note" style={{ margin: 0 }}><Link href={`/spotlight/earned/${address}`}>All you have earned →</Link></div>}</div>
+      </div>
+      {started && picks.length > 0 && (
+        <>
+          <ul className="list" style={{ marginTop: 12 }}>
+            {picks.map((p) => <li key={p.t}>{p.sym}: {stoaN(p.v)} $STOA · {p.win ? <b>winning now, ~{eth(p.est, 5)} ETH</b> : <span style={{ color: "var(--muted)" }}>not in the top {ep?.params.slots ?? SLOTS} right now</span>}</li>)}
+          </ul>
+          <p className="note" style={{ marginTop: 6 }}>If voting closed now: <b>~{eth(estTotal, 5)} ETH</b>. An estimate: bids and other votes move until the week ends.</p>
+        </>
+      )}
+      {next && (
+        <div className="notice" style={{ margin: "12px 0 0", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ flex: "1 1 200px" }}>{next.text}</span>
+          {next.href.startsWith("#") ? <a className="cta" href={next.href}>{next.cta}</a> : <Link className="cta" href={next.href}>{next.cta}</Link>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SpotlightBody() {
   const pub = usePublicClient({ chainId: net.chain.id });
   const { address } = useAccount();
@@ -129,6 +216,7 @@ export default function SpotlightBody() {
         <Cell label="$STOA BURNED BY SPOTLIGHT" v={live ? (d ? stoaN(d.burned) : undefined) : "0"} sub={d && d.pot > 0n ? `${eth(d.pot)} ETH waiting to buy and burn` : "10% of winning bids plus entry fees"} />
       </div>
 
+      {live && ready && <MyDashboard ep={d?.cur} meta={d?.meta} mine={d?.mine ?? {}} started={started} race={race} />}
       {live && ready && <LockCounter quorum={d?.cur.params.quorum} started={started} race={race} />}
       {ready && <SpotlightCalc cur={d?.cur} meta={d?.meta} week={race + 1} />}
       {ready && <ThisWeek prev={d?.prev ?? null} meta={d?.meta} e={e} onSettled={() => void data.refetch()} />}
@@ -311,7 +399,7 @@ function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<s
   }
 
   return (
-    <div className="panel" style={{ overflow: "hidden" }}>
+    <div className="panel" id="race" style={{ overflow: "hidden" }}>
       <div className="pad rowx" style={{ paddingBottom: 0 }}>
         <div className="lbl">THE RACE · WEEK {ep.epoch + 1}</div>
         <span className="chip">{phase === "bids" ? "Bids and votes open" : "Votes only: bids are final"}</span>
@@ -459,14 +547,7 @@ function Claims({ e }: { e: number }) {
     queryKey: ["spot-claims", address, e],
     enabled: !!pub && !!address && e >= 1,
     refetchInterval: 60_000,
-    queryFn: async () => {
-      const eps = Array.from({ length: e }, (_, i) => i);
-      const voted = await pub!.multicall({ contracts: eps.map((x) => ({ address: SPOT!, abi: spotlightAbi, functionName: "votedTokens", args: [BigInt(x), address!] })), allowFailure: false });
-      const pairs = eps.flatMap((x, i) => (voted[i] as unknown as Address[]).map((t) => [x, t] as const));
-      if (!pairs.length) return [];
-      const amts = await pub!.multicall({ contracts: pairs.map(([x, t]) => ({ address: SPOT!, abi: spotlightAbi, functionName: "claimable", args: [BigInt(x), t, address!] })), allowFailure: false });
-      return pairs.map(([x, t], i) => ({ epoch: x, token: t, amount: amts[i] as bigint })).filter((c) => c.amount > 0n);
-    },
+    queryFn: () => readClaims(pub!, address!, e),
   });
   const { busy, send, note } = useSend(() => { void q.refetch(); void earned.refetch(); });
   // everything this wallet has earned (claimed or not), for the share card
@@ -483,7 +564,7 @@ function Claims({ e }: { e: number }) {
   const shareText = `I've earned ${won.toLocaleString("en-US", { maximumFractionDigits: won < 1 ? 4 : 3 })} ETH voting with $STOA in @StoaDEX Spotlight. Projects pay ETH, holders earn it.`;
   const total = list.reduce((a, c) => a + c.amount, 0n);
   return (
-    <div className="panel pad">
+    <div className="panel pad" id="claims">
       <div className="rowx"><div className="lbl">YOUR ETH TO CLAIM</div><span className="chip">{q.isLoading ? "…" : `${eth(total)} ETH`}</span></div>
       {list.length === 0
         ? <p className="note">Nothing to claim yet. When a token you voted for wins, its ETH shows here after the week is settled.</p>

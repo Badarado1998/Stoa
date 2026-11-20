@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "spotlight-dashboard",
+    date: "2026-11-20",
+    title: "Your Spotlight at a glance, Points countdown, faster home on phones",
+    tag: "$STOA",
+    items: [
+      "Spotlight: a Your Spotlight panel shows your locked $STOA, what is unlocking, your votes this week with what they would earn if voting closed now, the ETH you can claim, and your next step.",
+      "Home and Trade show the countdown to Points season 1 (Mon 23 Nov, 00:00 UTC).",
+      "Home loads faster on phones without a graphics chip or with Data Saver on: the 3D walk is skipped there and the page shows the plain hero.",
+    ],
+    link: { href: "/spotlight#mine", label: "Spotlight" },
+  },
+  {
     id: "earnings-pnl-dip",
     date: "2026-11-20",
     title: "Earnings dates on stock pages, P&L cards, buy-if-cheaper limit orders",
