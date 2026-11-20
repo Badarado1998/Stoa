@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "points-season-1",
+    date: "2026-11-20",
+    title: "Stoa Points, season 1, from Mon 23 Nov 00:00 UTC",
+    tag: "Both chains",
+    items: [
+      "Every swap routed through Stoa earns points: 1 point per $1, Robinhood Stock Tokens 2x. Referrers earn 10% of the points of swaps made through their link.",
+      "At most 2,000 points a UTC day from your own swaps; round trips within an hour and stablecoin-to-stablecoin swaps earn nothing.",
+      "Points have no promised value: not a token, not claimable, not transferable. Leaderboard and rules on /points.",
+      "Portfolio now lists your Robinhood Stock Tokens, valued at Robinhood's price, with the on-chain gap.",
+    ],
+    link: { href: "/points", label: "Points" },
+  },
+  {
     id: "status-leaderboard-swapcheck",
     date: "2026-11-20",
     title: "Status page, weekly top traders, a check after every swap, Spotlight cards",
