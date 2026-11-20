@@ -4,7 +4,7 @@ name: Uptime check
 # (0.01 ETH -> USDG on Robinhood Chain), the stock list and the Spotlight API. A check that fails twice, 20 s apart, opens an issue
 # labelled "uptime" (GitHub emails the repo owner); while it stays down, one comment an hour; when everything passes
 # again, the issue is closed with a note. Each run is also counted in status.json (30 days of daily counts and incidents,
-# data/status/record.py), published to the status-data branch every hour and whenever an incident starts or ends, and
+# data/status/record.py), published to the status-data branch on every run, and
 # shown on stoadex.com/status. Read-only on-chain: it sends nothing.
 on:
   schedule:
@@ -61,12 +61,10 @@ jobs:
         with:
           path: status.json
           key: uptime-status-${{ github.run_id }}
-      - name: Publish status.json (hourly, or when an incident starts or ends)
-        if: steps.rec.outputs.changed == '1' || github.event_name == 'workflow_dispatch' || github.event.schedule == '*/15 * * * *'
+      - name: Publish status.json (every run; the branch holds one commit, replaced each time)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          [ "${{ steps.rec.outputs.changed }}" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(date -u +%M)" -lt 15 ] || { echo "not this quarter"; exit 0; }
           d=$(mktemp -d); cd "$d"
           git init -q -b status-data
           mkdir -p web
