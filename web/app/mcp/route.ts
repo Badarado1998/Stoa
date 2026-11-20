@@ -11,6 +11,12 @@ import { NETS, netByKey } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
 import { readSafety } from "@/lib/safety";
 import { mid, stockTokens } from "@/lib/stocks";
+import { createPublicClient, http, parseUnits } from "viem";
+import { ROBINHOOD } from "@/lib/networks";
+import { srv } from "@/lib/serverRpc";
+import { newId, readRequest, requestUrl } from "@/lib/pay";
+import { GET as payQuote } from "@/app/api/pay/quote/route";
+import { GET as payStatus } from "@/app/api/pay/status/route";
 import { isStalePool } from "@/lib/stockGap";
 import { bridgeQuote } from "@/lib/bridgeQuote";
 import { marketContext } from "@/lib/cmc";
@@ -149,6 +155,42 @@ const TOOLS = [
     inputSchema: { type: "object", additionalProperties: false, properties: {} },
     annotations: ro,
   },
+  {
+    name: "create_payment_link",
+    title: "Create a Stoa Pay link",
+    description: "Stoa Pay on Robinhood Chain: a link that asks to be paid `amount` USDG (or that much in a Robinhood stock token) to `to`. Whoever opens it pays with any token Stoa routes, or ETH from Base, Arbitrum, Optimism or Ethereum for USDG payouts. Nothing is stored or signed: the link is the request. Returns the URL; check it later with payment_status.",
+    inputSchema: {
+      type: "object", required: ["to", "amount"], additionalProperties: false,
+      properties: {
+        to: { type: "string", description: "Wallet that receives the payment (0x…)." },
+        amount: { type: "string", description: "Amount in USDG, up to two decimals, e.g. \"25\" or \"12.50\". Max 10000." },
+        note: { type: "string", description: "Optional plain-text note, up to 80 characters." },
+        receiveAs: { type: "string", description: "Optional: a Robinhood stock token (ticker like NVDA, or its address) to be paid in instead of USDG." },
+      },
+    },
+    annotations: ro,
+  },
+  {
+    name: "pay_payment_link",
+    title: "Build the payment for a Stoa Pay link",
+    description: "The unsigned transaction that pays a Stoa Pay link on Robinhood Chain from `payer`, with `payWith` (a token address or native). The requester gets at least what the link asks, or the transaction does not go through. Stoa never signs or sends: show the user the amount and the recipient, approve first if 'approval' is present, then let the user's wallet sign.",
+    inputSchema: {
+      type: "object", required: ["url", "payer"], additionalProperties: false,
+      properties: {
+        url: { type: "string", description: "The stoadex.com/pay link." },
+        payer: { type: "string", description: "Wallet that pays (0x…)." },
+        payWith: { type: "string", description: "Token to pay with: an address on Robinhood Chain, or native for ETH. Default USDG." },
+      },
+    },
+    annotations: ro,
+  },
+  {
+    name: "payment_status",
+    title: "Is a Stoa Pay link paid?",
+    description: "Whether a Stoa Pay link has been paid on Robinhood Chain, read from the chain: the paying transaction, who paid and when.",
+    inputSchema: { type: "object", required: ["url"], additionalProperties: false, properties: { url: { type: "string", description: "The stoadex.com/pay link." } } },
+    annotations: ro,
+  },
 ] as const;
 
 type Rpc = { jsonrpc: "2.0"; id?: string | number | null; method: string; params?: Record<string, unknown> };
@@ -251,6 +293,42 @@ async function callTool(name: string, a: Record<string, unknown>) {
         if (set === "venues") return text({ set, rows: await venueSnapshot(), note: "Each venue alone, one hop, before fees; router_out is Stoa's route after its 2 bps fee. A reading at one block, not a fill." });
       } catch { return text("the chains did not answer, try again shortly", true); }
       return text("set must be datasets, swaps, points or venues", true);
+    }
+    case "create_payment_link": {
+      let get: string | null = null;
+      const ra = str(a.receiveAs);
+      if (ra && ra.toUpperCase() !== "USDG") {
+        const { stocks } = await stockTokens();
+        const s = stocks.find((x) => x.symbol.toUpperCase() === ra.toUpperCase() || x.address.toLowerCase() === ra.toLowerCase());
+        if (!s) return text(`${ra} is not a Robinhood stock token Stoa knows`, true);
+        get = s.address;
+      }
+      const head = await createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc)) }).getBlockNumber().catch(() => null);
+      const r = readRequest({ to: str(a.to), amount: str(a.amount), note: str(a.note), get, id: newId(), b: head ? String(head) : null });
+      if (!r) return text("to must be an address and amount a USDG amount up to 10000 with at most two decimals", true);
+      return text({ url: requestUrl("https://stoadex.com", r), request: r, note: "Share the URL. Nothing is stored or signed; check it with payment_status." });
+    }
+    case "pay_payment_link":
+    case "payment_status": {
+      let q: URLSearchParams;
+      try { q = new URL(str(a.url) ?? "").searchParams; } catch { return text("url must be a stoadex.com/pay link", true); }
+      const r = readRequest({ to: q.get("to"), amount: q.get("amount"), note: q.get("note"), get: q.get("get"), id: q.get("id"), b: q.get("b") });
+      if (!r) return text("that is not a valid Stoa Pay link", true);
+      const raw = parseUnits(r.amount, 6).toString();
+      if (name === "payment_status") {
+        if (!r.id || !r.b) return text({ request: r, paid: null, note: "This link was made before payments could be matched to it; check the recipient's wallet instead." });
+        const res = await payStatus(new Request(`https://stoadex.com/api/pay/status?${new URLSearchParams({ to: r.to, get: r.get ?? ROBINHOOD.stable, amount: raw, id: r.id, b: String(r.b) })}`));
+        return text({ request: r, ...(await res.json()) }, !res.ok);
+      }
+      const payer = str(a.payer) ?? "";
+      if (!isAddress(payer)) return text("payer must be an address", true);
+      const u = new URLSearchParams({ token: str(a.payWith) ?? ROBINHOOD.stable, amount: raw, payer, to: r.to });
+      if (r.get) u.set("get", r.get);
+      if (r.id) u.set("id", r.id);
+      const res = await payQuote(new Request(`https://stoadex.com/api/pay/quote?${u}`));
+      const body = await res.json();
+      if (res.ok) body.note = "Unsigned. Show the user who gets paid (payment.to) and at least how much (payment.minOut of payment.get), approve first if 'approval' is present, then let the user's wallet sign on Robinhood Chain.";
+      return text({ request: r, ...body }, !res.ok);
     }
     case "stock_tokens": {
       const data = await stockTokens().catch(() => null);

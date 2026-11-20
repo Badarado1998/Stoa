@@ -1,25 +1,56 @@
-import { getAddress, isAddress, type Address } from "viem";
+import { concat, getAddress, isAddress, type Address, type Hex } from "viem";
 
-/** Stoa Pay: a payment request is just a link. Nothing is stored; the link carries who gets paid, how much and a note. */
+/** Stoa Pay: a payment request is just a link. Nothing is stored; the link carries who gets paid, how much, in what,
+ *  a note, a random request id and the block it was made at. The id rides at the end of the payment's calldata
+ *  (contracts ignore trailing bytes), which is how a payment is matched to its request on-chain. */
 export const PAY_MAX_USDG = 10_000;
 export const NOTE_MAX = 80;
+export const USDG_ADDR = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address;
 
-export type PayRequest = { to: Address; amount: string; note: string };
+export type PayRequest = {
+  to: Address; amount: string; note: string;
+  /** what the requester receives: USDG (undefined) or a Robinhood stock token, worth `amount` USDG when paid */
+  get?: Address;
+  /** 16 hex characters, random per link; absent on links made before 21 Nov 2026 */
+  id?: string;
+  /** Robinhood Chain block when the link was made: payments are looked for from here */
+  b?: number;
+};
+
+/** "SPAY" and the request id, appended to a payment's calldata */
+export const tagOf = (id: string): Hex => `0x53504159${id}` as Hex;
+export const withTag = (data: Hex, id?: string): Hex => (id ? concat([data, tagOf(id)]) : data);
+export const tagIn = (input: string): string | null => {
+  const m = /53504159([0-9a-f]{16})$/i.exec(input);
+  return m ? m[1].toLowerCase() : null;
+};
 
 /** Reads and checks a request from the link's query. Returns null when the link is not a valid request. */
-export function readRequest(q: { to?: string | null; amount?: string | null; note?: string | null }): PayRequest | null {
+export function readRequest(q: { to?: string | null; amount?: string | null; note?: string | null; get?: string | null; id?: string | null; b?: string | null }): PayRequest | null {
   const to = q.to ?? "", amount = (q.amount ?? "").trim();
   if (!isAddress(to, { strict: false })) return null;
   if (!/^\d{1,6}(\.\d{1,2})?$/.test(amount) || Number(amount) <= 0 || Number(amount) > PAY_MAX_USDG) return null;
   // the note is plain text, shown as text; links and markup are stripped so a request cannot pose as a Stoa message
   const note = (q.note ?? "").replace(/https?:\/\/\S+/gi, "").replace(/[<>]/g, "").trim().slice(0, NOTE_MAX);
-  return { to: getAddress(to), amount, note };
+  const r: PayRequest = { to: getAddress(to), amount, note };
+  if (q.get) {
+    if (!isAddress(q.get, { strict: false })) return null;
+    if (q.get.toLowerCase() !== USDG_ADDR.toLowerCase()) r.get = getAddress(q.get);
+  }
+  if (q.id) { if (!/^[0-9a-f]{16}$/i.test(q.id)) return null; r.id = q.id.toLowerCase(); }
+  if (q.b) { if (!/^\d{1,12}$/.test(q.b)) return null; r.b = Number(q.b); }
+  return r;
 }
 
 export function requestUrl(origin: string, r: PayRequest): string {
   const u = new URL("/pay", origin);
   u.searchParams.set("to", r.to);
   u.searchParams.set("amount", r.amount);
+  if (r.get) u.searchParams.set("get", r.get);
   if (r.note) u.searchParams.set("note", r.note);
+  if (r.id) u.searchParams.set("id", r.id);
+  if (r.b) u.searchParams.set("b", String(r.b));
   return u.toString();
 }
+
+export const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), (x) => x.toString(16).padStart(2, "0")).join("");

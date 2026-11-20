@@ -18,6 +18,8 @@ export const CHANGES: Change[] = [
     tag: "Robinhood Chain",
     items: [
       "Create a payment link for any amount up to 10,000 USDG, with a note and a QR code. Nothing is stored: the link is the request.",
+      "Get paid in a stock token: pick NVDA, TSLA or another Robinhood stock token, and the payer's swap delivers what the amount buys of it.",
+      "Links show when they are paid, with a receipt page read from the chain. MCP tools let AI agents create, pay and check payment links.",
       "The payer can use USDG, ETH, a stock token or any token Stoa routes on Robinhood Chain; a swap pays the requester directly, with the amount asked as its minimum.",
       "Or pay with ETH on Base, Arbitrum, Optimism or Ethereum through Relay, up to 500 USDG; Stoa checks Relay's order pays exactly the requester before the wallet opens.",
       "Stock swaps outside US market hours now show the session, when regular hours open (UTC), and a warning when the swap is on the costly side of Robinhood's price.",
