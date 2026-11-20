@@ -98,6 +98,36 @@ Elysium and Robinhood Chain. The venues on each are listed in the [Introduction]
 
 No. Connect any EVM wallet. There is no sign-up and no deposit.
 
+## Spotlight and Points
+
+### Why do my points show 0?
+
+Points season 1 counts swaps from Monday 23 November 2026, 00:00 UTC. Before that, [Points](https://stoadex.com/points) shows a preview of what your last 7 days would have earned, and nothing counts yet. After the start, the board refreshes every 5 minutes. A swap earns nothing if it is under $1, if both sides are stablecoins, or if it undoes your own opposite swap within an hour, and at most 2,000 points count per UTC day.
+
+### Do referrals earn points?
+
+Yes: 10% of the points of every swap made through your link, on top of 10% of Stoa's fee. Your link is on [Referrals](https://stoadex.com/referrals), with the points it has earned so far.
+
+### Are points worth anything?
+
+Points have no promised value. They are not a token, cannot be claimed, sold or transferred, and Stoa will never ask you to pay, deposit or sign anything for them.
+
+### When can I claim Spotlight ETH?
+
+After the week closes (Monday 00:00 UTC) and is settled, which the keeper does a few minutes later. Then it shows under Your ETH to claim on [Spotlight](https://stoadex.com/spotlight#claims). Claims never expire.
+
+### Why did a token with a bigger bid lose?
+
+A token needs at least 1,000,000 $STOA of votes to win. Among the tokens that reach that, the three largest bids win. A large bid without enough votes cannot win, and its bid can be taken back in full.
+
+### Can I unlock my $STOA any time?
+
+You can request an unlock any time; that $STOA stops voting at once and can be withdrawn when the week ends. $STOA that voted this week can be requested from next week on, so it stays locked about seven days at least. See [Spotlight for voters](spotlight-voters.md).
+
+### Is a Spotlight token safe to buy?
+
+Spotlight slots are sponsored and not reviewed by Stoa. Every candidate's page shows Stoa's free safety check (a simulated buy and sell-back, taxes, top holders), but a simulation cannot prove a token is safe. Check it yourself and never buy more than you can lose.
+
 ## Contact
 
 ### How do I reach the team?

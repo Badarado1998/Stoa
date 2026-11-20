@@ -741,6 +741,8 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
   .mnav a.on{color:var(--accent)}
   #app{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
   body:has(.mnav) .hdr .menu-btn{display:none}
+  /* the walk's story cards sit above the tab bar, and scroll inside themselves if a phone is short */
+  body:has(.mnav) .card{bottom:calc(64px + env(safe-area-inset-bottom) + 12px);max-height:calc(100dvh - 64px - env(safe-area-inset-bottom) - 120px);overflow-y:auto}
   .foot .cols{display:none !important}
   .show-m{display:flex !important}
   .toasts{bottom:calc(80px + env(safe-area-inset-bottom))}
