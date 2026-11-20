@@ -217,13 +217,13 @@ function PayRequestView({ req }: { req: PayRequest }) {
 
       <div className="lbl" style={{ marginTop: 14 }}>PAY WITH</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
-        {PAY_WITH.slice(0, 3).map((t) => (
+        {PAY_WITH.slice(0, 2).map((t) => (
           <button key={t.address} type="button" className={lc(t.address) === lc(token.address) ? "pri" : "ghost"} style={{ padding: "6px 14px" }} disabled={phase.k === "busy"} onClick={() => { setPhase({ k: "idle" }); setTokenAddr(t.address); }}>{t.symbol}</button>
         ))}
-        <select aria-label="Another token" value={PAY_WITH.slice(0, 3).some((t) => lc(t.address) === lc(token.address)) ? "" : token.address} disabled={phase.k === "busy"}
+        <select aria-label="Another token" value={PAY_WITH.slice(0, 2).some((t) => lc(t.address) === lc(token.address)) ? "" : token.address} disabled={phase.k === "busy"}
           onChange={(e) => { if (e.target.value) { setPhase({ k: "idle" }); setTokenAddr(e.target.value); } }} style={{ fontSize: 15, padding: "6px 8px", borderRadius: 10 }}>
           <option value="">Another token…</option>
-          {PAY_WITH.slice(3).map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
+          {PAY_WITH.slice(2).map((t) => <option key={t.address} value={t.address}>{t.symbol}</option>)}
         </select>
       </div>
 
