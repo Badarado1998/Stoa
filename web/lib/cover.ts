@@ -168,6 +168,14 @@ export const when = (ts: number | bigint) =>
   new Date(Number(ts) * 1000).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
 
 /** Readable text for a failed cover transaction: Rug Cover's errors, then the router's, then the wallet's. */
+/** the Rug Cover-specific text for a revert, if the error is one of Rug Cover's own */
+export function coverErrorText(e: unknown): string | undefined {
+  if (!(e instanceof BaseError)) return undefined;
+  const rev = e.walk((x) => x instanceof ContractFunctionRevertedError);
+  const n = rev instanceof ContractFunctionRevertedError ? rev.data?.errorName : undefined;
+  return n ? COVER_ERRORS[n] : undefined;
+}
+
 export function explainCover(e: unknown): string {
   if (e instanceof BaseError) {
     const rev = e.walk((x) => x instanceof ContractFunctionRevertedError);

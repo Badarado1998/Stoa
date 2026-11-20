@@ -35,7 +35,7 @@ import StockGap from "./StockGap";
 import { session as usSession } from "@/lib/marketHours";
 import { useWatch } from "@/lib/watchlist";
 import { useLimitLive } from "@/lib/limit";
-import { COVER, coverAbi, explainCover, useCoverLive, useOpenTokens } from "@/lib/cover";
+import { COVER, coverAbi, coverErrorText, useCoverLive, useOpenTokens } from "@/lib/cover";
 
 type Quote = { out: bigint; route: Route | null; at: number; impact: number; block?: bigint } | null;
 const IMPACT_WARN = 3; // %
@@ -43,16 +43,27 @@ const IMPACT_BLOCK = 15; // % — needs an explicit confirmation
 const SLIPS = [0.1, 0.5, 1];
 const DEADLINE_S = 120;
 
-/** Readable message for wallet and contract errors. */
-function explain(e: unknown, gas = "HYPE"): string {
+type Fix = "bridge" | "slip" | "retry" | "check" | "lower";
+/** Readable message for wallet and contract errors, and the one action that most likely fixes it. */
+function explain(e: unknown, gas = "HYPE"): { text: string; fix?: Fix } {
+  const msg = e instanceof BaseError ? `${e.shortMessage} ${e.details ?? ""}` : String((e as Error)?.message ?? "");
   if (e instanceof BaseError) {
     const rev = e.walk((x) => x instanceof ContractFunctionRevertedError);
-    if (rev instanceof ContractFunctionRevertedError && rev.data?.errorName && ERROR_TEXT[rev.data.errorName]) return ERROR_TEXT[rev.data.errorName];
-    if (/User rejected|denied/i.test(e.shortMessage)) return "You rejected the request in your wallet.";
-    if (/insufficient funds/i.test(e.shortMessage)) return `Not enough ${gas} to pay for gas.`;
-    return e.shortMessage;
+    const name = rev instanceof ContractFunctionRevertedError ? rev.data?.errorName : undefined;
+    if (name && ERROR_TEXT[name]) {
+      const text = ERROR_TEXT[name].replace(/HYPE/g, gas);
+      const fix: Fix | undefined = name === "Slippage" ? "slip" : name === "Expired" || name === "QuoteExpired" || name === "UnknownVenue" ? "retry" : name === "BadToken" || name === "InputNotSpent" ? "check" : name === "Partial" || name === "SizeExceeded" || name === "CapExceeded" ? "lower" : undefined;
+      return { text, fix };
+    }
   }
-  return (e as Error)?.message ?? "Something went wrong.";
+  if (/User rejected|denied|rejected the request/i.test(msg)) return { text: "You cancelled it in your wallet. Nothing was sent." };
+  if (/insufficient funds|gas required exceeds|exceeds the balance of the account/i.test(msg)) return { text: `Not enough ${gas} for this swap plus gas. Gas costs cents, but it has to be there.`, fix: "bridge" };
+  if (/transfer amount exceeds balance|exceeds balance|insufficient balance/i.test(msg)) return { text: "This wallet holds less than the amount you entered. Lower it and try again.", fix: "lower" };
+  if (/allowance/i.test(msg)) return { text: "The approval is not enough for this amount. Approve again, then swap.", fix: "retry" };
+  if (/nonce too low|replacement transaction underpriced|already known/i.test(msg)) return { text: "Your wallet still has an earlier transaction waiting. Wait for it, or speed it up or cancel it in your wallet, then try again.", fix: "retry" };
+  if (/timeout|timed out|fetch failed|HTTP request failed|network|disconnected/i.test(msg)) return { text: "The network did not answer in time. Nothing was sent if your wallet shows no transaction. Try again.", fix: "retry" };
+  if (/Transaction reverted|execution reverted|reverted/i.test(msg)) return { text: "The swap did not go through: the price or the pool changed, or the token blocks this trade. Your funds are safe; only gas was used if it reached the chain.", fix: "check" };
+  return { text: e instanceof BaseError ? e.shortMessage : msg || "Something went wrong. Try again.", fix: "retry" };
 }
 
 function useReferrer(self?: string) {
@@ -101,7 +112,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const [quoting, setQuoting] = useState(false);
   const [noRoute, setNoRoute] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: Hash; fix?: Fix } | null>(null);
   // the last confirmed swap, offered as a shareable link that carries the trader's referral
   const [done, setDone] = useState<{ hash: Hash; net: Net["key"]; symIn: string; symOut: string; inTxt: string; outTxt: string; covered?: boolean; pts?: number; watch?: { address: string; symbol: string; logo?: string; via?: string }; check?: { sell: Address; buy: Address; decimals: number; paid: bigint; got: bigint; block: bigint } } | null>(null);
   // the swap funnel, counted without any address, amount or token (privacy: docs/terms-privacy): once per page view
@@ -346,7 +357,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const live = useRef<SwapForm>({ amount, slip, sell: sell.address, buy: buy.address });
   live.current = { amount, slip, sell: sell.address, buy: buy.address };
 
-  async function run(label: string, fn: () => Promise<Hash>, onOk?: (r: TransactionReceipt, hash: Hash) => void, why: (e: unknown) => string = (e) => explain(e, G)) {
+  async function run(label: string, fn: () => Promise<Hash>, onOk?: (r: TransactionReceipt, hash: Hash) => void, why: (e: unknown) => { text: string; fix?: Fix } = (e) => explain(e, G)) {
     if (!pub) return;
     setBusy(label); setMsg(null); setDone(null);
     try {
@@ -358,7 +369,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
       void native.refetch(); void sellBal.refetch(); void buyBal.refetch(); void allowance.refetch();
       return true;
     } catch (e) {
-      setMsg({ ok: false, text: why(e) });
+      setMsg({ ok: false, ...why(e) });
       return false;
     } finally {
       setBusy(null);
@@ -404,7 +415,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         cover.refetch();
         step("swap_done");
         if (got !== undefined) setDone({ hash, net: net.key, symIn: sell.symbol, symOut: buy.symbol, inTxt: fmtAmt(paid, sell.decimals), outTxt: fmtAmt(got, buy.decimals), covered: true });
-      }, explainCover);
+      }, (e) => { const c = coverErrorText(e); return c ? { text: c } : explain(e, G); });
       if (ok) { setAmount(""); setAckImpact(false); }
       return;
     }
@@ -639,7 +650,21 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             <Link href="/bridge">Bridge {noGas ? G : "funds"} in from Base, Arbitrum, Ethereum, Optimism or BNB Chain →</Link>
           </div>
         )}
-        {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
+        {msg && !done && (
+          <div className={msg.ok ? "ok" : "err"}>
+            {msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}
+            {!msg.ok && msg.fix && !busy && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                {msg.fix === "bridge" && net.key === "robinhood" && <Link className="ghost" href="/bridge">Get {G} on {net.name}</Link>}
+                {msg.fix === "slip" && slip < 1 && <button type="button" className="ghost" onClick={() => { setSlip(1); setMsg(null); }}>Use 1% slippage</button>}
+                {(msg.fix === "retry" || (msg.fix === "slip" && slip >= 1)) && <button type="button" className="ghost" onClick={() => { setMsg(null); void onAction(); }}>Try again</button>}
+                {msg.fix === "check" && !isNative(buy) && <Link className="ghost" href={`/check/${net.key}/${buy.address}`}>Run the safety check on {buy.symbol}</Link>}
+                {msg.fix === "check" && <button type="button" className="ghost" onClick={() => { setMsg(null); void onAction(); }}>Try again</button>}
+                {msg.fix === "lower" && <button type="button" className="ghost" onClick={() => { setMsg(null); document.getElementById("sellv")?.focus(); }}>Change the amount</button>}
+              </div>
+            )}
+          </div>
+        )}
         {done && (() => {
           const link = `${SITE}/swap/${done.net}/${done.hash}${address ? `?ref=${address}` : ""}`;
           const text = `Swapped ${done.inTxt} ${done.symIn} for ${done.outTxt} ${done.symOut} on @StoaDEX. Every venue it routes, compared for my exact amount.`;
