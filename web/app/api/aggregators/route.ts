@@ -1,6 +1,6 @@
 import { isAddress } from "viem";
 import { limited } from "@/lib/api";
-import { aggregatorQuotes, aggregatorsOn } from "@/lib/aggregators";
+import { aggregatorQuotesWithStatus, aggregatorsOn } from "@/lib/aggregators";
 
 // GET /api/aggregators?sell=&buy=&amount= : 0x's and 1inch's quotes on Robinhood Chain for the same amount, shown next to
 // Stoa's route in Trade as a check. Empty list when no aggregator key is set or neither answers.
@@ -15,6 +15,6 @@ export async function GET(req: Request) {
   if (!isAddress(sell, { strict: false }) || !isAddress(buy, { strict: false }) || !/^\d{1,60}$/.test(amount) || amount === "0") {
     return Response.json({ error: "bad request" }, { status: 400 });
   }
-  const quotes = await aggregatorQuotes(sell, buy, amount);
-  return Response.json({ quotes }, { headers: { "cache-control": "no-store" } });
+  const { quotes, status } = await aggregatorQuotesWithStatus(sell, buy, amount);
+  return Response.json({ quotes, status }, { headers: { "cache-control": "no-store" } });
 }

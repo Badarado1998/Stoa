@@ -16,12 +16,16 @@ export interface AggQuote { name: AggName; out: string }
 
 const tok = (a: string) => (a.toLowerCase() === ZERO ? EVM_NATIVE : a);
 
-async function get(url: string, headers: Record<string, string>): Promise<Record<string, unknown> | null> {
+/** why each source gave no quote this time (an HTTP status or a short reason; never a key or a body) */
+export type AggStatus = Partial<Record<AggName, string>>;
+let lastStatus: AggStatus = {};
+async function get(name: AggName, url: string, headers: Record<string, string>): Promise<Record<string, unknown> | null> {
   try {
     const r = await fetch(url, { headers: { accept: "application/json", ...headers }, signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
-    if (!r.ok) return null;
+    if (!r.ok) { lastStatus[name] = `http ${r.status}`; return null; }
     return (await r.json()) as Record<string, unknown>;
-  } catch {
+  } catch (e) {
+    lastStatus[name] = (e as Error)?.name === "TimeoutError" ? "timeout" : "network";
     return null;
   }
 }
@@ -33,8 +37,9 @@ async function zeroX(sell: string, buy: string, amount: string): Promise<AggQuot
   const key = process.env.ZEROX_API_KEY;
   if (!key) return null;
   const q = new URLSearchParams({ chainId: String(AGG_CHAIN), sellToken: tok(sell), buyToken: tok(buy), sellAmount: amount });
-  const j = await get(`https://api.0x.org/swap/allowance-holder/price?${q}`, { "0x-api-key": key, "0x-version": "v2" });
-  if (!j || j.liquidityAvailable === false || !isAmount(j.buyAmount)) return null;
+  const j = await get("0x", `https://api.0x.org/swap/allowance-holder/price?${q}`, { "0x-api-key": key, "0x-version": "v2" });
+  if (!j) return null;
+  if (j.liquidityAvailable === false || !isAmount(j.buyAmount)) { lastStatus["0x"] = j.liquidityAvailable === false ? "no liquidity" : "no amount"; return null; }
   return { name: "0x", out: j.buyAmount };
 }
 
@@ -43,8 +48,9 @@ async function oneInch(sell: string, buy: string, amount: string): Promise<AggQu
   const key = process.env.ONEINCH_API_KEY;
   if (!key) return null;
   const q = new URLSearchParams({ src: tok(sell), dst: tok(buy), amount });
-  const j = await get(`https://api.1inch.com/swap/v6.1/${AGG_CHAIN}/quote?${q}`, { authorization: `Bearer ${key}` });
-  if (!j || !isAmount(j.dstAmount)) return null;
+  const j = await get("1inch", `https://api.1inch.com/swap/v6.1/${AGG_CHAIN}/quote?${q}`, { authorization: `Bearer ${key}` });
+  if (!j) return null;
+  if (!isAmount(j.dstAmount)) { lastStatus["1inch"] = "no amount"; return null; }
   return { name: "1inch", out: j.dstAmount };
 }
 
@@ -70,14 +76,21 @@ async function rialto(sell: string, buy: string, amount: string): Promise<AggQuo
   if (dec === null) return null;
   const w = (a: string) => (a.toLowerCase() === ZERO ? WETH : a);
   const q = new URLSearchParams({ sell_token: w(sell), buy_token: w(buy), sell_amount: formatUnits(BigInt(amount), dec), taker: "0x000000000000000000000000000000000000dEaD", slippage_bps: "50", chain_id: String(AGG_CHAIN) });
-  const j = await get(`https://rialto-trade-api.rialto.xyz/quote?${q}`, { authorization: `Bearer ${key}` });
-  if (!j || !isAmount(j.buy_amount)) return null;
+  const j = await get("Rialto", `https://rialto-trade-api.rialto.xyz/quote?${q}`, { authorization: `Bearer ${key}` });
+  if (!j) return null;
+  if (!isAmount(j.buy_amount)) { lastStatus.Rialto = "no amount"; return null; }
   return { name: "Rialto", out: j.buy_amount };
 }
 
 export const aggregatorsOn = () => !!(process.env.ZEROX_API_KEY || process.env.ONEINCH_API_KEY || process.env.RIALTO_API_KEY);
 
-export async function aggregatorQuotes(sell: string, buy: string, amount: string): Promise<AggQuote[]> {
+export async function aggregatorQuotesWithStatus(sell: string, buy: string, amount: string): Promise<{ quotes: AggQuote[]; status: AggStatus }> {
+  lastStatus = {};
+  const on: AggStatus = {};
+  if (!process.env.ZEROX_API_KEY) on["0x"] = "no key"; if (!process.env.ONEINCH_API_KEY) on["1inch"] = "no key"; if (!process.env.RIALTO_API_KEY) on.Rialto = "no key";
   const all = await Promise.all([zeroX(sell, buy, amount), oneInch(sell, buy, amount), rialto(sell, buy, amount)]);
-  return all.filter((x): x is AggQuote => x !== null);
+  return { quotes: all.filter((x): x is AggQuote => x !== null), status: { ...on, ...lastStatus } };
+}
+export async function aggregatorQuotes(sell: string, buy: string, amount: string): Promise<AggQuote[]> {
+  return (await aggregatorQuotesWithStatus(sell, buy, amount)).quotes;
 }
