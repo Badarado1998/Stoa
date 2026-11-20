@@ -20,8 +20,18 @@ const RH = ROBINHOOD.chain.id;
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const lc = (a: string) => a.toLowerCase();
 const PAY_WITH: Token[] = ROBINHOOD.tokens.filter((t) => lc(t.address) !== lc(ROBINHOOD.wrapped));
-const STOCKS: Token[] = ROBINHOOD.tokens.filter((t) => t.name.startsWith("Robinhood stock token"));
-const symbolOf = (a?: Address) => (!a ? "USDG" : ROBINHOOD.tokens.find((t) => lc(t.address) === lc(a))?.symbol ?? short(a));
+type StockRow = { symbol: string; address: Address; halted: boolean; routeOnStoa?: boolean };
+let stockCache: StockRow[] | null = null;
+/** every Robinhood stock token (/api/v1/stocks), for payout choices and names */
+function useStocks(): StockRow[] {
+  const [list, setList] = useState<StockRow[]>(stockCache ?? []);
+  useEffect(() => {
+    if (stockCache) return;
+    fetch("/api/v1/stocks").then((r) => r.json()).then((j: { stocks: StockRow[] }) => { stockCache = j.stocks; setList(j.stocks); }).catch(() => {});
+  }, []);
+  return list;
+}
+const symbolOf = (a?: Address) => (!a ? "USDG" : (stockCache ?? []).find((t) => lc(t.address) === lc(a))?.symbol ?? ROBINHOOD.tokens.find((t) => lc(t.address) === lc(a))?.symbol ?? short(a));
 
 type Quote = {
   transfer?: boolean; amountIn: string; amountOut: string; tx: { to: Address; data: Hex; value: string };
@@ -102,6 +112,7 @@ function CreateRequest({ malformed }: { malformed: boolean }) {
   const [get, setGet] = useState<string>("");
   const [id] = useState(newId);
   const [b, setB] = useState<number | null>(null);
+  const stocks = useStocks().filter((x) => x.routeOnStoa && !x.halted).sort((x, y) => x.symbol.localeCompare(y.symbol));
   useEffect(() => { if (address && !to) setTo(address); }, [address]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { pub?.getBlockNumber().then((n) => setB(Number(n))).catch(() => {}); }, [pub]);
   const r = readRequest({ to, amount, note, get: get || null, id, b: b ? String(b) : null });
@@ -128,7 +139,7 @@ function CreateRequest({ malformed }: { malformed: boolean }) {
         <div className="row"><label className="lbl" htmlFor="pay-get">RECEIVE AS</label></div>
         <select id="pay-get" value={get} onChange={(e) => setGet(e.target.value)} style={{ fontSize: 16, width: "100%", padding: "6px 4px", borderRadius: 10 }}>
           <option value="">USDG</option>
-          {STOCKS.map((t) => <option key={t.address} value={t.address}>{t.symbol} (stock token)</option>)}
+          {stocks.map((t) => <option key={t.address} value={t.address}>{t.symbol} (stock token)</option>)}
         </select>
         {get && <div className="note" style={{ marginTop: 6 }}>You get what {amount || "the amount"} USDG buys of {symbolOf(get as Address)} when they pay (at least 99.5% of it). Stock Tokens are issued by Robinhood and not offered in every country. Paying from another chain works for USDG payouts only.</div>}
       </div>
@@ -174,6 +185,7 @@ function usePaid(req: PayRequest) {
 }
 
 function PaidCard({ req, st }: { req: PayRequest; st: Status }) {
+  useStocks();
   return (
     <div className="panel pad" style={{ maxWidth: 560 }}>
       <div className="lbl" style={{ color: "#15803d" }}>✓ PAID</div>
@@ -194,6 +206,7 @@ function PayRequestView({ req }: { req: PayRequest }) {
   const { writeContractAsync } = useWriteContract();
   const pub = usePublicClient({ chainId: RH });
   const st = usePaid(req);
+  useStocks();
   const [tokenAddr, setTokenAddr] = useState<string>(USDG);
   const [src, setSrc] = useState<number>(RH);
   const token = PAY_WITH.find((t) => lc(t.address) === lc(tokenAddr)) ?? PAY_WITH.find((t) => lc(t.address) === lc(USDG))!;
