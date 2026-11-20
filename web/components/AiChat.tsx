@@ -31,6 +31,11 @@ const PROMPTS = [
   "How do I bridge to Robinhood Chain?",
 ];
 
+/** **bold** only; everything else stays plain text (no HTML from the model ever reaches the page) */
+function Rich({ text }: { text: string }) {
+  return <>{text.replace(/^#{1,6}\s+/gm, "").split(/\*\*/).map((p, i) => (i % 2 ? <b key={i}>{p}</b> : <span key={i}>{p}</span>))}</>;
+}
+
 function explain(e: unknown): string {
   if (e instanceof BaseError) return /User rejected|denied/i.test(e.shortMessage) ? "You rejected it in your wallet." : e.shortMessage;
   return (e as Error)?.message ?? "Something went wrong.";
@@ -162,7 +167,7 @@ export default function AiChat() {
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: msgs.length ? 0 : 16 }}>
         {msgs.map((m, i) => (
           <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "stretch", maxWidth: m.role === "user" ? "85%" : "100%" }}>
-            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.5, padding: "10px 14px", borderRadius: 16, background: m.role === "user" ? "#2f6fdc" : "var(--card2, #f3f5f9)", color: m.role === "user" ? "#fff" : "inherit" }}>{m.content}</div>
+            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.5, padding: "10px 14px", borderRadius: 16, background: m.role === "user" ? "#2f6fdc" : "var(--card2, #f3f5f9)", color: m.role === "user" ? "#fff" : "inherit" }}>{m.role === "assistant" ? <Rich text={m.content} /> : m.content}</div>
             {m.actions?.map((a, k) => <ActionView key={k} a={a} />)}
           </div>
         ))}
