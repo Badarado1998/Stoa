@@ -35,7 +35,9 @@ export function limited(req: Request): Response | null {
 
 const venueName = (net: Net, v: string) => (lc(v) === lc(NATIVE) ? null : net.contracts.pool && lc(v) === lc(net.contracts.pool) ? "Stoa maker pool" : net.venues[lc(v)] ?? "venue");
 
-export type QuoteInput = { chain: string; sellToken: string; buyToken: string; amount: string; slippageBps?: string; taker?: string; referrer?: string; deadlineSeconds?: string };
+export type QuoteInput = { chain: string; sellToken: string; buyToken: string; amount: string; slippageBps?: string; taker?: string; referrer?: string; deadlineSeconds?: string;
+  /** who receives the output; defaults to the taker */ recipient?: string;
+  /** internal (Stoa Pay): use exactly this minOut, and refuse a route that would not meet it */ minOutExact?: bigint };
 
 export async function apiQuote(p: QuoteInput) {
   const net = netByKey(p.chain);
@@ -56,6 +58,9 @@ export async function apiQuote(p: QuoteInput) {
   if (taker === null) return apiError(400, "taker must be an address");
   const referrer = p.referrer ? (isAddress(p.referrer, { strict: false }) ? getAddress(p.referrer) : null) : undefined;
   if (referrer === null) return apiError(400, "referrer must be an address");
+  const recipient = p.recipient ? (isAddress(p.recipient, { strict: false }) ? getAddress(p.recipient) : null) : undefined;
+  if (recipient === null) return apiError(400, "recipient must be an address");
+  if (recipient && !taker) return apiError(400, "recipient needs a taker");
 
   const router = net.contracts.router;
   const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc), ua) });
@@ -82,7 +87,8 @@ export async function apiQuote(p: QuoteInput) {
     }
   } catch { return apiError(422, "No route for this pair and amount right now"); }
   if (!route.amountOut || lc(route.leg1.venue) === lc(NATIVE)) return apiError(422, "No route for this pair and amount right now");
-  const minOut = (route.amountOut * BigInt(10_000 - slip)) / 10_000n;
+  if (p.minOutExact !== undefined && route.amountOut < p.minOutExact) return apiError(422, "This amount does not cover the payment");
+  const minOut = p.minOutExact ?? (route.amountOut * BigInt(10_000 - slip)) / 10_000n;
   const impact = ref > 0n ? Math.max(0, (1 - (Number(route.amountOut) / Number(amountIn)) / (Number(ref) / Number(small))) * 100) : null;
   const now = Math.floor(Date.now() / 1000);
   const hop = lc(route.mid) !== lc(NATIVE);
@@ -102,13 +108,14 @@ export async function apiQuote(p: QuoteInput) {
   if (taker) {
     const params = {
       tokenIn: sell, tokenOut: buy, mid: route.mid, leg1: route.leg1, leg2: route.leg2,
-      amountIn, minOut, to: taker, deadline: BigInt(now + dl), referrer: referrer ?? NATIVE,
+      amountIn, minOut, to: recipient ?? taker, deadline: BigInt(now + dl), referrer: referrer ?? NATIVE,
     };
     body.tx = {
       to: router, chainId: net.chain.id, value: lc(sell) === lc(NATIVE) ? amountIn.toString() : "0",
       data: encodeFunctionData({ abi: routerAbi, functionName: "swap", args: [params] }),
     };
     body.deadline = now + dl;
+    if (recipient) body.recipient = recipient;
     if (lc(sell) !== lc(NATIVE)) body.approval = { token: sell, spender: router, amount: amountIn.toString() };
   }
   return Response.json(body, { headers: API_HEADERS });
