@@ -30,6 +30,7 @@ const WAYS: { lbl: string; who: string; body: string; href: string; cta: string 
 ];
 const USED: { name: string; href: string; what: string }[] = [
   { name: "Nomad 0.6.0", href: "https://github.com/kadiri-seer/nomad/blob/main/docs/guides/stoa-setups.md", what: "Stoa's MCP tools built into the agent" },
+  { name: "Autonomo", href: "https://autonomo.fun", what: "Stoa's Token Safety Check and Swap Quote as paid agent APIs ($0.01 a call, x402)" },
 ];
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
