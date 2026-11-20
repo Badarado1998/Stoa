@@ -8,7 +8,9 @@ report, v4-gas-report.json (the daily job runs it first). Without that report no
 alone is no reason to leave a pool out (HEY Research Lab follow-up, F-4). Pons graduation pools come first, then other
 hooked pools, then hook-less ones.
 Also added, first: v4-v3-extra-4663.json, keys V2 cannot list because their hooks are allowed on V3 only (QHooks:
-QHOOKS/WETH on hook 0x0236…60cc, allowed by the timelock on 20 Nov 2026).
+QHOOKS/WETH on hook 0x0236…60cc, allowed by the timelock on 20 Nov 2026), and two spacing-1 USDG pools V2 routes today
+whose reference trade the gas report counts as too heavy (SPEPE/USDG 0.0075%, hXMAX/USDG 8%), so they keep a route
+after op B removes V2 (HEY Research Lab, V3 deployment check, 21 Nov 2026).
 Run from this folder:  python3 -I v4_v3_seed.py   (public RPC, no key)
 """
 import importlib.util
