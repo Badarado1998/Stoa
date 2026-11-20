@@ -7,6 +7,8 @@ import { WatchStar } from "@/components/Watch";
 import CopyButton from "@/components/CopyButton";
 import { mid, shortName, stockBySymbol } from "@/lib/stocks";
 import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
+import { weekPrices } from "@/lib/priceHistory";
+import PriceChart from "@/components/PriceChart";
 
 export const revalidate = 120;
 
@@ -41,6 +43,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const diff = ref && s.dex ? ((s.dex.priceUsd - ref) / ref) * 100 : null;
   const swap = `/trade?chain=robinhood&sell=USDG&buy=${s.address}`;
   const more = all.filter((x) => x.route && x.address !== s.address).slice(0, 12);
+  const history = s.dex ? await weekPrices("robinhood", s.address) : null;
   const cell = (label: string, v: React.ReactNode, sub?: React.ReactNode) => (
     <div className="panel pad"><div className="lbl">{label}</div><div style={{ fontFamily: "var(--num)", fontSize: 24, marginTop: 6 }}>{v}</div>{sub && <div className="note" style={{ marginTop: 4 }}>{sub}</div>}</div>
   );
@@ -57,6 +60,13 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     ["Enter an amount and read the quote", `Stoa compares every venue it routes for your exact amount and shows the rate, the venue, the 2 bps fee, price impact and the minimum you receive.`],
     ["Confirm in your wallet", `Approve USDG once if asked, then confirm the swap. ${s.symbol} arrives in the same wallet.`],
   ] as const;
+  const faq: [string, string][] = [
+    [`What is ${s.symbol} on Robinhood Chain?`, `A Robinhood Stock Token: an ERC-20 on Robinhood Chain, issued by Robinhood Assets (Jersey) Limited, that tracks ${s.name}. It is held in your own wallet and can be swapped on-chain like any other token.`],
+    [`Why is the on-chain price different from Robinhood's price?`, `Robinhood's price follows the underlying shares. The on-chain price is whatever the token last traded for in its pool, so it drifts when the pool is thin or when the US market is closed and the shares are not trading.${diff != null ? ` Right now the gap is ${diff >= 0 ? "+" : ""}${diff.toFixed(2)}%.` : ""}`],
+    [`Can I swap ${s.symbol} when the US market is closed?`, s.route ? `Yes. The pool trades at any hour, every day. Outside market hours there is no fresh share price behind it, so check the gap to Robinhood's last price before you swap.` : `Its pool trades at any hour, but Stoa has no route to it yet; the route is checked every day.`],
+    [`What does a swap on Stoa cost?`, `A 2 bps (0.02%) protocol fee, already counted in the quote, plus Robinhood Chain gas, usually a few cents of ETH. The quote shows the venue, the price impact and the minimum you receive before you confirm.`],
+  ];
+  const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
   const howTo = {
     "@context": "https://schema.org", "@type": "HowTo", name: `How to buy ${s.name} (${s.symbol}) on Robinhood Chain`,
     step: steps.map(([n, t], i) => ({ "@type": "HowToStep", position: i + 1, name: n, text: t })),
@@ -81,6 +91,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {cell("ON-CHAIN PRICE", s.dex ? fmtUsd(s.dex.priceUsd) : "No pool yet", diff != null ? `${diff >= 0 ? "+" : ""}${diff.toFixed(2)}% from Robinhood's price` : undefined)}
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}
       </div>
+      {history && <PriceChart points={history} symbol={s.symbol} source="GeckoTerminal" />}
       <details className="panel pad fold-panel" style={{ marginBottom: 16 }}>
         <summary className="lbl">HOW THIS WORKS</summary>
         <p style={{ marginTop: 8 }}>
@@ -99,6 +110,12 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <p style={{ marginTop: 12, marginBottom: 0 }}><Link className="cta" href={swap}>Swap USDG to {s.symbol}</Link></p>
         </div>
       )}
+      <div className="panel pad" style={{ marginBottom: 16 }}>
+        <div className="lbl">{s.symbol} QUESTIONS</div>
+        <ul className="list prose">
+          {faq.map(([q, a]) => <li key={q}><span>{q}</span><b>{a}</b></li>)}
+        </ul>
+      </div>
       {more.length > 0 && (
         <div className="panel pad">
           <div className="lbl">OTHER STOCK TOKENS ON STOA</div>
@@ -109,6 +126,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
       )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />
       {s.route && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howTo).replace(/</g, "\\u003c") }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd).replace(/</g, "\\u003c") }} />
     </section>
   );
 }

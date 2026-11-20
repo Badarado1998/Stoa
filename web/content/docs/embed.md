@@ -1,18 +1,40 @@
-# Embed a buy button
+# Embed a swap widget or buy button
 
-Put a live "Buy on Stoa" card for any listed token on your website, and earn 10% of Stoa's fee on the swaps it brings.
+Put Stoa on your token's website, and earn 10% of Stoa's fee on the swaps it brings. There are two embeds: the **swap widget**, where visitors type an amount and see a live quote, and the smaller **buy card**.
 
-## What it shows
+## Swap widget
+
+Make yours on [stoadex.com/build/widget](https://stoadex.com/build/widget): pick the token, what visitors pay with, light or dark, and your wallet for the referral, then copy the code. It looks like this:
+
+```html
+<iframe src="https://stoadex.com/embed/swap/robinhood/<token address>?pay=ETH&ref=<your wallet>"
+  width="100%" height="330" style="max-width:420px;border:0;border-radius:16px"
+  title="Swap on Stoa" loading="lazy"></iframe>
+```
+
+| Parameter | Value |
+| --- | --- |
+| Token address | $STOA, a token listed under [Tokens](https://stoadex.com/tokens), a Robinhood Stock Token Stoa routes, or a Pons launch Stoa routes |
+| `pay` | `ETH` or `USDG`: what the widget starts with. Visitors can switch |
+| `amount` | Optional. The amount it starts with, such as `0.01` |
+| `theme` | Optional. `dark` for a dark widget; light by default |
+| `ref` | Optional. Your wallet address: swaps made through the widget pay you the referral share |
+
+The visitor types an amount and the widget asks Stoa's router for the best route across every venue it uses, refreshed every 20 seconds. **Swap on Stoa** opens stoadex.com in a new tab with the same tokens and amount filled in; the visitor checks the quote and confirms there, in their own wallet. Nothing is signed inside the widget.
+
+Tokens Stoa does not list or route get a short notice instead of a widget.
+
+## Buy card
 
 A small card with the token's price and 24-hour change, what a small buy gets on Stoa right now and on which venue, and a **Buy on Stoa** button. The button opens Stoa in a new tab with the token selected and your referral attached. No wallet connects inside the card, so it cannot ask your visitors to sign anything.
 
 The price comes from DexScreener and the route is read live from Stoa's router. Both refresh every minute.
 
-## Pons launches
+### Pons launches
 
 A Pons launch gets its own card: price, creator tax, and how far its curve is from graduation (or that it has graduated to Uniswap V4). The button opens Stoa with the launch selected, so it can be bought on its curve from day one. Launch cards are marked as unverified: Stoa does not review launches.
 
-## Add it to your site
+### Add the buy card
 
 Open the token's page under [Tokens](https://stoadex.com/tokens) (or a launch's page under [Launches](https://stoadex.com/launches)), connect your wallet and press **Copy embed code**. The code carries your wallet as the referrer. It looks like this:
 
@@ -40,5 +62,5 @@ The card is an open tool: any project can put it on its own site, and showing it
 ## Safety
 
 - Only `/embed` pages can be framed by other sites. Every other Stoa page refuses to load in a frame.
-- The card never connects a wallet and never asks for a signature. Trading happens on stoadex.com, in its own tab.
+- Neither the widget nor the card connects a wallet or asks for a signature. Trading happens on stoadex.com, in its own tab.
 - Listed tokens are not reviewed by Stoa. The card shows the token's contract on its page: check it before you promote a token.

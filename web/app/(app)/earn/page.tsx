@@ -55,6 +55,7 @@ export default async function EarnPage() {
             <li><span className="qn">4</span><span><b>Claim ETH</b><small>After the week, voters of each winning token share {toVoters}% of its bid, pro rata. The rest buys $STOA and burns it.</small></span></li>
           </ol>
           <Link className="big pri" href="/spotlight#lock" style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", marginTop: 12 }}>Lock and vote</Link>
+          <p className="note" style={{ marginBottom: 0, textAlign: "center" }}><Link href="/spotlight#calc">Estimate what your $STOA could earn</Link></p>
         </div>
         <div className="panel pad">
           <div className="lbl">WHAT TO KNOW</div>

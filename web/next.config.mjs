@@ -9,7 +9,7 @@ const CSP = [
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "connect-src 'self' https: wss:" + (LOCAL ? " http://127.0.0.1:8545 http://localhost:8545" : ""),
-  "frame-src https://verify.walletconnect.com https://verify.walletconnect.org",
+  "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

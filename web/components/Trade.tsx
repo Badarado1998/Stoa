@@ -254,7 +254,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   };
   const flip = () => { if (busy) return; setSell(buy); setBuy(sell); setQuote(null); };
 
-  // deep link: /trade?chain=robinhood&sell=ETH&buy=0x… (ticker or address); applied once, on the network it names
+  // deep link: /trade?chain=robinhood&sell=ETH&buy=0x…&amount=25 (ticker or address); applied once, on the network it names
   const linked = useRef(false);
   useEffect(() => {
     if (linked.current || !pub) return;
@@ -276,6 +276,9 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
     }
     if (s.address === b.address) b = s.address === net.tokens[0].address ? net.tokens[2] : net.tokens[0];
     setSell(s); setBuy(b);
+    // &amount=25 prefills the sell side (the embed widget passes what the visitor typed); never more than 18 decimals
+    const a = p.get("amount")?.trim();
+    if (a && /^\d{1,15}(\.\d{1,18})?$/.test(a) && Number(a) > 0) setAmount(a);
     (async () => { for (const [side, v] of custom) await addCustom(v, side); })();
   }, [pub]); // eslint-disable-line react-hooks/exhaustive-deps
 

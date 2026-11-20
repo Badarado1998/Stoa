@@ -6,6 +6,7 @@ import { SITE } from "@/lib/chain";
 import { cleanRef } from "@/lib/swap";
 import { findListed, priceFmt, readToken } from "@/lib/tokenInfo";
 import { readLaunch, type LaunchInfo } from "@/lib/ponsLaunch";
+import { EMBED_OFF } from "@/lib/embed";
 
 // /embed/<chain>/<token>?ref=<wallet>: a small buy card any website can put in an iframe. It shows the token's price and
 // Stoa's best route right now; Buy opens Stoa in a new tab with the referral, so no wallet ever connects inside the frame.
@@ -20,8 +21,6 @@ type P = { params: Promise<{ chain: string; token: string }>; searchParams: Prom
 const launchCached = (a: string) =>
   unstable_cache(async () => readLaunch(getAddress(a)).catch(() => null), ["embed-launch", a.toLowerCase()], { revalidate: 60 })();
 
-/** tokens whose buy card Stoa has switched off: the card shows a plain notice instead of a price or a Buy button */
-const EMBED_OFF = new Set(["0xcaeed5281bd1eeb26d5f8bd550bf5c3727ba6514"]); // $NOUNY, integration ended 18 Nov 2026
 
 const abs = (u: string | null) => (u ? (u.startsWith("http") ? u : `${SITE}${u}`) : null);
 

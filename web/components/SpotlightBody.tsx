@@ -13,6 +13,7 @@ import { BID_WINDOW, SLOTS, SPOT, SPOT_START, SPOTLIGHT_HIDDEN, epochAt, epochSt
 import { PageHead, Sk, TokenIcon } from "./ui";
 import { useWalletModal } from "./Providers";
 import { readEpoch, tokenMeta, useNow, useSpotLive, type SpotEpoch, type SpotTokenMeta } from "./spotlightData";
+import SpotlightCalc from "./SpotlightCalc";
 
 const net = ROBINHOOD;
 const M = 10n ** 24n; // 1M $STOA
@@ -129,6 +130,7 @@ export default function SpotlightBody() {
       </div>
 
       {live && ready && <LockCounter quorum={d?.cur.params.quorum} started={started} race={race} />}
+      {ready && <SpotlightCalc cur={d?.cur} meta={d?.meta} week={race + 1} />}
       {ready && <ThisWeek prev={d?.prev ?? null} meta={d?.meta} e={e} onSettled={() => void data.refetch()} />}
       {live && started && d && <Race ep={d.cur} meta={d.meta} mine={d.mine} phase={phase} onDone={() => void data.refetch()} />}
       {live && ready && <HolderPanel race={race} started={started} paused={!!d?.paused} onDone={() => void data.refetch()} />}

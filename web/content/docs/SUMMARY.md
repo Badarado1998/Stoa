@@ -57,7 +57,7 @@
 * [LP tokens as collateral](lp-collateral.md)
 * [Liquidation venue](liquidation-venue.md)
 * [Aggregator integration](aggregators.md)
-* [Embed a buy button](embed.md)
+* [Embed a swap widget](embed.md)
 * [Contract addresses](contracts.md)
 
 ## Security

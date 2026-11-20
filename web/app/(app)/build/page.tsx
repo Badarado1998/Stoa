@@ -23,7 +23,7 @@ const MCP = `claude mcp add --transport http stoa https://stoadex.com/mcp
 { "mcpServers": { "stoa": { "url": "https://stoadex.com/mcp" } } }`;
 
 const WAYS: { lbl: string; who: string; body: string; href: string; cta: string }[] = [
-  { lbl: "BUY CARD", who: "For token projects", body: "A live \"Buy on Stoa\" card for your token page: price, what a buy gets right now and on which venue, and a button that opens Stoa with your token selected. Copy one line of HTML.", href: "/docs/embed", cta: "Embed docs" },
+  { lbl: "SWAP WIDGET", who: "For token projects", body: "A swap box for your token's website: visitors type an amount, see Stoa's live quote across every venue, and swap on Stoa with it filled in. Light or dark, one line of HTML. A smaller buy card is in the docs.", href: "/build/widget", cta: "Make your widget" },
   { lbl: "HTTP API", who: "For bots, wallets and Telegram bots", body: "One call returns the route for any amount across every venue, plus the swap transaction to send. No key, 60 requests a minute.", href: "/docs/api", cta: "API docs" },
   { lbl: "MCP SERVER", who: "For AI agents", body: "stoadex.com/mcp: list tokens, quote, safety check, build an unsigned swap, bridge in, market context and stock tokens. Works in Claude, Cursor, Codex and Nomad. The user's wallet signs.", href: "/docs/mcp", cta: "MCP docs" },
   { lbl: "ROUTER CONTRACTS", who: "For contracts and aggregators", body: "Call StoaRouter from your own contract or front end: quote with an eth_call, then swap with your own limits. Same ABI on Robinhood Chain and Elysium.", href: "/docs/router-sdk", cta: "Router docs" },

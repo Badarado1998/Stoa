@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "widget-stock-charts-calc",
+    date: "2026-11-20",
+    title: "Swap widget, 7-day charts on stock pages, Spotlight earnings estimate",
+    tag: "Robinhood Chain",
+    items: [
+      "Swap widget for any website: visitors type an amount, see Stoa's live quote across every venue, and open Stoa with the same swap filled in. Light or dark, pay with ETH or USDG, one line of HTML. Make one at /build/widget. No wallet connects inside it.",
+      "Each stock token page now shows its on-chain price over the last 7 days and answers common questions: what the token is, why its price differs from Robinhood's, swapping while the US market is closed, and what a swap costs.",
+      "Spotlight has a calculator: enter how much $STOA you would lock and see what a winning bid would pay you, from this week's live bids or a what-if. An estimate, not a promise.",
+      "Trade links can now carry an amount (&amount=25), so a shared link opens with the swap filled in.",
+    ],
+    link: { href: "/build/widget", label: "Swap widget" },
+  },
+  {
     id: "earn-spotlight",
     date: "2026-11-20",
     title: "Earn: lock $STOA, vote, share the winning bids in ETH",

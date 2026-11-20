@@ -924,3 +924,28 @@ details.fold[open] summary{margin-bottom:6px}
 .qok{background:#E7F4EC;color:#1E6B41}.qno{background:#EEF1F5;color:var(--muted)}
 .qrules{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* swap widget (/embed/swap): amount in, live quote out, light or dark */
+.em-swap{gap:10px}
+.em-field{display:flex;flex-direction:column;gap:4px}
+.em-field>label{font-size:12px;color:var(--muted)}
+.em-row{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 12px}
+.em-row input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--num);font-size:22px;color:var(--ink);padding:4px 0}
+.em-row:focus-within{border-color:var(--accent)}
+.em-unit{font-weight:600;padding:0 8px}
+.em-pay{display:flex;gap:4px;background:rgba(47,111,214,.08);border-radius:10px;padding:3px}
+.em-pay button{border:0;background:transparent;border-radius:8px;padding:7px 10px;font:600 13px var(--sans);color:var(--muted);cursor:pointer;min-height:32px}
+.em-pay button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.em-out{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;overflow-wrap:anywhere}
+.em-out b{font-family:var(--num);font-size:20px;font-weight:500;color:var(--accent-d)}
+.em-out small{display:block;margin-top:2px;font-size:12px;color:var(--muted)}
+.em-dim{color:var(--muted);font-size:14px}
+.embed.em-dark{background:linear-gradient(135deg,#141A26 0%,#18233A 60%,#1C2A45 100%);color:#EEF2FB}
+.em-dark .em-id span,.em-dark .em-field>label,.em-dark .em-foot,.em-dark .em-foot a,.em-dark .em-dim,.em-dark .em-out small,.em-dark .em-q small{color:#9AA8C2}
+.em-dark .em-foot b{color:#EEF2FB}
+.em-dark .em-row,.em-dark .em-out,.em-dark .em-q{background:#0F1520;border-color:#2A3550}
+.em-dark .em-row input{color:#EEF2FB}
+.em-dark .em-out b{color:#8FB6FF}
+.em-dark .em-pay{background:#0F1520}
+.em-dark .em-pay button{color:#9AA8C2}
+.em-dark .em-pay button.on{background:#2A3550;color:#fff}
+.em-dark .em-logo{background:#2A3550}
