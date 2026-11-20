@@ -39,6 +39,11 @@ export default function OpenPage() {
           </a>
         ))}
 
+        <div className="panel" style={{ overflow: "hidden" }}>
+          <div className="pad" style={{ paddingBottom: 0 }}><div className="rowx"><div className="lbl">LIVE DASHBOARD · FROM THE DATASETS</div><a href="https://huggingface.co/spaces/StoaDex/stoa-dashboard" target="_blank" rel="noopener noreferrer">Open on Hugging Face →</a></div></div>
+          <iframe title="Stoa open data dashboard" src="https://stoadex-stoa-dashboard.static.hf.space" loading="lazy" style={{ display: "block", width: "100%", height: 1400, border: 0, marginTop: 8 }} referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />
+        </div>
+
         <div className="panel pad">
           <div className="lbl">VERIFY A DATASET UPDATE</div>
           <p className="note">Download an update from Hugging Face, then hash its files. The hashes must match <code>manifest.json</code> in the same update. Every row comes from Stoa&apos;s routers&apos; <code>Routed</code> events, so you can also recount them from the chain.</p>
