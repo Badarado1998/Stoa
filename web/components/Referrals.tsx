@@ -74,6 +74,10 @@ export default function Referrals() {
         ) : (
           <>
             <div className="box" style={{ marginTop: 12 }}><div className="row"><span className="addrchip" style={{ wordBreak: "break-all" }}>{link}</span><CopyButton text={link} /></div></div>
+            <p className="note" style={{ marginTop: 8 }}>
+              Or share your invite card: <a href={`https://x.com/intent/post?text=${encodeURIComponent("Swapping on Robinhood Chain? Stoa compares every route for your exact amount, stock tokens included, and swaps earn Points. Here's my invite:")}&url=${encodeURIComponent(`${SITE}/r/${address}`)}`} target="_blank" rel="noopener noreferrer">Post on X ↗</a>
+              {" · "}<CopyButton text={`${SITE}/r/${address}`} label="Copy invite link" />
+            </p>
             <div className="lbl" style={{ marginTop: 20 }}>EARNED ON {net.short.toUpperCase()}, NOT CLAIMED</div>
             <ul className="list">{TOK.map((t, i) => (i < BASE.length || amounts[i] > 0n) && <li key={t.a}>{t.s} <b>{CONTRACTS.fees ? fmt(amounts[i], t.d, 6) : "—"}</b></li>)}</ul>
             <button className="big pri" type="button" disabled={!any || busy || !CONTRACTS.fees} onClick={claim}>{busy ? "Claiming…" : !CONTRACTS.fees ? "Opens at launch" : any ? "Claim" : "Nothing to claim yet"}</button>

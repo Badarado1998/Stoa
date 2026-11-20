@@ -132,6 +132,16 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const buyBal = useReadContract({ address: buy.address, abi: viemErc20, functionName: "balanceOf", args: [address ?? zeroAddress], chainId: chain.id, query: { enabled: !!address && !isNative(buy), refetchInterval: 10_000 } });
   const balOf = (t: Token, r: typeof sellBal) => (isNative(t) ? native.data?.value : (r.data as bigint | undefined));
   const sBal = balOf(sell, sellBal), bBal = balOf(buy, buyBal);
+  // what "Max" fills: the whole balance, minus a little of the gas token for the swap's own gas (cents on Robinhood Chain)
+  const gasKeep = net.key === "robinhood" ? 5n * 10n ** 14n : 10n ** 16n;
+  const amountOf = (v: bigint) => fmt(isNative(sell) ? (v > gasKeep ? v - gasKeep : 0n) : v, sell.decimals, sell.decimals).replace(/,/g, "");
+  // quick amounts under "You sell": shares of the balance once a wallet is connected, round sizes before that
+  const chips: [string, string][] = isConnected && sBal !== undefined
+    ? (sBal > 0n ? [["25%", amountOf(sBal / 4n)], ["50%", amountOf(sBal / 2n)], ["Max", amountOf(sBal)]] : [])
+    : isNative(sell) && net.key === "robinhood" ? [["0.005", "0.005"], ["0.01", "0.01"], ["0.05", "0.05"]]
+    : sell.tone === "usd" ? [["10", "10"], ["50", "50"], ["100", "100"]] : [];
+  // a wallet with no gas on this chain cannot swap anything yet: point it at the bridge instead of a dead end
+  const noGas = isConnected && !wrongChain && native.data !== undefined && native.data.value < gasKeep / 5n;
 
   // allowance: ERC-20 sells through the router (or nothing for wrap/unwrap)
   const needsAllowance = deployed && !isNative(sell) && kind !== "unwrap";
@@ -500,7 +510,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         <WatchChips net={net} onPick={(a, via) => { if (busy) return; const st = via && tokens.find((t) => t.symbol === via); if (st && st.address !== sell.address) pick("sell", st); addCustom(a, "buy"); }} />
         <div className="box">
           <div className="row"><label className="blab" htmlFor="sellv">You sell</label>
-            {sBal !== undefined && <button type="button" className="blab" style={{ border: 0, background: "none", padding: 0, cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(fmt(isNative(sell) ? (sBal > 10n ** 16n ? sBal - 10n ** 16n : 0n) : sBal, sell.decimals, sell.decimals).replace(/,/g, ""))}>
+            {sBal !== undefined && <button type="button" className="blab" style={{ border: 0, background: "none", padding: 0, cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(amountOf(sBal))}>
               {sBal !== undefined ? `Balance ${fmt(sBal, sell.decimals, 4)}` : ""}
             </button>}</div>
           <div className="row" style={{ position: "relative" }}>
@@ -509,6 +519,11 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             {menu === "sell" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("sell", t)} onImport={(a) => addCustom(a, "sell")} onClose={closeMenu} />}
           </div>
           {sellUsd > 0 && <div className="usd">≈ {fmtUsd(sellUsd)}</div>}
+          {chips.length > 0 && !busy && (
+            <div className="qchips" role="group" aria-label="Quick amounts">
+              {chips.map(([l, v]) => <button key={l} type="button" onClick={() => { setMsg(null); setDone(null); setAmount(v); }}>{l}</button>)}
+            </div>
+          )}
         </div>
         <div className="flip"><button type="button" aria-label="Switch tokens" onClick={flip}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" /></svg></button></div>
         <div className="box">
@@ -537,7 +552,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         {amt && quote && (
           <details className="qsum">
             <summary>
-              <span className="qs-l"><VenueIcons ids={venueIds(venueName)} />{kind === "wrap" || kind === "unwrap" ? venueName : <>Filled by <b>{venueName}</b></>}</span>
+              <span className="qs-l"><VenueIcons ids={venueIds(venueName)} />{kind === "wrap" || kind === "unwrap" ? venueName : <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Filled by <b>{venueName}</b></span>}</span>
               <span className="qs-r">{kind !== "wrap" && kind !== "unwrap" && <span style={{ color: quote.impact >= IMPACT_WARN ? "#B4532A" : undefined }}>{quote.impact < 0.01 ? "< 0.01" : quote.impact.toFixed(2)}% impact</span>}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span>
             </summary>
           <div className="det">
@@ -590,6 +605,12 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         })()}
         {tokenWarning}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>
+        {net.key === "robinhood" && (noGas || label === `Not enough ${sell.symbol}`) && !busy && (
+          <div className="notice" style={{ margin: "10px 0 0" }}>
+            {noGas ? <>This wallet has no {G} on {net.name} yet, and every swap needs a little for gas (cents). </> : <>Not enough {sell.symbol} in this wallet. </>}
+            <Link href="/bridge">Bridge {noGas ? G : "funds"} in from Base, Arbitrum, Ethereum, Optimism or BNB Chain →</Link>
+          </div>
+        )}
         {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
         {done && (() => {
           const link = `${SITE}/swap/${done.net}/${done.hash}${address ? `?ref=${address}` : ""}`;

@@ -951,3 +951,7 @@ details.fold[open] summary{margin-bottom:6px}
 .em-dark .em-pay button{color:#9AA8C2}
 .em-dark .em-pay button.on{background:#2A3550;color:#fff}
 .em-dark .em-logo{background:#2A3550}
+/* Trade: quick amounts under "You sell" */
+.qchips{display:flex;gap:6px;margin-top:8px}
+.qchips button{min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font:500 13px var(--sans);cursor:pointer}
+.qchips button:hover{border-color:var(--accent);color:var(--accent-d)}

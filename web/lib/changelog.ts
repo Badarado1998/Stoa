@@ -12,6 +12,19 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "trade-quick-amounts-invites-agents",
+    date: "2026-11-20",
+    title: "Quick amounts on Trade, invite cards, Stoa for AI agents",
+    tag: "Robinhood Chain",
+    items: [
+      "Trade: quick amounts under You sell (25%, 50%, Max once connected; round sizes before), and Max now keeps only a little ETH back for gas instead of 0.01 ETH.",
+      "A wallet with no ETH on Robinhood Chain, or not enough of what it sells, now gets a link to bridge funds in instead of a dead end.",
+      "Invite cards: share stoadex.com/r/<your wallet> from Referrals. It saves your referral like ?ref= and shows an invite image when posted.",
+      "stoadex.com/agents: the MCP server, agent tools, API and the safe order for AI agents in one page.",
+    ],
+    link: { href: "/agents", label: "Stoa for AI agents" },
+  },
+  {
     id: "points-season-1",
     date: "2026-11-20",
     title: "Stoa Points, season 1, from Mon 23 Nov 00:00 UTC",
