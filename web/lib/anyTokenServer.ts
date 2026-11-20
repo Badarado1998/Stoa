@@ -92,8 +92,11 @@ export async function anyTokenQuote(a: AnyTokenAsk): Promise<{ q: AnyTokenQuote 
   let gas: bigint;
   try {
     const relayer = "0x000000000000000000000000000000000000dEaD" as Address;
-    gas = await c.estimateGas({ account: relayer, to: CROSS_BUY, data: callData, value: fund, stateOverride: [{ address: relayer, balance: fund * 2n + 10n ** 18n }] });
-    gas = (gas * 13n) / 10n;
+    // priced like a real transaction (a token can spend more gas when tx.gasprice is above 0), then a reserve on top:
+    // a destination call that runs out of gas buys nothing and refunds nothing on Robinhood Chain (HEY re-test, N-1)
+    const base = (await c.getBlock()).baseFeePerGas ?? 10_000_000n;
+    gas = await c.estimateGas({ account: relayer, to: CROSS_BUY, data: callData, value: fund, maxFeePerGas: base * 2n + 1n, maxPriorityFeePerGas: 0n, stateOverride: [{ address: relayer, balance: fund * 2n + 10n ** 18n }] });
+    gas = (gas * 15n) / 10n + 150_000n;
   } catch { gas = 4_000_000n; }
 
   // the purchase itself, at the real size, then a sale and a transfer from the buyer's own address (lib/anyTokenTrip.ts)

@@ -39,25 +39,35 @@ export async function realTrip(
   // sell a little less than the minimum the buy guarantees, so the amount is there whatever the buy returned
   const sellAmt = (p.minOut * 999n) / 1000n;
   if (sellAmt === 0n) return { ok: false, why: "Amount too small.", status: 422 };
+  const router = ROBINHOOD.contracts.router!;
+  // priced like real transactions (HEY re-test of e409248, item 1): eth_simulateV1 and eth_call otherwise run at a gas
+  // price and base fee of 0, which a token can test for. The sale runs an hour after the purchase, as a buyer's might.
+  let head: { baseFeePerGas: bigint | null; timestamp: bigint };
+  try { head = await c.getBlock(); } catch { return { ok: false, why: "Stoa could not test this purchase right now. Try again in a minute.", status: 503 }; }
+  const fee = { maxFeePerGas: numberToHex((head.baseFeePerGas ?? 10_000_000n) * 2n + 1n), maxPriorityFeePerGas: "0x0" as Hex };
+  const later = numberToHex(head.timestamp + 3600n);
+  // the sale's own deadline: it runs in the later block, after the purchase's deadline may have passed
   const swapData = encodeFunctionData({
     abi: routerAbi, functionName: "swap",
-    args: [{ tokenIn: p.tokenOut, tokenOut: "0x0000000000000000000000000000000000000000", mid: p.sell.mid, leg1: p.sell.leg1, leg2: p.sell.leg2, amountIn: sellAmt, minOut: 1n, to: p.user, deadline: p.deadline, referrer: "0x0000000000000000000000000000000000000000" }],
+    args: [{ tokenIn: p.tokenOut, tokenOut: "0x0000000000000000000000000000000000000000", mid: p.sell.mid, leg1: p.sell.leg1, leg2: p.sell.leg2, amountIn: sellAmt, minOut: 1n, to: p.user, deadline: head.timestamp + 3600n + 900n, referrer: "0x0000000000000000000000000000000000000000" }],
   });
-  const router = ROBINHOOD.contracts.router!;
   const calls = [
-    { from: relayer, to: CROSS_BUY, data: buyData(maxUint256), value: numberToHex(p.fund), gas: numberToHex(p.gas) },
-    { from: relayer, to: CROSS_BUY, data: buyData(p.minOut), value: numberToHex(p.fund), gas: numberToHex(p.gas) },
-    { from: p.user, to: p.tokenOut, data: encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [router, sellAmt] }), gas: numberToHex(500_000n) },
+    { from: relayer, to: CROSS_BUY, data: buyData(maxUint256), value: numberToHex(p.fund), gas: numberToHex(p.gas), ...fee },
+    { from: relayer, to: CROSS_BUY, data: buyData(p.minOut), value: numberToHex(p.fund), gas: numberToHex(p.gas), ...fee },
+    { from: p.user, to: p.tokenOut, data: encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [router, sellAmt] }), gas: numberToHex(500_000n), ...fee },
     // the sale gets ample gas: it tests the token, not the gas Trustware is given
-    { from: p.user, to: router, data: swapData, gas: numberToHex(8_000_000n) },
-    { from: p.user, to: p.tokenOut, data: encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [other, 1n] }), gas: numberToHex(500_000n) },
+    { from: p.user, to: router, data: swapData, gas: numberToHex(8_000_000n), ...fee },
+    { from: p.user, to: p.tokenOut, data: encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [other, 1n] }), gas: numberToHex(500_000n), ...fee },
   ];
   let res: SimCall[];
   try {
     const out = (await c.request({
       method: "eth_simulateV1" as never,
       // the sale in a later block than the purchase, as a buyer's would be (some pools refuse a round trip in one block)
-      params: [{ blockStateCalls: [{ stateOverrides: { [relayer]: { balance: numberToHex(p.fund * 3n + 10n ** 18n) } }, calls: calls.slice(0, 2) }, { calls: calls.slice(2) }], validation: false }, "latest"] as never,
+      params: [{ blockStateCalls: [
+        { stateOverrides: { [relayer]: { balance: numberToHex(p.fund * 3n + 10n ** 18n) }, [p.user]: { balance: numberToHex(10n ** 18n) } }, calls: calls.slice(0, 2) },
+        { blockOverrides: { time: later }, calls: calls.slice(2) },
+      ], validation: true }, "latest"] as never,
     })) as unknown as { calls: SimCall[] }[];
     res = [...(out?.[0]?.calls ?? []), ...(out?.[1]?.calls ?? [])];
   } catch { return { ok: false, why: "Stoa could not test this purchase right now. Try again in a minute.", status: 503 }; }
