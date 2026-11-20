@@ -19,6 +19,8 @@ export const CHANGES: Change[] = [
     items: [
       "Spotlight: a Your Spotlight panel shows your locked $STOA, what is unlocking, your votes this week with what they would earn if voting closed now, the ETH you can claim, and your next step.",
       "Home and Trade show the countdown to Points season 1 (Mon 23 Nov, 00:00 UTC).",
+      "Points: before the season starts, Your points shows a preview of what your swaps of the last 7 days would have earned under the season 1 rules.",
+      "Add to calendar: the Points start, and weekly Spotlight reminders (last hours to vote, then a check for ETH to claim). New guide: Spotlight for voters.",
       "Home loads faster on phones without a graphics chip or with Data Saver on: the 3D walk is skipped there and the page shows the plain hero.",
     ],
     link: { href: "/spotlight#mine", label: "Spotlight" },

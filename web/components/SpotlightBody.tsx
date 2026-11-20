@@ -117,7 +117,7 @@ function MyDashboard({ ep, meta, mine, started, race }: { ep?: SpotEpoch; meta?:
   else if (active === 0n && (bal ?? 0n) > 0n) next = { text: `You hold ${stoaN(bal)} $STOA that is not locked: locked $STOA is what votes.`, href: "#lock", cta: "Lock $STOA" };
   else if (active === 0n) next = { text: "This wallet has no $STOA yet: buy some, then lock it to vote.", href: `/trade?chain=robinhood&sell=ETH&buy=${STOA}`, cta: "Buy $STOA" };
   else if (started && (avail ?? 0n) > 0n) next = { text: `${stoaN(avail)} of your votes are not cast this week.`, href: "#race", cta: "Vote" };
-  else if (!started) next = { text: `Your votes are ready. Voting opens ${utc(SPOT_START)}.`, href: "/docs/spotlight", cta: "How voting works" };
+  else if (!started) next = { text: `Your votes are ready. Voting opens ${utc(SPOT_START)}.`, href: "/docs/spotlight-voters", cta: "How voting works" };
   else if (pending > 0n && unlockAt > 0n && Number(unlockAt) <= now) next = { text: `${stoaN(pending)} $STOA has finished unlocking.`, href: "#lock", cta: "Withdraw" };
 
   return (

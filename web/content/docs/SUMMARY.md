@@ -39,6 +39,7 @@
 * [$STOA](token.md)
 * [How to buy $STOA](buy-stoa.md)
 * [Spotlight](spotlight.md)
+* [Spotlight for voters](spotlight-voters.md)
 * [Rug Cover](rug-cover.md)
 
 ## Run a pool

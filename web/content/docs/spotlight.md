@@ -1,6 +1,6 @@
 # Spotlight
 
-Every week projects bid ETH for three sponsored slots on Stoa, and $STOA holders who lock and vote are paid 90% of the winning bids. The other 10%, plus every entry fee, buys $STOA and burns it. Week 1 opens on Monday 23 November 2026 at 00:00 UTC on [stoadex.com/spotlight](https://stoadex.com/spotlight).
+Every week projects bid ETH for three sponsored slots on Stoa, and $STOA holders who lock and vote are paid 90% of the winning bids. The other 10%, plus every entry fee, buys $STOA and burns it. Week 1 opens on Monday 23 November 2026 at 00:00 UTC on [stoadex.com/spotlight](https://stoadex.com/spotlight). New to voting? Start with [Spotlight for voters](spotlight-voters.md).
 
 ## How a week runs
 
