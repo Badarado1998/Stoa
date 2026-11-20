@@ -1,0 +1,67 @@
+name: Deploy StoaGasless (Robinhood Chain)
+
+# Manual only. Unticked "broadcast" = dry run against Robinhood Chain mainnet: sends nothing.
+# Deploys StoaGasless (swaps without gas): the trader signs an order and an EIP-2612 permit, Stoa's relayer submits them
+# and pays the gas; the output goes straight to the trader. No owner, no settings; nothing in governance changes.
+# Verifies it on Sourcify. Run only after the independent review and the owner's go-ahead.
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the transaction (leave unticked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-robinhood
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      ROBINHOOD_RPC_URL: ${{ secrets.ROBINHOOD_FORK_RPC_URL || secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+      PK: ${{ secrets.ROBINHOOD_DEPLOYER_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+
+      - name: Check settings
+        run: |
+          test -n "$PK" || { echo "::error::secret ROBINHOOD_DEPLOYER_PRIVATE_KEY is missing"; exit 1; }
+          [ "$(cast chain-id --rpc-url "$ROBINHOOD_RPC_URL")" = "4663" ] || { echo "::error::RPC is not Robinhood Chain mainnet"; exit 1; }
+          echo "Deployer: $(cast wallet address --private-key "$PK") · $(cast balance $(cast wallet address --private-key "$PK") --ether --rpc-url "$ROBINHOOD_RPC_URL") ETH"
+
+      - name: Fork test - USDG to a stock token and to ETH through the live router, signatures, nonces, permits
+        run: forge test --match-contract ForkRobinhoodCrossBuy -vv
+
+      - name: Deploy (${{ inputs.broadcast && 'broadcast' || 'dry run' }})
+        run: |
+          forge script script/DeployStoaGasless.s.sol --rpc-url "$ROBINHOOD_RPC_URL" --private-key "$PK" \
+            --slow ${{ inputs.broadcast && '--broadcast' || '' }}
+          cat deployments/4663-gasless.json
+
+      - name: Verify on Sourcify
+        if: ${{ inputs.broadcast }}
+        continue-on-error: true
+        run: |
+          M=$(jq -r .gasless deployments/4663-gasless.json)
+          forge verify-contract $M src/tools/StoaGasless.sol:StoaGasless --verifier sourcify --chain 4663 \
+            --constructor-args $(cast abi-encode "c(address)" 0x2F2804fad735a38015650f32f95Ad5E08D6B3eE5) || true
+
+      - name: Check the deployed contract
+        if: ${{ inputs.broadcast }}
+        run: |
+          M=$(jq -r .gasless deployments/4663-gasless.json)
+          echo "router $(cast call $M 'router()(address)' --rpc-url "$ROBINHOOD_RPC_URL")"
+          echo "::notice::StoaGasless deployed at $M"

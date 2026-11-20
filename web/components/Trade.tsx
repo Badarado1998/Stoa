@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createPortal } from "react-dom";
 import { fmtUsd, usePrices } from "@/lib/prices";
 import { useStoaToken } from "@/lib/stoaToken";
-import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, decodeEventLog, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, zeroAddress, type Address, type Hash, type PublicClient, type TransactionReceipt } from "viem";
+import { useAccount, useBalance, usePublicClient, useReadContract, useReadContracts, useSignTypedData, useSwitchChain, useWriteContract } from "wagmi";
+import { BaseError, decodeEventLog, formatUnits, ContractFunctionRevertedError, erc20Abi as viemErc20, isAddress, maxUint256, parseSignature, zeroAddress, type Address, type Hash, type PublicClient, type TransactionReceipt } from "viem";
+import { GASLESS, GASLESS_TTL_S, GAS_FLOOR_WEI, NO_PERMIT, gaslessAbi, orderDomain, orderTypes, permitDomain, permitTypes, toWire, type GaslessOrder, type GaslessPermit } from "@/lib/gasless";
 import { NATIVE, isNative, type Token } from "@/lib/tokens";
 import { ROBINHOOD, txUrlOn, type Net } from "@/lib/networks";
 import { fetchGuard, routeWithoutOldV4, usesPoisoned } from "@/lib/v4guard";
@@ -74,6 +75,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const pub = usePublicClient({ chainId: chain.id });
   const { switchChain } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
+  const { signTypedDataAsync } = useSignTypedData();
   const { open: openWallet } = useWalletModal();
   const referrer = useReferrer(address);
 
@@ -126,10 +128,27 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const balOf = (t: Token, r: typeof sellBal) => (isNative(t) ? native.data?.value : (r.data as bigint | undefined));
   const sBal = balOf(sell, sellBal), bBal = balOf(buy, buyBal);
 
+
   // allowance: ERC-20 sells through the router (or nothing for wrap/unwrap)
   const needsAllowance = deployed && !isNative(sell) && kind !== "unwrap";
   const allowance = useReadContract({ address: sell.address, abi: erc20Abi, functionName: "allowance", args: [address ?? zeroAddress, CONTRACTS.router ?? zeroAddress], chainId: chain.id, query: { enabled: !!address && needsAllowance } });
-  const needApprove = needsAllowance && amt !== undefined && (allowance.data as bigint | undefined ?? 0n) < amt;
+  const needApproveRouter = needsAllowance && amt !== undefined && (allowance.data as bigint | undefined ?? 0n) < amt;
+
+  // Swap without gas (Robinhood Chain): the trader signs, Stoa's relayer submits and pays the gas (lib/gasless.ts).
+  // Offered for a token sold for anything when the token has an EIP-2612 permit or is already approved to it.
+  const gaslessBase = !!GASLESS && net.key === "robinhood" && deployed && (kind === "erc20" || kind === "hypeOut");
+  const gaslessToken = useQuery({
+    queryKey: ["gasless-permit", sell.address],
+    enabled: gaslessBase && !!pub,
+    staleTime: 3_600_000,
+    queryFn: async () => (await permitDomain(pub as unknown as PublicClient, sell.address)) ?? false,
+  });
+  const gaslessAllow = useReadContract({ address: sell.address, abi: erc20Abi, functionName: "allowance", args: [address ?? zeroAddress, GASLESS ?? zeroAddress], chainId: chain.id, query: { enabled: gaslessBase && !!address } });
+  const gaslessOk = gaslessBase && !limitMode && !cover.on && (!!gaslessToken.data || (amt !== undefined && (gaslessAllow.data as bigint | undefined ?? 0n) >= amt));
+  const lowGas = native.data !== undefined && native.data.value < GAS_FLOOR_WEI;
+  const [gaslessPick, setGaslessPick] = useState<boolean | null>(null); // null: on when the wallet is short of gas
+  const gasless = gaslessOk && (gaslessPick ?? lowGas);
+  const needApprove = needApproveRouter && !gasless;
   const routerPaused = useReadContract({ address: CONTRACTS.router, abi: routerAbi, functionName: "paused", chainId: chain.id, query: { enabled: deployed, refetchInterval: 15_000 } });
   const isPaused = routerPaused.data === true;
   // venues being added to the router (Robinhood Chain: Aero, Ramses): listed as live only once the router uses them
@@ -344,6 +363,50 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
     if (kind === "wrap") return run("Wrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "deposit", value: amt, chainId: chain.id }));
     if (kind === "unwrap") return run("Unwrap", () => writeContractAsync({ address: WHYPE, abi: whypeAbi, functionName: "withdraw", args: [amt], chainId: chain.id }));
 
+    if (gasless && GASLESS) {
+      const GL: Address = GASLESS;
+      const ok = await run("Swap without gas", async () => {
+        const fresh = await getQuote();
+        if (!fresh?.route) throw new Error("No route for this swap right now.");
+        if (fresh.impact >= IMPACT_BLOCK && !ackImpact) throw new Error(`Price impact is now ${fresh.impact.toFixed(1)}%. Confirm the high price impact to continue.`);
+        setQuote(fresh);
+        const r = fresh.route;
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + GASLESS_TTL_S);
+        const nonce = await pub!.readContract({ address: GL, abi: gaslessAbi, functionName: "nonces", args: [address!] });
+        const o: GaslessOrder = {
+          owner: address!, tokenIn: sell.address, tokenOut: buy.address, amountIn: amt, minOut: minOut(fresh.out, slip),
+          mid: r.mid, venue1: r.leg1.venue, isPool1: r.leg1.isPool, venue2: r.leg2.venue, isPool2: r.leg2.isPool, nonce, deadline,
+        };
+        // a permit only when the contract may not take the amount yet
+        let permit: GaslessPermit = NO_PERMIT;
+        const allowed = await pub!.readContract({ address: sell.address, abi: erc20Abi, functionName: "allowance", args: [address!, GL] });
+        if (allowed < amt) {
+          const dom = await permitDomain(pub as unknown as PublicClient, sell.address);
+          if (!dom) throw new Error(`${sell.symbol} cannot be swapped without gas. Swap with your own ETH instead.`);
+          const pn = await pub!.readContract({ address: sell.address, abi: [{ type: "function", name: "nonces", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] }] as const, functionName: "nonces", args: [address!] });
+          const psig = await signTypedDataAsync({ domain: dom, types: permitTypes, primaryType: "Permit", message: { owner: address!, spender: GL, value: amt, nonce: pn, deadline } });
+          const ps = parseSignature(psig);
+          permit = { value: amt, deadline, v: Number(ps.v ?? BigInt(ps.yParity + 27)), r: ps.r, s: ps.s };
+        }
+        if (!sameForm(form, live.current)) throw new Error(FORM_CHANGED);
+        const sig = await signTypedDataAsync({ domain: orderDomain(GL), types: orderTypes, primaryType: "Order", message: o });
+        const res = await fetch("/api/gasless", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(toWire(o, sig, permit)) });
+        const j = (await res.json().catch(() => ({}))) as { hash?: Hash; error?: string };
+        if (!res.ok || !j.hash) throw new Error(j.error ?? "The relayer could not send this swap. Nothing was taken; try again.");
+        return j.hash;
+      }, (r, hash) => {
+        let paid = amt, got: bigint | undefined;
+        for (const l of r.logs) {
+          if (l.address.toLowerCase() !== CONTRACTS.router!.toLowerCase()) continue;
+          try { const ev = decodeEventLog({ abi: [routedEvent], data: l.data, topics: l.topics }); paid = ev.args.amountIn; got = ev.args.amountOut; break; } catch { /* another event */ }
+        }
+        void gaslessAllow.refetch();
+        if (got !== undefined) setDone({ hash, net: net.key, symIn: sell.symbol, symOut: buy.symbol, inTxt: fmtAmt(paid, sell.decimals), outTxt: fmtAmt(got, buy.decimals) });
+      }, (e) => (e instanceof Error && !(e instanceof BaseError) ? e.message : explain(e, G)));
+      if (ok) { setAmount(""); setAckImpact(false); }
+      return;
+    }
+
     if (cover.on) {
       if (!cover.ok) return;
       const ok = await run("Covered buy", async () => {
@@ -423,6 +486,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   else if (cover.on && !cover.ok) { label = "Not covered: untick Rug Cover to swap"; disabled = true; }
   else if (cover.on) label = `Buy with cover · pay ${fmt(amt + cover.premium, 18, 6)} ETH`;
   else if (needApprove) label = unlimited ? `Approve ${sell.symbol}` : `Approve ${fmt(amt, sell.decimals, 4)} ${sell.symbol}`;
+  else if (gasless) label = "Sign and swap · no gas needed";
   else if (kind === "wrap") label = `Wrap ${G}`;
   else if (kind === "unwrap") label = `Unwrap ${W}`;
   if (busy) { label = `${busy}…`; disabled = true; }
@@ -569,6 +633,12 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
           );
         })()}
         {tokenWarning}
+        {gaslessOk && (
+          <label className="chk gasless">
+            <input type="checkbox" checked={gasless} disabled={!!busy} onChange={(e) => setGaslessPick(e.target.checked)} />
+            <span>Swap without gas: you sign, Stoa pays the network fee{lowGas ? " (your wallet has almost no ETH)" : ""}.</span>
+          </label>
+        )}
         <button className="big pri" type="button" disabled={disabled} onClick={onAction}>{label}</button>
         {msg && !done && <div className={msg.ok ? "ok" : "err"}>{msg.text}{msg.hash && <> · <a href={txUrl(msg.hash)} target="_blank" rel="noopener noreferrer">View</a></>}</div>}
         {done && (() => {
