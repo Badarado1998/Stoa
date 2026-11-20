@@ -694,6 +694,8 @@ body.past-walk .hdr{background:#F4F6FA;box-shadow:0 1px 0 rgba(30,38,51,.07)}
 .herospot{flex-basis:100%;display:flex;justify-content:center}
 .herospot:empty{display:none}
 .spotban.pill{pointer-events:auto;display:inline-flex;border-radius:999px;padding:8px 14px;margin:14px auto 0;max-width:92vw;letter-spacing:normal;text-transform:none;font-family:var(--sans)}
+.herospot+.herospot .spotban.pill{margin-top:8px}
+.spotban.bar+.spotban.bar{margin-top:-26px}
 .spotban.pill .sb-t{font-size:13px}.spotban.pill .sb-go{margin-left:6px;font-size:13px}
 .spotban .sb-t{flex:1 1 auto;text-align:left}
 @media (max-width:560px){.spotban.bar{padding:10px 14px;gap:8px}.spotban .sb-t{font-size:13px}.spotban .sb-go{font-size:13px}.spotban.pill .sb-t small{display:none}}

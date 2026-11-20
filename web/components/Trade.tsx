@@ -647,7 +647,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
               <div className="rowx"><span className="lbl">SWAP CONFIRMED</span><a className="lbl" href={txUrl(done.hash)} target="_blank" rel="noopener noreferrer">VIEW ↗</a></div>
               <div className="sc-amt">{done.inTxt} {done.symIn} → <b>{done.outTxt} {done.symOut}</b></div>
               {done.pts !== undefined && (Date.now() / 1000 >= SEASON_START
-                ? done.pts > 0 && <p className="note" style={{ marginTop: 6 }}><b style={{ color: "var(--accent-d)" }}>+{done.pts.toLocaleString("en-US", { maximumFractionDigits: 1 })} points</b> toward season 1 (before the daily cap). <a href="/points">Your points</a></p>
+                ? done.pts > 0 && <p className="note" style={{ marginTop: 6 }}><b style={{ color: "var(--accent-d)" }}>+{done.pts.toLocaleString("en-US", { maximumFractionDigits: 1 })} points</b> toward season 1 (an estimate: the daily cap and the round-trip rule apply). <a href="/points">Your points</a></p>
                 : <p className="note" style={{ marginTop: 6 }}>Points season 1 starts Mon 23 Nov, 00:00 UTC: swaps from then on earn points. <a href="/points">How it works</a></p>)}
               {done.watch && done.net === net.key && (
                 <div className="note" style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

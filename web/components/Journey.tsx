@@ -6,6 +6,7 @@ import StoaCA from "./StoaCA";
 import StoaPulse from "./StoaPulse";
 import HomeLive from "./HomeLive";
 import SpotlightBanner from "./SpotlightBanner";
+import PointsBanner from "./PointsBanner";
 import Footer from "./Footer";
 import MobileNav from "./MobileNav";
 import { CA as STOA_CA } from "@/lib/stoaAddress";
@@ -139,6 +140,7 @@ function HeroButtons() {
         <Link href="/check">Check a token</Link>
       </div>
       <div className="herospot"><SpotlightBanner variant="pill" /></div>
+      <div className="herospot"><PointsBanner variant="pill" /></div>
     </div>
   );
 }
