@@ -57,7 +57,8 @@ export async function securityStatus(): Promise<Status> {
     ["Limit orders (StoaLimitV2)", a("limit")],
     ["Rug Cover", a("rugCover")],
     ["Spotlight", a("spotlightMarket")],
-    ["Uniswap V4 adapter (V2)", a("uniswapV4AdapterV2")],
+    ["Uniswap V4 adapter (V3)", a("uniswapV4AdapterV3")],
+    ["Uniswap V4 adapter (V2, retired)", a("uniswapV4AdapterV2")],
     ["Metric adapter", a("metricAdapter")],
   ];
   const cs = list.filter((x): x is [string, Address] => Boolean(x[1]));

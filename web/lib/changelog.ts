@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "v4-adapter-v3",
+    date: "2026-11-22",
+    title: "Uniswap V4 adapter V3 live: more V4 pools, pinned core pairs",
+    tag: "Robinhood Chain",
+    items: [
+      "The router now uses UniswapV4AdapterV3 in place of V2, through the 48-hour timelock, after an independent security review by HEY Research Lab.",
+      "V4 pools on allowlisted hooks (Fables, QHooks and others) can now be routed; the $STOA and ETH/USDG pools are pinned so the keeper cannot remove them.",
+      "Pool registration stays keeper-only, and a guardian can take a hook off the list at once.",
+    ],
+    link: { href: "/docs/contracts", label: "Contracts" },
+  },
+  {
     id: "spotlight-dashboard",
     date: "2026-11-20",
     title: "Your Spotlight at a glance, Points countdown, faster home on phones",

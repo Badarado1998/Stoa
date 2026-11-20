@@ -32,7 +32,7 @@ Hey Research Lab reported two Medium findings, each with a test that reproduces 
 
 ### M-HRL-2 Uniswap V4 pool registry
 
-**Status: fixed on 16 November 2026; the new adapter replaced the first one in the router on 19 November 2026, through the 48-hour timelock. UniswapV4AdapterV3 follows through the same timelock.** A finding about which Uniswap V4 pools the router uses. **Fix:** a new [UniswapV4AdapterV2](https://robinhoodchain.blockscout.com/address/0x27958279F95225b2a5517E7DD12b6Fc0317E5c5d) where only Stoa's keeper (or the timelock) can register pools, and the Add pool buttons are gone from the site. Until the swap is done, the site, the API and the keeper check the current adapter's pool list before using it, and the keeper compares router quotes against a second price before any buyback or burn. Full details are published here once the new adapter is live.
+**Status: fixed on 16 November 2026; the new adapter replaced the first one in the router on 19 November 2026, through the 48-hour timelock. UniswapV4AdapterV3 replaced it on 22 November 2026 through the same timelock, after an independent security review by HEY Research Lab.** A finding about which Uniswap V4 pools the router uses. **Fix:** a new [UniswapV4AdapterV2](https://robinhoodchain.blockscout.com/address/0x27958279F95225b2a5517E7DD12b6Fc0317E5c5d) where only Stoa's keeper (or the timelock) can register pools, and the Add pool buttons are gone from the site. Until the swap is done, the site, the API and the keeper check the current adapter's pool list before using it, and the keeper compares router quotes against a second price before any buyback or burn. Full details are published here once the new adapter is live.
 
 ## Update, 16 November 2026: bug bounty reports
 
