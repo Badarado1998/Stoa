@@ -362,7 +362,7 @@ function PayCross({ req, chainId }: { req: PayRequest; chainId: number }) {
       {phase.k === "failed" && <div className="notice" style={{ marginTop: 10 }}>{phase.text}</div>}
       {phase.k === "moving" && <p className="note" style={{ marginTop: 10 }}>Sent. Relay is paying {req.amount} USDG to {short(req.to)} on Robinhood Chain. <a href={`https://relay.link/transaction/${phase.id}`} target="_blank" rel="noopener noreferrer">Follow it on Relay ↗</a></p>}
       <button type="button" className="big pri" style={{ marginTop: 12, width: "100%" }} disabled={isConnected && (self || over || !quote || loading || short_ || phase.k === "busy" || phase.k === "moving")} onClick={() => (isConnected ? go() : openWallet())}>{label}</button>
-      <p className="note" style={{ marginTop: 8 }}>Stoa checks Relay&apos;s order before your wallet opens: it pays exactly this address at least {req.amount} USDG on Robinhood Chain, and any refund comes back to you. Up to {PAY_CROSS_MAX_USDG} USDG from another chain for now. Payments cannot be reversed.</p>
+      <p className="note" style={{ marginTop: 8 }}>Stoa checks Relay&apos;s order before your wallet opens: it pays exactly this address at least {req.amount} USDG on Robinhood Chain, and if Relay cannot deliver, your ETH comes back to you. Up to {PAY_CROSS_MAX_USDG} USDG from another chain for now. Payments cannot be reversed.</p>
     </>
   );
 }
