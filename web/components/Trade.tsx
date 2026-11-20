@@ -3,6 +3,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 // panels that show only after a quote, a token pick or a tab change load on demand, so the swap box itself is ready sooner
 const VenueCompare = dynamic(() => import("./VenueCompare"), { ssr: false });
+const AggregatorCheck = dynamic(() => import("./AggregatorCheck"), { ssr: false });
 const SwapCheck = dynamic(() => import("./SwapCheck"), { ssr: false });
 const PoolDepth = dynamic(() => import("./PoolDepth"), { ssr: false });
 const SafetyPanel = dynamic(() => import("./SafetyPanel"), { ssr: false });
@@ -606,6 +607,9 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
           </div>
           {quote.route && kind !== "wrap" && kind !== "unwrap" && (
             <VenueCompare net={net} pub={pub} sell={sell} buy={buy} amt={amt} route={quote.route} out={quote.out} block={quote.block} />
+          )}
+          {quote.route && amt !== undefined && kind !== "wrap" && kind !== "unwrap" && net.key === "robinhood" && (
+            <AggregatorCheck sell={sell.address} buy={buy.address} amt={amt} out={quote.out} decimals={buy.decimals} symbol={buy.symbol} />
           )}
           </details>
         )}
