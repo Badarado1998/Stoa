@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stoa Dashboard · Robinhood Chain open data</title>
+<style>
+:root{--bg:#eef2f8;--card:#fff;--ink:#1e2633;--muted:#667085;--line:#e3e8f0;--accent:#2f6fd6;--up:#1f9d55;--down:#c2412d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:28px 16px 40px}
+h1{font:600 30px/1.15 Georgia,"Times New Roman",serif;margin:4px 0 6px;letter-spacing:.2px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:600}
+.sub{color:var(--muted);margin:0 0 20px;max-width:680px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:0 6px 18px rgba(30,38,51,.05);margin-bottom:16px}
+.grid .card{margin:0}.lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.big{font:500 26px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}.up{color:var(--up)}.down{color:var(--down)}.note{color:var(--muted);font-size:13px;margin:8px 0 0}
+a{color:var(--accent)}svg text{font:11px system-ui,sans-serif;fill:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+select{font:inherit;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:#fff}
+footer{color:var(--muted);font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">STOA · OPEN DATA · ROBINHOOD CHAIN</div>
+  <h1>Robinhood Chain, in the open</h1>
+  <p class="sub">Swaps through <a href="https://stoadex.com" target="_blank" rel="noopener">Stoa</a>'s router, Robinhood Stock Tokens next to Robinhood's own price, and the same swaps quoted on every venue. Read live from Stoa's public datasets on Hugging Face. Not financial advice.</p>
+
+  <div class="grid">
+    <div class="card"><div class="lbl">Swaps routed</div><div class="big" id="k-swaps">…</div></div>
+    <div class="card"><div class="lbl">Volume, USD</div><div class="big" id="k-usd">…</div></div>
+    <div class="card"><div class="lbl">Wallets</div><div class="big" id="k-wallets">…</div></div>
+    <div class="card"><div class="lbl">Stock tokens tracked</div><div class="big" id="k-stocks">…</div></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl">Daily volume through Stoa (USD, UTC days)</div><a href="https://huggingface.co/datasets/StoaDex/stoa-onchain" target="_blank" rel="noopener">Dataset →</a></div>
+    <div id="chart"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl">Stock tokens: on-chain price vs Robinhood</div><a href="https://huggingface.co/datasets/StoaDex/robinhood-stock-tokens" target="_blank" rel="noopener">Dataset →</a></div>
+    <p class="note" id="st-note">Largest gaps among tokens with at least $50,000 of on-chain liquidity.</p>
+    <div class="scroll"><table id="stocks"><thead><tr><th>Token</th><th>Robinhood mid</th><th>On-chain</th><th>Gap</th><th>Liquidity</th><th>24h volume</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="lbl">Venue quotes, same block</div><span><select id="pick" aria-label="Swap"></select> <a href="https://huggingface.co/datasets/StoaDex/robinhood-chain-venue-quotes" target="_blank" rel="noopener">Dataset →</a></span></div>
+    <div class="scroll"><table id="venues"><thead><tr><th>Venue</th><th>You get</th><th>vs top venue</th></tr></thead><tbody></tbody></table></div>
+    <p class="note" id="v-note"></p>
+  </div>
+
+  <footer>Data: <a href="https://huggingface.co/datasets/StoaDex/stoa-onchain">stoa-onchain</a> · <a href="https://huggingface.co/datasets/StoaDex/robinhood-stock-tokens">robinhood-stock-tokens</a> · <a href="https://huggingface.co/datasets/StoaDex/robinhood-chain-venue-quotes">robinhood-chain-venue-quotes</a> · <a href="https://huggingface.co/datasets/StoaDex/stoa-contracts">stoa-contracts</a> · <a href="https://stoadex.com/open">stoadex.com/open</a> · <a href="https://x.com/StoaDEX">X @StoaDEX</a></footer>
+</main>
+<script>
+const HF = "https://huggingface.co/datasets/StoaDex/";
+const f$ = (n, d = 0) => n == null || isNaN(n) ? "—" : Number(n).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
+const usd = (n) => n == null ? "—" : n >= 1e6 ? "$" + f$(n / 1e6, 2) + "M" : n >= 1e3 ? "$" + f$(n / 1e3, 1) + "K" : "$" + f$(n, 2);
+function csv(t) {
+  const rows = []; let r = [], c = "", q = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"') { if (t[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"') q = true; else if (ch === ",") { r.push(c); c = ""; }
+    else if (ch === "\n") { r.push(c); rows.push(r); r = []; c = ""; } else if (ch !== "\r") c += ch;
+  }
+  if (c || r.length) { r.push(c); rows.push(r); }
+  const [h, ...b] = rows; return b.filter((x) => x.length === h.length).map((x) => Object.fromEntries(h.map((k, i) => [k, x[i]])));
+}
+const get = (repo, path) => fetch(HF + repo + "/resolve/main/" + path).then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(csv);
+const el = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+get("stoa-onchain", "data/swaps.csv").then((s) => {
+  el("#k-swaps").textContent = f$(s.length);
+  el("#k-usd").textContent = usd(s.reduce((a, x) => a + (+x.usd || 0), 0));
+  el("#k-wallets").textContent = f$(new Set(s.map((x) => x.trader).filter(Boolean)).size);
+}).catch(() => { el("#k-swaps").textContent = "—"; });
+
+get("stoa-onchain", "data/daily.csv").then((d) => {
+  const by = {}; d.forEach((x) => { by[x.date] = (by[x.date] || 0) + (+x.usd || 0); });
+  const days = Object.keys(by).sort().slice(-30); if (!days.length) return;
+  const W = 960, H = 180, P = 24, max = Math.max(...days.map((k) => by[k])) || 1, bw = (W - P) / days.length;
+  let svg = `<svg viewBox="0 0 ${W} ${H + 20}" width="100%" role="img" aria-label="Daily volume">`;
+  days.forEach((k, i) => { const h = Math.max(2, (by[k] / max) * H); svg += `<rect x="${P + i * bw + 2}" y="${H - h}" width="${Math.max(2, bw - 4)}" height="${h}" rx="3" fill="#2f6fd6"><title>${k}: ${usd(by[k])}</title></rect>`; });
+  svg += `<text x="${P}" y="${H + 16}">${days[0]}</text><text x="${W}" y="${H + 16}" text-anchor="end">${days[days.length - 1]}</text><text x="0" y="12">${usd(max)}</text></svg>`;
+  el("#chart").innerHTML = svg;
+}).catch(() => { el("#chart").textContent = "Daily data not available yet."; });
+
+get("robinhood-stock-tokens", "latest.csv").then((s) => {
+  el("#k-stocks").textContent = f$(s.length);
+  const rows = s.filter((x) => +x.liquidity_usd >= 50000 && x.gap_pct !== "").sort((a, b) => Math.abs(+b.gap_pct) - Math.abs(+a.gap_pct)).slice(0, 12);
+  el("#stocks tbody").innerHTML = rows.map((x) => { const mid = (+x.robinhood_bid + +x.robinhood_ask) / 2, g = +x.gap_pct; return `<tr><td><b>${esc(x.symbol)}</b> <span class="note">${esc(x.name)}</span></td><td>$${f$(mid, 2)}</td><td>$${f$(+x.onchain_price, 2)}</td><td class="${g > 0 ? "up" : "down"}">${g > 0 ? "+" : ""}${f$(g, 2)}%</td><td>${usd(+x.liquidity_usd)}</td><td>${usd(+x.volume24h_usd)}</td></tr>`; }).join("");
+  if (s[0]) el("#st-note").textContent = `Largest gaps among tokens with at least $50,000 of on-chain liquidity. Snapshot ${s[0].snapshot_utc.replace("T", " ").replace("Z", " UTC")}.`;
+}).catch(() => { el("#k-stocks").textContent = "—"; el("#st-note").textContent = "Stock data not available yet."; });
+
+get("robinhood-chain-venue-quotes", "latest.csv").then((v) => {
+  const keys = [...new Set(v.map((x) => `${x.pair}|${x.amount_in}`))];
+  el("#pick").innerHTML = keys.map((k) => { const [p, a] = k.split("|"); return `<option value="${esc(k)}">${esc(a)} ${esc(p.split("/")[0])} → ${esc(p.split("/")[1])}</option>`; }).join("");
+  const show = () => {
+    const [p, a] = el("#pick").value.split("|");
+    const rows = v.filter((x) => x.pair === p && x.amount_in === a && x.amount_out !== "").sort((x, y) => +y.amount_out - +x.amount_out);
+    const buy = p.split("/")[1];
+    el("#venues tbody").innerHTML = rows.map((x) => `<tr><td>${esc(x.venue)}</td><td>${f$(+x.amount_out, 4)} ${esc(buy)}</td><td>${+x.vs_best_bps === 0 ? "top" : "−" + f$((+x.vs_best_bps) / 100, 2) + "%"}</td></tr>`).join("") || `<tr><td colspan="3">No venue quoted this swap.</td></tr>`;
+    const r = v.find((x) => x.pair === p && x.amount_in === a);
+    el("#v-note").textContent = r ? `Block ${r.block}, ${r.snapshot_utc.replace("T", " ").replace("Z", " UTC")}. Each venue alone, one hop, before fees. Stoa's router returned ${r.router_out ? f$(+r.router_out, 4) + " " + buy : "no route"} after its 2 bps fee. A quote is a reading, not a fill.` : "";
+  };
+  el("#pick").onchange = show; if (keys.length) show();
+}).catch(() => { el("#v-note").textContent = "Venue data not available yet."; });
+</script>
+</body>
+</html>

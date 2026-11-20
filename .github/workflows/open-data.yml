@@ -1,12 +1,24 @@
 name: Open data to Hugging Face
 
-# Every Monday 04:23 UTC, after the Spotlight week is settled: publishes Stoa's public on-chain data (swaps through the
-# routers, daily summary, Points board, Spotlight week) to the Hugging Face dataset HF_REPO, tagged with the ISO week.
-# Needs the repository secret HF_TOKEN (a write token for the organization). Without it, it only builds the files.
+# Every 6 hours (00:23, 06:23, 12:23, 18:23 UTC), and on a push that changes data/: publishes Stoa's open data to
+# Hugging Face under the StoaDex account (data/hf_publish.py):
+#   datasets/StoaDex/stoa-onchain                  swaps through the routers, daily summary, Points, Spotlight (tag per ISO week)
+#   datasets/StoaDex/robinhood-stock-tokens        Robinhood Stock Tokens, Robinhood's price vs on-chain, a snapshot per run
+#   datasets/StoaDex/robinhood-chain-venue-quotes  a basket of swaps quoted on every venue in one block, a snapshot per run
+#   datasets/StoaDex/stoa-contracts                contract release archive, only when the contracts or deployments change
+#   spaces/StoaDex/stoa-dashboard                  a static dashboard reading the datasets
+# Needs the repository secret HF_TOKEN (write). Without it, it only builds the files.
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 4 * * 1"
+    - cron: "23 */6 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "contracts/src/**"
+      - "contracts/deployments/**"
+      - ".github/workflows/open-data.yml"
 
 permissions:
   contents: read
@@ -18,15 +30,20 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
-      HF_REPO: ${{ vars.HF_REPO || 'StoaDex/stoa-onchain' }}
       HAS_TOKEN: ${{ secrets.HF_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Compile the contracts (ABIs for the release archive)
+        working-directory: contracts
+        run: forge build --skip test --skip script || echo "::warning::forge build failed; the release archive goes out without ABIs"
       - name: Build the files
         if: env.HAS_TOKEN != 'true'
         run: python3 -I data/hf_publish.py --out hf-out
