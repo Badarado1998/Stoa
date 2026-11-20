@@ -16,7 +16,7 @@ const routerAbi = parseAbi([
 ]);
 const lc = (a: string) => a.toLowerCase();
 
-/** The swap screen's proof of "best price": what each venue the router uses would give for this exact amount, direct,
+/** The swap screen's venue comparison: what each venue the router uses would give for this exact amount, direct,
  *  next to what Stoa fills. Venue quotes are the venues' own (before Stoa's 2 bps); Stoa's is what you receive.
  *  Shown only when at least two venues quote the pair directly, so there is something to compare. */
 export default function VenueCompare({ net, pub, sell, buy, amt, route, out, block }: {

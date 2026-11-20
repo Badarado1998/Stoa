@@ -1,6 +1,6 @@
 # Become a maker
 
-A maker quotes a Stoa pool: a bid and an ask, with sizes, refreshed every block. When a swap comes in, the router compares that quote with every other venue and fills against it when it is the best price. The pool earns the spread: it buys below the market and sells above it.
+A maker quotes a Stoa pool: a bid and an ask, with sizes, refreshed every block. When a swap comes in, the router compares that quote with every other venue and fills against it when it gives the trader the most. The pool earns the spread: it buys below the market and sells above it.
 
 A **curator** owns a pool's inventory and keeps what the spread earns; a **maker** is the wallet that posts the quotes. Usually they are the same team. See [Become a curator](become-a-curator.md) for the pool side.
 

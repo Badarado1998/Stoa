@@ -104,7 +104,7 @@ export default async function Embed({ params, searchParams }: P) {
       </div>
       <div className="em-q">
         {t?.quote
-          ? <>{t.quote.amountIn} {hit.net.gas} → <b>{t.quote.amountOut} {sym}</b><small>best of every venue Stoa routes on {hit.net.name}{t.quote.venues.length ? `, now on ${t.quote.venues.join(" → ")}` : ""}</small></>
+          ? <>{t.quote.amountIn} {hit.net.gas} → <b>{t.quote.amountOut} {sym}</b><small>every venue Stoa routes on {hit.net.name}, compared{t.quote.venues.length ? `, now on ${t.quote.venues.join(" → ")}` : ""}</small></>
           : <>Every route compared on {hit.net.name}<small>Open Stoa to get a live quote for any amount.</small></>}
       </div>
       <a className="em-buy" href={buy} target="_blank" rel="noopener noreferrer">Buy {sym} on Stoa ↗</a>

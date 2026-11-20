@@ -94,6 +94,19 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {cell("ON-CHAIN PRICE", s.dex ? fmtUsd(s.dex.priceUsd) : "No pool yet", diff != null ? `${diff >= 0 ? "+" : ""}${diff.toFixed(2)}% from Robinhood's price` : undefined)}
         {cell("ON-CHAIN LIQUIDITY", s.dex ? usd0(s.dex.liquidityUsd) : "—", s.dex ? `24h volume ${usd0(s.dex.volume24h)}` : undefined)}
       </div>
+      {(() => {
+        // a report today or tomorrow (UTC): say so at the top, since prices often move most around it
+        const n = earn.next;
+        if (!n) return null;
+        const today = new Date().toISOString().slice(0, 10), tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+        if (n.date !== today && n.date !== tomorrow) return null;
+        return (
+          <div className="notice" style={{ marginBottom: 16 }}>
+            <b>{s.symbol} reports earnings {n.date === today ? "today" : "tomorrow"}</b>{n.timing === "pm" ? ", after the US market closes (about 21:00 UTC)" : n.timing === "am" ? ", before the US market opens (about 12:00 UTC)" : ""}{n.verified ? "" : " (date not yet confirmed)"}.
+            {" "}Prices often move most around a report. On-chain {s.symbol} trades around the clock, while Robinhood&apos;s price follows extended and overnight sessions, so the gap below can widen. Not financial advice.
+          </div>
+        );
+      })()}
       {history && <PriceChart points={history} symbol={s.symbol} source="GeckoTerminal" stock />}
       {s.dex && <GapChart points={gaps} symbol={s.symbol} />}
       {(earn.next || earn.last) && (

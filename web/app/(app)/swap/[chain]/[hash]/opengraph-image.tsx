@@ -31,14 +31,14 @@ export default async function Image({ params }: { params: Promise<{ chain: strin
             {side("PAID", s.amountIn, s.symIn, "#18202C")}
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
               <div style={{ width: 54, height: 54, borderRadius: 999, background: "#fff", color: BLUE, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, boxShadow: "0 8px 20px rgba(24,32,44,.10)" }}>↓</div>
-              <span style={{ fontFamily: "Marcellus", fontSize: 30, color: MUTED }}>best of every venue Stoa checked</span>
+              <span style={{ fontFamily: "Marcellus", fontSize: 30, color: MUTED }}>every venue Stoa routes, compared</span>
             </div>
             {side("GOT", s.amountOut, s.symOut, BLUE)}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", marginTop: 60 }}>
             <span style={{ fontFamily: "Marcellus", fontSize: 64 }}>Swapped on Stoa,</span>
-            <span style={{ fontFamily: "Marcellus", fontSize: 64, color: BLUE }}>at the best live price.</span>
+            <span style={{ fontFamily: "Marcellus", fontSize: 64, color: BLUE }}>every route compared.</span>
           </div>
         )}
       </OgFrame>
