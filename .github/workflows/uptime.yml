@@ -1,0 +1,63 @@
+name: Uptime check
+
+# Every 15 minutes: is stoadex.com up and can the router quote? Checks the home page, Trade, a live router quote
+# (0.01 ETH -> USDG on Robinhood Chain), the stock list and the Spotlight API. A check that fails twice, 20 s apart, opens an issue
+# labelled "uptime" (GitHub emails the repo owner); while it stays down, one comment an hour; when everything passes
+# again, the issue is closed with a note. Read-only: it sends nothing on-chain.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the site and the APIs
+        id: run
+        run: |
+          fail=""
+          check() { # name url jq-test
+            for i in 1 2; do
+              body=$(curl -sS -m 25 -A "stoa-uptime/1" -w '\n%{http_code}' "$2" 2>/dev/null) && code=$(echo "$body" | tail -n1) || code=000
+              json=$(echo "$body" | sed '$d')
+              if [ "$code" = "200" ] && { [ -z "$3" ] || echo "$json" | jq -e "$3" >/dev/null 2>&1; }; then echo "ok   $1"; return; fi
+              sleep 20
+            done
+            echo "FAIL $1 (HTTP $code)"; fail="$fail\n- $1: HTTP $code, $2"
+          }
+          check "Home page" "https://stoadex.com/" ""
+          check "Trade page" "https://stoadex.com/trade" ""
+          check "Router quote 0.01 ETH -> USDG" "https://stoadex.com/api/v1/quote?chain=robinhood&sellToken=native&buyToken=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&amount=10000000000000000" '(.amountOut | tonumber) > 0'
+          check "Stock tokens API" "https://stoadex.com/api/v1/stocks" '(.stocks | length) > 0'
+          check "Spotlight API" "https://stoadex.com/api/v1/spotlight" '.week >= 1'
+          printf "%b" "$fail" > fail.txt
+      - name: Open, update or close the uptime issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          n=$(gh issue list --state open --label uptime --json number --jq '.[0].number' -R "${{ github.repository }}")
+          if [ -s fail.txt ]; then
+            body=$(printf "Checked %s UTC, each twice, 20 s apart:\n%s\n\nRun: %s" "$(date -u '+%Y-%m-%d %H:%M')" "$(cat fail.txt)" "$RUN")
+            if [ -z "$n" ]; then
+              gh label create uptime --color D73A4A -R "${{ github.repository }}" 2>/dev/null || true
+              gh issue create -R "${{ github.repository }}" --title "stoadex.com check failing" --label uptime --body "$body"
+            else
+              # one comment an hour at most while it stays down
+              last=$(gh api "repos/${{ github.repository }}/issues/$n" --jq .updated_at)
+              if [ $(( $(date -u +%s) - $(date -u -d "$last" +%s) )) -ge 3300 ]; then gh issue comment "$n" -R "${{ github.repository }}" --body "Still failing. $body"; fi
+            fi
+            exit 1
+          elif [ -n "$n" ]; then
+            gh issue close "$n" -R "${{ github.repository }}" --comment "All checks pass again ($(date -u '+%Y-%m-%d %H:%M') UTC). $RUN"
+          fi
