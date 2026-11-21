@@ -28,7 +28,7 @@ export default async function StocksPage() {
   return (
     <section className="page">
       <PageHead eyebrow="STOCK TOKENS · ROBINHOOD CHAIN" title="Tokenized stocks, on-chain" action={<MarketStatus initial={session()} />}>
-        {rows.length ? `${rows.length} Robinhood Stock Tokens, ${rows.filter((r) => r.route).length} of them swappable on Stoa right now,` : "Robinhood Stock Tokens,"} each with Robinhood&apos;s own price next to what it trades for on-chain. Follow the ones you care about with ☆ and set a price alert.
+        {rows.length ? `${rows.length} Robinhood Stock Tokens, ${rows.filter((r) => r.route).length} of them swappable on Stoa right now,` : "Robinhood Stock Tokens,"} each with Robinhood&apos;s own price next to what it trades for on-chain. Follow the ones you care about with ☆ and set a price alert. New to this? <Link href="/buy-stocks">How to buy stock tokens</Link>.
       </PageHead>
       {week.length > 0 && (
         <div className="panel pad" style={{ marginBottom: 16 }}>
