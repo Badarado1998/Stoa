@@ -100,7 +100,10 @@ function SwapCard({ d }: { d: SwapData }) {
       <div style={{ fontSize: 18, fontWeight: 600, margin: "6px 0" }}>{s.sell.amount} {s.sell.symbol} → about {s.buy.about} {s.buy.symbol}</div>
       <div className="note">At least {s.buy.atLeast} {s.buy.symbol} · {s.slippagePct}% slippage{s.priceImpactPct !== null ? ` · ${s.priceImpactPct.toFixed(2)}% impact` : ""}{s.route ? ` · ${s.route}` : ""}</div>
       {st.k === "done" ? (
-        <p style={{ marginTop: 8 }}>Swapped. <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">See it on Robinhood Chain ↗</a></p>
+        <>
+          <p style={{ marginTop: 8 }}>Swapped. <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">See it on Robinhood Chain ↗</a></p>
+          <Share url={`https://stoadex.com/swap/robinhood/${st.tx}`} text={`Swapped ${s.sell.symbol} to ${s.buy.symbol} on Robinhood Chain by asking Stoa AI.`} />
+        </>
       ) : (
         <>
           {st.k === "failed" && <div className="notice" style={{ marginTop: 8 }}>{st.text}</div>}
@@ -340,7 +343,10 @@ function SpotCard({ d }: { d: SpotData }) {
         </>
       )}
       {st.k === "done" ? (
-        <p style={{ marginTop: 8 }}>{s.action === "lock" ? "Locked." : "Votes saved."} <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">See it ↗</a> · <a href="/spotlight">Spotlight</a></p>
+        <>
+          <p style={{ marginTop: 8 }}>{s.action === "lock" ? "Locked." : "Votes saved."} <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">See it ↗</a> · <a href="/spotlight">Spotlight</a></p>
+          {s.action === "vote" && s.votes?.[0] && <Share url={`https://stoadex.com/spotlight/vote/${s.votes[0].token}`} text="I voted in Stoa Spotlight this week. Lock $STOA, vote, and share the winners' ETH." />}
+        </>
       ) : (
         <>
           {st.k === "failed" && <div className="notice" style={{ marginTop: 8 }}>{st.text}</div>}
@@ -405,6 +411,17 @@ export function Avatar({ size = 30 }: { size?: number }) {
   );
 }
 
+/** share a result: its Stoa page carries a picture card (opengraph image) for X and Telegram */
+function Share({ url, text }: { url: string; text: string }) {
+  const x = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  return (
+    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+      <a className="ghost btn" href={x} target="_blank" rel="noopener noreferrer" style={{ padding: "5px 10px", fontSize: 13 }}>Share on X</a>
+      <CopyButton text={url} label="Copy link" />
+    </div>
+  );
+}
+
 export function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
   const box: React.CSSProperties = { background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: "12px 14px", marginTop: 8 };
   if (c.kind === "safety") {
@@ -419,7 +436,8 @@ export function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
           <span className="note" style={{ margin: 0 }}>Creator holds</span><span>{pc(d.creatorPct)}</span>
           <span className="note" style={{ margin: 0 }}>Top 10 hold</span><span>{pc(d.top10Pct)}</span>
         </div>
-        {d.token && <a className="note" href={`/check?token=${d.token}`} style={{ display: "inline-block", marginTop: 6 }}>Full check →</a>}
+        {d.token && <a className="note" href={`/check/robinhood/${d.token}`} style={{ display: "inline-block", marginTop: 6 }}>Full check →</a>}
+        {d.token && d.verdict && d.verdict !== "unknown" && <Share url={`https://stoadex.com/check/robinhood/${d.token}`} text={`Stoa AI checked $${d.symbol} on Robinhood Chain: safety ${d.verdict}. A test buy and sell through Stoa's router, nothing sent.`} />}
       </div>
     );
   }
@@ -477,6 +495,7 @@ export function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
             </div>
           );
         })}
+        {c.kind === "stock" && rows[0]?.symbol && <Share url={`https://stoadex.com/stocks/${rows[0].symbol}`} text={`${rows[0].symbol} on Robinhood Chain vs Robinhood's price, via Stoa AI`} />}
       </div>
     );
   }

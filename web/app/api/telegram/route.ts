@@ -17,7 +17,7 @@ import { tg, tgHtml, tgMe, tgOn, tgSecret, tgSend } from "@/lib/telegram";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-type TgMsg = { message_id: number; text?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; reply_to_message?: { text?: string; from?: { id: number } } };
+type TgMsg = { message_id: number; text?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; new_chat_members?: { id: number }[]; reply_to_message?: { text?: string; from?: { id: number } } };
 
 const HELP = `<b>Stoa AI</b> · early beta on Robinhood Chain
 
@@ -38,6 +38,24 @@ Quick data, free and unlimited:
 /app · open Stoa right here in Telegram
 
 I only read: to trade, use stoadex.com/ai where your own wallet signs. Not financial advice. 10 questions a day each.`;
+
+/** a private /start: the first three steps on Robinhood Chain, with buttons */
+const WELCOME = `👋 <b>Welcome to Stoa AI</b> · early beta
+
+New to Robinhood Chain? Three steps:
+
+<b>1. Get ETH on Robinhood Chain.</b> Bridge from Base, Arbitrum, OP or Ethereum (button below). Gas is paid in ETH.
+
+<b>2. Make your first swap.</b> Ask me "quote 0.01 ETH to USDG", then swap on Stoa, where your own wallet signs. Stoa compares every venue it routes.
+
+<b>3. Stay safe.</b> /safe any token before you buy. /watch 0xYourWallet for rug alerts, /alert NVDA below 120 for price alerts.
+
+Or just ask me anything, in any language. I never ask for keys or seed phrases. Not financial advice.`;
+const START_BUTTONS = [
+  [{ text: "1 · Bridge to Robinhood Chain ↗", url: "https://stoadex.com/bridge" }],
+  [{ text: "2 · Open Stoa ↗", url: "https://stoadex.com/trade?chain=robinhood" }],
+  [{ text: "Stoa AI on the web ↗", url: "https://stoadex.com/ai" }, { text: "Join the community", url: "https://t.me/StoaDexChat" }],
+];
 
 function cardText(kind: string, data: unknown): string | null {
   const d = data as Record<string, unknown>;
@@ -94,6 +112,12 @@ async function answer(m: TgMsg, q: string, botId: number) {
 }
 
 async function handle(m: TgMsg) {
+  // added to a group: say what it does and what an admin can set up
+  if (m.new_chat_members?.length) {
+    const me = await tgMe();
+    if (me && m.new_chat_members.some((u) => u.id === me.id)) await tgSend(m.chat.id, `👋 Hi, I'm <b>Stoa AI</b> (early beta). Ask me about any Robinhood Chain token with /ask, by mentioning me, or by replying to me.\n\n<b>Admins:</b>\n/settoken 0xYourToken · make me this project's assistant\n/report on · a market report here at 01:00 and 13:00 UTC, with Spotlight reminders\n\nI only read: I never ask for keys and never move funds. Not financial advice.`);
+    return;
+  }
   const text = (m.text ?? "").trim();
   // an admin posting "anonymously" (as the group) arrives from Telegram's GroupAnonymousBot with sender_chat = the group
   const anonAdmin = m.sender_chat?.id === m.chat.id;
@@ -106,6 +130,7 @@ async function handle(m: TgMsg) {
   const name = cmd?.[1].toLowerCase(), arg = (cmd?.[3] ?? "").trim();
   const priv = m.chat.type === "private";
 
+  if (name === "start" && priv) { await tgSend(m.chat.id, WELCOME, undefined, START_BUTTONS); return; }
   if (name === "start" || name === "help") { await tgSend(m.chat.id, HELP); return; }
   if (name === "watch" || name === "unwatch") {
     if (!priv) { await tgSend(m.chat.id, "Rug alerts are sent in a private chat: message me directly.", m.message_id); return; }

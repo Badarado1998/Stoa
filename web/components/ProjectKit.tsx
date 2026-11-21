@@ -18,6 +18,8 @@ export default function ProjectKit() {
     { lbl: "SAFETY BADGE · HTML", what: "Live result of a simulated buy and sell through Stoa's router, re-checked every 30 minutes.", value: `<a href="${check}"><img src="${badge}" alt="Stoa safety check" height="20"></a>`, img: `/badge/safety/robinhood/${t}` },
     { lbl: "SAFETY BADGE · MARKDOWN", what: "The same badge for a GitHub README or docs.", value: `[![Stoa safety check](${badge})](${check})` },
     { lbl: "SWAP WIDGET", what: "A swap box for your website. Colors and your referral wallet: open the widget builder.", open: "/build/widget", value: `<iframe src="${SITE}/embed/swap/robinhood/${t}?pay=ETH" width="100%" height="330" style="max-width:420px;border:0;border-radius:16px" title="Swap on Stoa" loading="lazy"></iframe>` },
+    { lbl: "STOA AI · CHAT BUTTON FOR YOUR SITE", what: "An assistant that answers about your token from on-chain data: safety check, price, liquidity, holders. Read-only; Buy opens Stoa.", open: `/embed/ai?token=${t}`, value: `<script src="${SITE}/stoa-ai.js" data-token="${t}" defer></script>` },
+    { lbl: "STOA AI · YOUR TELEGRAM GROUP", what: "Add @StoaDexAIbot to your group (Open →), then send this as an admin. Members ask with /ask or by mentioning it.", open: "https://t.me/StoaDexAIbot?startgroup=true", value: `/settoken ${t}` },
     { lbl: "SPOTLIGHT VOTE PAGE", what: "After you bid: the page to share so $STOA holders vote for your token.", value: `${SITE}/spotlight/vote/${t}`, open: `/spotlight/vote/${t}` },
   ] : [];
   return (
