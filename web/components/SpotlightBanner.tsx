@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { useReadContract } from "wagmi";
 import { ROBINHOOD } from "@/lib/networks";
-import { BID_WINDOW, SPOT, SPOT_START, WEEK, epochAt, epochStart, left, spotlightAbi } from "@/lib/spotlight";
+import { BID_WINDOW, SLOTS, SPOT, SPOT_START, WEEK, epochAt, epochStart, left, spotlightAbi } from "@/lib/spotlight";
+
+const QUORUM = 1_000_000; // $STOA of votes a token needs to win (SpotlightMarket's quorum; the race panels read it on chain)
 import { useNow, useSpotLive } from "./spotlightData";
 
 const net = ROBINHOOD;
@@ -33,7 +35,11 @@ export default function SpotlightBanner({ variant = "bar" }: { variant?: "pill" 
     cta = "Vote";
     href = "/spotlight";
   }
-  const lockTxt = !locked ? null : `${cmp(locked)} $STOA locked`; // hidden until someone locks
+  // each winning token needs QUORUM votes, so every QUORUM of locked $STOA can fill one more slot: say how far the next is
+  const full = locked !== undefined ? Number(locked / 10n ** 18n) : 0;
+  const slots = Math.min(SLOTS, Math.floor(full / QUORUM));
+  const nextSlot = slots < SLOTS ? `${cmp(BigInt(QUORUM * (slots + 1) - full) * 10n ** 18n)} more opens slot ${slots + 1}` : null;
+  const lockTxt = !locked ? null : `${cmp(locked)} $STOA locked${nextSlot && variant === "bar" ? ` · ${nextSlot}` : ""}`; // hidden until someone locks
 
   return (
     <Link href={href} prefetch={false} className={`spotban ${variant}`} aria-label={`${text}. ${lockTxt ?? ""} ${cta}`}>
