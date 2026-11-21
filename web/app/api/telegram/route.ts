@@ -3,6 +3,7 @@ import { getAddress, isAddress, type Address } from "viem";
 import { runAgent } from "@/lib/aiAgent";
 import { countToday } from "@/lib/aiCredits";
 import { gapsText, pnlText, priceText } from "@/lib/tgReport";
+import { addAlert, alertText, listAlerts, removeAlert, topText } from "@/lib/tgAlerts";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
 import { kv, kvOn } from "@/lib/kv";
 import { rugScan, type RugToken } from "@/lib/rugScan";
@@ -32,7 +33,9 @@ In a group: /ask your question, mention me, or reply to me.
 /report on · group admins: a market report here at 01:00 and 13:00 UTC
 
 Quick data, free and unlimited:
-/price STOA · /gaps · /pnl 0xWallet
+/price STOA · /gaps · /pnl 0xWallet · /top
+/alert NVDA below 120 · /alerts · /unalert (private chat)
+/app · open Stoa right here in Telegram
 
 I only read: to trade, use stoadex.com/ai where your own wallet signs. Not financial advice. 10 questions a day each.`;
 
@@ -137,6 +140,17 @@ async function handle(m: TgMsg) {
     await tgSend(m.chat.id, out, m.message_id, { text: "Open Stoa ↗", url: name === "pnl" && isAddress(a, { strict: false }) ? `https://stoadex.com/pnl/robinhood/${getAddress(a)}` : name === "gaps" ? "https://stoadex.com/stocks" : "https://stoadex.com/ai" });
     return;
   }
+  if (name === "alert" || name === "alerts" || name === "unalert") {
+    if (!priv) { await tgSend(m.chat.id, "Price alerts are sent in a private chat: message me directly.", m.message_id); return; }
+    if (!kvOn) { await tgSend(m.chat.id, "Price alerts are not switched on yet."); return; }
+    if (name === "alert") { await tgSend(m.chat.id, await addAlert(m.chat.id, arg)); return; }
+    if (name === "unalert") { await tgSend(m.chat.id, await removeAlert(m.chat.id, arg)); return; }
+    const list = await listAlerts(m.chat.id);
+    await tgSend(m.chat.id, list.length ? `🔔 <b>Your alerts</b>\n${list.map((a, i) => `${i + 1}. ${alertText(a)}`).join("\n")}\n\n/unalert 1 removes the first, /unalert all removes all.` : "No alerts yet. Example: /alert NVDA below 120");
+    return;
+  }
+  if (name === "top") { await tgSend(m.chat.id, await topText(), m.message_id, { text: "Open Points ↗", url: "https://stoadex.com/points" }); return; }
+  if (name === "app") { await tgSend(m.chat.id, "Stoa inside Telegram: swap, Stoa AI, Stoa Pay. Your own wallet signs.", m.message_id, { text: "Open Stoa ↗", url: "https://stoadex.com/trade?chain=robinhood" }); return; }
   if (name === "report") {
     if (priv) { await tgSend(m.chat.id, "Add me to a group, then an admin sends /report on there."); return; }
     const st = anonAdmin ? { status: "administrator" } : await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });

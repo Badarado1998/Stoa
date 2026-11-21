@@ -39,6 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* the footer's HEY Research Lab badge is the largest picture on short pages: open its connection early */}
       <head><link rel="preconnect" href="https://heyresearch.xyz" /></head>
       <body>
+        {/* opened as a Telegram Mini App: tell Telegram the page is ready and use the full height */}
+        <script dangerouslySetInnerHTML={{ __html: "try{var p=window.TelegramWebviewProxy;if(p){p.postEvent('web_app_ready','{}');p.postEvent('web_app_expand','{}')}}catch(e){}" }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LD) }} />
         <Providers>{children}</Providers>
         <SiteAnalytics />

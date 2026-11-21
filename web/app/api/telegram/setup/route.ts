@@ -16,10 +16,16 @@ export async function GET() {
     { command: "price", description: "Price, 1h and 24h change: /price STOA" },
     { command: "gaps", description: "Stock tokens vs Robinhood's price" },
     { command: "pnl", description: "PnL of a wallet's swaps through Stoa: /pnl 0x…" },
+    { command: "top", description: "Points leaderboard" },
+    { command: "alert", description: "Price alert: /alert NVDA below 120 (private chat)" },
+    { command: "alerts", description: "Your price alerts" },
+    { command: "app", description: "Open Stoa inside Telegram" },
     { command: "settoken", description: "Admins: make me this project's assistant" },
     { command: "report", description: "Admins: market report here twice a day (/report on)" },
     { command: "help", description: "What I can do" },
   ] });
+  // the menu button opens Stoa as a Telegram Mini App
+  await tg("setChatMenuButton", { menu_button: { type: "web_app", text: "Open Stoa", web_app: { url: "https://stoadex.com/trade?chain=robinhood" } } });
   await tg("setMyName", { name: "Stoa AI" });
   await tg("setMyShortDescription", { short_description: "Ask Robinhood Chain anything: token safety checks, quotes, stock gaps, rug alerts. Early beta · stoadex.com/ai" });
   await tg("setMyDescription", { description: `Stoa AI is the assistant of Stoa, the swap router on Robinhood Chain. Early beta.

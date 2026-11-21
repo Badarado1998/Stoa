@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "telegram-alerts-spotlight",
+    date: "2026-11-21",
+    title: "Price alerts, Points board and Stoa inside Telegram; Spotlight from Stoa AI",
+    tag: "Robinhood Chain",
+    items: [
+      "Ask Stoa AI to lock $STOA or vote in Spotlight: it builds the card, your wallet signs.",
+      "Telegram: /alert NVDA below 120 for price alerts, /top for the Points board, and an Open Stoa button that runs Stoa inside Telegram.",
+      "Groups with /report on get Spotlight reminders: when a week opens, and before bids and votes close.",
+    ],
+    link: { href: "/docs/ask-stoa", label: "Stoa AI" },
+  },
+  {
     id: "stoa-ai-credits",
     date: "2026-11-21",
     title: "Stoa AI credits, and a market report in Telegram",

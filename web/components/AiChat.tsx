@@ -7,6 +7,7 @@ import { ROBINHOOD } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
 import { requestUrl, type PayRequest } from "@/lib/pay";
 import { LIMIT, LIMIT_ERRORS, limitAbi } from "@/lib/limit";
+import { SPOT, spotlightAbi } from "@/lib/spotlight";
 import CopyButton from "./CopyButton";
 import { useWalletModal } from "./Providers";
 
@@ -31,6 +32,7 @@ const GROUPS: { label: string; items: string[] }[] = [
   { label: "Trade", items: ["Swap 0.01 ETH to USDG", "Quote 10 USDG to STOA"] },
   { label: "Strategies", items: ["Buy NVDA with 50 USDG if it drops 5%", "Sell 1000 STOA for ETH if it goes up 20%"] },
   { label: "Check", items: ["Scan my tokens for rug signs", "Is STOA safe to buy?"] },
+  { label: "Spotlight", items: ["Lock all my STOA for Spotlight", "Who can I vote for this week?"] },
   { label: "Stocks", items: ["How far is NVDA from Robinhood's price?", "Which stock tokens are furthest from Robinhood?"] },
   { label: "Pay", items: ["Make me a payment link for 25 USDG", "Make a link to get paid 50 USDG in NVDA"] },
   { label: "Learn", items: ["How do I bridge to Robinhood Chain?", "What is Spotlight?"] },
@@ -248,6 +250,77 @@ function BuyCredits({ onDone }: { onDone: (credits: number) => void }) {
   );
 }
 
+type SpotData = {
+  summary: { action: "lock" | "vote"; amount: string; lockedAfter?: string; opensAt?: string; week?: number; votes?: { token: Address; amount: string }[]; votesCloseAt?: string };
+  call: { spotlight: Address; stoa?: Address; action: "lock" | "vote"; amount?: string; tokens?: Address[]; amounts?: string[] };
+};
+
+/** Spotlight: lock $STOA, or save this week's votes, signed by the user's wallet */
+function SpotCard({ d }: { d: SpotData }) {
+  const { address, isConnected, chainId } = useAccount();
+  const { open } = useWalletModal();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+  const pub = usePublicClient({ chainId: RH });
+  const [st, setSt] = useState<{ k: "idle" | "busy" | "done" | "failed"; text?: string; tx?: Hash }>({ k: "idle" });
+  const s = d.summary, c = d.call;
+  const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+
+  async function go() {
+    if (!address) return open();
+    if (!SPOT || lc(c.spotlight) !== lc(SPOT)) { setSt({ k: "failed", text: "This is not Stoa's Spotlight contract." }); return; }
+    if (c.action === "lock" && lc(c.stoa ?? "") !== lc(STOA_T)) { setSt({ k: "failed", text: "This is not $STOA." }); return; }
+    try {
+      if (chainId !== RH) { setSt({ k: "busy", text: "Switch to Robinhood Chain…" }); await switchChainAsync({ chainId: RH }); }
+      let tx: Hash;
+      if (c.action === "lock") {
+        const amt = BigInt(c.amount!);
+        const have = await pub!.readContract({ address: STOA_T, abi: erc20Abi, functionName: "allowance", args: [address, SPOT] }) as bigint;
+        if (have < amt) {
+          setSt({ k: "busy", text: "Approve $STOA in your wallet…" });
+          const a = await writeContractAsync({ address: STOA_T, abi: erc20Abi, functionName: "approve", args: [SPOT, amt], chainId: RH });
+          await pub!.waitForTransactionReceipt({ hash: a });
+        }
+        setSt({ k: "busy", text: "Confirm the lock in your wallet…" });
+        tx = await writeContractAsync({ address: SPOT, abi: spotlightAbi, functionName: "lock", args: [amt], chainId: RH });
+      } else {
+        setSt({ k: "busy", text: "Confirm your votes in your wallet…" });
+        tx = await writeContractAsync({ address: SPOT, abi: spotlightAbi, functionName: "vote", args: [c.tokens!, c.amounts!.map((x) => BigInt(x))], chainId: RH });
+      }
+      setSt({ k: "busy", text: "Waiting for Robinhood Chain…" });
+      const rc = await pub!.waitForTransactionReceipt({ hash: tx });
+      setSt(rc.status === "success" ? { k: "done", tx } : { k: "failed", text: "It did not go through. Ask again for a fresh card." });
+    } catch (e) { setSt({ k: "failed", text: explain(e) }); }
+  }
+
+  return (
+    <div className="box" style={{ marginTop: 8 }}>
+      <div className="lbl">SPOTLIGHT · {s.action === "lock" ? "LOCK $STOA" : `WEEK ${s.week} VOTES`}</div>
+      {s.action === "lock" ? (
+        <>
+          <div style={{ fontSize: 17, fontWeight: 600, margin: "6px 0" }}>Lock {s.amount} $STOA</div>
+          <div className="note">Locked after: {s.lockedAfter} $STOA. It votes every week; unlock any time (it stops voting, then can be withdrawn after the wait).</div>
+        </>
+      ) : (
+        <>
+          {(s.votes ?? []).map((v) => <div key={v.token} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: "1px solid #eef1f5" }}><span className="mono">{short(v.token)}</span><b>{v.amount} $STOA</b></div>)}
+          {s.votesCloseAt && <div className="note">Votes close {new Date(s.votesCloseAt).toUTCString().slice(0, 22)} UTC.</div>}
+        </>
+      )}
+      {st.k === "done" ? (
+        <p style={{ marginTop: 8 }}>{s.action === "lock" ? "Locked." : "Votes saved."} <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">See it ↗</a> · <a href="/spotlight">Spotlight</a></p>
+      ) : (
+        <>
+          {st.k === "failed" && <div className="notice" style={{ marginTop: 8 }}>{st.text}</div>}
+          <button type="button" className="pri" style={{ marginTop: 10, width: "100%" }} disabled={st.k === "busy"} onClick={() => (isConnected ? go() : open())}>
+            {!isConnected ? "Connect wallet" : st.k === "busy" ? st.text : s.action === "lock" ? "Lock $STOA" : "Save votes"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function LinkCard({ url, title }: { url: string; title: string }) {
   return (
     <div className="box" style={{ marginTop: 8 }}>
@@ -261,6 +334,7 @@ function LinkCard({ url, title }: { url: string; title: string }) {
 function ActionView({ a }: { a: Action }) {
   if (a.tool === "prepare_swap") return <SwapCard d={a.data as unknown as SwapData} />;
   if (a.tool === "prepare_limit_order") return <LimitCard d={a.data as unknown as LimitData} />;
+  if (a.tool === "prepare_spotlight") return <SpotCard d={a.data as unknown as SpotData} />;
   if (a.tool === "create_payment_link" && typeof a.data.url === "string" && a.data.url.startsWith("https://stoadex.com/pay?")) return <LinkCard url={a.data.url} title="PAYMENT LINK" />;
   if (a.tool === "pay_payment_link" && a.data.request) {
     const url = requestUrl("https://stoadex.com", a.data.request as PayRequest);
