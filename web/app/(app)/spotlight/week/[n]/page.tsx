@@ -8,6 +8,9 @@ import { loadSpotlightHistory } from "@/lib/spotlightHistory";
 // /spotlight/week/<n>: one finished Spotlight week, for its recap post: the winners, their bids, the ETH their voters
 // got, and how many tokens bid. Read from SpotlightMarket; its share card is the recap image.
 export const revalidate = 300;
+// no page is built ahead: each one is rendered on its first visit and then kept (ISR), so a busy week does not
+// re-render it on every request
+export async function generateStaticParams() { return []; }
 type P = { params: Promise<{ n: string }> };
 const eth = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 4 });
 const mm = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : `${Math.round(v / 1e3)}K`);

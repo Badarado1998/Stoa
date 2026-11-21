@@ -18,6 +18,9 @@ const TONE = { ok: ["#15803d", "#E9F7EF", "Passed the safety check"], caution: [
 // /spotlight/vote/<token>: a Spotlight candidate's own page, for projects to share with their community: its bid, its
 // votes against the quorum, and how to lock $STOA and vote for it. Read from SpotlightMarket.
 export const revalidate = 120;
+// no page is built ahead: each one is rendered on its first visit and then kept (ISR), so a busy week does not
+// re-render it on every request
+export async function generateStaticParams() { return []; }
 type P = { params: Promise<{ token: string }> };
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {

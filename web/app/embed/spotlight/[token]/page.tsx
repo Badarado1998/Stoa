@@ -7,6 +7,9 @@ import { ethTxt, readVote, stoaTxt, utcTxt } from "@/lib/spotlightVote";
 // or an iframe): its Spotlight bid, its votes against the quorum, whether it wins now, and a button to vote on Stoa in a
 // new tab. No wallet ever connects inside the frame. Read from SpotlightMarket, kept two minutes.
 export const revalidate = 120;
+// no page is built ahead: each one is rendered on its first visit and then kept (ISR), so a busy week does not
+// re-render it on every request
+export async function generateStaticParams() { return []; }
 export const metadata: Metadata = { title: "Vote in Stoa Spotlight", robots: { index: false, follow: false } };
 
 type P = { params: Promise<{ token: string }> };
