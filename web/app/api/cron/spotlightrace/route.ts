@@ -2,6 +2,7 @@ import { kv, kvOn } from "@/lib/kv";
 import { tgSym, tgOn, tgSend } from "@/lib/telegram";
 import { readSpotlight } from "@/lib/spotlightServer";
 import { cronAllowed, cronRefused } from "@/lib/cronAuth";
+import { followAlerts } from "@/lib/spotlightFollow";
 
 // GET /api/cron/spotlightrace (Vercel cron, every 10 minutes): tells the groups that turned on /report when the race
 // moves: a new token bids, a token passes the vote quorum, or the tokens that would win change. Compared with the last
@@ -18,6 +19,8 @@ export async function GET(req: Request) {
   const s = await readSpotlight().catch(() => null);
   if (!s || s.phase === "before_week_1" || s.paused) return Response.json({ ok: true, nothing: true });
   const live = s.candidates.filter((c) => !c.canceled);
+  // opt-in alerts for followed tokens (/follow): their own snapshot, no group cooldown
+  await followAlerts(s).catch(() => 0);
   const now: Snap = {
     bids: live.map((c) => c.token.toLowerCase()),
     quorum: live.filter((c) => c.reachesQuorum).map((c) => c.token.toLowerCase()),

@@ -50,3 +50,10 @@ declare module "wagmi" {
     config: typeof wagmiConfig;
   }
 }
+
+/** The wallet of the app Stoa is opened in (a Farcaster client's built-in wallet), added as the first wallet choice */
+export function addHostWallet(provider: unknown, name: string) {
+  if (typeof window === "undefined" || wagmiConfig.connectors.some((c) => c.id === "hostWallet")) return;
+  const c = wagmiConfig._internal.connectors.setup(injected({ target: { id: "hostWallet", name, provider: provider as never } }));
+  wagmiConfig._internal.connectors.setState((xs) => [c, ...xs]);
+}

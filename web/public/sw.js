@@ -2,7 +2,7 @@
  * - Build files (/_next/static, hashed and never changed) and images: served from the cache, fetched once.
  * - Pages: always from the network first; the last good copy only when the network fails, then an offline page.
  * - Everything else (APIs, quotes, RPC, link cards) is never touched: prices and balances always come live. */
-const VERSION = "stoa-v1";
+const VERSION = "stoa-v1"; // push handler added 21 Nov; the cache name stays so nothing is refetched
 const STATIC = `${VERSION}-static`, PAGES = `${VERSION}-pages`;
 const OFFLINE = "/offline.html"; // plain HTML, no scripts: it works with nothing else cached
 
@@ -79,4 +79,12 @@ self.addEventListener("notificationclick", (e) => {
     }
     await self.clients.openWindow(url.href);
   })());
+});
+
+// web push (only on devices that turned on "Notify me"): Spotlight moments, ETH to claim, price alerts
+self.addEventListener("push", (e) => {
+  let n = {};
+  try { n = e.data ? e.data.json() : {}; } catch { n = { body: e.data ? e.data.text() : "" }; }
+  const url = typeof n.url === "string" && n.url.startsWith("/") ? n.url : "/";
+  e.waitUntil(self.registration.showNotification(n.title || "Stoa", { body: n.body || "", icon: "/icon.png", badge: "/icon.png", tag: n.tag, data: { url } }));
 });

@@ -14,6 +14,7 @@ import { PageHead, Sk, TokenIcon } from "./ui";
 import { useWalletModal } from "./Providers";
 import { readEpoch, tokenMeta, useNow, useSpotLive, type SpotEpoch, type SpotTokenMeta } from "./spotlightData";
 import SpotlightCalc from "./SpotlightCalc";
+import PushToggle from "./PushToggle";
 
 const net = ROBINHOOD;
 const M = 10n ** 24n; // 1M $STOA
@@ -218,6 +219,7 @@ export default function SpotlightBody() {
 
       {live && ready && <MyDashboard ep={d?.cur} meta={d?.meta} mine={d?.mine ?? {}} started={started} race={race} />}
       {live && ready && <LockCounter quorum={d?.cur.params.quorum} started={started} race={race} />}
+      {live && ready && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <div className="panel pad"><div className="lbl" style={{ marginBottom: 10 }}>REMINDERS ON THIS DEVICE</div><PushToggle /></div>}
       {ready && <SpotlightCalc cur={d?.cur} meta={d?.meta} week={race + 1} />}
       {ready && <ThisWeek prev={d?.prev ?? null} meta={d?.meta} e={e} onSettled={() => void data.refetch()} />}
       {live && started && d && <Race ep={d.cur} meta={d.meta} mine={d.mine} phase={phase} onDone={() => void data.refetch()} />}

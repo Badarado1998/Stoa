@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { NETS, netByKey } from "@/lib/networks";
 import { fetchPrices, fmtUsd, usePrices } from "@/lib/prices";
 import type { Token } from "@/lib/tokens";
+import PushToggle from "./PushToggle";
+const PUSH = !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 import { Ticker } from "./ui";
 import { addAlert, alertText, crossed, isWatched, markFired, removeAlert, toggleWatch, useWatch, type PriceAlert, type Watch } from "@/lib/watchlist";
 
@@ -107,8 +109,9 @@ export function WatchlistPanel({ chain, empty }: { chain?: string; empty?: React
     <div className="panel pad watchlist" style={{ marginBottom: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <div className="lbl">YOUR WATCHLIST · {watch.length}</div>
-        {alerts.length > 0 && p === "default" && <button className="ghost" type="button" onClick={ask}>Turn on alert notifications</button>}
+        {alerts.length > 0 && p === "default" && !PUSH && <button className="ghost" type="button" onClick={ask}>Turn on alert notifications</button>}
       </div>
+      {alerts.length > 0 && PUSH && <div style={{ marginTop: 10 }}><PushToggle /></div>}
       <div className="wl">
         {watch.map((w) => {
           const price = getters[w.chain]?.(asToken(w));

@@ -1,5 +1,5 @@
 import "server-only";
-import { getAddress, isAddress, type Address } from "viem";
+import { formatUnits, getAddress, isAddress, parseUnits, type Address } from "viem";
 import { callTool as mcpCall } from "./mcpTools";
 import { marketBrief } from "./aiBrief";
 import { marketOf } from "./rugScan";
@@ -133,4 +133,41 @@ export async function spotlightText(): Promise<{ text: string; buttons: { text: 
   lines.push(`\n${s.rules.toVotersPct}% of a winning bid goes to its voters, in ETH. Sponsored slots, not reviewed by Stoa. Nothing is promised; not financial advice.`);
   const votes = live.slice(0, 3).map((c) => ({ text: `Vote ${(c.symbol ?? c.token.slice(0, 6)).slice(0, 12)} ↗`, url: `https://stoadex.com/spotlight/vote/${c.token.toLowerCase()}` }));
   return { text: lines.join("\n"), buttons: votes.length ? [main, votes] : [main] };
+}
+
+/** /compare 1 ETH USDG: one swap on every venue Stoa routes, in one block, against the top venue, and Stoa's route
+ *  after its 2 bps fee. Plain data, read-only. */
+export async function compareText(arg: string): Promise<{ text: string; buttons?: { text: string; url: string }[][] }> {
+  const m = /^\s*([\d.,]+)\s+(\S+)\s+(?:to\s+|for\s+|->\s*|→\s*)?(\S+)\s*$/i.exec(arg);
+  if (!m) return { text: "Compare a swap on every venue: <code>/compare 1 ETH USDG</code> or <code>/compare 500 USDG NVDA</code>" };
+  const [, amtS, a, b] = m;
+  // symbols: listed tokens and $STOA first, then Robinhood Stock Tokens (NVDA, TSLA…)
+  const anyToken = async (q: string) => {
+    const t = await resolveToken(q).catch(() => null);
+    if (t) return t;
+    const { stockTokens } = await import("./stocks");
+    const st = (await stockTokens().catch(() => null))?.stocks.find((x) => x.symbol.toLowerCase() === q.replace(/^\$/, "").toLowerCase());
+    return st ? await resolveToken(st.address).catch(() => null) : null;
+  };
+  const [sell, buy] = await Promise.all([anyToken(a), anyToken(b)]);
+  if (!sell || !buy) return { text: `I don't know ${!sell ? a : b} on Robinhood Chain. Use its symbol or 0x address.` };
+  if (sell.address.toLowerCase() === buy.address.toLowerCase()) return { text: "Pick two different tokens." };
+  let amt: bigint;
+  try { amt = parseUnits(amtS.replace(",", "."), sell.decimals); } catch { return { text: "That amount doesn't look right." }; }
+  if (amt <= 0n) return { text: "The amount must be above zero." };
+  const { quoteVenues } = await import("./venueSnapshot");
+  const q = await quoteVenues(sell.address as Address, buy.address as Address, amt).catch(() => null);
+  if (!q) return { text: "Robinhood Chain did not answer just now. Try again in a minute." };
+  const rows = q.venues.filter((v) => v.out !== null).sort((x, y) => (y.out! > x.out! ? 1 : -1));
+  if (!rows.length && !q.router) return { text: `No venue quotes ${tgSym(sell.symbol)} → ${tgSym(buy.symbol)} directly right now.` };
+  const n = (v: bigint) => Number(formatUnits(v, buy.decimals)).toLocaleString("en-US", { maximumSignificantDigits: 6 });
+  const top = rows[0]?.out ?? 0n;
+  const bps = (v: bigint) => (top > 0n ? Number(((v - top) * 100_000n) / top) / 10 : 0);
+  const lines = [`⚖️ <b>${amtS} ${tgSym(sell.symbol)} → ${tgSym(buy.symbol)}</b> on every venue · block ${q.block}`];
+  if (q.router) lines.push(`<b>Stoa route</b> (after 2 bps fee): <b>${n(q.router)}</b>${top > 0n ? ` (${bps(q.router) >= 0 ? "+" : ""}${bps(q.router).toFixed(1).replace("-", "−")} bps vs top)` : ""}`);
+  lines.push("");
+  rows.slice(0, 8).forEach((v, i) => lines.push(`${i === 0 ? "🥇" : "·"} ${v.name}: ${n(v.out!)}${i === 0 ? "" : ` (${bps(v.out!).toFixed(1).replace("-", "−")} bps)`}`));
+  lines.push("\nSingle venues are shown before any fee. Quotes move every block. Not financial advice.");
+  const sellQ = sell.address, buyQ = buy.address;
+  return { text: lines.join("\n"), buttons: [[{ text: "Swap on Stoa ↗", url: `https://stoadex.com/trade?chain=robinhood&sell=${sellQ}&buy=${buyQ}&amount=${encodeURIComponent(amtS)}` }, { text: "All pairs ↗", url: "https://stoadex.com/compare" }]] };
 }

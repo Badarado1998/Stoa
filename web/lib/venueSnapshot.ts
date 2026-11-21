@@ -70,3 +70,31 @@ export async function venueSnapshot(): Promise<VenueRow[]> {
   }
   return out;
 }
+
+export type VenueQuote = { block: bigint; router: bigint | null; venues: { name: string; address: string; out: bigint | null }[] };
+
+/** One swap quoted on every venue Stoa's router uses and on the router itself, in one block (read-only). For the bot's
+ *  /compare. `sell`/`buy` may be the native token address; venues quote the wrapped token. */
+export async function quoteVenues(sell: Address, buy: Address, amount: bigint): Promise<VenueQuote> {
+  const router = net.contracts.router;
+  if (!router) throw new Error("router not deployed");
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.chain.rpcUrls.default.http[0]), { timeout: 15_000, fetchOptions: { headers: { "user-agent": "curl/8.5.0" } } }) });
+  const addrs = Object.keys(net.venues) as Address[];
+  const isA = await c.multicall({ contracts: addrs.map((a) => ({ address: router, abi: routerAbi, functionName: "isAdapter" as const, args: [a] as const })), allowFailure: true });
+  const venues = addrs.filter((_, i) => isA[i]?.result === true);
+  const a = lc(sell) === lc(NATIVE) ? net.wrapped : sell, b = lc(buy) === lc(NATIVE) ? net.wrapped : buy;
+  const block = await c.getBlockNumber();
+  const r = (await c.multicall({
+    contracts: [
+      { address: router, abi: routerAbi, functionName: "quote" as const, args: [sell, buy, amount] as const },
+      ...venues.map((v) => ({ address: v, abi: adapterAbi, functionName: "quote" as const, args: [a, b, amount] as const })),
+    ] as never,
+    allowFailure: true, blockNumber: block,
+  })) as { result?: unknown }[];
+  const best = r[0]?.result as { amountOut: bigint } | undefined;
+  return {
+    block,
+    router: best && best.amountOut > 0n ? best.amountOut : null,
+    venues: venues.map((v, i) => { const o = r[i + 1]?.result as bigint | undefined; return { name: net.venues[lc(v)] ?? "venue", address: lc(v), out: o && o > 0n ? o : null }; }),
+  };
+}

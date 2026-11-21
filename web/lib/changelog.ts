@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "miniapps-push-follow",
+    date: "2026-11-21",
+    title: "Stoa inside Telegram and Farcaster, notifications, Spotlight alerts and weekly streaks",
+    tag: "Robinhood Chain",
+    items: [
+      "Opened from the Telegram bot or shared in a Farcaster client, Stoa runs as a Mini App: full screen, Trade in Lite, and the Farcaster wallet offered first.",
+      "Telegram: /follow 0xToken tells a chat when that token starts or stops winning Spotlight, passes the vote quorum or is outbid, with the bid that would put it back on top. /compare 1 ETH USDG shows the same swap on every venue.",
+      "Notifications on your phone or browser (when switched on): Spotlight closing times, ETH ready to claim for your wallet, and price alerts even with Stoa closed.",
+      "Portfolio shows your weekly swap streak, with a share button. A badge only: it earns no points.",
+    ],
+  },
+  {
     id: "lite-compare-leaders",
     date: "2026-11-21",
     title: "Trade Lite, one swap on every venue, and Spotlight's top earners",

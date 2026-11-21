@@ -1,5 +1,6 @@
 "use client";
 import { useAccount, useBalance, useReadContracts } from "wagmi";
+import StreakBadge from "./StreakBadge";
 import { erc20Abi } from "viem";
 import Link from "next/link";
 import { isNative } from "@/lib/tokens";
@@ -47,6 +48,7 @@ export default function Portfolio() {
         <div className="panel pad"><div className="lbl">VAULT SHARES</div><p className="note">Pool vaults are not open yet. <a href="/earn">Earn ETH with $STOA</a> in Spotlight today.</p></div>
       </div>
       {address && net.key === "robinhood" && <StockHoldings address={address} />}
+      {address && <StreakBadge />}
       {address && net.contracts.router && net.deployed && <PnlPanel net={net} address={address} />}
       <div className="panel pad" style={{ gridColumn: "1 / -1", overflowX: "auto" }}><div className="lbl" style={{ marginBottom: 12 }}>YOUR SWAPS</div><SwapHistory /></div>
     </div>

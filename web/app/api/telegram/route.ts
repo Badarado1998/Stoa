@@ -2,7 +2,9 @@ import { after } from "next/server";
 import { getAddress, isAddress, type Address } from "viem";
 import { runAgent } from "@/lib/aiAgent";
 import { countToday } from "@/lib/aiCredits";
-import { gapsText, pnlText, priceText, spotlightText } from "@/lib/tgReport";
+import { compareText, gapsText, pnlText, priceText, spotlightText } from "@/lib/tgReport";
+import { follow, followed, unfollow } from "@/lib/spotlightFollow";
+import { readSpotlight } from "@/lib/spotlightServer";
 import { spamWhy } from "@/lib/tgSpam";
 import { CA as STOA_CA } from "@/lib/stoaAddress";
 import { addAlert, alertText, listAlerts, removeAlert, topText } from "@/lib/tgAlerts";
@@ -36,6 +38,8 @@ In a group: /ask your question, mention me, or reply to me.
 /report on · group admins: a market report here at 01:00 and 13:00 UTC
 /antispam on · group admins: remove scam messages (make me an admin)
 /welcome on · group admins: greet new members with the safety basics
+/compare 1 ETH USDG · the same swap on every venue
+/follow 0xToken · Spotlight alerts when it wins, passes the quorum or is outbid
 
 Quick data, free and unlimited:
 /price STOA · /gaps · /pnl 0xWallet · /top
@@ -177,6 +181,36 @@ async function handle(m: TgMsg) {
 
   if (name === "start" && priv) { await tgSend(m.chat.id, WELCOME, undefined, START_BUTTONS); return; }
   if (name === "start" || name === "help") { await tgSend(m.chat.id, HELP); return; }
+  if (name === "compare") {
+    const r = await compareText(arg).catch(() => ({ text: "Robinhood Chain did not answer just now. Try again in a minute.", buttons: undefined }));
+    await tgSend(m.chat.id, r.text, m.message_id, r.buttons);
+    return;
+  }
+  if (name === "follow" || name === "unfollow" || name === "following") {
+    if (!kvOn) { await tgSend(m.chat.id, "Spotlight alerts are not switched on yet.", m.message_id); return; }
+    if (!priv && name !== "following") {
+      const st = m.sender_chat?.id === m.chat.id ? { status: "administrator" } : await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });
+      if (!st || !["creator", "administrator"].includes(st.status)) { await tgSend(m.chat.id, "Only group admins can do that here. Anyone can follow a token in a private chat with me.", m.message_id); return; }
+    }
+    if (name === "following") {
+      const ts = await followed(m.chat.id);
+      await tgSend(m.chat.id, ts.length ? `Spotlight alerts here for:\n${ts.map((t) => `<code>${t}</code>`).join("\n")}\n\n/unfollow 0x… to stop one, /unfollow all to stop all.` : "No Spotlight alerts here. /follow 0xToken or a symbol in this week's race.", m.message_id);
+      return;
+    }
+    if (name === "unfollow") {
+      const n = await unfollow(m.chat.id, /^all$/i.test(arg) || !arg ? undefined : isAddress(arg, { strict: false }) ? arg : (await readSpotlight().catch(() => null))?.candidates.find((c) => (c.symbol ?? "").toLowerCase() === arg.replace(/^\$/, "").toLowerCase())?.token);
+      await tgSend(m.chat.id, n ? `Stopped ${n} Spotlight alert${n > 1 ? "s" : ""} here.` : "Nothing to stop. /following lists the alerts here.", m.message_id);
+      return;
+    }
+    if (!arg) { await tgSend(m.chat.id, "Get told when a token in Spotlight starts or stops winning, passes the vote quorum, or is outbid: <code>/follow 0xYourToken</code> or <code>/follow SYMBOL</code> for a token in this week's race.", m.message_id); return; }
+    let token: string | undefined;
+    if (isAddress(arg, { strict: false })) token = getAddress(arg);
+    else token = (await readSpotlight().catch(() => null))?.candidates.find((c) => (c.symbol ?? "").toLowerCase() === arg.replace(/^\$/, "").toLowerCase())?.token;
+    if (!token) { await tgSend(m.chat.id, `${tgHtml(arg.slice(0, 20))} is not in this week's Spotlight race. Use the token's 0x address to follow it before it bids.`, m.message_id); return; }
+    const r = await follow(m.chat.id, token);
+    await tgSend(m.chat.id, r === "full" ? "This chat already follows 5 tokens. /unfollow one first." : `🔦 Following <code>${token}</code> in Spotlight. I'll say here when it starts or stops winning, passes the vote quorum, or is outbid (checked every 10 minutes). /unfollow to stop.`, m.message_id);
+    return;
+  }
   if (name === "watch" || name === "unwatch") {
     if (!priv) { await tgSend(m.chat.id, "Rug alerts are sent in a private chat: message me directly.", m.message_id); return; }
     if (!kvOn) { await tgSend(m.chat.id, "Rug alerts are not switched on yet. You can scan any time on stoadex.com/ai: \"Scan my tokens for rug signs\"."); return; }

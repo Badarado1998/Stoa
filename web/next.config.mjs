@@ -14,7 +14,8 @@ const CSP = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'none'",
+  // only Telegram's and Farcaster's web clients may frame the app (as a Mini App); everyone else is refused
+  "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://farcaster.xyz https://*.farcaster.xyz https://warpcast.com https://*.warpcast.com",
   ...(LOCAL ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
@@ -61,13 +62,12 @@ const nextConfig = {
       },
       {
         source: "/embed/:path*",
-        headers: [{ key: "Content-Security-Policy", value: CSP.replace("frame-ancestors 'none'", "frame-ancestors *") }, ...common],
+        headers: [{ key: "Content-Security-Policy", value: CSP.replace(/frame-ancestors [^;]+/, "frame-ancestors *") }, ...common],
       },
       {
         source: "/((?!embed/).*)",
         headers: [
           { key: "Content-Security-Policy", value: CSP },
-          { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },

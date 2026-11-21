@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Providers from "@/components/Providers";
 import SiteAnalytics from "@/components/SiteAnalytics";
+import MiniAppBridge from "@/components/MiniAppBridge";
 import { SITE } from "@/lib/chain";
 import { Inter, JetBrains_Mono, Marcellus } from "next/font/google";
 import "./globals.css";
@@ -10,6 +11,11 @@ import { ldJson } from "@/lib/ldJson";
 const serif = Marcellus({ subsets: ["latin"], weight: "400", display: "swap", variable: "--font-serif" });
 const sans = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], display: "swap", variable: "--font-mono" });
+
+const FC_EMBED = JSON.stringify({
+  version: "1", imageUrl: `${SITE}/fc-embed.png`,
+  button: { title: "Open Stoa", action: { type: "launch_miniapp", name: "Stoa", splashImageUrl: `${SITE}/fc-splash.png`, splashBackgroundColor: "#EEF2F8" } },
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -22,6 +28,8 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Stoa", statusBarStyle: "default" },
   // Google Search Console ownership (URL-prefix property https://stoadex.com)
   verification: { google: "AP_Tt9q0yq2k5u87TR5_9tr2uUQclr70RT9jfRFjVLA" },
+  // shared in a Farcaster client, a stoadex.com link shows this card with a button that opens that page as a Mini App
+  other: { "fc:miniapp": FC_EMBED, "fc:frame": FC_EMBED.replace('"launch_miniapp"', '"launch_frame"') },
 };
 // structured data for search engines: who Stoa is and what the site does
 const LD = [
@@ -45,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(LD) }} />
         <Providers>{children}</Providers>
         <SiteAnalytics />
+        <MiniAppBridge />
       </body>
     </html>
   );
