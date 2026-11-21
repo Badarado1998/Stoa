@@ -10,8 +10,9 @@ export default function AiEmbed({ token, symbol, logo, buy }: { token: string; s
   const [msgs, setMsgs] = useState<M[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs]);
+  const box = useRef<HTMLDivElement>(null);
+  // scroll the chat itself, never the page around the frame (scrollIntoView would move the host page too)
+  useEffect(() => { if (msgs.length && box.current) box.current.scrollTop = box.current.scrollHeight; }, [msgs]);
   const starters = [`Is ${symbol} safe?`, `What does 0.01 ETH buy in ${symbol}?`, `Who holds ${symbol}?`];
 
   async function send(text: string) {
@@ -48,7 +49,7 @@ export default function AiEmbed({ token, symbol, logo, buy }: { token: string; s
         </div>
         <a href={buy} target="_blank" rel="noopener noreferrer" style={{ flex: "none", padding: "8px 12px", fontSize: 13.5, fontWeight: 600, background: "var(--accent)", color: "#fff", borderRadius: 999, textDecoration: "none" }}>Buy on Stoa ↗</a>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div ref={box} style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         {!msgs.length && (
           <div>
             <div style={{ display: "flex", gap: 10 }}><Avatar /><div style={{ background: "#f3f6fb", borderRadius: "4px 16px 16px 16px", padding: "10px 14px", lineHeight: 1.5 }}>Hi! Ask me about {symbol}: its safety check, price, liquidity and holders, straight from the chain. I don&apos;t know the team&apos;s plans, and this is not financial advice.</div></div>
@@ -69,7 +70,6 @@ export default function AiEmbed({ token, symbol, logo, buy }: { token: string; s
             </div>
           </div>
         ))}
-        <div ref={end} />
       </div>
       <form onSubmit={(e) => { e.preventDefault(); void send(input); }} style={{ padding: "8px 10px", borderTop: "1px solid #eef1f5" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", background: "#f3f6fb", borderRadius: 999, padding: "3px 3px 3px 14px" }}>
