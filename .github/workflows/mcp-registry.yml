@@ -1,0 +1,35 @@
+name: Publish to the MCP Registry
+
+# Publishes mcp-registry/server.json (the Stoa MCP server at https://stoadex.com/mcp) to the official MCP Registry,
+# registry.modelcontextprotocol.io. Run by hand after a change to server.json (bump its version first). It signs in with
+# this workflow's GitHub OIDC token, which proves the io.github.StoaDex namespace: no secret or personal token involved.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: mcp-registry
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-registry
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install mcp-publisher 1.8.10 (checksum pinned)
+        run: |
+          curl -sSfL -o /tmp/mp.tgz https://github.com/modelcontextprotocol/registry/releases/download/v1.8.10/mcp-publisher_linux_amd64.tar.gz
+          echo "32d287ed6fb7dc04eddd2621097784c06a355b2348b35ccc630a1643aa75ff4a  /tmp/mp.tgz" | sha256sum -c -
+          tar xzf /tmp/mp.tgz -C /tmp mcp-publisher
+      - name: Validate
+        run: /tmp/mcp-publisher validate
+      - name: Sign in with GitHub OIDC and publish
+        run: |
+          /tmp/mcp-publisher login github-oidc
+          /tmp/mcp-publisher publish
