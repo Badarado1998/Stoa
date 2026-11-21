@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BaseError, erc20Abi, formatUnits, isAddress, parseAbiItem, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
@@ -383,6 +383,12 @@ function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<s
   const total = Object.values(edit).reduce((a, s) => a + parse(s), 0n);
   const perM = (c: SpotCandidate) => (c.votes > 0n ? (c.pot * BigInt(10_000 - ep.params.cutBps) / 10_000n) * M / c.votes : undefined);
 
+  // on a phone the table hides its last columns, so each token gets its own row with the input under it
+  const voteInput = (k: string, width?: number) => (
+    <input className="inp" style={{ margin: 0, width: width ?? undefined, flex: width ? undefined : 1, minWidth: 0 }} inputMode="numeric" placeholder="0" value={edit[k] ?? ""}
+      onChange={(x) => setEdit({ ...edit, [k]: x.target.value.replace(/[^0-9]/g, "") })} aria-label={`Your votes for ${meta[k]?.symbol ?? k}`} />
+  );
+
   async function save() {
     if (!pub) return;
     const ts = Object.entries(edit).filter(([, s]) => parse(s) > 0n);
@@ -408,20 +414,25 @@ function Race({ ep, meta, mine, phase, onDone }: { ep: SpotEpoch; meta: Record<s
         <p className="pad" style={{ paddingTop: 10 }}>No bids yet this week. The first project to bid pays the base entry fee.</p>
       ) : (
         <table className="tbl" style={{ marginTop: 8 }}>
-          <thead><tr><th>TOKEN</th><th>BID</th><th className="hm">VOTES</th><th className="hm">ETH PER 1M VOTES</th><th>STATUS</th>{isConnected && <th>YOUR VOTES</th>}</tr></thead>
+          <thead><tr><th>TOKEN</th><th>BID</th><th className="hm">VOTES</th><th className="hm">ETH PER 1M VOTES</th><th>STATUS</th>{isConnected && <th className="hm">YOUR VOTES</th>}</tr></thead>
           <tbody>
             {rows.map((c) => {
               const k = c.token.toLowerCase();
               const status = c.canceled ? "Canceled" : leading.has(k) ? "Winning now" : c.votes < ep.params.quorum ? `Needs ${stoaN(ep.params.quorum - c.votes)} votes` : "Outbid";
               return (
-                <tr key={c.token} style={c.canceled ? { opacity: 0.5 } : undefined}>
+                <Fragment key={c.token}>
+                <tr style={c.canceled ? { opacity: 0.5 } : undefined}>
                   <td><TokenCell t={c.token} meta={meta[k]} /></td>
                   <td style={{ fontFamily: "var(--num)" }}>{eth(c.pot)} ETH</td>
                   <td className="hm" style={{ fontFamily: "var(--num)" }}>{stoaN(c.votes)}</td>
                   <td className="hm" style={{ fontFamily: "var(--num)" }}>{perM(c) === undefined ? "—" : `${eth(perM(c), 5)} ETH`}</td>
                   <td><span className="chip" style={leading.has(k) ? undefined : { background: "#F2F4F7", color: "var(--muted)" }}>{status}</span>{!c.canceled && <Link className="note" style={{ display: "block", marginTop: 4 }} href={`/spotlight/vote/${k}`}>Share</Link>}</td>
-                  {isConnected && <td>{c.canceled ? "—" : <input className="inp" style={{ margin: 0, width: 130 }} inputMode="numeric" placeholder="0" value={edit[k] ?? ""} onChange={(x) => setEdit({ ...edit, [k]: x.target.value.replace(/[^0-9]/g, "") })} aria-label={`Your votes for ${meta[k]?.symbol ?? c.token}`} />}</td>}
+                  {isConnected && <td className="hm">{c.canceled ? "—" : voteInput(k, 130)}</td>}
                 </tr>
+                {isConnected && !c.canceled && (
+                  <tr className="om"><td colSpan={3} style={{ paddingTop: 0 }}><label className="note" style={{ display: "flex", alignItems: "center", gap: 10, margin: 0 }}>Your votes for {meta[k]?.symbol ?? short(c.token)}{voteInput(k)}</label></td></tr>
+                )}
+                </Fragment>
               );
             })}
           </tbody>

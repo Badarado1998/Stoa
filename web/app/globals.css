@@ -279,10 +279,12 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 @media (prefers-reduced-motion:reduce){.modal.open .panel,.wspin{animation:none}}
 .x{border:none;background:transparent;width:36px;height:36px;border-radius:10px;cursor:pointer;color:var(--ink);font-size:20px}
 .x:hover{background:#F1F4F8}
+.tbl tr.om{display:none}
 @media (max-width:860px){
   #app{padding-top:80px}
   .grid2,.grid3{grid-template-columns:minmax(0,1fr)}
   .tbl .hm{display:none}
+  .tbl tr.om{display:table-row}
   .tbl th,.tbl td{padding-left:8px;padding-right:8px}
 }
 
