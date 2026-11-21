@@ -619,7 +619,10 @@ export default function AiChat() {
     const q = new URLSearchParams();
     if (address) q.set("wallet", address);
     if (myWatch.length) q.set("watch", myWatch.map((w) => w.address).join(","));
-    fetch(`/api/ai/brief?${q}`).then((r) => r.json()).then((j) => { if (live) setBrief(j); }).catch(() => {});
+    // the brief prices the watchlist by address; the names come from the list itself
+    fetch(`/api/ai/brief?${q}`).then((r) => r.json()).then((j: Brief) => {
+      if (live) setBrief({ ...j, watch: j.watch?.map((w) => ({ ...w, symbol: myWatch.find((x) => x.address.toLowerCase() === w.address.toLowerCase())?.symbol ?? w.symbol })) });
+    }).catch(() => {});
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, myWatch.length]);
