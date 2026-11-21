@@ -21,7 +21,7 @@ None of this replaces an external audit. It is what you can check today.
 
 The router cannot move anything from your wallet except the exact amount of the swap you sign, inside that swap. It does not hold funds between swaps, and it checks what you received against your minimum before the transaction can finish. The app approves only the amount of each swap unless you opt in to more.
 
-No contract is upgradeable. Every admin action goes through a 2-of-3 Safe and then waits 48 hours in public in a timelock before it can run. All three Safe signers are held by the team, so the Safe protects against a leaked key, not against the team itself; the 48-hour public wait is what gives you time to react. See [Admin and permissions](admin.md).
+No contract is upgradeable. Every admin action goes through a 2-of-3 Safe and then waits 48 hours in public in a timelock before it can run. All three Safe signers are held by the team, and two of them are kept in Stoa's GitHub for automated steps, so the Safe protects against one lost key, not against the team itself or a GitHub compromise; the 48-hour public wait is what gives you time to react. See [Admin and permissions](admin.md).
 
 ### What happens if something goes wrong?
 
