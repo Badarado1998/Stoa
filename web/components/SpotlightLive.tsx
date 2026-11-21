@@ -96,7 +96,7 @@ export default function SpotlightLive({ initial, history }: { initial: Snap | nu
         {history.length === 0 ? <p style={{ marginBottom: 0 }}>The first week settles {utc(s.votesCloseAt)}. Each week&apos;s winners and the ETH their voters got show here.</p> : (
           <ul className="list">
             {history.map((h) => (
-              <li key={h.week}><span>Week {h.week} · {h.bids} bid{h.bids === 1 ? "" : "s"}{h.finalized ? "" : " · settling"}</span>
+              <li key={h.week}><span><Link href={`/spotlight/week/${h.week}`}>Week {h.week}</Link> · {h.bids} bid{h.bids === 1 ? "" : "s"}{h.finalized ? "" : " · settling"}</span>
                 <b>{h.winners.length ? h.winners.map((w) => `${w.symbol} ${eth(w.toVotersEth)} ETH to voters`).join(" · ") : h.finalized ? "No winner (no token reached the quorum)" : "—"}</b></li>
             ))}
           </ul>
