@@ -40,6 +40,11 @@ const nextConfig = {
       { source: "/swap/:chain(robinhood|elysium)", destination: "/trade?chain=:chain", permanent: false },
     ];
   },
+  // the HEY Research badge in the footer, served from our own origin: no extra connection to another host before it
+  // shows (it was the largest paint on short pages); HEY's own cache headers pass through
+  async rewrites() {
+    return [{ source: "/hey-badge.svg", destination: "https://heyresearch.xyz/api/badge/stoa?style=pill" }];
+  },
   async headers() {
     const common = [
       { key: "X-Content-Type-Options", value: "nosniff" },

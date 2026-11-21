@@ -21,7 +21,7 @@ export default function Footer() {
         {/* HEY Research Lab badge (HEY looks for it on our site; one-line pill variant of their snippet) */}
         <a href="https://heyresearch.xyz/project/stoa?utm_source=badge&utm_medium=html" target="_blank" rel="noopener noreferrer">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://heyresearch.xyz/api/badge/stoa?style=pill" alt="Stoa on HEY Research Lab" width={439} height={36} decoding="async" />
+          <img src="/hey-badge.svg" alt="Stoa on HEY Research Lab" width={439} height={36} decoding="async" />
         </a>
         {/* where the code and data live, as pills next to HEY's badge */}
         <a className="obadge" href="https://huggingface.co/StoaDex" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">🤗</span> Hugging Face <small>open data</small></a>
