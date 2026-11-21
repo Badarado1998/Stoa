@@ -4,6 +4,7 @@ import { runAgent } from "@/lib/aiAgent";
 import { countToday } from "@/lib/aiCredits";
 import { gapsText, pnlText, priceText, spotlightText } from "@/lib/tgReport";
 import { spamWhy } from "@/lib/tgSpam";
+import { CA as STOA_CA } from "@/lib/stoaAddress";
 import { addAlert, alertText, listAlerts, removeAlert, topText } from "@/lib/tgAlerts";
 import { change, cleanList, priced } from "@/lib/aiWatchlist";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
@@ -19,7 +20,7 @@ import { tg, tgHtml, tgSym, tgMe, tgOn, tgSecret, tgSend } from "@/lib/telegram"
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-type TgMsg = { message_id: number; text?: string; caption?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; new_chat_members?: { id: number; is_bot?: boolean }[]; reply_to_message?: { text?: string; from?: { id: number } } };
+type TgMsg = { message_id: number; text?: string; caption?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; new_chat_members?: { id: number; is_bot?: boolean; first_name?: string }[]; reply_to_message?: { text?: string; from?: { id: number } } };
 
 const HELP = `<b>Stoa AI</b> · early beta on Robinhood Chain
 
@@ -34,6 +35,7 @@ In a group: /ask your question, mention me, or reply to me.
 /settoken 0xToken · group admins: make me this project's assistant
 /report on · group admins: a market report here at 01:00 and 13:00 UTC
 /antispam on · group admins: remove scam messages (make me an admin)
+/welcome on · group admins: greet new members with the safety basics
 
 Quick data, free and unlimited:
 /price STOA · /gaps · /pnl 0xWallet · /top
@@ -132,13 +134,32 @@ async function spamCheck(m: TgMsg, text: string): Promise<boolean> {
   return true;
 }
 
+/** /welcome on: greet people who join, with the safety basics. Only the latest greeting stays: the one before is deleted,
+ *  and joins within a minute share one greeting. */
+async function welcome(chat: number, people: { first_name?: string }[]) {
+  if ((await kv("SET", `tg:welcome:busy:${chat}`, 1, "NX", "EX", 60)) !== "OK") return;
+  const names = people.map((u) => tgHtml((u.first_name ?? "there").slice(0, 32))).slice(0, 5).join(", ");
+  const proj = await kv<string>("GET", `tg:proj:${chat}`);
+  const stoaGroup = !proj || proj.toLowerCase() === STOA_CA.toLowerCase();
+  const text = `👋 Welcome, ${names}!\n\n🛡 Admins here never DM you first and never ask for a seed phrase, a private key or a wallet "sync". Anyone who does is a scammer.\n\nAsk me about any Robinhood Chain token: /ask is it safe?`;
+  const buttons = stoaGroup
+    ? [[{ text: "Is Stoa safe? ↗", url: "https://stoadex.com/safe" }, { text: "Check a token ↗", url: "https://stoadex.com/check" }]]
+    : [[{ text: "Check this token ↗", url: `https://stoadex.com/check/robinhood/${proj}` }]];
+  const sent = await tgSend(chat, text, undefined, buttons) as { message_id?: number } | null;
+  const prev = await kv<string>("GET", `tg:welcome:last:${chat}`);
+  if (prev) void tg("deleteMessage", { chat_id: chat, message_id: Number(prev) });
+  if (sent?.message_id) await kv("SET", `tg:welcome:last:${chat}`, sent.message_id, "EX", 30 * 86400);
+}
+
 async function handle(m: TgMsg) {
   // added to a group: say what it does and what an admin can set up
   if (m.new_chat_members?.length) {
     // remember who joined in the last 24 hours: with /antispam on, their links are removed
     if (kvOn && m.chat.type !== "private") for (const u of m.new_chat_members) if (!u.is_bot) await kv("SET", `tg:new:${m.chat.id}:${u.id}`, 1, "EX", 86400);
     const me = await tgMe();
-    if (me && m.new_chat_members.some((u) => u.id === me.id)) await tgSend(m.chat.id, `👋 Hi, I'm <b>Stoa AI</b> (early beta). Ask me about any Robinhood Chain token with /ask, by mentioning me, or by replying to me.\n\n<b>Admins:</b>\n/settoken 0xYourToken · make me this project's assistant\n/report on · a market report here at 01:00 and 13:00 UTC, with Spotlight reminders\n/antispam on · remove scam messages (needs me as an admin)\n\nI only read: I never ask for keys and never move funds. Not financial advice.`);
+    const people = m.new_chat_members.filter((u) => !u.is_bot);
+    if (people.length && kvOn && m.chat.type !== "private" && await kv<number>("EXISTS", `tg:welcome:${m.chat.id}`)) await welcome(m.chat.id, people);
+    if (me && m.new_chat_members.some((u) => u.id === me.id)) await tgSend(m.chat.id, `👋 Hi, I'm <b>Stoa AI</b> (early beta). Ask me about any Robinhood Chain token with /ask, by mentioning me, or by replying to me.\n\n<b>Admins:</b>\n/settoken 0xYourToken · make me this project's assistant\n/report on · a market report here at 01:00 and 13:00 UTC, with Spotlight reminders\n/antispam on · remove scam messages (needs me as an admin)\n/welcome on · greet new members with the safety basics\n\nI only read: I never ask for keys and never move funds. Not financial advice.`);
     return;
   }
   const text = (m.text ?? "").trim();
@@ -225,6 +246,16 @@ async function handle(m: TgMsg) {
     void tg("sendChatAction", { chat_id: m.chat.id, action: "typing" });
     const r = await spotlightText();
     await tgSend(m.chat.id, r.text, m.message_id, r.buttons);
+    return;
+  }
+  if (name === "welcome") {
+    if (priv) { await tgSend(m.chat.id, "Add me to your group, then an admin sends /welcome on there."); return; }
+    const st = anonAdmin ? { status: "administrator" } : await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });
+    if (!st || !["creator", "administrator"].includes(st.status)) { await tgSend(m.chat.id, "Only group admins can do that.", m.message_id); return; }
+    if (!kvOn) { await tgSend(m.chat.id, "Greetings are not switched on yet.", m.message_id); return; }
+    if (/^off$/i.test(arg)) { await kv("DEL", `tg:welcome:${m.chat.id}`); await tgSend(m.chat.id, "I stopped greeting new members here."); return; }
+    await kv("SET", `tg:welcome:${m.chat.id}`, 1);
+    await tgSend(m.chat.id, "👋 Done: I greet people who join with the safety basics (admins never DM first, never share a seed phrase). Only the latest greeting stays, so the chat stays clean. Deleting the old one needs me as an admin with \"Delete messages\". /welcome off to stop.");
     return;
   }
   if (name === "antispam") {
