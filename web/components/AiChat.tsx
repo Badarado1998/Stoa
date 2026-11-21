@@ -8,6 +8,7 @@ import { NATIVE } from "@/lib/tokens";
 import { requestUrl, type PayRequest } from "@/lib/pay";
 import { LIMIT, LIMIT_ERRORS, limitAbi } from "@/lib/limit";
 import { SPOT, spotlightAbi } from "@/lib/spotlight";
+import { isWatched, toggleWatch, useWatch } from "@/lib/watchlist";
 import CopyButton from "./CopyButton";
 import { useWalletModal } from "./Providers";
 
@@ -32,6 +33,7 @@ const GROUPS: { label: string; items: string[] }[] = [
   { label: "Trade", items: ["Swap 0.01 ETH to USDG", "Quote 10 USDG to STOA"] },
   { label: "Strategies", items: ["Buy NVDA with 50 USDG if it drops 5%", "Sell 1000 STOA for ETH if it goes up 20%"] },
   { label: "Check", items: ["Scan my tokens for rug signs", "Is STOA safe to buy?"] },
+  { label: "Watchlist", items: ["Add NVDA and STOA to my watchlist", "Show my watchlist"] },
   { label: "Spotlight", items: ["Lock all my STOA for Spotlight", "Who can I vote for this week?"] },
   { label: "Stocks", items: ["How far is NVDA from Robinhood's price?", "Which stock tokens are furthest from Robinhood?"] },
   { label: "Pay", items: ["Make me a payment link for 25 USDG", "Make a link to get paid 50 USDG in NVDA"] },
@@ -388,6 +390,7 @@ type ChatMsg = AMsg | UMsg;
 type Brief = {
   market: { stocks: { symbol: string; gapPct: number }[]; launches: { symbol: string; token: string; graduated: boolean; progress: number; mcapUsd: number }[]; spotlight: { phase: string; opensAt: string | null; stoaLocked: string | number | null; candidates: number } | null } | null;
   wallet: { totalUsd: number; holdings: { symbol: string; address: string; amount: string; usd: number | null; ch24: number | null; verdict?: string }[] } | null;
+  watch?: { address: string; symbol: string; usd: number | null; ch1: number | null; ch24: number | null }[];
 };
 
 const usd = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `$${v.toLocaleString("en-US", { maximumFractionDigits: v < 10 ? 2 : 0 })}`);
@@ -466,6 +469,22 @@ export function CardView({ c, ask }: { c: Card; ask: (q: string) => void }) {
       </div>
     );
   }
+  if (c.kind === "watchlist") {
+    const d = c.data as { list: { address: string; symbol: string; usd: number | null; ch1: number | null; ch24: number | null }[]; unknown?: string[] };
+    return (
+      <div style={box}>
+        <div className="lbl">YOUR WATCHLIST</div>
+        {!d.list.length && <div style={{ marginTop: 6 }}>Empty. Try "add NVDA and STOA to my watchlist".</div>}
+        {d.list.map((t) => (
+          <button key={t.address} type="button" onClick={() => ask(`Tell me about ${t.symbol} (${t.address})`)} style={{ all: "unset", cursor: "pointer", display: "flex", justifyContent: "space-between", width: "100%", padding: "7px 0", borderTop: "1px solid #eef1f5", fontSize: 14 }}>
+            <b>{t.symbol}</b>
+            <span>{usd(t.usd)} {t.ch24 !== null && <span style={{ fontSize: 12, color: t.ch24 >= 0 ? "#15803d" : "#c2412d" }}>{t.ch24 >= 0 ? "+" : ""}{t.ch24.toFixed(1)}%</span>}</span>
+          </button>
+        ))}
+        {!!d.unknown?.length && <div className="note" style={{ marginTop: 6 }}>Not found: {d.unknown.join(", ")}</div>}
+      </div>
+    );
+  }
   if (c.kind === "rug") {
     const d = c.data as { scanned: number; tokens: { symbol: string; address: string; usd: number | null; flags: { level: string; text: string }[] }[] };
     const bad = d.tokens.filter((t) => t.flags.length);
@@ -515,6 +534,7 @@ function Welcome({ brief, ask, connected, connect }: { brief: Brief | null; ask:
         </div>
       </div>
       {brief?.wallet && brief.wallet.holdings.length > 0 && <div style={{ marginLeft: 40 }}><CardView c={{ kind: "wallet", data: brief.wallet as unknown as Record<string, unknown> }} ask={ask} /></div>}
+      {!!brief?.watch?.length && <div style={{ marginLeft: 40 }}><CardView c={{ kind: "watchlist", data: { list: brief.watch } }} ask={ask} /></div>}
       {m && (
         <div style={{ marginLeft: 40, marginTop: 10, display: "grid", gap: 8 }}>
           {m.stocks.length > 0 && (
@@ -587,15 +607,22 @@ export default function AiChat() {
   const [left, setLeft] = useState<number | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [brief, setBrief] = useState<Brief | null>(null);
+  // the site's own watchlist (lib/watchlist.ts): Robinhood Chain entries are what Stoa AI sees and changes
+  const watchState = useWatch();
+  const myWatch = watchState.watch.filter((w) => w.chain === "robinhood").map((w) => ({ address: w.address, symbol: w.symbol }));
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { try { const v = sessionStorage.getItem(STORE); if (v) setMsgs((JSON.parse(v) as ChatMsg[]).map((m) => (m.role === "assistant" ? { ...m, streaming: false, status: undefined } : m))); } catch { /* blocked */ } }, []);
   useEffect(() => { try { sessionStorage.setItem(STORE, JSON.stringify(msgs.slice(-30))); } catch { /* blocked */ } }, [msgs]);
   useEffect(() => { end.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [msgs.length, busy]);
   useEffect(() => {
     let live = true;
-    fetch(`/api/ai/brief${address ? `?wallet=${address}` : ""}`).then((r) => r.json()).then((j) => { if (live) setBrief(j); }).catch(() => {});
+    const q = new URLSearchParams();
+    if (address) q.set("wallet", address);
+    if (myWatch.length) q.set("watch", myWatch.map((w) => w.address).join(","));
+    fetch(`/api/ai/brief?${q}`).then((r) => r.json()).then((j) => { if (live) setBrief(j); }).catch(() => {});
     return () => { live = false; };
-  }, [address]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, myWatch.length]);
 
   async function send(text: string) {
     const t = text.trim();
@@ -607,10 +634,20 @@ export default function AiChat() {
     setBusy(true);
     const patch = (f: (m: AMsg) => AMsg) => setMsgs((cur) => cur.map((m, i) => (i === idx && m.role === "assistant" ? f(m) : m)));
     try {
-      await streamChat({ wallet: address, session: getSession(address) ?? undefined, messages: history.map((m) => ({ role: m.role, content: m.content })) }, (ev) => {
+      await streamChat({ wallet: address, session: getSession(address) ?? undefined, watchlist: myWatch, messages: history.map((m) => ({ role: m.role, content: m.content })) }, (ev) => {
         if (ev.t === "text") patch((m) => ({ ...m, content: m.content + (ev.d ?? ""), status: undefined }));
         else if (ev.t === "status") patch((m) => ({ ...m, status: ev.d }));
         else if (ev.t === "card") patch((m) => ({ ...m, cards: [...m.cards, { kind: ev.kind!, data: ev.data as Card["data"] }] }));
+        else if (ev.t === "action" && ev.tool === "watchlist") {
+          // Stoa AI changed the watchlist: make the site's list match it
+          const d = ev.data as { saved?: boolean; list?: { address: string; symbol: string }[] };
+          if (d.saved && Array.isArray(d.list)) {
+            const want = new Set(d.list.map((x) => x.address.toLowerCase()));
+            const cur = watchState;
+            for (const w of cur.watch.filter((x) => x.chain === "robinhood" && !want.has(x.address.toLowerCase()))) toggleWatch({ chain: "robinhood", address: w.address, symbol: w.symbol });
+            for (const x of d.list) if (!isWatched(cur, "robinhood", x.address)) toggleWatch({ chain: "robinhood", address: x.address, symbol: x.symbol });
+          }
+        }
         else if (ev.t === "action") patch((m) => ({ ...m, actions: [...m.actions, { tool: ev.tool!, data: ev.data as Record<string, unknown> }] }));
         else if (ev.t === "suggest") patch((m) => ({ ...m, suggest: ev.items }));
         else if (ev.t === "error") {

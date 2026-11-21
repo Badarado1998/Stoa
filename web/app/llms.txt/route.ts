@@ -8,6 +8,7 @@ const plain = (s: string) => s.replace(/<[^>]+>/g, "").replace(/\[([^\]]+)\]\([^
   .replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
 
 const PAGES: [string, string, string][] = [
+  ["/ai", "Stoa AI", "AI assistant for Robinhood Chain (early beta): token safety checks, quotes and swaps you sign, strategies as limit orders, rug scans, stock token gaps; also the Telegram bot @StoaDexAIbot and a widget for token projects"],
   ["/trade", "Trade", "Swap on Robinhood Chain or Elysium; each swap is compared across every venue the router uses, for the exact amount"],
   ["/stocks", "Stock tokens", "Every Robinhood Stock Token on Robinhood Chain with Robinhood's own price next to the on-chain price and the gap"],
   ["/check", "Token safety check", "Paste a token address: a simulated buy and sell through the live router shows failed sells, taxes and holder concentration"],

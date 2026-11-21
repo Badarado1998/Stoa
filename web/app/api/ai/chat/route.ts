@@ -2,6 +2,7 @@ import { getAddress, isAddress, type Address } from "viem";
 import { runAgent, type AiEvent } from "@/lib/aiAgent";
 import { FREE_PER_DAY, sessionFor, takeMessage } from "@/lib/aiCredits";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
+import { cleanList } from "@/lib/aiWatchlist";
 
 // POST /api/ai/chat {messages: [{role: "user"|"assistant", content}], wallet?, project?}: Stoa's assistant on OpenRouter
 // (lib/aiAgent.ts), streamed back as newline-delimited JSON:
@@ -16,7 +17,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: "The assistant is not switched on yet." }, { status: 503 });
-  const b = (await req.json().catch(() => null)) as { messages?: { role?: string; content?: string }[]; wallet?: string; project?: string; session?: string } | null;
+  const b = (await req.json().catch(() => null)) as { messages?: { role?: string; content?: string }[]; wallet?: string; project?: string; session?: string; watchlist?: unknown } | null;
   const history = (b?.messages ?? []).filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-12)
     .map((m) => ({ role: m.role as "user" | "assistant", content: m.content!.slice(0, 2000) }));
   if (!history.length || history[history.length - 1].role !== "user") return Response.json({ error: "bad request" }, { status: 400 });
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   const stream = new ReadableStream({
     async start(ctrl) {
       const send = (e: AiEvent) => ctrl.enqueue(enc.encode(JSON.stringify(e.t === "done" || e.t === "error" ? { ...e, left, credits } : e) + "\n"));
-      try { await runAgent({ history, wallet, emit: send, extra, allow: project ? (n) => PROJECT_TOOLS.has(n) : undefined }); }
+      try { await runAgent({ history, wallet, emit: send, extra, allow: project ? (n) => PROJECT_TOOLS.has(n) : undefined, ctx: { watchlist: project ? [] : cleanList(b?.watchlist) } }); }
       catch { send({ t: "error", d: "The assistant could not answer right now. Try again in a minute." }); }
       ctrl.close();
     },

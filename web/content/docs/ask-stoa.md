@@ -9,6 +9,7 @@
 - "Make me a payment link for 25 USDG": a [Stoa Pay](stoa-pay.md) link, ready to share.
 - "Buy NVDA with 50 USDG if it drops 5%" or "Sell 1000 STOA for ETH if it goes up 20%": a [limit order](limit-orders.md) built from your words, shown as a card you sign. Your deposit waits in Stoa's limit order contract and Stoa's keeper fills it once the market pays that price. A limit order only fills at a better price than now, so it cannot be a stop-loss.
 - "Scan my tokens for rug signs": a rug scan of your connected wallet (see below).
+- "Add NVDA and STOA to my watchlist": it keeps your watchlist (the same one as the star on Trade and token pages, kept in your browser) and opens with it next time.
 - "Lock all my STOA for Spotlight" or "Vote for 0x… with all my STOA": a [Spotlight](spotlight.md) card you sign. Votes you already gave other candidates this week stay on the card.
 
 ## Rug scan and alerts
@@ -21,7 +22,7 @@ To get alerts, message the Stoa AI Telegram bot privately: `/watch 0xYourWallet`
 
 The Stoa AI bot answers in private chats, and in groups when you use `/ask`, mention it, or reply to it. It reads only: for a swap, a limit order or a payment it sends you to stoadex.com/ai, where your own wallet signs. Projects can make it their own assistant: see [Stoa AI for projects](stoa-ai-for-projects.md).
 
-Quick data, free and unlimited: `/price STOA`, `/gaps` (stock tokens against Robinhood's price), `/pnl 0xWallet` (swaps through Stoa), `/top` (the [Points](points.md) board). A group admin can send `/report on` for a short market report in the group at 01:00 and 13:00 UTC, with Spotlight reminders when a week opens and before bids and votes close.
+Quick data, free and unlimited: `/price STOA`, `/gaps` (stock tokens against Robinhood's price), `/pnl 0xWallet` (swaps through Stoa), `/top` (the [Points](points.md) board), `/watchlist add NVDA STOA`. A group admin can send `/report on` for a short market report in the group at 01:00 and 13:00 UTC (on Mondays with last week on Stoa and the Points top 5), with Spotlight reminders when a week opens and before bids and votes close.
 
 Price alerts, in a private chat: `/alert NVDA below 120`, `/alert STOA up 20%`. The bot checks every 5 minutes and messages you once; `/alerts` lists them, `/unalert` removes one. Up to 10 at a time.
 

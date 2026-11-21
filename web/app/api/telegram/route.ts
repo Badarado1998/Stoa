@@ -4,6 +4,7 @@ import { runAgent } from "@/lib/aiAgent";
 import { countToday } from "@/lib/aiCredits";
 import { gapsText, pnlText, priceText } from "@/lib/tgReport";
 import { addAlert, alertText, listAlerts, removeAlert, topText } from "@/lib/tgAlerts";
+import { change, cleanList, priced } from "@/lib/aiWatchlist";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
 import { kv, kvOn } from "@/lib/kv";
 import { rugScan, type RugToken } from "@/lib/rugScan";
@@ -34,6 +35,7 @@ In a group: /ask your question, mention me, or reply to me.
 
 Quick data, free and unlimited:
 /price STOA · /gaps · /pnl 0xWallet · /top
+/watchlist add NVDA STOA · /watchlist
 /alert NVDA below 120 · /alerts · /unalert (private chat)
 /app · open Stoa right here in Telegram
 
@@ -158,7 +160,7 @@ async function handle(m: TgMsg) {
     return;
   }
   // quick commands and alerts read RPCs and DexScreener: a generous daily limit per person stops floods
-  if (name && ["price", "gaps", "pnl", "top", "alert", "alerts", "unalert", "watch", "app"].includes(name) && (await countToday(`tgq:${m.sender_chat?.id ?? m.from?.id ?? m.chat.id}`)) > 100) {
+  if (name && ["watchlist", "wl", "price", "gaps", "pnl", "top", "alert", "alerts", "unalert", "watch", "app"].includes(name) && (await countToday(`tgq:${m.sender_chat?.id ?? m.from?.id ?? m.chat.id}`)) > 100) {
     await tgSend(m.chat.id, "That's a lot of requests today. More after 00:00 UTC.", m.message_id); return;
   }
   if (name === "price" || name === "gaps" || name === "pnl") {
@@ -176,6 +178,25 @@ async function handle(m: TgMsg) {
     if (name === "unalert") { await tgSend(m.chat.id, await removeAlert(m.chat.id, arg)); return; }
     const list = await listAlerts(m.chat.id);
     await tgSend(m.chat.id, list.length ? `🔔 <b>Your alerts</b>\n${list.map((a, i) => `${i + 1}. ${alertText(a)}`).join("\n")}\n\n/unalert 1 removes the first, /unalert all removes all.` : "No alerts yet. Example: /alert NVDA below 120");
+    return;
+  }
+  if (name === "watchlist" || name === "wl") {
+    if (!kvOn) { await tgSend(m.chat.id, "Watchlists are not switched on yet.", m.message_id); return; }
+    const who = m.sender_chat?.id ?? m.from?.id ?? m.chat.id, k = `tg:wl:${who}`;
+    const await_wl = await kv<string>("GET", k);
+    let list = cleanList((() => { try { return JSON.parse("" + ((await_wl) ?? "[]")); } catch { return []; } })());
+    const mm = /^(add|remove|rm|del)\s+(.+)$/i.exec(arg);
+    let unknown: string[] = [];
+    if (mm) {
+      const toks = mm[2].split(/[\s,]+/).filter(Boolean).slice(0, 20);
+      ({ list, unknown } = await change(list, /^add$/i.test(mm[1]) ? toks : [], /^add$/i.test(mm[1]) ? [] : toks));
+      await kv("SET", k, JSON.stringify(list));
+    } else if (arg) { await tgSend(m.chat.id, "Use /watchlist, /watchlist add NVDA STOA, or /watchlist remove NVDA.", m.message_id); return; }
+    const rows = await priced(list);
+    const usd = (v: number | null) => (v == null ? "—" : `$${v >= 1 ? v.toLocaleString("en-US", { maximumFractionDigits: 2 }) : v.toPrecision(3)}`);
+    await tgSend(m.chat.id, rows.length
+      ? `👀 <b>Your watchlist</b>\n${rows.map((r) => `${tgHtml(r.symbol)} ${usd(r.usd)}${r.ch24 != null ? ` · ${r.ch24 >= 0 ? "+" : ""}${r.ch24.toFixed(1)}%` : ""}`).join("\n")}${unknown.length ? `\n\nNot found: ${tgHtml(unknown.join(", "))}` : ""}`
+      : "Your watchlist is empty. Add tokens: /watchlist add NVDA STOA", m.message_id);
     return;
   }
   if (name === "top") { await tgSend(m.chat.id, await topText(), m.message_id, { text: "Open Points ↗", url: "https://stoadex.com/points" }); return; }

@@ -13,6 +13,7 @@ import { curveOf } from "./ponsLaunch";
 import { rugScan } from "./rugScan";
 import { LIMIT_ADDR, limitPaused } from "./limitServer";
 import { prepareSpotlight } from "./aiSpotlight";
+import { change, priced, WL_MAX, type WlItem } from "./aiWatchlist";
 
 /** Tools for Stoa's AI assistant (app/api/ai/chat). Amounts are human ("0.01", "25"), tokens by symbol or address;
  *  everything resolves on Robinhood Chain. Transactions are only ever built, never signed or sent: the browser shows
@@ -138,6 +139,7 @@ const OWN = [
   { name: "prepare_swap", description: "Build the swap for the user's connected wallet, after a quote. It is shown to the user as a card with a Sign button: nothing happens until their wallet signs. Use when the user asks to swap, buy or sell.", parameters: { type: "object", required: ["sell", "buy", "amount"], properties: { sell: tokenArg("Token to sell"), buy: tokenArg("Token to buy"), amount: { type: "string", description: "Amount to sell, in whole tokens." }, slippagePct: { type: "number", description: "Max slippage in percent. Default 0.5." } } } },
   { name: "prepare_limit_order", description: "Turn a price strategy into a limit order for the connected wallet, e.g. \"buy NVDA with 100 USDG if it drops 5%\" (sell USDG, buy NVDA, when buy_price_drops, pct 5) or \"sell 1000 STOA for ETH if it goes up 20%\" (sell STOA, buy ETH, when sell_price_rises, pct 20). The deposit waits in Stoa's limit order contract; Stoa's keeper fills it once the market pays the price. It only works for a better price than now: it cannot be a stop-loss. Shown as a card the user signs.", parameters: { type: "object", required: ["sell", "buy", "amount", "when", "pct"], properties: { sell: tokenArg("Token deposited (paid)"), buy: tokenArg("Token received"), amount: { type: "string", description: "Amount of the sell token, in whole tokens." }, when: { type: "string", enum: ["buy_price_drops", "sell_price_rises"], description: "buy_price_drops: fill when the buy token gets pct% cheaper. sell_price_rises: fill when the sell token is worth pct% more." }, pct: { type: "number", description: "The move in percent, e.g. 5." }, expiryDays: { type: "number", enum: [1, 7, 30], description: "Default 7." } } } },
   { name: "prepare_spotlight", description: "Spotlight, as a card the connected wallet signs: action \"lock\" locks $STOA so it can vote (amount, or \"all\"); action \"vote\" sets this week's votes for one candidate token (token address from the spotlight tool; amount of locked $STOA, or \"all\" for everything not voting elsewhere). Earlier votes for other candidates are kept. Voters of the winning tokens share their ETH bids.", parameters: { type: "object", required: ["action"], properties: { action: { type: "string", enum: ["lock", "vote"] }, amount: { type: "string", description: "$STOA in whole tokens, or \"all\"." }, token: { type: "string", description: "For vote: the candidate's token address." } } } },
+  { name: "watchlist", description: "The user's watchlist (up to 20 tokens) with prices now. action \"show\" lists it; \"add\" and \"remove\" change it (tokens: symbols or addresses). It is kept for the user and shown when they come back.", parameters: { type: "object", required: ["action"], properties: { action: { type: "string", enum: ["show", "add", "remove"] }, tokens: { type: "array", items: { type: "string" }, description: "For add or remove: symbols like NVDA, STOA, or addresses." } } } },
   { name: "rug_scan", description: "Scan the connected wallet's tokens (other than ETH, WETH, USDG and stock tokens) for signs of a rug pull right now: safety verdict, a failing test sell, the creator wallet sending out supply in the last 6 hours, a price crash in the last hour or day, very low liquidity. Read-only.", parameters: { type: "object", properties: {} } },
   { name: "my_wallet", description: "The connected wallet's holdings on Robinhood Chain: each token, amount, USD value, 24h change, and Stoa's safety verdict for the larger tokens other than ETH, WETH and USDG.", parameters: { type: "object", properties: {} } },
   { name: "search_docs", description: "Search Stoa's docs (fees, bridging, limit orders, Spotlight, Rug Cover, $STOA, Stoa Pay, API, safety). Returns excerpts with links.", parameters: { type: "object", required: ["query"], properties: { query: { type: "string" } } } },
@@ -149,9 +151,18 @@ export const AI_TOOLS = [
   ...MCP_TOOLS.filter((t) => FROM_MCP.includes(t.name)).map((t) => ({ type: "function" as const, function: { name: t.name, description: t.description, parameters: t.inputSchema } })),
 ];
 
-/** Runs a tool for the assistant. `wallet` is the user's connected address: swaps and payments are built for it only. */
-export async function runAiTool(name: string, a: Record<string, unknown>, wallet: Address | null): Promise<unknown> {
+export type AiCtx = { watchlist?: WlItem[] };
+
+/** Runs a tool for the assistant. `wallet` is the user's connected address: swaps and payments are built for it only.
+ *  `ctx` carries what the surface keeps for the user (the web's watchlist). */
+export async function runAiTool(name: string, a: Record<string, unknown>, wallet: Address | null, ctx: AiCtx = {}): Promise<unknown> {
   switch (name) {
+    case "watchlist": {
+      const act = String(a.action ?? "show"), toks = Array.isArray(a.tokens) ? a.tokens.map(String).slice(0, 20) : [];
+      let list = ctx.watchlist ?? [], unknown: string[] = [];
+      if (act === "add" || act === "remove") ({ list, unknown } = await change(list, act === "add" ? toks : [], act === "remove" ? toks : []));
+      return { list: await priced(list), saved: act !== "show", unknown, max: WL_MAX };
+    }
     case "find_token": { const t = await resolveToken(String(a.query ?? "")); return t ?? { error: "not found" }; }
     case "quote": return swapLike(a, wallet, false);
     case "prepare_swap": return swapLike(a, wallet, true);

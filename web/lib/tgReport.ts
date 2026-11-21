@@ -8,6 +8,8 @@ import { ROBINHOOD } from "./networks";
 import { resolveToken } from "./aiTools";
 import { NATIVE } from "./tokens";
 import { tgHtml } from "./telegram";
+import { readRouterStats } from "./routerStats";
+import { readSpotlight } from "./spotlightServer";
 
 /** The Telegram bot's quick commands and its twice-daily market report: plain data, no AI, no quota. */
 const STOA = "0x13E6993417616De724F2b337D65063f229e96718";
@@ -27,6 +29,7 @@ export async function priceText(q: string): Promise<string> {
   const t = await resolveToken(q || "STOA");
   if (!t) return "I don't know that token. Send a symbol like STOA, NVDA, or a token address.";
   const a = t.address === NATIVE ? ROBINHOOD.wrapped : t.address;
+  if (a.toLowerCase() === ROBINHOOD.stable.toLowerCase()) return `💲 <b>USDG</b> $1.00 (a dollar stablecoin)`;
   const m = (await marketOf([a]).catch(() => ({})) as Awaited<ReturnType<typeof marketOf>>)[a.toLowerCase()];
   if (!m) return `No market data for ${tgHtml(t.symbol)} right now.`;
   return `💲 <b>${tgHtml(t.symbol)}</b> ${usd(m.usd)}\n1h ${pct(m.ch1)} · 24h ${pct(m.ch24)} · liquidity ${usd(m.liq)}`;
@@ -60,4 +63,23 @@ export async function reportText(): Promise<string> {
   if (s) parts.push(`🏛 <b>$STOA</b> ${usd(s.usd)} · 24h ${pct(s.ch24)}`);
   parts.push("Ask me anything with /ask. Not financial advice.");
   return parts.join("\n\n");
+}
+
+/** Mondays: last week on Stoa in a few lines (swaps and volume on Robinhood Chain, the largest swap of the last day,
+ *  last week's Spotlight winners) */
+export async function weeklyText(): Promise<string> {
+  const [st, spot] = await Promise.all([readRouterStats().catch(() => null), readSpotlight().catch(() => null)]);
+  const parts = ["📅 <b>Last week on Stoa</b>"];
+  if (st) {
+    const since = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    const days = st.days.filter((d) => d.date > since);
+    const swaps = days.reduce((a, d) => a + (d.chains.robinhood?.swaps ?? 0), 0);
+    const vol = st.chains.find((c) => c.key === "robinhood")?.usd7d ?? days.reduce((a, d) => a + (d.chains.robinhood?.usd ?? 0), 0);
+    parts.push(`Robinhood Chain: <b>${swaps.toLocaleString("en-US")} swaps</b> through Stoa, about <b>${usd(vol)}</b>`);
+    const top = st.topBought24h?.filter((t) => t.chain === "robinhood").slice(0, 3) ?? [];
+    if (top.length) parts.push(`Most bought (last 24h): ${top.map((t) => tgHtml(t.symbol)).join(", ")}`);
+  }
+  const w = (spot as { lastWeekWinners?: { symbol: string | null; token: string }[] } | null)?.lastWeekWinners ?? [];
+  if (w.length) parts.push(`🔦 Spotlight winners: ${w.map((x) => tgHtml(x.symbol ?? x.token.slice(0, 8))).join(", ")}. Their voters can claim ETH on stoadex.com/spotlight`);
+  return parts.join("\n");
 }
