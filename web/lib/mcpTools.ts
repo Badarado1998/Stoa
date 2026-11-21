@@ -134,8 +134,11 @@ export const TOOLS = [
   {
     name: "spotlight",
     title: "Spotlight this week",
-    description: "Stoa Spotlight on Robinhood Chain: projects bid ETH for 3 sponsored slots a week and $STOA holders lock and vote; voters share most of each winning bid. Returns the week, its phase (before_week_1, bids_open, votes_only) and closing times, the rules (quorum, min bid, entry fee), every candidate with its bid and votes, last week's winners and the $STOA locked. Sponsored, not reviewed: run safety_check before buying a Spotlight token.",
-    inputSchema: { type: "object", additionalProperties: false, properties: {} },
+    description: "Stoa Spotlight on Robinhood Chain: projects bid ETH for 3 sponsored slots a week and $STOA holders lock and vote; voters share most of each winning bid. Returns the week, its phase (before_week_1, bids_open, votes_only) and closing times, the rules (quorum, min bid, entry fee), every candidate with its bid, votes, whether it wins if voting closed now, the votes it still needs and the ETH per 1M votes it would pay now, last week's winners and the $STOA locked. Give `token` and `votes` to estimate what that many more votes on that token would earn if it wins (an estimate: bids and votes move until the week closes). Sponsored, not reviewed: run safety_check before buying a Spotlight token.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      token: { type: "string", description: "Optional: a candidate's token address or symbol, for an estimate." },
+      votes: { type: "number", description: "Optional: $STOA votes to add to that token, for the estimate." },
+    } },
     annotations: ro,
   },
   {
@@ -234,7 +237,29 @@ export async function callTool(name: string, a: Record<string, unknown>) {
       return text(r, "error" in r);
     }
     case "spotlight": {
-      try { return text(await readSpotlight()); } catch { return text("Robinhood Chain did not answer, try again shortly", true); }
+      let sp: Awaited<ReturnType<typeof readSpotlight>>;
+      try { sp = await readSpotlight(); } catch { return text("Robinhood Chain did not answer, try again shortly", true); }
+      const pct = sp.rules.toVotersPct / 100, q = sp.rules.quorumStoa;
+      const live = sp.candidates.filter((c) => !c.canceled);
+      const winning = new Set(live.filter((c) => c.reachesQuorum).slice(0, sp.rules.slots).map((c) => c.token));
+      const candidates = sp.candidates.map((c) => ({
+        ...c, winsIfClosedNow: winning.has(c.token), votesNeeded: c.reachesQuorum ? 0 : Math.max(0, q - c.votesStoa),
+        ethPer1MVotesNow: c.votesStoa > 0 ? Number(((c.bidEth * pct * 1e6) / c.votesStoa).toFixed(6)) : null,
+      }));
+      let estimate: unknown = undefined;
+      const want = str(a.token), add = Number(a.votes ?? 0);
+      if (want) {
+        const c = candidates.find((x) => x.token.toLowerCase() === want.toLowerCase() || (x.symbol ?? "").toLowerCase() === want.replace(/^\$/, "").toLowerCase());
+        if (!c) estimate = { error: `${want} is not in this week's race` };
+        else if (!(add > 0)) estimate = { error: "give votes > 0 for an estimate" };
+        else {
+          const after = c.votesStoa + add;
+          estimate = { token: c.token, symbol: c.symbol, votes: add, votesAfter: after, reachesQuorumAfter: after >= q,
+            ethIfItWins: Number(((c.bidEth * pct * add) / after).toFixed(6)),
+            note: `If ${c.symbol ?? "it"} wins with today's bid and votes plus these. More votes on it shrink each share; it earns nothing if it does not win. An estimate, not a promise.` };
+        }
+      }
+      return text({ ...sp, candidates, ...(estimate ? { estimate } : {}) });
     }
     case "stock_gaps": {
       const data = await stockTokens().catch(() => null);

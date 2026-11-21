@@ -12,7 +12,7 @@ import { walletSnapshot } from "./aiBrief";
 import { curveOf } from "./ponsLaunch";
 import { rugScan } from "./rugScan";
 import { LIMIT_ADDR, limitPaused } from "./limitServer";
-import { prepareSpotlight } from "./aiSpotlight";
+import { mySpotlight, prepareSpotlight } from "./aiSpotlight";
 import { change, priced, WL_MAX, type WlItem } from "./aiWatchlist";
 
 /** Tools for Stoa's AI assistant (app/api/ai/chat). Amounts are human ("0.01", "25"), tokens by symbol or address;
@@ -186,6 +186,13 @@ export async function runAiTool(name: string, a: Record<string, unknown>, wallet
     if (!wallet) return { error: "No wallet connected. Ask the user to connect a wallet first." };
     args.payer = wallet;
     if (typeof args.payWith === "string") { const t = await resolveToken(args.payWith); if (t) args.payWith = t.address === NATIVE ? "native" : t.address; }
+  }
+  // with a wallet connected, the race comes with the user's own locked $STOA and votes, for "what would I earn"
+  if (name === "spotlight" && wallet) {
+    const [out, mine] = await Promise.all([mcpCall(name, args) as Promise<{ structuredContent?: unknown } | null>, mySpotlight(wallet).catch(() => null)]);
+    const race = out?.structuredContent ?? null;
+    if (!race) return { error: "Robinhood Chain did not answer, try again shortly" };
+    return mine ? { race, you: mine } : race;
   }
   if (name === "safety_check" && typeof args.token === "string" && !isAddress(args.token, { strict: false })) {
     const t = await resolveToken(args.token);

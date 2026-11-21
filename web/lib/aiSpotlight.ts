@@ -65,3 +65,22 @@ export async function prepareSpotlight(a: Record<string, unknown>, wallet: Addre
   }
   return { error: 'action must be "lock" or "vote"' };
 }
+
+/** The connected wallet's Spotlight position, added to the spotlight tool's answer in Stoa AI: locked $STOA, $STOA still
+ *  in the wallet, and its votes this week (token → $STOA). */
+export async function mySpotlight(wallet: Address) {
+  if (!SPOT) return null;
+  const S: Address = SPOT, pc = c();
+  const ep = epochAt(Math.floor(Date.now() / 1000));
+  const [acct, bal] = await Promise.all([
+    pc.readContract({ address: S, abi: spotlightAbi, functionName: "accounts", args: [wallet] }),
+    pc.readContract({ address: STOA, abi: erc20Abi, functionName: "balanceOf", args: [wallet] }),
+  ]);
+  const votes: Record<string, number> = {};
+  if (ep >= 0) {
+    const ts = await pc.readContract({ address: S, abi: spotlightAbi, functionName: "votedTokens", args: [BigInt(ep), wallet] });
+    const vs = await Promise.all(ts.map((t) => pc.readContract({ address: S, abi: spotlightAbi, functionName: "votesOf", args: [BigInt(ep), t, wallet] })));
+    ts.forEach((t, i) => { votes[t] = Number(formatUnits(vs[i], 18)); });
+  }
+  return { lockedStoa: Number(formatUnits(acct[0], 18)), stoaInWallet: Number(formatUnits(bal, 18)), votesThisWeek: votes };
+}
