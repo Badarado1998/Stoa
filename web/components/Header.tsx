@@ -2,8 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import WalletButton from "./WalletButton";
-import NetSwitch from "./NetSwitch";
+import HeaderWallet from "./HeaderWallet";
 import { NAV_GROUPS } from "@/lib/siteNav";
 
 // the top bar: the same five places as the phone tab bar; everything else (Stocks, Launches, Spotlight, Earn, Referrals,
@@ -54,8 +53,7 @@ export default function Header({ extra }: { extra?: ReactNode }) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11.5h-6.8l-5.3-6.9-6.1 6.9H1.3l7.9-9L.9 2.3h7l4.8 6.3 5.5-6.3zm-1.2 17.9h1.9L7.1 4.2H5.1l11.9 16z" /></svg>
           </a>
           {extra}
-          <NetSwitch />
-          <WalletButton />
+          <HeaderWallet />
           <button ref={btnRef} className="ghost menu-btn" type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
           </button>

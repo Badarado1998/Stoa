@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Providers from "@/components/Providers";
 import SiteAnalytics from "@/components/SiteAnalytics";
 import { SITE } from "@/lib/chain";
 import { Inter, JetBrains_Mono, Marcellus } from "next/font/google";
@@ -43,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* opened as a Telegram Mini App: tell Telegram the page is ready and use the full height */}
         <script dangerouslySetInnerHTML={{ __html: "try{var p=window.TelegramWebviewProxy;if(p){p.postEvent('web_app_ready','{}');p.postEvent('web_app_expand','{}')}}catch(e){}" }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(LD) }} />
-        <Providers>{children}</Providers>
+        {children}
         <SiteAnalytics />
       </body>
     </html>

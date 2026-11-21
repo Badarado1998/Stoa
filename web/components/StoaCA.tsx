@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import { ROBINHOOD, addressUrlOn } from "@/lib/networks";
-import { useStoaToken } from "@/lib/stoaToken";
+import { CA } from "@/lib/stoaAddress";
 
-/** "$STOA · CA" line, shown the moment the dev wallet's Pons launch is on-chain (Robinhood Chain). */
+/** "$STOA · CA" line. The address is pinned since the launch (lib/stoaAddress.ts), so this needs no wallet or query code
+ *  and can sit in the footer of every page. */
 export default function StoaCA({ short = false }: { short?: boolean }) {
-  const t = useStoaToken();
+  const t = { symbol: "STOA", address: CA };
   const [copied, setCopied] = useState(false);
   if (!t) return null;
   return (
