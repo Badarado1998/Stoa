@@ -2,7 +2,7 @@ import "server-only";
 import { createPublicClient, formatEther, http, parseAbiItem, type Address } from "viem";
 import { ROBINHOOD } from "./networks";
 import { srv } from "./serverRpc";
-import { getLogsOn } from "./logs";
+import { cachedLogs } from "./logCache";
 import { SPOT, epochAt, spotlightAbi } from "./spotlight";
 
 const net = ROBINHOOD;
@@ -28,7 +28,7 @@ export async function readLeaders(limit = 25): Promise<Leaders> {
   const wins = settled.flatMap((x) => infos[x][4].map((t) => [x, t] as const));
   if (!wins.length) return { ...empty, settledWeeks: settled.length };
 
-  const logs = (await getLogsOn(net, { address: spot, event: voted, fromBlock: net.deployBlock })) as unknown as { args: { epoch: bigint; voter: Address; tokens: readonly Address[] } }[];
+  const logs = await cachedLogs<{ epoch: bigint; voter: Address; tokens: readonly Address[] }>(net, `spotlight:${spot.toLowerCase()}:Voted`, { address: spot, event: voted, fromBlock: net.deployBlock });
   const votersOf = new Map<string, Set<Address>>(); // "epoch:token" -> voters who ever put votes on it
   const everyone = new Set<string>();
   for (const l of logs) {

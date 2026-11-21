@@ -47,7 +47,7 @@ function TokenCell({ t, meta }: { t: Address; meta?: SpotTokenMeta }) {
       <TokenIcon t={{ glyph: sym[0] ?? "?", tone: "other", logo: meta?.logo }} />
       <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         <b style={{ fontWeight: 600 }}>{sym}</b>
-        <a className="note" style={{ marginTop: 0, fontFamily: "var(--mono)" }} href={addressUrlOn(net, t)} target="_blank" rel="noopener noreferrer">{short(t)}</a>
+        <a className="note" style={{ marginTop: 0, fontFamily: "var(--mono)", whiteSpace: "nowrap" }} href={addressUrlOn(net, t)} target="_blank" rel="noopener noreferrer">{short(t)}</a>
       </span>
     </span>
   );

@@ -1,5 +1,5 @@
 import { createPublicClient, erc20Abi, formatEther, http, parseAbiItem, type Address } from "viem";
-import { getLogsOn } from "./logs";
+import { cachedLogs } from "./logCache";
 import { ROBINHOOD } from "./networks";
 import { srv } from "@/lib/serverRpc";
 import { BID_WINDOW, SLOTS, SPOT, SPOT_START, WEEK, epochAt, epochStart, spotlightAbi } from "./spotlight";
@@ -8,7 +8,7 @@ const net = ROBINHOOD;
 const lockedEv = parseAbiItem("event Locked(address indexed holder, uint256 amount)");
 
 async function votingLocked(c: { multicall: (a: never) => Promise<unknown> }, spot: Address): Promise<bigint> {
-  const logs = (await getLogsOn(net, { address: spot, event: lockedEv, fromBlock: net.deployBlock })) as unknown as { args: { holder: Address } }[];
+  const logs = await cachedLogs<{ holder: Address }>(net, `spotlight:${spot.toLowerCase()}:Locked`, { address: spot, event: lockedEv, fromBlock: net.deployBlock });
   const holders = [...new Set(logs.map((l) => l.args.holder.toLowerCase()))] as Address[];
   if (!holders.length) return 0n;
   const accts = (await c.multicall({ contracts: holders.map((h) => ({ address: spot, abi: spotlightAbi, functionName: "accounts", args: [h] })), allowFailure: false } as never)) as unknown as (readonly [bigint, bigint, bigint])[];
