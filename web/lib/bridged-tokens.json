@@ -63,18 +63,18 @@
   "hyperevm": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"
  },
  {
-  "symbol": "EQSPCX",
-  "name": "EQX Tokenized SPCX",
-  "address": "0x8264c91CedFE6CC078116083d5a3e198c16B1898",
-  "decimals": 8,
-  "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD"
- },
- {
   "symbol": "PURR",
   "name": "Purr",
   "address": "0x46b131573Ca7c2674b652BbeB7FC16D530396aEC",
   "decimals": 18,
   "hyperevm": "0x9b498C3c8A0b8CD8BA1D9851d40D186F1872b44E"
+ },
+ {
+  "symbol": "EQSPCX",
+  "name": "EQX Tokenized SPCX",
+  "address": "0x8264c91CedFE6CC078116083d5a3e198c16B1898",
+  "decimals": 8,
+  "hyperevm": "0xF115FF708A795cD0E06531Dec57ed716138bE8BD"
  },
  {
   "symbol": "EQTSLA",

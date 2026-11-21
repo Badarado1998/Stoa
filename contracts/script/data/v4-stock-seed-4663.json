@@ -1,30 +1,21 @@
 [
  {
-  "currency0": "0x05a3d1cd21d0c88145e82600e62e7e496e0f222b",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 1000,
-  "tickSpacing": 10,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "AMC",
-  "liquidityUsd": 292686
- },
- {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "currency1": "0xb90a19ff0af67f7779aff50a882a9cff42446400",
   "fee": 10000,
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "SNDK",
-  "liquidityUsd": 171734
+  "liquidityUsd": 151675
  },
  {
-  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0xb0992820e760d836549ba69bc7598b4af75dee03",
-  "fee": 10000,
-  "tickSpacing": 200,
+  "currency0": "0x05a3d1cd21d0c88145e82600e62e7e496e0f222b",
+  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "fee": 1000,
+  "tickSpacing": 10,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "ORCL",
-  "liquidityUsd": 110745
+  "symbol": "AMC",
+  "liquidityUsd": 151636
  },
  {
   "currency0": "0x5f10a1c971b69e47e059e1dc91901b59b3fb49c3",
@@ -33,7 +24,16 @@
   "tickSpacing": 90,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "CRWV",
-  "liquidityUsd": 107748
+  "liquidityUsd": 101485
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xb0992820e760d836549ba69bc7598b4af75dee03",
+  "fee": 10000,
+  "tickSpacing": 200,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "ORCL",
+  "liquidityUsd": 98067
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -42,16 +42,7 @@
   "tickSpacing": 99,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "NBIS",
-  "liquidityUsd": 99803
- },
- {
-  "currency0": "0x117cc2133c37b721f49de2a7a74833232b3b4c0c",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 100,
-  "tickSpacing": 1,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "SPY",
-  "liquidityUsd": 91492
+  "liquidityUsd": 90517
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -60,16 +51,7 @@
   "tickSpacing": 50,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "BULL",
-  "liquidityUsd": 39525
- },
- {
-  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0xf52597345a8edf418bc4071b4a35112472277d3e",
-  "fee": 10100,
-  "tickSpacing": 101,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "WDC",
-  "liquidityUsd": 30842
+  "liquidityUsd": 38020
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -78,25 +60,7 @@
   "tickSpacing": 200,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "SNOW",
-  "liquidityUsd": 24577
- },
- {
-  "currency0": "0x48e39e56acdba37b09020c0b734a613c9a2f100a",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 7100,
-  "tickSpacing": 71,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "BB",
-  "liquidityUsd": 24350
- },
- {
-  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0x9e7abd3c9139d14e4c86dce0e455aab7a0c2fb3e",
-  "fee": 11100,
-  "tickSpacing": 111,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "WYFI",
-  "liquidityUsd": 21271
+  "liquidityUsd": 23644
  },
  {
   "currency0": "0x329fcaceb9ad6f9580dd5f643fed0646900d043c",
@@ -105,7 +69,16 @@
   "tickSpacing": 50,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "LMT",
-  "liquidityUsd": 17556
+  "liquidityUsd": 17516
+ },
+ {
+  "currency0": "0x3b14c39e89d60d627b42a1a4ca45b5bb45fc12e2",
+  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "fee": 9000,
+  "tickSpacing": 90,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "RKLB",
+  "liquidityUsd": 15122
  },
  {
   "currency0": "0x44c4f142009036cf477ed2d09932051843137cf1",
@@ -114,7 +87,7 @@
   "tickSpacing": 300,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "ZM",
-  "liquidityUsd": 13759
+  "liquidityUsd": 12293
  },
  {
   "currency0": "0x0f17206447090e464c277571124dd2688e48aea9",
@@ -123,25 +96,7 @@
   "tickSpacing": 71,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "QCOM",
-  "liquidityUsd": 10346
- },
- {
-  "currency0": "0x59dd09d4900c2e4b5f75b7c0d4e6796fcc234cb1",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 30000,
-  "tickSpacing": 1,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "HPE",
-  "liquidityUsd": 8674
- },
- {
-  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0x98e75885157c80992a8d41b696d8c9c6fb30a926",
-  "fee": 30500,
-  "tickSpacing": 305,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "SOFI",
-  "liquidityUsd": 7012
+  "liquidityUsd": 9991
  },
  {
   "currency0": "0x27c99fbde9d0d2aa4f4bfb4943f237843ddf6958",
@@ -150,25 +105,43 @@
   "tickSpacing": 100,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "DDOG",
-  "liquidityUsd": 6915
- },
- {
-  "currency0": "0x1cdad396db64bda184d5182a97dd9b3c62100b7d",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 30000,
-  "tickSpacing": 300,
-  "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "P",
-  "liquidityUsd": 5602
+  "liquidityUsd": 6734
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0xae517a2903e68bd929dfd15be875f8369d53e94a",
-  "fee": 9000,
-  "tickSpacing": 90,
+  "currency1": "0x9651342cea770ae9a2969ba2a52611523146aef9",
+  "fee": 50000,
+  "tickSpacing": 500,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "CEG",
-  "liquidityUsd": 5507
+  "symbol": "CCL",
+  "liquidityUsd": 6618
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xacef2e09adb47ad6abebad9ff06689e60615c2b6",
+  "fee": 48598,
+  "tickSpacing": 486,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "INDA",
+  "liquidityUsd": 5998
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0xf0ab0c93be6f41369d302e55db1a96b3c430212d",
+  "fee": 50000,
+  "tickSpacing": 500,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "IREN",
+  "liquidityUsd": 5993
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0x75742c18bc1f1c5c5f448f4c9d9c6f66dafaaa38",
+  "fee": 50000,
+  "tickSpacing": 500,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "SOXX",
+  "liquidityUsd": 5227
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -177,7 +150,16 @@
   "tickSpacing": 1,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "CLOV",
-  "liquidityUsd": 4943
+  "liquidityUsd": 4483
+ },
+ {
+  "currency0": "0x0000000000000000000000000000000000000000",
+  "currency1": "0x1cdad396db64bda184d5182a97dd9b3c62100b7d",
+  "fee": 50000,
+  "tickSpacing": 500,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "P",
+  "liquidityUsd": 3534
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -186,25 +168,25 @@
   "tickSpacing": 300,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "FIX",
-  "liquidityUsd": 3670
+  "liquidityUsd": 3456
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "currency1": "0xf0ab0c93be6f41369d302e55db1a96b3c430212d",
-  "fee": 9000,
-  "tickSpacing": 90,
+  "currency1": "0xd63abb2c13d7a8421a8017a712802053568e3c1d",
+  "fee": 49000,
+  "tickSpacing": 490,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "IREN",
-  "liquidityUsd": 3592
+  "symbol": "SCHD",
+  "liquidityUsd": 2984
  },
  {
-  "currency0": "0x03bc731ffb162cdd7b98d3c6542bfc291126075d",
-  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
-  "fee": 35000,
-  "tickSpacing": 350,
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xeb61c0ed490a367d4e3631ccf8a74b3bfc7e775d",
+  "fee": 30000,
+  "tickSpacing": 300,
   "hooks": "0x0000000000000000000000000000000000000000",
-  "symbol": "FLY",
-  "liquidityUsd": 2972
+  "symbol": "HII",
+  "liquidityUsd": 2848
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -213,7 +195,7 @@
   "tickSpacing": 340,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "APP",
-  "liquidityUsd": 2428
+  "liquidityUsd": 2369
  },
  {
   "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -222,6 +204,33 @@
   "tickSpacing": 20,
   "hooks": "0x0000000000000000000000000000000000000000",
   "symbol": "EWY",
-  "liquidityUsd": 2377
+  "liquidityUsd": 2327
+ },
+ {
+  "currency0": "0x1af6446f07eb1d97c546afc8c9544cbdf3ad5137",
+  "currency1": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "fee": 60000,
+  "tickSpacing": 600,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "ASTS",
+  "liquidityUsd": 2320
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xbef75684c43c4ea7bd18dd532a2244674ee8b926",
+  "fee": 10000,
+  "tickSpacing": 100,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "NNE",
+  "liquidityUsd": 2057
+ },
+ {
+  "currency0": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "currency1": "0xddf2266b79abf0b48898959b0ed6e6adf512be74",
+  "fee": 40500,
+  "tickSpacing": 405,
+  "hooks": "0x0000000000000000000000000000000000000000",
+  "symbol": "MDB",
+  "liquidityUsd": 2046
  }
 ]
