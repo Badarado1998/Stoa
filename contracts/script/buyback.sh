@@ -30,7 +30,8 @@ TOKENS=$(cast logs --from-block $FROM --address $FEES $TOPIC --rpc-url $LOGS_RPC
 for T in $TOKENS; do
   T=$(cast to-check-sum-address $T)
   ACC=$(cast call $FEES 'protocolAccrued(address)(uint256)' $T --rpc-url $RPC | cut -d' ' -f1)
-  SYM=$(cast call $T 'symbol()(string)' --rpc-url $RPC 2>/dev/null | tr -d '"' || echo "$T")
+  # symbol plus a short address: copycat tokens can share a symbol (another "STOA" is not $STOA)
+  SYM="$(cast call $T 'symbol()(string)' --rpc-url $RPC 2>/dev/null | tr -d '"' || echo token) (${T:0:6}…${T: -4})"
   [ "$ACC" != "0" ] || { echo "$SYM: no protocol fees waiting"; continue; }
   if [ "${T,,}" = "${STOA,,}" ]; then
     echo "$SYM: burning $ACC directly"
