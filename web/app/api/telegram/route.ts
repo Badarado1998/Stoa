@@ -14,7 +14,7 @@ import { tg, tgHtml, tgMe, tgOn, tgSecret, tgSend } from "@/lib/telegram";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-type TgMsg = { message_id: number; text?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; reply_to_message?: { text?: string; from?: { id: number } } };
+type TgMsg = { message_id: number; text?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; reply_to_message?: { text?: string; from?: { id: number } } };
 const perUser = quota(10, 100_000), perChat = quota(150, 100_000), all = quota(1_000_000, Number(process.env.AI_DAILY_CAP || 3000));
 
 const HELP = `<b>Stoa AI</b> · early beta on Robinhood Chain
@@ -55,7 +55,7 @@ const rugText = (toks: RugToken[], onlyFlagged = false) => {
 };
 
 async function answer(m: TgMsg, q: string, botId: number) {
-  const chat = m.chat.id, uid = m.from?.id ?? chat;
+  const chat = m.chat.id, uid = m.sender_chat?.id ?? m.from?.id ?? chat;
   const u = perUser(String(uid));
   if (!u.ok) { await tgSend(chat, "That's your 10 questions for today. More after 00:00 UTC, or ask on stoadex.com/ai.", m.message_id); return; }
   if (!perChat(String(chat)).ok || !all("all").ok) { await tgSend(chat, "I'm very busy today. Try again later, or ask on stoadex.com/ai.", m.message_id); return; }
@@ -84,7 +84,9 @@ async function answer(m: TgMsg, q: string, botId: number) {
 
 async function handle(m: TgMsg) {
   const text = (m.text ?? "").trim();
-  if (!text || m.from?.is_bot) return;
+  // an admin posting "anonymously" (as the group) arrives from Telegram's GroupAnonymousBot with sender_chat = the group
+  const anonAdmin = m.sender_chat?.id === m.chat.id;
+  if (!text || m.is_automatic_forward || (m.from?.is_bot && !anonAdmin)) return;
   const me = await tgMe();
   if (!me) return;
   const at = new RegExp(`@${me.username}\\b`, "i");
@@ -109,7 +111,7 @@ async function handle(m: TgMsg) {
   }
   if (name === "settoken" || name === "cleartoken") {
     if (priv) { await tgSend(m.chat.id, "Add me to your project's group, then send /settoken 0xYourToken there."); return; }
-    const st = await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });
+    const st = anonAdmin ? { status: "administrator" } : await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });
     if (!st || !["creator", "administrator"].includes(st.status)) { await tgSend(m.chat.id, "Only group admins can do that.", m.message_id); return; }
     if (!kvOn) { await tgSend(m.chat.id, "Project mode is not switched on yet. I still answer questions here.", m.message_id); return; }
     if (name === "cleartoken") { await kv("DEL", `tg:proj:${m.chat.id}`); await tgSend(m.chat.id, "Done: I'm back to general Robinhood Chain questions here."); return; }
