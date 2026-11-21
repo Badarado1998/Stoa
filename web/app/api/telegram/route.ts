@@ -141,7 +141,7 @@ async function welcome(chat: number, people: { first_name?: string }[]) {
   const names = people.map((u) => tgHtml((u.first_name ?? "there").slice(0, 32))).slice(0, 5).join(", ");
   const proj = await kv<string>("GET", `tg:proj:${chat}`);
   const stoaGroup = !proj || proj.toLowerCase() === STOA_CA.toLowerCase();
-  const text = `👋 Welcome, ${names}!\n\n🛡 Admins here never DM you first and never ask for a seed phrase, a private key or a wallet "sync". Anyone who does is a scammer.\n\nAsk me about any Robinhood Chain token: /ask is it safe?`;
+  const text = `👋 Welcome, ${names}!\n\n🛡 Admins here never DM you first and never ask for a seed phrase, a private key or a wallet "sync". Anyone who does is a scammer. Official links: stoadex.com/docs/official-links\n\nAsk me about any Robinhood Chain token: /ask is it safe?`;
   const buttons = stoaGroup
     ? [[{ text: "Is Stoa safe? ↗", url: "https://stoadex.com/safe" }, { text: "Check a token ↗", url: "https://stoadex.com/check" }]]
     : [[{ text: "Check this token ↗", url: `https://stoadex.com/check/robinhood/${proj}` }]];

@@ -73,3 +73,21 @@ The card shows the bid, the votes against the quorum and whether the token wins 
 `SpotlightMarket` on Robinhood Chain: [`0xf3A995D4240c0F36da697E5292B294052a1706B5`](https://robinhoodchain.blockscout.com/address/0xf3A995D4240c0F36da697E5292B294052a1706B5), deployed on 15 November 2026 ([transaction](https://robinhoodchain.blockscout.com/tx/0xbe834ada0440ee669d0f7e3c3e189fb2aa4704c426bb5be6ed5359b13f84e1c9)) with CREATE2 through the standard deterministic deployer. It is owned by the 48-hour timelock from its constructor, with the router's guardian and the buyback keeper, and its source is verified on [Sourcify](https://repo.sourcify.dev/4663/0xf3A995D4240c0F36da697E5292B294052a1706B5) (exact match). Source: [contracts/src/SpotlightMarket.sol](https://github.com/StoaDex/Stoa/blob/main/contracts/src/SpotlightMarket.sol).
 
 Payouts depend on what projects bid each week; nothing is promised.
+
+## FAQ
+
+**My votes do not show.** Votes come only from $STOA locked on the Spotlight page, on Robinhood Chain. $STOA in your wallet, in a pool or on an exchange does not vote. After locking, put the votes on a token in the race table and wait for the transaction to confirm. $STOA you asked to unlock stops voting at once.
+
+**Can I change my votes?** Yes, as often as you like until the week closes on Monday 00:00 UTC. Each change is a transaction, so it costs a little gas.
+
+**How many tokens can win this week?** Up to three, but each winner needs at least 1,000,000 $STOA of votes, so the $STOA locked sets the limit: with under 2M locked, at most one token can reach the quorum. The counter at the top of the page shows how much more opens the next slot.
+
+**What if no token reaches 1M votes?** Nobody wins that week. Every bid can be refunded in full and nobody earns; the entry fees still go to the burn.
+
+**When can I claim?** After the week closes on Monday 00:00 UTC and is settled. Anyone can settle it, and Stoa's keeper does so shortly after the close. Then your ETH shows under **Your ETH to claim**. Claims never expire.
+
+**Do I earn if my token does not win?** No. You earn only from tokens you voted for that win. Your $STOA stays locked and can vote again the next week.
+
+**When can I take my $STOA out?** Request an unlock; it can be withdrawn when the current week ends. $STOA that voted this week can be requested from next week on, so plan for about seven days at least.
+
+**Someone offered me a Spotlight slot or a share of the rewards in a DM.** It is a scam. Slots are won only through the contract, and Stoa never DMs first: see [Official links and scams](official-links.md).

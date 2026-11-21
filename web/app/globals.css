@@ -243,6 +243,7 @@ pre.code .c{color:#7D8CA3}pre.code .k{color:#8EC2FF}pre.code .s{color:#A6E3C8}
 .foot h4,.foot .fh{margin:0 0 10px;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--muted)}
 .foot a{display:block;padding:4px 0;color:var(--ink);font-size:14px}
 .foot a.brand{display:flex;padding:0;margin-bottom:6px}
+.foot .fwarn{max-width:260px;margin-top:10px;font-size:12.5px}.foot .fwarn a{text-decoration:underline;text-underline-offset:2px}
 .foot .badge{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-start;padding-top:20px;border-top:1px solid var(--line)}
 .foot .badge a.obadge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
 .foot .badge a.obadge small{font-weight:400;color:var(--muted);font-size:12px}

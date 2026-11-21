@@ -6,6 +6,7 @@
 * [How Stoa works](how-stoa-works.md)
 * [FAQ](faq.md)
 * [Contact](contact.md)
+* [Official links and scams](official-links.md)
 
 ## Guides
 

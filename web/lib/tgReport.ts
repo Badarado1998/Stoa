@@ -95,7 +95,7 @@ const mStoa = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(2).replace(/\.?0+$
 /** /spotlight: the race this week, read from SpotlightMarket, with a Vote button for the leading tokens */
 export async function spotlightText(): Promise<{ text: string; buttons: { text: string; url: string }[][] }> {
   const s = await readSpotlight().catch(() => null);
-  const main = [{ text: "Lock and vote ↗", url: "https://stoadex.com/spotlight#race" }];
+  const main = [{ text: "Lock and vote ↗", url: "https://stoadex.com/spotlight#race" }, { text: "FAQ", url: "https://stoadex.com/docs/spotlight#faq" }];
   if (!s) return { text: "Spotlight did not answer right now. Try again in a minute, or open stoadex.com/spotlight.", buttons: [main] };
   const lines = [`🔦 <b>Stoa Spotlight · week ${s.week}</b>`];
   if (s.paused) lines.push("⏸ Paused: no new bids, locks or votes. Claims and refunds still work.");
