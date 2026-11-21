@@ -1,6 +1,6 @@
 import { getAddress, isAddress, type Address } from "viem";
 import { runAgent, type AiEvent } from "@/lib/aiAgent";
-import { FREE_PER_DAY, takeMessage } from "@/lib/aiCredits";
+import { FREE_PER_DAY, sessionFor, takeMessage } from "@/lib/aiCredits";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
 
 // POST /api/ai/chat {messages: [{role: "user"|"assistant", content}], wallet?, project?}: Stoa's assistant on OpenRouter
@@ -16,7 +16,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: "The assistant is not switched on yet." }, { status: 503 });
-  const b = (await req.json().catch(() => null)) as { messages?: { role?: string; content?: string }[]; wallet?: string; project?: string } | null;
+  const b = (await req.json().catch(() => null)) as { messages?: { role?: string; content?: string }[]; wallet?: string; project?: string; session?: string } | null;
   const history = (b?.messages ?? []).filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-12)
     .map((m) => ({ role: m.role as "user" | "assistant", content: m.content!.slice(0, 2000) }));
   if (!history.length || history[history.length - 1].role !== "user") return Response.json({ error: "bad request" }, { status: 400 });
@@ -25,9 +25,10 @@ export async function POST(req: Request) {
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "local";
   // free messages per visitor, then the connected wallet's credits (lib/aiCredits.ts)
-  const q = await takeMessage(ip, wallet);
+  const payer = await sessionFor(b?.session, wallet);
+  const q = await takeMessage(ip, wallet, payer);
   if (!q.ok) return q.why === "user"
-    ? Response.json({ error: `That's today's ${FREE_PER_DAY} free messages. Get more with credits, or come back after 00:00 UTC.`, left: 0, credits: q.credits, buy: !project }, { status: 429 })
+    ? Response.json({ error: `That's today's ${FREE_PER_DAY} free messages. Get more with credits, or come back after 00:00 UTC.`, left: 0, credits: q.credits, buy: !project, needSession: !!q.credits && !payer }, { status: 429 })
     : Response.json({ error: "The assistant is very busy today. Try again later." }, { status: 503 });
   const left = q.left, credits = q.credits;
   const extra = project ? await projectContext(project) : undefined;

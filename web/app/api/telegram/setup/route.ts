@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   if (!tgOn) return Response.json({ ok: false, error: "TELEGRAM_BOT_TOKEN is not set in Vercel yet." }, { status: 503 });
-  const hook = await tg("setWebhook", { url: "https://stoadex.com/api/telegram", secret_token: tgSecret(), allowed_updates: ["message"], drop_pending_updates: true, max_connections: 20 });
+  const hook = await tg("setWebhook", { url: "https://stoadex.com/api/telegram", secret_token: tgSecret(), allowed_updates: ["message"], drop_pending_updates: false, max_connections: 20 });
   const cmds = await tg("setMyCommands", { commands: [
     { command: "ask", description: "Ask Stoa AI anything about Robinhood Chain" },
     { command: "safe", description: "Safety check a token: /safe 0x… or a symbol" },

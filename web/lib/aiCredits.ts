@@ -1,5 +1,6 @@
 import "server-only";
-import { createPublicClient, formatUnits, getAddress, http, type Address, type Hash } from "viem";
+import { randomBytes } from "node:crypto";
+import { createPublicClient, formatUnits, getAddress, http, type Address, type Hash, type Hex } from "viem";
 import { apiQuote } from "./api";
 import { ROBINHOOD } from "./networks";
 import { NATIVE } from "./tokens";
@@ -40,13 +41,45 @@ export async function countToday(key: string): Promise<number> {
 
 export const creditsOf = async (wallet: Address) => Number((await kv<string>("GET", `ai:cr:${wallet.toLowerCase()}`)) ?? 0) || 0;
 
-/** one message: free first, then the wallet's credits. `left` is free messages left, `credits` the wallet's credits. */
-export async function takeMessage(ip: string, wallet: Address | null): Promise<{ ok: true; left: number; credits: number | null } | { ok: false; why: "user" | "cap"; credits: number | null }> {
+/** Spending credits needs proof that the browser holds the wallet: a signed message, once per device, gives a session
+ *  (30 days). Without it anyone could name someone else's wallet and use up its credits. */
+const sessionMessage = (wallet: Address, nonce: string) => `Stoa AI: use my credits on this device.\nWallet: ${wallet}\nNonce: ${nonce}\n\nThis signature costs nothing and moves no funds.`;
+
+export async function newNonce(wallet: Address): Promise<{ nonce: string; message: string } | null> {
+  if (!kvOn) return null;
+  const nonce = randomBytes(12).toString("hex");
+  await kv("SET", `ai:nonce:${nonce}`, wallet.toLowerCase(), "EX", 600);
+  return { nonce, message: sessionMessage(wallet, nonce) };
+}
+
+export async function openSession(wallet: Address, nonce: string, signature: Hex): Promise<string | null> {
+  if (!/^[0-9a-f]{24}$/.test(nonce)) return null;
+  const owner = await kv<string>("GETDEL", `ai:nonce:${nonce}`);
+  if (!owner || owner !== wallet.toLowerCase()) return null;
+  const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.logsRpc), { timeout: 15_000 }) });
+  // EOAs and smart wallets (ERC-1271 / ERC-6492) alike
+  const ok = await c.verifyMessage({ address: wallet, message: sessionMessage(wallet, nonce), signature }).catch(() => false);
+  if (!ok) return null;
+  const token = randomBytes(24).toString("hex");
+  await kv("SET", `ai:sess:${token}`, wallet.toLowerCase(), "EX", 30 * 86_400);
+  return token;
+}
+
+/** the wallet a session belongs to, if it is `wallet` */
+export async function sessionFor(token: unknown, wallet: Address | null): Promise<Address | null> {
+  if (!wallet || typeof token !== "string" || !/^[0-9a-f]{48}$/.test(token)) return null;
+  const w = await kv<string>("GET", `ai:sess:${token}`);
+  return w && w === wallet.toLowerCase() ? wallet : null;
+}
+
+/** one message: free first, then the credits of `payer` (a wallet proven by a session). `left` is free messages left,
+ *  `credits` the connected wallet's credits. */
+export async function takeMessage(ip: string, wallet: Address | null, payer: Address | null = null): Promise<{ ok: true; left: number; credits: number | null } | { ok: false; why: "user" | "cap"; credits: number | null }> {
   if ((await countToday("all")) > DAILY_CAP) return { ok: false, why: "cap", credits: null };
   const n = await countToday(`ip:${ip}`);
   const credits = wallet && kvOn ? await creditsOf(wallet) : null;
   if (n <= FREE_PER_DAY) return { ok: true, left: FREE_PER_DAY - n, credits };
-  if (wallet && credits && credits > 0) {
+  if (payer && wallet && payer === wallet && credits && credits > 0) {
     const after = await kv<number>("DECR", `ai:cr:${wallet.toLowerCase()}`);
     if (after !== null && after >= 0) return { ok: true, left: 0, credits: after };
     if (after !== null) await kv("INCR", `ai:cr:${wallet.toLowerCase()}`);

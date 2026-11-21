@@ -14,6 +14,7 @@ const when = (t: number) => `${new Date(t * 1000).toUTCString().slice(0, 22)} UT
 
 export async function GET() {
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
+  if ((await kv("SET", "tg:spotnudge:lock", 1, "NX", "EX", 600)) !== "OK") return Response.json({ ok: true, skipped: "ran recently" });
   const now = Math.floor(Date.now() / 1000), ep = epochAt(now);
   let key: string | null = null, text = "";
   if (ep < 0) {

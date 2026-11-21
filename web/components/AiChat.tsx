@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useAccount, usePublicClient, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useSendTransaction, useSignMessage, useSwitchChain, useWriteContract } from "wagmi";
 import { BaseError, decodeFunctionData, erc20Abi as erc20Full, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import { erc20Abi, routerAbi } from "@/lib/abi";
 import { ROBINHOOD } from "@/lib/networks";
@@ -183,6 +183,25 @@ function LimitCard({ d }: { d: LimitData }) {
 }
 
 const BURN = "0x000000000000000000000000000000000000dEaD";
+/** this device's proof that it holds the wallet, so it may spend the wallet's credits (/api/ai/session) */
+const sessKey = (a: string) => `stoa.ai.session.${a.toLowerCase()}`;
+const getSession = (a?: string) => { try { return a ? localStorage.getItem(sessKey(a)) : null; } catch { return null; } };
+function useEnsureSession() {
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  return async (): Promise<boolean> => {
+    if (!address) return false;
+    if (getSession(address)) return true;
+    const n = await fetch(`/api/ai/session?wallet=${address}`).then((r) => r.json()).catch(() => null) as { nonce?: string; message?: string } | null;
+    if (!n?.nonce || !n.message) return false;
+    const signature = await signMessageAsync({ message: n.message });
+    const r = await fetch("/api/ai/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: address, nonce: n.nonce, signature }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.session) return false;
+    try { localStorage.setItem(sessKey(address), j.session); } catch { /* blocked */ }
+    return true;
+  };
+}
 const STOA_T = "0x13E6993417616De724F2b337D65063f229e96718";
 type PayOpt = { asset: "USDG" | "ETH" | "STOA"; token: Address; to: Address; amount: string; display: string; burned: boolean };
 
@@ -194,7 +213,8 @@ function BuyCredits({ onDone }: { onDone: (credits: number) => void }) {
   const { sendTransactionAsync } = useSendTransaction();
   const { writeContractAsync } = useWriteContract();
   const pub = usePublicClient({ chainId: RH });
-  const [info, setInfo] = useState<{ on: boolean; pack?: { messages: number; usd: number }; options?: PayOpt[] } | null>(null);
+  const [info, setInfo] = useState<{ on: boolean; credits?: number | null; pack?: { messages: number; usd: number }; options?: PayOpt[] } | null>(null);
+  const ensureSession = useEnsureSession();
   const [st, setSt] = useState<{ k: "idle" | "busy" | "done" | "failed"; text?: string }>({ k: "idle" });
   useEffect(() => { fetch(`/api/ai/credits${address ? `?wallet=${address}` : ""}`).then((r) => r.json()).then(setInfo).catch(() => setInfo({ on: false })); }, [address]);
   if (!info) return null;
@@ -220,7 +240,13 @@ function BuyCredits({ onDone }: { onDone: (credits: number) => void }) {
       for (let i = 0; i < 4; i++) {
         const r = await fetch("/api/ai/credits", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: address, tx }) });
         const j = await r.json().catch(() => ({}));
-        if (r.ok) { setSt({ k: "done", text: `Added ${j.credited} messages. You have ${j.credits}.` }); onDone(j.credits); return; }
+        if (r.ok) {
+          onDone(j.credits);
+          setSt({ k: "busy", text: "One signature so this device can use them (free, moves nothing)…" });
+          const ok = await ensureSession().catch(() => false);
+          setSt({ k: "done", text: `Added ${j.credited} messages. You have ${j.credits}.${ok ? " Ask away." : " Sign the message when you ask next to use them."}` });
+          return;
+        }
         if (!/does not show/.test(j.error ?? "")) { setSt({ k: "failed", text: j.error ?? "Could not add the credits." }); return; }
         await new Promise((res) => setTimeout(res, 3000));
       }
@@ -232,6 +258,12 @@ function BuyCredits({ onDone }: { onDone: (credits: number) => void }) {
     <div className="box" style={{ marginTop: 8 }}>
       <div className="lbl">MORE MESSAGES</div>
       <div style={{ margin: "6px 0" }}><b>{info.pack?.messages} messages</b> for ${info.pack?.usd}, paid from your wallet on Robinhood Chain. Credits never expire.</div>
+      {st.k !== "done" && isConnected && (info.credits ?? 0) > 0 && !getSession(address) && (
+        <button type="button" className="pri" style={{ width: "100%", marginBottom: 8 }} disabled={st.k === "busy"}
+          onClick={() => { setSt({ k: "busy", text: "Sign the message in your wallet (free, moves nothing)…" }); void ensureSession().then((ok) => setSt(ok ? { k: "done", text: `This device can now use your ${info.credits} credits. Ask again.` } : { k: "failed", text: "The signature did not go through." })).catch((e) => setSt({ k: "failed", text: explain(e) })); }}>
+          Use my {info.credits} credits here
+        </button>
+      )}
       {st.k === "done" ? <div className="ok">{st.text}</div> : !isConnected ? (
         <button type="button" className="pri" style={{ width: "100%" }} onClick={() => open()}>Connect wallet</button>
       ) : (
@@ -503,13 +535,13 @@ export const Dots = () => (
   </span>
 );
 
-export type ChatEv = { t: string; d?: string; kind?: string; data?: unknown; tool?: string; items?: string[]; left?: number; credits?: number | null; buy?: boolean };
+export type ChatEv = { t: string; d?: string; kind?: string; data?: unknown; tool?: string; items?: string[]; left?: number; credits?: number | null; buy?: boolean; needSession?: boolean };
 /** POST /api/ai/chat and hand each streamed event to `on`; a refused request arrives as one error event */
 export async function streamChat(body: object, on: (ev: ChatEv) => void) {
   const r = await fetch("/api/ai/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok || !r.body) {
     const j = await r.json().catch(() => ({}));
-    on({ t: "error", d: j.error ?? "The assistant could not answer right now.", left: j.left, credits: j.credits, buy: j.buy });
+    on({ t: "error", d: j.error ?? "The assistant could not answer right now.", left: j.left, credits: j.credits, buy: j.buy, needSession: j.needSession });
     return;
   }
   const reader = r.body.getReader(), dec = new TextDecoder();
@@ -556,13 +588,17 @@ export default function AiChat() {
     setBusy(true);
     const patch = (f: (m: AMsg) => AMsg) => setMsgs((cur) => cur.map((m, i) => (i === idx && m.role === "assistant" ? f(m) : m)));
     try {
-      await streamChat({ wallet: address, messages: history.map((m) => ({ role: m.role, content: m.content })) }, (ev) => {
+      await streamChat({ wallet: address, session: getSession(address) ?? undefined, messages: history.map((m) => ({ role: m.role, content: m.content })) }, (ev) => {
         if (ev.t === "text") patch((m) => ({ ...m, content: m.content + (ev.d ?? ""), status: undefined }));
         else if (ev.t === "status") patch((m) => ({ ...m, status: ev.d }));
         else if (ev.t === "card") patch((m) => ({ ...m, cards: [...m.cards, { kind: ev.kind!, data: ev.data as Card["data"] }] }));
         else if (ev.t === "action") patch((m) => ({ ...m, actions: [...m.actions, { tool: ev.tool!, data: ev.data as Record<string, unknown> }] }));
         else if (ev.t === "suggest") patch((m) => ({ ...m, suggest: ev.items }));
-        else if (ev.t === "error") { patch((m) => ({ ...m, error: ev.d, buy: !!ev.buy })); if (typeof ev.left === "number") setLeft(ev.left); }
+        else if (ev.t === "error") {
+          // the server no longer knows this device's session: drop it so the card offers to sign again
+          if (ev.needSession && address) { try { localStorage.removeItem(sessKey(address)); } catch { /* blocked */ } }
+          patch((m) => ({ ...m, error: ev.d, buy: !!ev.buy })); if (typeof ev.left === "number") setLeft(ev.left);
+        }
         else if (ev.t === "done" && typeof ev.left === "number") setLeft(ev.left);
         if ((ev.t === "done" || ev.t === "error") && typeof ev.credits === "number") setCredits(ev.credits);
       });

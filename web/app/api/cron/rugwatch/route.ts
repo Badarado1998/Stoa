@@ -12,7 +12,10 @@ export const maxDuration = 300;
 export async function GET() {
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
   if ((await kv("SET", "tg:rugwatch:lock", Date.now(), "NX", "EX", 480)) !== "OK") return Response.json({ ok: true, skipped: "ran recently" });
-  const chats = ((await kv<string[]>("SMEMBERS", "tg:watchers")) ?? []).slice(0, 2000);
+  // start where the last run stopped, so every wallet gets its turn when they do not all fit in one run
+  const all = (await kv<string[]>("SMEMBERS", "tg:watchers")) ?? [];
+  const from = Number((await kv<string>("GET", "tg:rugwatch:cursor")) ?? 0) % Math.max(1, all.length);
+  const chats = [...all.slice(from), ...all.slice(0, from)].slice(0, 2000);
   const started = Date.now();
   let scanned = 0, sent = 0;
   for (let i = 0; i < chats.length && Date.now() - started < 240_000; i += 5) {
@@ -30,5 +33,6 @@ export async function GET() {
       if (fresh.length) { await tgSend(chat, `🚨 <b>Rug alert</b> for <code>${w.slice(0, 6)}…${w.slice(-4)}</code>\n\n${fresh.join("\n")}\n\nA signal, not certainty. Check it on stoadex.com/ai. /unwatch to stop.`); sent++; }
     }));
   }
-  return Response.json({ ok: true, watchers: chats.length, scanned, sent });
+  await kv("SET", "tg:rugwatch:cursor", (from + scanned) % Math.max(1, all.length));
+  return Response.json({ ok: true, watchers: all.length, scanned, sent });
 }

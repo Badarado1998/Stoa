@@ -10,7 +10,10 @@ export const maxDuration = 120;
 
 export async function GET() {
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
-  const slot = new Date().toISOString().slice(0, 13); // one report per hour slot
+  // only at the report hours, once each: a call at any other time sends nothing
+  const h = new Date().getUTCHours();
+  if (h !== 1 && h !== 13) return Response.json({ ok: true, skipped: "not a report hour" });
+  const slot = new Date().toISOString().slice(0, 13);
   if ((await kv("SET", `tg:report:sent:${slot}`, 1, "NX", "EX", 7200)) !== "OK") return Response.json({ ok: true, skipped: "sent this hour" });
   const chats = ((await kv<string[]>("SMEMBERS", "tg:report")) ?? []).slice(0, 500);
   if (!chats.length) return Response.json({ ok: true, chats: 0 });

@@ -132,6 +132,10 @@ async function handle(m: TgMsg) {
     await tgSend(m.chat.id, `Done. In this group, "the token" now means <code>${t}</code>. Ask me anything about it: /ask is it safe? I answer from on-chain data only, never about the team's plans.`);
     return;
   }
+  // quick commands and alerts read RPCs and DexScreener: a generous daily limit per person stops floods
+  if (name && ["price", "gaps", "pnl", "top", "alert", "alerts", "unalert", "watch", "app"].includes(name) && (await countToday(`tgq:${m.sender_chat?.id ?? m.from?.id ?? m.chat.id}`)) > 100) {
+    await tgSend(m.chat.id, "That's a lot of requests today. More after 00:00 UTC.", m.message_id); return;
+  }
   if (name === "price" || name === "gaps" || name === "pnl") {
     void tg("sendChatAction", { chat_id: m.chat.id, action: "typing" });
     let a = arg;

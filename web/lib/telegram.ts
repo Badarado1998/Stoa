@@ -24,11 +24,16 @@ export type TgButton = { text: string; url: string };
 export async function tgSend(chat: number | string, text: string, replyTo?: number, button?: TgButton) {
   const priv = typeof chat === "number" ? chat > 0 : !String(chat).startsWith("-");
   const b = button && priv && button.url.startsWith("https://stoadex.com") ? { text: button.text.replace(" ↗", ""), web_app: { url: button.url } } : button;
-  return tg("sendMessage", {
-    chat_id: chat, text: text.slice(0, 4000), parse_mode: "HTML", link_preview_options: { is_disabled: true },
+  const base = {
+    chat_id: chat, link_preview_options: { is_disabled: true },
     ...(replyTo ? { reply_parameters: { message_id: replyTo, allow_sending_without_reply: true } } : {}),
     ...(b ? { reply_markup: { inline_keyboard: [[b]] } } : {}),
-  });
+  };
+  const sent = await tg("sendMessage", { ...base, text: text.slice(0, 4000), parse_mode: "HTML" });
+  if (sent) return sent;
+  // Telegram refuses HTML it cannot parse: send the same words as plain text rather than nothing
+  const plain = text.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  return tg("sendMessage", { ...base, text: plain.slice(0, 4000) });
 }
 
 let me: { username: string; id: number } | null = null;
