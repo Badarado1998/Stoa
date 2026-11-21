@@ -21,6 +21,7 @@ It uses the Streamable HTTP transport and is stateless. Every tool is read-only.
 | `stock_tokens` | Robinhood Stock Tokens: Robinhood's price next to the on-chain price, liquidity, volume, and whether Stoa routes them |
 | `spotlight` | This week's Spotlight on Robinhood Chain: the phase and closing times, the rules, every candidate with its ETH bid and $STOA votes, last week's winners and the $STOA locked. Sponsored slots, not reviewed |
 | `stock_gaps` | Stock tokens whose on-chain price is furthest from Robinhood's (cheaper or dearer, real liquidity only), and optionally one token's gap every 6 hours for 7 days from Stoa's open dataset. Information, not trading advice |
+| `compare_venues` | One swap on every venue the router uses, each alone and before fees, in one block, next to Stoa's route after its 2 bps fee |
 | `open_data` | Stoa's open datasets on Hugging Face with links, or live: every routed swap, the Points board, or the venue-quote basket |
 | `create_payment_link` | A [Stoa Pay](stoa-pay.md) link that asks to be paid an amount in USDG, or that much in a Robinhood stock token |
 | `pay_payment_link` | The unsigned transaction that pays a Stoa Pay link from the payer's wallet, with any token Stoa routes |

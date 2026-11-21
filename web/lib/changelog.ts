@@ -21,6 +21,8 @@ export const CHANGES: Change[] = [
       "Telegram: /follow 0xToken tells a chat when that token starts or stops winning Spotlight, passes the vote quorum or is outbid, with the bid that would put it back on top. /compare 1 ETH USDG shows the same swap on every venue.",
       "Notifications on your phone or browser (when switched on): Spotlight closing times, ETH ready to claim for your wallet, and price alerts even with Stoa closed.",
       "Portfolio shows your weekly swap streak, with a share button. A badge only: it earns no points.",
+      "Telegram: /mywallet 0xYourWallet tells you when a settled Spotlight week leaves ETH to claim. AI agents get a compare_venues tool on Stoa's MCP server.",
+      "Build bounties pay only in USDG on Robinhood Chain, to the wallet posted by the account that opened the entry.",
     ],
   },
   {

@@ -12,6 +12,12 @@ Swap tokens on Robinhood Chain or Elysium, on the best route Stoa finds across t
 | Elysium | Stoa maker pools, Uniswap V2/V3/V4, Aero, Ramses, Liquidity Book |
 | Robinhood Chain | Uniswap V2, V3 and V4 (including Pons graduation pools), Aero, Ramses, Metric (oracle-priced pools for stock tokens) and Pons bonding curves |
 
+## Lite and Pro
+
+The switch at the top of the swap card picks how much you see. **Lite** shows only the tokens, the amount and the Swap button; tap **Filled by** under the amount for the venues and the route. **Pro** adds limit orders, the stock-token price gap, market data and the panels beside the form. Both use the same router and the same quotes. Your choice is remembered in this browser, and a link can open either view with `?view=lite` or `?view=pro`. Opened inside Telegram or a Farcaster app, Trade starts in Lite.
+
+To see what every venue pays for the same swaps right now, side by side, open [Compare](https://stoadex.com/compare): single venues before any fee, and Stoa's route after its 2 bps fee, refreshed every 10 minutes.
+
 ## Safety check
 
 When you buy an unverified token, Trade runs a safety check first. It simulates buying a small amount through the live router and selling it straight back, on the chain as it is now, without sending anything. It reports:

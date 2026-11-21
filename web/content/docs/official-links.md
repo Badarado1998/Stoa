@@ -21,6 +21,7 @@ Stoa's team **never sends the first direct message**, on X, Telegram, Discord or
 - **Fake support.** You ask a question in a group, and a "support agent" DMs you with a link to "fix" your wallet. Real admins answer in the group.
 - **Fake security researchers.** A DM says it found a bug in Stoa and wants a reward, a call, or for you to open a file. Real reports go privately through GitHub, as described on [Security reports](bug-bounty.md), and DMs about them are not answered.
 - **Look-alike sites and airdrops.** A site with a name close to Stoa's offers a claim, a bonus or a "migration". Stoa has no claim page: [Points](points.md) are shown on stoadex.com/points and need no signature.
+- **Prize "claims".** Stoa's build bounties pay only in USDG on Robinhood Chain, to a wallet posted on the entry's GitHub issue by the account that opened it. A look-alike account posting its own address is never paid, and nobody needs to pay or sign anything to receive a prize.
 - **Renamed accounts.** An account changes its name and picture to look like Stoa or someone from the community. On X, a "username changed recently" warning in a DM is a strong sign.
 
 ## If you are not sure

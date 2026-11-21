@@ -74,6 +74,12 @@ The card shows the bid, the votes against the quorum and whether the token wins 
 
 Payouts depend on what projects bid each week; nothing is promised.
 
+## Alerts and top earners
+
+- **Projects:** send `/follow 0xYourToken` to the Stoa AI Telegram bot (in a group, an admin) to hear when your token starts or stops winning, passes the vote quorum or is outbid, with the bid that would put it back on top.
+- **Voters:** `/mywallet 0xYourWallet` in a private chat with the bot, or **Notify me on this device** on the Spotlight page, tells you when a settled week leaves ETH for you to claim.
+- **Top earners:** [stoadex.com/spotlight/leaders](https://stoadex.com/spotlight/leaders) lists the wallets Spotlight has paid the most ETH, claimed or not, from the first payout on.
+
 ## FAQ
 
 **My votes do not show.** Votes come only from $STOA locked on the Spotlight page, on Robinhood Chain. $STOA in your wallet, in a pool or on an exchange does not vote. After locking, put the votes on a token in the race table and wait for the transaction to confirm. $STOA you asked to unlock stops voting at once.

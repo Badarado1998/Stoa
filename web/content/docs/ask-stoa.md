@@ -26,7 +26,11 @@ Quick data, free and unlimited: `/price STOA`, `/gaps` (stock tokens against Rob
 
 Price alerts, in a private chat: `/alert NVDA below 120`, `/alert STOA up 20%`. The bot checks every 5 minutes and messages you once; `/alerts` lists them, `/unalert` removes one. Up to 10 at a time.
 
-The bot's **Open Stoa** menu button (and `/app`) opens Stoa inside Telegram: swap, Stoa AI and Stoa Pay, signed by your own wallet.
+Compare a swap on every venue: `/compare 1 ETH USDG` or `/compare 500 USDG NVDA` shows what each venue pays for that exact amount in one block, before fees, and what Stoa's route returns after its 2 bps fee.
+
+Spotlight: `/spotlight` shows the race. `/follow 0xToken` (or a symbol in this week's race) tells the chat when that token starts or stops winning, passes the vote quorum or is outbid, with the bid that would put it back on top; in a group only admins can turn it on, and a chat follows up to 5 tokens (`/following`, `/unfollow`). `/mywallet 0xYourWallet`, in a private chat, tells you after each week is settled if Spotlight left ETH for that wallet to claim; `/mywallet off` forgets it.
+
+The bot's **Open Stoa** menu button (and `/app`) opens Stoa inside Telegram: swap, Stoa AI and Stoa Pay, signed by your own wallet. Stoa also runs as a Mini App in Farcaster clients: a stoadex.com link shared in a cast shows an **Open Stoa** button, and the client's own wallet is offered first.
 
 ## What it will not do
 

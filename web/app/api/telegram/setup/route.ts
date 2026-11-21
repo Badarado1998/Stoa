@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     { command: "spotlight", description: "This week's Spotlight race, with Vote buttons" },
     { command: "follow", description: "Spotlight alerts for a token: /follow 0xToken" },
     { command: "compare", description: "One swap on every venue: /compare 1 ETH USDG" },
+    { command: "mywallet", description: "Spotlight claim reminders for your wallet (private chat)" },
     { command: "top", description: "Points leaderboard" },
     { command: "antispam", description: "Admins: remove scam messages here (on/off)" },
     { command: "welcome", description: "Admins: greet new members with safety basics (on/off)" },

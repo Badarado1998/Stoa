@@ -2,7 +2,7 @@ import { kv } from "@/lib/kv";
 import { cronAllowed, cronRefused } from "@/lib/cronAuth";
 import { allSubs, pushOn, pushTo, saveSub, type PushAlert } from "@/lib/push";
 import { BID_WINDOW, SPOT_START, WEEK, epochAt, epochStart } from "@/lib/spotlight";
-import { readEarned } from "@/lib/spotlightEarned";
+import { epochSettled, readEarned } from "@/lib/spotlightEarned";
 import { marketOf } from "@/lib/rugScan";
 
 // GET /api/cron/push (Vercel cron, every 10 minutes): web push to the devices that turned on notifications.
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
   }
 
   // 2. ETH to claim from the week that just closed (epoch ep-1 is week ep)
-  if (ep >= 1) {
+  if (ep >= 1 && (await epochSettled(ep - 1).catch(() => false))) {
     for (const [id, s] of subs) {
       if (!s.wallet || (await kv("SET", `push:claim:${ep}:${id}`, 1, "NX", "EX", 21 * 86400)) !== "OK") continue;
       const e = await readEarned(s.wallet).catch(() => null);

@@ -3,6 +3,7 @@ import { tgSym, tgOn, tgSend } from "@/lib/telegram";
 import { readSpotlight } from "@/lib/spotlightServer";
 import { cronAllowed, cronRefused } from "@/lib/cronAuth";
 import { followAlerts } from "@/lib/spotlightFollow";
+import { claimReminders } from "@/lib/claimReminders";
 
 // GET /api/cron/spotlightrace (Vercel cron, every 10 minutes): tells the groups that turned on /report when the race
 // moves: a new token bids, a token passes the vote quorum, or the tokens that would win change. Compared with the last
@@ -16,6 +17,8 @@ export async function GET(req: Request) {
   if (!cronAllowed(req)) return cronRefused();
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
   if ((await kv("SET", "tg:race:lock", 1, "NX", "EX", 300)) !== "OK") return Response.json({ ok: true, skipped: "ran recently" });
+  // /mywallet chats: ETH to claim once a week is settled (once per week each)
+  await claimReminders().catch(() => 0);
   const s = await readSpotlight().catch(() => null);
   if (!s || s.phase === "before_week_1" || s.paused) return Response.json({ ok: true, nothing: true });
   const live = s.candidates.filter((c) => !c.canceled);

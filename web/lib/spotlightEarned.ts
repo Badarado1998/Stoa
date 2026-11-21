@@ -43,3 +43,11 @@ export async function readEarned(who: string): Promise<Earned> {
   const total = won.reduce((a, w) => a + w.wei, 0n);
   return { address, eth: Number(formatEther(total)), weeks: new Set(rows.map((x) => x.week)).size, rows };
 }
+
+/** has SpotlightMarket settled this epoch yet (finalize called): before that nobody has anything to claim from it */
+export async function epochSettled(epoch: number): Promise<boolean> {
+  if (!SPOT || epoch < 0) return false;
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.chain.rpcUrls.default.http[0]), { timeout: 10_000 }) });
+  const info = (await c.readContract({ address: SPOT, abi: spotlightAbi, functionName: "epochInfo", args: [BigInt(epoch)] })) as readonly [unknown, boolean, boolean, unknown, unknown];
+  return info[2];
+}

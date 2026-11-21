@@ -1,4 +1,5 @@
 import "server-only";
+import { CA as STOA_CA } from "@/lib/stoaAddress";
 import { aggregatorQuotes, aggregatorsOn } from "@/lib/aggregators";
 import { isAddress } from "viem";
 import { gloamSwapUrl } from "@/lib/gloam";
@@ -6,13 +7,13 @@ import { readSpotlight } from "@/lib/spotlightServer";
 import { gapHistory } from "@/lib/gapHistory";
 import { readSwaps } from "@/lib/routerStats";
 import { readPoints } from "@/lib/points";
-import { venueSnapshot } from "@/lib/venueSnapshot";
+import { quoteVenues, venueSnapshot } from "@/lib/venueSnapshot";
 import { API_HEADERS, apiQuote, limited } from "@/lib/api";
 import { NETS, netByKey } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
 import { readSafety } from "@/lib/safety";
 import { mid, stockTokens } from "@/lib/stocks";
-import { createPublicClient, http, parseUnits } from "viem";
+import { createPublicClient, erc20Abi, formatUnits, http, parseUnits } from "viem";
 import { ROBINHOOD } from "@/lib/networks";
 import { srv } from "@/lib/serverRpc";
 import { newId, readRequest, requestUrl } from "@/lib/pay";
@@ -118,6 +119,17 @@ export const TOOLS = [
       minLiquidityUsd: { type: "number", description: "Minimum on-chain liquidity, default 50000." },
       limit: { type: "number", description: "How many, 1 to 20, default 10." },
       historyFor: { type: "string", description: "Optional ticker (e.g. TSLA): also return its gap every 6 hours for the last 7 days." },
+    } },
+    annotations: ro,
+  },
+  {
+    name: "compare_venues",
+    title: "One swap on every venue",
+    description: "Quote one swap on Robinhood Chain on every venue Stoa's router uses (Uniswap V2/V3/V4, Aero, Ramses, Pons curves, Metric pools), each alone and before fees, in the same block, next to what Stoa's own route returns after its 2 bps fee. Shows which venue pays the most for this exact amount and how far the others are. Read-only.",
+    inputSchema: { type: "object", additionalProperties: false, required: ["sellToken", "buyToken", "amount"], properties: {
+      sellToken: { type: "string", description: "What you sell: ETH, USDG, STOA, a stock ticker like NVDA, or a 0x address." },
+      buyToken: { type: "string", description: "What you buy, same forms." },
+      amount: { type: "string", description: "Amount to sell in whole units, e.g. \"1\" or \"0.25\"." },
     } },
     annotations: ro,
   },
@@ -280,6 +292,43 @@ export async function callTool(name: string, a: Record<string, unknown>) {
       }
       return text({ chain: "robinhood", updated: new Date(data.updated).toISOString(), side, minLiquidityUsd: minLiq, count: rows.length, stocks: rows, history,
         note: "gapPct: on-chain price vs Robinhood's mid price. A gap is information, not a trade signal: pools move, swaps pay price impact and gas, and outside US market hours Robinhood follows the overnight session. Quote the exact amount with quote before swapping. Not financial advice." });
+    }
+    case "compare_venues": {
+      const pick = async (q: string) => {
+        const v = q.trim().replace(/^\$/, "");
+        if (/^(eth|native)$/i.test(v)) return { address: NATIVE as `0x${string}`, symbol: "ETH", decimals: 18 };
+        const listed = ROBINHOOD.tokens.find((t) => t.symbol.toLowerCase() === v.toLowerCase() || t.address.toLowerCase() === v.toLowerCase());
+        if (listed) return { address: listed.address as `0x${string}`, symbol: listed.symbol, decimals: listed.decimals };
+        const st = (await stockTokens().catch(() => null))?.stocks.find((x) => x.symbol.toLowerCase() === v.toLowerCase() || x.address.toLowerCase() === v.toLowerCase());
+        const addr = st ? st.address : isAddress(v, { strict: false }) ? v : /^stoa$/i.test(v) ? STOA_CA : null;
+        if (!addr) return null;
+        const c = createPublicClient({ chain: ROBINHOOD.chain, transport: http(srv(ROBINHOOD.chain.rpcUrls.default.http[0]), { timeout: 10_000 }) });
+        const [sym, dec] = await Promise.all([
+          c.readContract({ address: addr as `0x${string}`, abi: erc20Abi, functionName: "symbol" }).catch(() => st?.symbol ?? "TOKEN"),
+          c.readContract({ address: addr as `0x${string}`, abi: erc20Abi, functionName: "decimals" }).catch(() => 18),
+        ]);
+        return { address: addr as `0x${string}`, symbol: String(sym).slice(0, 16), decimals: Number(dec) };
+      };
+      const [sell, buy] = await Promise.all([pick(String(a.sellToken ?? "")), pick(String(a.buyToken ?? ""))]);
+      if (!sell || !buy) return text(`unknown token: ${!sell ? a.sellToken : a.buyToken}. Use ETH, USDG, STOA, a stock ticker or a 0x address on Robinhood Chain.`, true);
+      if (sell.address.toLowerCase() === buy.address.toLowerCase()) return text("sellToken and buyToken must differ", true);
+      let amt: bigint;
+      try { amt = parseUnits(String(a.amount ?? "").replace(",", "."), sell.decimals); } catch { return text("amount must be a number in whole units, e.g. 0.5", true); }
+      if (amt <= 0n) return text("amount must be above zero", true);
+      const q = await quoteVenues(sell.address, buy.address, amt).catch(() => null);
+      if (!q) return text("Robinhood Chain did not answer, try again shortly", true);
+      const f = (v: bigint) => Number(formatUnits(v, buy.decimals));
+      const venues = q.venues.filter((v) => v.out !== null).sort((x, y) => (y.out! > x.out! ? 1 : -1));
+      const top = venues[0]?.out ?? 0n;
+      const bps = (v: bigint) => (top > 0n ? Number(((v - top) * 100_000n) / top) / 10 : null);
+      return text({
+        chain: "robinhood", block: q.block.toString(), sell: { symbol: sell.symbol, address: sell.address, amount: String(a.amount) }, buy: { symbol: buy.symbol, address: buy.address },
+        stoaRoute: q.router !== null ? { amountOut: f(q.router), vsTopVenueBps: bps(q.router), note: "after Stoa's 2 bps fee" } : null,
+        venues: venues.map((v) => ({ venue: v.name, address: v.address, amountOut: f(v.out!), vsTopBps: bps(v.out!) })),
+        noQuote: q.venues.filter((v) => v.out === null).map((v) => v.name),
+        page: "https://stoadex.com/compare",
+        note: "Each venue alone, one hop, before fees, in one block. Quotes move every block and are not fills. Not financial advice.",
+      });
     }
     case "open_data": {
       const set = str(a.set) ?? "datasets", limit = Math.min(200, Math.max(1, Number(a.limit ?? 50) || 50));

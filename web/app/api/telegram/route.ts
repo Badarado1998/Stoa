@@ -40,6 +40,7 @@ In a group: /ask your question, mention me, or reply to me.
 /welcome on · group admins: greet new members with the safety basics
 /compare 1 ETH USDG · the same swap on every venue
 /follow 0xToken · Spotlight alerts when it wins, passes the quorum or is outbid
+/mywallet 0xYourWallet · a message when Spotlight leaves ETH for you to claim (private chat)
 
 Quick data, free and unlimited:
 /price STOA · /gaps · /pnl 0xWallet · /top
@@ -181,6 +182,24 @@ async function handle(m: TgMsg) {
 
   if (name === "start" && priv) { await tgSend(m.chat.id, WELCOME, undefined, START_BUTTONS); return; }
   if (name === "start" || name === "help") { await tgSend(m.chat.id, HELP); return; }
+  if (name === "mywallet") {
+    if (!priv) { await tgSend(m.chat.id, "Link your wallet in a private chat with me: it is between you and me.", m.message_id); return; }
+    if (!kvOn) { await tgSend(m.chat.id, "Claim reminders are not switched on yet.", m.message_id); return; }
+    if (/^off$/i.test(arg)) { await kv("HDEL", "tg:mywallet", m.chat.id); await tgSend(m.chat.id, "Done: I forgot your wallet and stopped claim reminders."); return; }
+    if (!isAddress(arg, { strict: false })) { const cur = await kv<string>("HGET", "tg:mywallet", m.chat.id); await tgSend(m.chat.id, cur ? `Your wallet here: <code>${cur}</code>\n/mywallet off to forget it.` : "Send <code>/mywallet 0xYourWallet</code> and I'll tell you when a Spotlight week leaves ETH for it to claim. Only the public address: never send a seed phrase or a private key, to anyone."); return; }
+    await kv("HSET", "tg:mywallet", m.chat.id, getAddress(arg));
+    await tgSend(m.chat.id, `🔦 Linked <code>${getAddress(arg)}</code>. After each Spotlight week is settled (Mondays, soon after 00:00 UTC), I'll tell you here if it has ETH to claim. /mywallet off to stop.`);
+    return;
+  }
+  if (name === "statusalerts") {
+    if (!priv) { await tgSend(m.chat.id, "Status alerts are sent in a private chat: message me directly.", m.message_id); return; }
+    if (!kvOn) { await tgSend(m.chat.id, "Status alerts are not switched on yet.", m.message_id); return; }
+    if (/^off$/i.test(arg)) { await kv("SREM", "tg:statusalerts", m.chat.id); await tgSend(m.chat.id, "Status alerts stopped."); return; }
+    if (((await kv<number>("SCARD", "tg:statusalerts")) ?? 0) >= 20) { await tgSend(m.chat.id, "Status alerts are full right now. stoadex.com/status shows the live checks."); return; }
+    await kv("SADD", "tg:statusalerts", m.chat.id);
+    await tgSend(m.chat.id, "🟢 Done: I'll message you here if stoadex.com, the router quote, the stock list or Spotlight fail for about 5-10 minutes, and again when they're back. /statusalerts off to stop.", undefined, { text: "Status page ↗", url: "https://stoadex.com/status" });
+    return;
+  }
   if (name === "compare") {
     const r = await compareText(arg).catch(() => ({ text: "Robinhood Chain did not answer just now. Try again in a minute.", buttons: undefined }));
     await tgSend(m.chat.id, r.text, m.message_id, r.buttons);

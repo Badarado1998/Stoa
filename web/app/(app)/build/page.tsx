@@ -104,6 +104,7 @@ export default function BuildPage() {
           {BOUNTIES.map((b) => <li key={b.t} style={{ marginBottom: 8 }}><b>{b.t}.</b> {b.b}{b.won && <> <span className="chip">{b.won.tx ? "Claimed" : "Won · payout pending"}</span> <a href={b.won.href} target="_blank" rel="noopener noreferrer">Entry</a>{b.won.tx && <> · <a href={b.won.tx} target="_blank" rel="noopener noreferrer">Paid tx</a></>}</>}</li>)}
         </ol>
         <p className="note" style={{ marginTop: 8 }}>To count, it has to be live and public, its code open on GitHub, and every swap it sends has to name your address as <code>referrer</code>, so you also earn the referrer share. Stoa checks each entry before paying; one bounty per person. No wash trading: entries that inflate swaps are not paid.</p>
+        <p className="note" style={{ marginTop: 8 }}><b>Payment:</b> in USDG on Robinhood Chain only (no PayPal, bank or other tokens), to a wallet posted on the entry&apos;s GitHub issue by the account that opened it. An address posted by anyone else, including look-alike accounts, is never paid. Stoa never asks for a payment or a signature to release a prize, and posts the payment transaction on the issue.</p>
         <a className="go" href="https://github.com/StoaDex/Stoa/issues/new?title=Bounty%3A%20&labels=bounty" target="_blank" rel="noopener noreferrer">Submit on GitHub</a>
       </div>
       <div className="panel pad" style={{ marginBottom: 20 }}>
