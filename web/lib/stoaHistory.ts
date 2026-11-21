@@ -32,7 +32,7 @@ export async function readStoaHistory(): Promise<StoaHistory> {
   // logs from the public RPC (it answers wide ranges), blocks from the main RPC in batches: the public one answers
   // 429 when a hundred block reads arrive at once
   const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc ?? net.chain.rpcUrls.default.http[0]), { timeout: 20_000, retryCount: 4, retryDelay: 400 }) });
-  const rc = createPublicClient({ chain: net.chain, batch: { multicall: false }, transport: http(srv(net.chain.rpcUrls.default.http[0]), { timeout: 20_000, retryCount: 4, retryDelay: 400, batch: { batchSize: 50 } }) });
+  const rc = createPublicClient({ chain: net.chain, batch: { multicall: false }, transport: http(srv(net.chain.rpcUrls.default.http[0]), { timeout: 20_000, retryCount: 2, retryDelay: 600 }) });
   const head = await rc.getBlockNumber();
   const ranges: [bigint, bigint][] = [];
   for (let f = FIRST; f <= head; f += WINDOW) ranges.push([f, f + WINDOW - 1n > head ? head : f + WINDOW - 1n]);
@@ -44,7 +44,9 @@ export async function readStoaHistory(): Promise<StoaHistory> {
   const samples: bigint[] = [];
   for (let b = FIRST; b < head; b += step) samples.push(b);
   samples.push(head);
-  const times = await inTurns(samples, 10, (b) => rc.getBlock({ blockNumber: b }).then((x) => Number(x.timestamp)));
+  // a few at a time, and from the logs RPC when the main one answers 429
+  const blockTime = (b: bigint) => rc.getBlock({ blockNumber: b }).catch(() => c.getBlock({ blockNumber: b })).then((x) => Number(x.timestamp));
+  const times = await inTurns(samples, 3, blockTime);
   const timeOf = (b: bigint) => {
     let i = samples.findIndex((s) => s > b);
     if (i <= 0) i = i === 0 ? 1 : samples.length - 1;
