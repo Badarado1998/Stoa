@@ -69,6 +69,16 @@ async function resolve(chain: string, token: string): Promise<WidgetBuy | null> 
   return { address: getAddress(token), symbol: safe.symbol, name: String(name).replace(/[<>]/g, "").slice(0, 40), decimals, logo: null, kind: "routed" };
 }
 
-/** cached ten minutes per token: the list and the routes change slowly, and the widget re-quotes live anyway */
-export const widgetToken = (chain: string, token: string) =>
-  unstable_cache(() => resolve(chain, token), ["embed-widget-token", chain, lc(token)], { revalidate: 600 })();
+/** a yes is cached ten minutes per token (the list and the routes change slowly, and the widget re-quotes live anyway) */
+export const widgetToken = (chain: string, token: string): Promise<WidgetBuy | null> =>
+  unstable_cache(
+    async () => {
+      const r = await resolve(chain, token);
+      // a "no" is never cached: a token whose check failed once (a slow RPC, a pool added since) gets its widget as
+      // soon as it passes, instead of staying off for the cache's lifetime
+      if (!r) throw new Error("no widget for this token");
+      return r;
+    },
+    ["embed-widget-token-v2", chain, lc(token)],
+    { revalidate: 600 },
+  )().catch(() => null);
