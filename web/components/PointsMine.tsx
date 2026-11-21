@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { useWalletModal } from "./Providers";
@@ -50,11 +51,16 @@ export default function PointsMine() {
               <li>From your swaps <b>{n(q.data.row.swapPoints)} · {q.data.row.swaps} {q.data.row.swaps === 1 ? "swap" : "swaps"}</b></li>
               <li>From swaps you referred <b>{n(q.data.row.refPoints)}</b></li>
             </ul>
-          ) : <p className="note">No points yet this season. Swap on Stoa, or share your referral link from Referrals.</p>}
+          ) : (
+            <>
+              <p className="note">No points yet this season. Swap on Stoa, or invite friends: their swaps through your link earn you referral points.</p>
+              {address && <ShareRow url={`https://stoadex.com/r/${address.toLowerCase()}`} text="Swapping on Robinhood Chain? Stoa compares every route for your exact amount, stock tokens included, and swaps earn Points this season. Here's my invite:" />}
+            </>
+          )}
           {q.data.row && address && (
             <>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
-              <a className="cta" href={`https://x.com/intent/post?text=${encodeURIComponent(`${q.data.points.toLocaleString("en-US", { maximumFractionDigits: 0 })} points, rank ${q.data.rank} of ${q.data.wallets} in @StoaDEX Points season 1. Swap through my card:`)}&url=${encodeURIComponent(`https://stoadex.com/points/${address.toLowerCase()}`)}`} target="_blank" rel="noopener noreferrer">Share your card on X ↗</a>
+              <ShareRow url={`https://stoadex.com/points/${address.toLowerCase()}`} text={`${q.data.points.toLocaleString("en-US", { maximumFractionDigits: 0 })} points, rank ${q.data.rank} of ${q.data.wallets} in @StoaDEX Points season 1. Swap through my card:`} />
               <a href={`/points/${address.toLowerCase()}`}>See your card</a>
             </div>
             <p className="note" style={{ marginBottom: 0 }}>Anyone who swaps through your card counts as your referral, so sharing it earns you referral points.</p>
@@ -62,6 +68,18 @@ export default function PointsMine() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/** share a Points card or an invite: X, Telegram and a copy button. The link's own card image shows in the post. */
+function ShareRow({ url, text }: { url: string; text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <a className="cta" href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">Share on X ↗</a>
+      <a className="ghost" href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text.replace("@StoaDEX ", "Stoa "))}`} target="_blank" rel="noopener noreferrer">Telegram ↗</a>
+      <button type="button" className="ghost" onClick={() => { void navigator.clipboard?.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => undefined); }}>{copied ? "Copied" : "Copy link"}</button>
     </div>
   );
 }
