@@ -29,6 +29,7 @@ import { VenueIcons, venueIds } from "./VenueIcons";
 import { findV4Pools, sameKey, type PoolKey } from "@/lib/v4";
 import { useNet, useWalletModal } from "./Providers";
 import { SpotlightPicks } from "./SpotlightStrip";
+import { useTradeLite } from "@/lib/tradeView";
 import { TokenIcon } from "./ui";
 import { useCoverOffer } from "./CoverTrade";
 import { WatchStar } from "./Watch";
@@ -139,6 +140,8 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   // Limit tab (Robinhood Chain, once StoaLimit is deployed)
   const limitLive = useLimitLive() && net.key === "robinhood";
   const [mode, setMode] = useState<"swap" | "limit">("swap");
+  const [lite, setLite] = useTradeLite();
+  useEffect(() => { if (lite) setMode("swap"); }, [lite]);
   const [limitStart, setLimitStart] = useState(0); // % above market a limit price starts at (?mode=limit&dip=5)
   const limitMode = limitLive && mode === "limit";
 
@@ -521,7 +524,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
   const outTxt = quote ? fmtAmt(quote.out, buy.decimals) : "";
 
   return (
-    <div className="grid2">
+    <div className={lite ? "tlite" : "grid2"}>
       <div className="panel pad" style={{ position: "relative" }}>
         {!deployed && <div className="notice">Stoa is not live on {net.name} yet. Wrapping {G} works; swaps open at launch.</div>}
         {deployed && isPaused && <div className="notice">Swaps are paused for safety. Your funds are not affected; wrapping {G} still works.</div>}
@@ -531,10 +534,15 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         <div className="rowx" style={{ marginBottom: 12 }}>
           <div className="seg" role="tablist">
             <button className={limitMode ? undefined : "on"} type="button" role="tab" aria-selected={!limitMode} onClick={() => setMode("swap")}>Swap</button>
-            {limitLive && <button className={limitMode ? "on" : undefined} type="button" role="tab" aria-selected={limitMode} onClick={() => setMode("limit")}>Limit</button>}
+            {limitLive && !lite && <button className={limitMode ? "on" : undefined} type="button" role="tab" aria-selected={limitMode} onClick={() => setMode("limit")}>Limit</button>}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="seg vseg" role="group" aria-label="View">
+            <button type="button" className={lite ? "on" : undefined} aria-pressed={lite} title="Only the tokens, the amount and the Swap button" onClick={() => setLite(true)}>Lite</button>
+            <button type="button" className={lite ? undefined : "on"} aria-pressed={!lite} title="Every detail: venues, limit orders, price gaps" onClick={() => setLite(false)}>Pro</button>
           </div>
           <button className="ghost" type="button" style={{ borderColor: "var(--line)", background: "#fff" }} aria-label={`Swap settings, slippage ${slip}%`} aria-expanded={showSet} onClick={() => setShowSet((s) => !s)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg>{slip}%
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></svg><span className="slipx">{slip}%</span>
           </button>
           <div className={`panel pop${showSet ? " open" : ""}`}>
             <div className="lbl">MAX SLIPPAGE</div>
@@ -544,9 +552,10 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             <label className="chk"><input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} /> Approve unlimited (fewer transactions, more exposure)</label>
             <p className="note">By default Stoa asks to approve only the amount of each swap.</p>
           </div>
+          </div>
         </div>
 
-        <WatchChips net={net} onPick={(a, via) => { if (busy) return; const st = via && tokens.find((t) => t.symbol === via); if (st && st.address !== sell.address) pick("sell", st); addCustom(a, "buy"); }} />
+        {!lite && <WatchChips net={net} onPick={(a, via) => { if (busy) return; const st = via && tokens.find((t) => t.symbol === via); if (st && st.address !== sell.address) pick("sell", st); addCustom(a, "buy"); }} />}
         <div className="box">
           <div className="row"><label className="blab" htmlFor="sellv">You sell</label>
             {sBal !== undefined && <button type="button" className="blab" style={{ border: 0, background: "none", padding: 0, cursor: sBal ? "pointer" : "default" }} onClick={() => sBal && !busy && setAmount(amountOf(sBal))}>
@@ -575,10 +584,10 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             {menu === "buy" && <TokenMenu net={net} covered={coveredSet} tokens={tokens} onPick={(t) => pick("buy", t)} onImport={(a) => addCustom(a, "buy")} onClose={closeMenu} />}
           </div>
           {quote && (usdOf(buy)?.usd ?? 0) > 0 && <div className="usd">≈ {fmtUsd((usdOf(buy)!.usd) * Number(formatUnits(quote.out, buy.decimals)))}</div>}
-          {quote && amt !== undefined && !limitMode && <StockGap sell={sell} buy={buy} amtIn={amt} out={quote.out} usdOf={usdOf} onLimit={limitLive ? (pct) => { setLimitStart(Number(pct.toFixed(3))); setMode("limit"); } : undefined} />}
+          {quote && amt !== undefined && !limitMode && !lite && <StockGap sell={sell} buy={buy} amtIn={amt} out={quote.out} usdOf={usdOf} onLimit={limitLive ? (pct) => { setLimitStart(Number(pct.toFixed(3))); setMode("limit"); } : undefined} />}
         </div>
         <MarketNote tokens={[sell, buy]} />
-        {net.key === "robinhood" && !isNative(buy) && !/^(USDG|WETH|USDC|USDT)$/.test(buy.symbol) && <CmcPanel token={buy.address} />}
+        {net.key === "robinhood" && !lite && !isNative(buy) && !/^(USDG|WETH|USDC|USDT)$/.test(buy.symbol) && <CmcPanel token={buy.address} />}
 
         {limitMode ? (
           <>
@@ -698,10 +707,11 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
         })()}
           </>
         )}
-        <p className="note hide-m">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on whichever venue Stoa routes pays the most for your amount; maker pools come later.`}</p>
+        {lite && <p className="note" style={{ textAlign: "center" }}>Lite view: same router and quotes, fewer details. Tap <b>Filled by</b> for the venues, or switch to <button type="button" className="linkbtn" onClick={() => setLite(false)}>Pro</button> for limit orders and price gaps.</p>}
+        {!lite && <p className="note hide-m">{net.makers ? `Native ${G} works directly. Maker pools cap each fill at $500 while they ramp up.` : `Native ${G} works directly. Swaps on ${net.name} fill on whichever venue Stoa routes pays the most for your amount; maker pools come later.`}</p>}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {!lite && <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {aside}
         <div className="vrow show-m">
           <span>Every swap compares</span>
@@ -721,7 +731,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             {net.pons && <div><span className="vn"><VenueIcons ids={["pons"]} />Pons launch curves</span> <em>{ponsLive ? "LIVE" : "BEING ADDED"}</em></div>}
             {net.makers && <div><span className="vn"><VenueIcons ids={["lb"]} />Liquidity Book</span> <em>{deployed ? "LIVE" : "AT LAUNCH"}</em></div>}
           </div>
-          <p className="note">Every swap compares these venues, directly and through {W}, and fills on the one that pays the most.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}</p>
+          <p className="note">Every swap compares these venues, directly and through {W}, and fills on the one that pays the most.{net.makers ? " When a maker quotes better, the router uses it automatically." : ""}{net.key === "robinhood" && <> <Link href="/compare" prefetch={false}>See them side by side</Link></>}</p>
         </div>
         {net.key === "robinhood" && (
           <a className="panel pad hide-m" href="/check" style={{ display: "block", textDecoration: "none", color: "inherit" }}>
@@ -729,7 +739,7 @@ function TradeOn({ net, aside }: { net: Net; aside?: ReactNode }) {
             <p style={{ marginTop: 8 }}>Check it free before you buy: a simulated buy and sell-back, hidden taxes and who holds it. Nothing to sign. <b style={{ color: "var(--accent)" }}>stoadex.com/check →</b></p>
           </a>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

@@ -969,3 +969,15 @@ details.fold[open] summary{margin-bottom:6px}
 
 /* links inside running text: underlined so they are not told apart by colour alone */
 .uline a{text-decoration:underline;text-underline-offset:2px}
+
+/* Trade Lite view: one centred card */
+.tlite{max-width:520px;margin:0 auto}
+.seg.vseg button{padding:6px 10px;font-size:12.5px}
+.spgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px}
+.spgrid.c{grid-template-columns:1fr}
+.spcard{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px;display:flex;flex-direction:column;gap:10px}
+.sphead{display:flex;align-items:center;gap:8px;min-width:0}
+.spsym{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sppx{margin-left:auto;font-family:var(--num);font-size:13px;white-space:nowrap}
+.spbtns{display:flex;gap:8px}.spbtns>a{flex:1;justify-content:center;min-height:36px;padding:6px 10px;font-size:13px}
+@media (max-width:420px){.seg.vseg button{padding:6px 8px}.vseg~button .slipx{display:none}}

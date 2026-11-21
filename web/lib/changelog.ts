@@ -12,6 +12,21 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "lite-compare-leaders",
+    date: "2026-11-21",
+    title: "Trade Lite, one swap on every venue, and Spotlight's top earners",
+    tag: "Robinhood Chain",
+    items: [
+      "Trade has a Lite view: just the tokens, the amount and the Swap button, with the venues one tap away. Same router and quotes; switch back to Pro any time, and your choice is remembered.",
+      "stoadex.com/compare: the same swaps quoted on every venue in one block, next to what Stoa's route returns after its 2 bps fee. Live from the chain.",
+      "stoadex.com/spotlight/leaders: the wallets Spotlight has paid the most ETH for their votes, from the first payout on.",
+      "Spotlight winners get cards with price and a safety-check link on Trade, Launches and Tokens, always marked Sponsored.",
+      "The Telegram daily report now shows each new Pons launch's safety check and the Spotlight race.",
+      "A page of official links and common scams, and \"Stoa never DMs you first\" in the footer and the bot's greeting.",
+    ],
+    link: { href: "/compare", label: "Compare venues" },
+  },
+  {
     id: "spotlight-launch-kit",
     date: "2026-11-21",
     title: "Spotlight live board, a vote card for project sites, and race alerts",

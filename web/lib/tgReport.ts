@@ -10,6 +10,7 @@ import { NATIVE } from "./tokens";
 import { tgSym } from "./telegram";
 import { readRouterStats } from "./routerStats";
 import { readSpotlight } from "./spotlightServer";
+import { readSafety } from "./safety";
 
 /** The Telegram bot's quick commands and its twice-daily market report: plain data, no AI, no quota. */
 const STOA = "0x13E6993417616De724F2b337D65063f229e96718";
@@ -49,17 +50,31 @@ export async function pnlText(w: string): Promise<string> {
 }
 
 export async function reportText(): Promise<string> {
-  const [b, stoa] = await Promise.all([
-    marketBrief().catch(() => null) as Promise<{ stocks: { symbol: string; gapPct: number }[]; launches: { symbol: string; graduated: boolean; progress: number; mcapUsd: number }[]; spotlight: { phase: string; opensAt: string | null; candidates: number } | null } | null>,
+  const [b, stoa, spot] = await Promise.all([
+    marketBrief().catch(() => null) as Promise<{ stocks: { symbol: string; gapPct: number }[]; launches: { symbol: string; token: string; graduated: boolean; progress: number; mcapUsd: number }[]; spotlight: { phase: string; opensAt: string | null; candidates: number } | null } | null>,
     marketOf([STOA]).catch(() => ({} as Awaited<ReturnType<typeof marketOf>>)),
+    readSpotlight().catch(() => null),
   ]);
   const s = stoa[STOA.toLowerCase()];
   const time = new Date().toISOString().slice(11, 16);
   const parts = [`☀️ <b>Robinhood Chain today</b> · ${time} UTC`];
   if (b?.stocks.length) parts.push("📈 <b>Furthest from Robinhood</b>\n" + b.stocks.map((x) => `${tgSym(x.symbol)} ${x.gapPct >= 0 ? "+" : ""}${x.gapPct.toFixed(2)}%`).join(" · "));
   const launches = (b?.launches ?? []).filter((l, i, a) => l.mcapUsd > 0 && a.findIndex((x) => x.symbol === l.symbol) === i);
-  if (launches.length) parts.push("🚀 <b>Newest on Pons</b>\n" + launches.map((l) => `${tgSym(l.symbol)} · ${l.graduated ? "bonded" : `${Math.round(l.progress)}% curve`} · mcap ${usd(l.mcapUsd)}`).join("\n") + "\n<i>New launches are risky: /safe the address first.</i>");
-  if (b?.spotlight?.opensAt && b.spotlight.phase === "before_week_1") parts.push(`🔦 <b>Spotlight</b> opens ${new Date(b.spotlight.opensAt).toUTCString().slice(0, 22)} UTC`);
+  // each new launch with its safety check (a simulated buy and sell-back): passed, caution or failed; no tag if unknown
+  const tag = { ok: " · ✅ sell test passed", caution: " · ⚠️ caution", danger: " · ⛔ sell test failed", unknown: "" } as const;
+  const safe = await Promise.all(launches.map((l) => (isAddress(l.token) ? Promise.race([readSafety(ROBINHOOD, getAddress(l.token)).then((x) => x.verdict), new Promise<"unknown">((r) => setTimeout(() => r("unknown"), 12_000))]).catch(() => "unknown" as const) : Promise.resolve("unknown" as const))));
+  if (launches.length) parts.push("🚀 <b>Newest on Pons</b>\n" + launches.map((l, i) => `${tgSym(l.symbol)} · ${l.graduated ? "bonded" : `${Math.round(l.progress)}% curve`} · mcap ${usd(l.mcapUsd)}${tag[safe[i]]}`).join("\n") + "\n<i>New launches are risky, even after a passed test: /safe the address first.</i>");
+  if (spot?.phase === "before_week_1" && spot.opensAt) parts.push(`🔦 <b>Spotlight</b> opens ${new Date(spot.opensAt).toUTCString().slice(0, 22)} UTC`);
+  else if (spot && !spot.paused) {
+    const live = spot.candidates.filter((c) => !c.canceled);
+    const winning = live.filter((c) => c.reachesQuorum).slice(0, spot.rules.slots);
+    const close = spot.phase === "bids_open" ? `bids close ${utcShort(spot.bidsCloseAt)}` : `votes close ${utcShort(spot.votesCloseAt)}`;
+    const head = `🔦 <b>Spotlight week ${spot.week}</b> · ${close} · ${mStoa(spot.stoaLocked)} $STOA locked`;
+    const body = !live.length ? "No bids yet." : winning.length
+      ? "Winning now: " + winning.map((c) => `${tgSym(c.symbol ?? c.token.slice(0, 8))} (${c.bidEth.toLocaleString("en-US", { maximumFractionDigits: 3 })} ETH)`).join(", ") + "."
+      : `${live.length} bid${live.length > 1 ? "s" : ""} in, none has ${mStoa(spot.rules.quorumStoa)} votes yet.`;
+    parts.push(`${head}\n${body} /spotlight for the full race.`);
+  }
   if (s) parts.push(`🏛 <b>$STOA</b> ${usd(s.usd)} · 24h ${pct(s.ch24)}`);
   parts.push("Ask me anything with /ask. Not financial advice.");
   return parts.join("\n\n");

@@ -194,7 +194,7 @@ export default function SpotlightBody() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <PageHead eyebrow="SPOTLIGHT · ROBINHOOD CHAIN" title="Projects pay ETH. $STOA holders earn it." action={<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="cta" href="/spotlight/projects">For projects</Link><Link className="ghost" href="/spotlight/live">Live board</Link><Link className="ghost" href="/docs/spotlight">How it works</Link><a className="ghost" href="/cal/spotlight.ics">Add weekly reminders</a></div>}>
+      <PageHead eyebrow="SPOTLIGHT · ROBINHOOD CHAIN" title="Projects pay ETH. $STOA holders earn it." action={<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="cta" href="/spotlight/projects">For projects</Link><Link className="ghost" href="/spotlight/live">Live board</Link><Link className="ghost" href="/spotlight/leaders">Top earners</Link><Link className="ghost" href="/docs/spotlight">How it works</Link><a className="ghost" href="/cal/spotlight.ics">Add weekly reminders</a></div>}>
         Every week projects bid ETH for three sponsored slots on Stoa. $STOA holders lock and vote. The three largest bids that reach the vote quorum win, and 90% of their ETH goes to the holders who voted for them. The other 10% buys $STOA and burns it.
       </PageHead>
 
