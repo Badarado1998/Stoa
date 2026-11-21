@@ -20,12 +20,15 @@ export async function GET(req: Request) {
   const chats = ((await kv<string[]>("SMEMBERS", "tg:report")) ?? []).slice(0, 500);
   if (!chats.length) return Response.json({ ok: true, chats: 0 });
   const d = new Date();
-  // Mondays 01:00 UTC: last week's Points top 5 too
+  // Mondays 01:00 UTC: last week's recap and the Points top 10 too, with a button to the board
   const monday = d.getUTCDay() === 1 && d.getUTCHours() === 1;
   const text = monday
-    ? `${await weeklyText().catch(() => "")}\n\n${await topText(5).catch(() => "")}\n\n${await reportText()}`
+    ? `${await weeklyText().catch(() => "")}\n\n${await topText(10).catch(() => "")}\n\n${await reportText()}`
     : await reportText();
   let sent = 0;
-  for (const c of chats) if (await tgSend(c, text, undefined, { text: "Ask Stoa AI ↗", url: "https://stoadex.com/ai" })) sent++;
+  const buttons = monday
+    ? [[{ text: "Points board ↗", url: "https://stoadex.com/points" }, { text: "Ask Stoa AI ↗", url: "https://stoadex.com/ai" }]]
+    : [[{ text: "Ask Stoa AI ↗", url: "https://stoadex.com/ai" }]];
+  for (const c of chats) if (await tgSend(c, text, undefined, buttons)) sent++;
   return Response.json({ ok: true, chats: chats.length, sent });
 }
