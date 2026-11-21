@@ -965,3 +965,6 @@ details.fold[open] summary{margin-bottom:6px}
 .qchips button{min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font:500 13px var(--sans);cursor:pointer}
 .qchips button:hover{border-color:var(--accent);color:var(--accent-d)}
 .dmain img{display:block;max-width:min(100%,380px);height:auto;margin:16px 0;border-radius:14px;border:1px solid var(--line)}
+
+/* links inside running text: underlined so they are not told apart by colour alone */
+.uline a{text-decoration:underline;text-underline-offset:2px}

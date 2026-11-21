@@ -29,7 +29,7 @@ function Q({ q, children }: { q: string; children: React.ReactNode }) {
   return (
     <div className="panel pad">
       <h2 style={{ fontSize: 20, margin: "0 0 8px" }}>{q}</h2>
-      <div style={{ lineHeight: 1.6 }}>{children}</div>
+      <div className="uline" style={{ lineHeight: 1.6 }}>{children}</div>
     </div>
   );
 }

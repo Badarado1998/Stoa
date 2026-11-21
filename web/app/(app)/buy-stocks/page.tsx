@@ -43,7 +43,7 @@ export default async function BuyStocks() {
       <PageHead eyebrow="GUIDE · STOCK TOKENS" title={title} action={<Link className="cta" href="/stocks">All stock tokens</Link>}>
         Tokenized US stocks and ETFs, held in your own wallet and swappable at any hour. {routed.length ? `${all.filter((s) => s.route).length} of them can be swapped on Stoa right now.` : ""}
       </PageHead>
-      <div className="panel pad">
+      <div className="panel pad uline">
         <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 12, lineHeight: 1.55 }}>
           {STEPS.map(([n, b]) => <li key={n}><b>{n}.</b> {b}</li>)}
         </ol>

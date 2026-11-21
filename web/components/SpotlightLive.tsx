@@ -63,7 +63,7 @@ export default function SpotlightLive({ initial, history }: { initial: Snap | nu
       <div className="panel pad">
         <div className="rowx"><div className="lbl">THE RACE · WEEK {s.week}</div><span className="chip">{live.length} bid{live.length === 1 ? "" : "s"}</span></div>
         {live.length === 0 ? (
-          <p style={{ marginBottom: 0 }}>{s.phase === "before_week_1" ? "Bids open with week 1." : "No bids yet this week."} Projects bid on <Link href="/spotlight/projects">Spotlight for projects</Link>.</p>
+          <p className="uline" style={{ marginBottom: 0 }}>{s.phase === "before_week_1" ? "Bids open with week 1." : "No bids yet this week."} Projects bid on <Link href="/spotlight/projects">Spotlight for projects</Link>.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 12 }}>
             {live.map((c, i) => {
