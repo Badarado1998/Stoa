@@ -92,6 +92,12 @@ export default async function VotePage({ params }: P) {
           <CopyButton text={url} label="Copy link" />
           <a className="ghost" href={`/api/spotlight/card/${v.token.toLowerCase()}`} download>Download the card</a>
         </div>
+        <div className="lbl" style={{ marginTop: 16 }}>ON YOUR WEBSITE</div>
+        <p className="note">A live &quot;Vote for {v.symbol}&quot; card with the bid, the votes and a button to vote on Stoa. Paste it where the card should show; it never connects a wallet.</p>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <code style={{ fontSize: 12, overflowWrap: "anywhere", flex: "1 1 240px" }}>{`<script src="https://stoadex.com/stoa-spotlight.js" data-token="${v.token.toLowerCase()}" defer></script>`}</code>
+          <CopyButton text={`<script src="https://stoadex.com/stoa-spotlight.js" data-token="${v.token.toLowerCase()}" defer></script>`} label="Copy code" />
+        </div>
         <p className="note" style={{ marginBottom: 0 }}>Slots are sponsored and not reviewed by Stoa. Payouts depend only on what projects bid; nothing is promised, and this is not financial advice.</p>
       </div>
     </section>

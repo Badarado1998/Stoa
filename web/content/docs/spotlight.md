@@ -43,6 +43,14 @@ Parameter changes go through the 48-hour timelock and apply from the following w
 
 Every token in the week's race has its own page, `stoadex.com/spotlight/vote/<token address>`, with its bid, its votes against the quorum, how to vote for it and a share card for X and Telegram. Projects can share it with their community; the Share link next to each token in the race table and the bid panel lead there.
 
+Right after a bid confirms, the bid panel shows the project's share kit: its vote page, a ready post for X and Telegram, and its "Vote for $X" card to download (`stoadex.com/api/spotlight/card/<token address>`). To show a live card on the project's own website, paste one line where it should appear:
+
+```html
+<script src="https://stoadex.com/stoa-spotlight.js" data-token="0xYourToken" defer></script>
+```
+
+The card shows the bid, the votes against the quorum and whether the token wins now, with a button that opens Stoa to vote. It never connects a wallet. The live board at `stoadex.com/spotlight/live` shows the whole race, and the Telegram bot answers `/spotlight` and tells groups that turned on `/report` when a token bids, passes the quorum, or takes a winning place.
+
 ## Safety
 
 - **Sponsored, not reviewed.** Every slot says "Sponsored" and links here. Stoa does not review the projects: a winning token can still go to zero.
