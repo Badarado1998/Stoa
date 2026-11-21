@@ -19,7 +19,7 @@ export async function ogFonts() {
   ];
 }
 
-async function dataUrl(rel: string) {
+export async function dataUrl(rel: string) {
   const type = rel.endsWith(".svg") ? "image/svg+xml" : "image/png";
   return `data:${type};base64,${(await readFile(join(root, "public", rel))).toString("base64")}`;
 }
