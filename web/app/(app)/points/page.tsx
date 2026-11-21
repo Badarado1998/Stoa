@@ -19,7 +19,7 @@ export default async function PointsPage() {
   const start = new Date(SEASON_START * 1000).toUTCString().slice(0, 16);
   return (
     <section className="page">
-      <PageHead eyebrow="POINTS · SEASON 1" title="Swap, refer, collect points" action={<a className="ghost" href="/cal/points.ics">Add the start to your calendar</a>}>
+      <PageHead eyebrow="POINTS · SEASON 1" title="Swap, refer, collect points" action={started ? <Link className="ghost" href="/referrals">Your referral link</Link> : <a className="ghost" href="/cal/points.ics">Add the start to your calendar</a>}>
         Every swap routed through Stoa earns points, and so does every swap made through your referral link. {started ? `Season 1 started ${start}, 00:00 UTC.` : `Season 1 starts ${start}, 00:00 UTC.`}
       </PageHead>
       <div className="notice" style={{ marginBottom: 16 }}>
