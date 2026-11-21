@@ -1,4 +1,5 @@
 "use client";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useReadContract } from "wagmi";
 import { ROBINHOOD } from "@/lib/networks";
@@ -16,10 +17,16 @@ const cmp = (v: bigint) => Number(v / 10n ** 18n).toLocaleString("en-US", { nota
 export default function SpotlightBanner({ variant = "bar" }: { variant?: "pill" | "bar" }) {
   const live = useSpotLive();
   const now = useNow(30_000);
-  const locked = useReadContract({
+  // $STOA that can vote (pending unlocks excluded), from the server's snapshot; the contract's total as a fallback
+  const total = useReadContract({
     address: SPOT, abi: spotlightAbi, functionName: "totalLocked", chainId: net.chain.id,
     query: { enabled: live, refetchInterval: 60_000 },
   }).data as bigint | undefined;
+  const voting = useQuery({
+    queryKey: ["spot-api-locked"], enabled: live, refetchInterval: 60_000,
+    queryFn: async () => { const j = (await (await fetch("/api/v1/spotlight")).json()) as { stoaLocked?: number }; return typeof j.stoaLocked === "number" ? BigInt(Math.floor(j.stoaLocked)) * 10n ** 18n : undefined; },
+  }).data;
+  const locked = voting ?? total;
   if (!live || now === 0) return null;
 
   const e = epochAt(now);

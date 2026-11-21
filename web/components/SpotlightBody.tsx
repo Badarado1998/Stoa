@@ -534,7 +534,7 @@ function HolderPanel({ race, started, paused, onDone }: { race: number; started:
       {active + pending > 0n && (
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
           <div className="lbl">UNLOCK</div>
-          <p className="note" style={{ marginTop: 4 }}>Request unlock uses the amount above (up to {stoaN(avail)} STOA now).</p>
+          <p className="note" style={{ marginTop: 4 }}>Request unlock uses the amount above (up to {stoaN(avail)} STOA now).{avail !== undefined && avail > 0n && <> <button type="button" className="linkbtn" onClick={() => setAmt(formatUnits(avail, 18))}>Use all {stoaN(avail)}</button></>}</p>
           {btn("Request unlock", () => send("Request unlock", () => w("requestUnlock", raw!)), !raw || raw > (avail ?? 0n))}
           {btn("Withdraw", () => send("Withdraw", () => writeContractAsync({ address: SPOT!, abi: spotlightAbi, functionName: "withdraw", args: [address!], chainId: net.chain.id })), pending === 0n || unlockAt > now)}
         </div>

@@ -37,7 +37,7 @@ const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const BOUNTIES: { t: string; b: string; won?: { href: string; tx?: string } }[] = [
   { t: "Telegram bot", b: "A bot in a public group that answers /quote and /check for any Robinhood Chain token, using Stoa's HTTP API or MCP server, and links each quote to a swap on Stoa.", won: { href: "https://github.com/StoaDex/Stoa/issues/7", tx: "https://robinhoodchain.blockscout.com/tx/0xcb332b52c50dfd461da2895886c37d47aa3d70d0d8271a35c5d4d7007ee3544c" } },
   { t: "Swap widget on a token's site", b: "Stoa's swap widget or buy card live on the website of a token that trades on Robinhood Chain, added by you with the project's agreement." },
-  { t: "Public dashboard", b: "A public dashboard of Stoa's swaps on Robinhood Chain (volume, traders, routes per venue) built from on-chain data on Dune, Blockscout or your own site, with its queries shared.", won: { href: "https://github.com/StoaDex/Stoa/issues/9" } },
+  { t: "Public dashboard", b: "A public dashboard of Stoa's swaps on Robinhood Chain (volume, traders, routes per venue) built from on-chain data on Dune, Blockscout or your own site, with its queries shared.", won: { href: "https://github.com/StoaDex/Stoa/issues/9", tx: "https://robinhoodchain.blockscout.com/tx/0xe35f1147a01a44d32108d6186d3e32dd4d2b5a6422972bc67e1863eeeebab026" } },
 ];
 
 const SOL = `// 1. off-chain: route = router.quote(USDC, WHYPE, 250e6)  (eth_call)

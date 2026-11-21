@@ -1,9 +1,19 @@
-import { createPublicClient, erc20Abi, formatEther, http, type Address } from "viem";
+import { createPublicClient, erc20Abi, formatEther, http, parseAbiItem, type Address } from "viem";
+import { getLogsOn } from "./logs";
 import { ROBINHOOD } from "./networks";
 import { srv } from "@/lib/serverRpc";
 import { BID_WINDOW, SLOTS, SPOT, SPOT_START, WEEK, epochAt, epochStart, spotlightAbi } from "./spotlight";
 
 const net = ROBINHOOD;
+const lockedEv = parseAbiItem("event Locked(address indexed holder, uint256 amount)");
+
+async function votingLocked(c: { multicall: (a: never) => Promise<unknown> }, spot: Address): Promise<bigint> {
+  const logs = (await getLogsOn(net, { address: spot, event: lockedEv, fromBlock: net.deployBlock })) as unknown as { args: { holder: Address } }[];
+  const holders = [...new Set(logs.map((l) => l.args.holder.toLowerCase()))] as Address[];
+  if (!holders.length) return 0n;
+  const accts = (await c.multicall({ contracts: holders.map((h) => ({ address: spot, abi: spotlightAbi, functionName: "accounts", args: [h] })), allowFailure: false } as never)) as unknown as (readonly [bigint, bigint, bigint])[];
+  return accts.reduce((a, x) => a + x[0], 0n);
+}
 const iso = (t: number) => new Date(t * 1000).toISOString();
 const stoa = (v: bigint) => Number(formatEther(v));
 
@@ -58,7 +68,10 @@ export async function readSpotlight() {
         opensAt: e < 0 ? iso(SPOT_START) : null,
         bidsCloseAt: iso(start + BID_WINDOW), votesCloseAt: iso(start + WEEK),
         rules: { slots: Number(p.slots) || SLOTS, quorumStoa: stoa(p.quorum), minBidEth: Number(formatEther(p.minBid)), maxBidEth: Number(formatEther(p.maxBid)), entryFeeEth: Number(formatEther(p.entryFee)), toVotersPct: 100 - Number(p.cutBps) / 100 },
-        stoaLocked: stoa(locked as bigint),
+        // $STOA that can vote: each locker's active balance; a requested unlock stops voting at once (it stays in the
+        // contract until withdrawn, so totalLocked still counts it)
+        stoaLocked: stoa(await votingLocked(c, spot).catch(() => locked as bigint)),
+        stoaInContract: stoa(locked as bigint),
         candidates,
         lastWeekWinners: prev ? prev[4].map((t) => ({ token: t, symbol: sym(t) })) : [],
         totals: { ethPaidToVoters: Number(formatEther(paid as bigint)), stoaBurned: stoa(burned as bigint) },
