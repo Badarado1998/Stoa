@@ -420,7 +420,19 @@ html,body{overflow-x:clip}
 .em-q b{color:var(--accent-d)}.em-q small{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
 .em-buy{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;font-size:15px;text-decoration:none;box-shadow:none}
 .em-buy:hover{background:var(--accent-d)}
-.em-foot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted)}.em-foot a{color:var(--muted);text-decoration:none}.em-foot b{font-family:var(--serif);letter-spacing:.2em;font-weight:400;color:var(--ink)}
+.em-foot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted)}
+/* /embed/spotlight: the whole race */
+.em-race{display:flex;flex-direction:column;gap:6px}
+.em-rrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;color:inherit;text-decoration:none}
+.em-rrow:hover{border-color:var(--accent)}
+.em-rk{flex:none;width:22px;height:22px;border-radius:999px;background:#EAF1FB;color:var(--accent-d);font:600 12px/22px var(--mono);text-align:center}
+.em-rmain{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.em-rtop,.em-rsub{display:flex;justify-content:space-between;gap:8px}
+.em-rtop b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.em-rtop span{font-family:var(--num);font-size:14px;white-space:nowrap}
+.em-rsub{font-size:11.5px;color:var(--muted)}.em-rsub .em-win{color:#1E6B41;font-weight:600}
+.em-rbar{display:block;height:5px;border-radius:5px;background:rgba(47,111,214,.12);overflow:hidden}.em-rbar>span{display:block;height:100%;background:var(--accent)}
+.em-dark .em-rrow{background:#0F1520;border-color:#2A3550}.em-dark .em-rk{background:#1C2A45;color:#8FB6FF}.em-dark .em-rsub{color:#9AA8C2}.em-dark .em-rsub .em-win{color:#5FD49A}
+.em-foot a{color:var(--muted);text-decoration:none}.em-foot b{font-family:var(--serif);letter-spacing:.2em;font-weight:400;color:var(--ink)}
 /* ---------- Stoa Wrapped ---------- */
 .wr-wrap{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:36px;align-items:center}
 .wr-stage{perspective:1100px;display:flex;justify-content:center;padding:10px 0 20px}

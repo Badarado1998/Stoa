@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "race-card-live-cards",
+    date: "2026-11-22",
+    title: "The Spotlight race on any website, and live link cards for Compare and Top earners",
+    tag: "Robinhood Chain",
+    items: [
+      "One line puts the whole Spotlight race on a website: this week's bids, each token's votes against the quorum and which ones win now, light or dark. The code is on the live board and in the docs.",
+      "Links to /compare now preview with a live card: one swap quoted on every venue in the same block, next to Stoa's route.",
+      "Links to Spotlight's Top earners preview with the top three wallets and the ETH paid to voters, or the date of the first payouts.",
+    ],
+    link: { href: "/spotlight/live", label: "Get the race card" },
+  },
+  {
     id: "miniapps-push-follow",
     date: "2026-11-21",
     title: "Stoa inside Telegram and Farcaster, notifications, Spotlight alerts and weekly streaks",

@@ -51,6 +51,19 @@ Open the token's page under [Tokens](https://stoadex.com/tokens) (or a launch's 
 | `ref` | Optional. Your wallet address: swaps made through the card pay you the referral share |
 | Size | 230 px high fits the card; any width from about 300 px |
 
+## Spotlight cards
+
+Two live cards for [Spotlight](spotlight.md), Stoa's weekly race for sponsored slots. Paste one line where the card should show:
+
+```html
+<!-- the whole race: this week's bids, each token's votes, which ones win now -->
+<script src="https://stoadex.com/stoa-spotlight.js" defer></script>
+<!-- one token's "Vote for us" card -->
+<script src="https://stoadex.com/stoa-spotlight.js" data-token="0xYourToken" defer></script>
+```
+
+The race card takes `data-rows` (3 to 8, default 5) and `data-theme="dark"`. Both cards take `data-width` (280 to 600 px). They open Stoa in a new tab and never connect a wallet. Spotlight slots are sponsored and not reviewed by Stoa.
+
 ## What you earn
 
 The same as any referral link: 10% of the 2 bps protocol fee on each swap made through the card, booked to your address in the FeeDistributor and claimable on [Referrals](https://stoadex.com/referrals). See [Referrals](referrals.md).

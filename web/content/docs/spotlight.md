@@ -49,7 +49,12 @@ Right after a bid confirms, the bid panel shows the project's share kit: its vot
 <script src="https://stoadex.com/stoa-spotlight.js" data-token="0xYourToken" defer></script>
 ```
 
-The card shows the bid, the votes against the quorum and whether the token wins now, with a button that opens Stoa to vote. It never connects a wallet. The live board at `stoadex.com/spotlight/live` shows the whole race, and the Telegram bot answers `/spotlight` and tells groups that turned on `/report` when a token bids, passes the quorum, or takes a winning place.
+The card shows the bid, the votes against the quorum and whether the token wins now, with a button that opens Stoa to vote. It never connects a wallet. Leave out `data-token` to show the whole race instead: this week's bids, each token's votes against the quorum and which ones win now (`data-rows="3"` to `"8"`, `data-theme="dark"` for a dark card):
+
+```html
+<script src="https://stoadex.com/stoa-spotlight.js" defer></script>
+```
+ The live board at `stoadex.com/spotlight/live` shows the whole race, and the Telegram bot answers `/spotlight` and tells groups that turned on `/report` when a token bids, passes the quorum, or takes a winning place.
 
 ## Safety
 
