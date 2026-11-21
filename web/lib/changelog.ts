@@ -12,6 +12,33 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "spotlight-launch-kit",
+    date: "2026-11-21",
+    title: "Spotlight live board, a vote card for project sites, and race alerts",
+    tag: "Robinhood Chain",
+    items: [
+      "stoadex.com/spotlight/live: a countdown to the next close, every bid's votes against the 1M quorum, ETH paid to voters and $STOA burned.",
+      "Projects get a share kit right after they bid: their vote page, a ready post, a card to download, and a one-line \"Vote for us\" card for their own website.",
+      "Telegram: /spotlight shows the race with Vote buttons, and groups with /report on hear when a token bids, passes the quorum or takes a winning place.",
+      "Ask Stoa AI \"who is winning Spotlight?\" or \"what would I earn voting for X?\": it reads the race and gives an estimate.",
+      "Every finished week gets a recap page with its winners and the ETH their voters got. On phones, the vote boxes now sit under each token.",
+    ],
+    link: { href: "/spotlight/live", label: "Live board" },
+  },
+  {
+    id: "safe-guides-antispam",
+    date: "2026-11-21",
+    title: "\"Is Stoa safe?\", a stock token guide, and anti-spam for Telegram groups",
+    tag: "Robinhood Chain",
+    items: [
+      "stoadex.com/safe answers \"is Stoa safe?\" in plain words, with live figures and the real risks, so anyone can check a rumour themselves.",
+      "stoadex.com/buy-stocks: how to buy stock tokens on Robinhood Chain from any chain, with the stocks Stoa can swap now.",
+      "Telegram group admins can turn on /antispam (removes seed-phrase, DM-bait and spaced-letter scam messages) and /welcome (greets new members with the safety basics).",
+      "Share your Points card or your invite on X, Telegram or by link, even before your first swap.",
+    ],
+    link: { href: "/safe", label: "Is Stoa safe?" },
+  },
+  {
     id: "telegram-alerts-spotlight",
     date: "2026-11-21",
     title: "Price alerts, Points board and Stoa inside Telegram; Spotlight from Stoa AI",
