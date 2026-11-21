@@ -28,7 +28,12 @@ const nextConfig = {
     "/sitemap.xml": ["./content/docs/**/*"],
     "/docs/[slug]": ["./content/docs/**/*"],
   },
-  // WalletConnect's logger optionally requires these; they are not needed in the browser
+  // Next 16 builds with Turbopack. WalletConnect's logger optionally requires pino-pretty, lokijs and encoding;
+  // they are not needed in the browser, so Turbopack resolves them to an empty module
+  turbopack: {
+    resolveAlias: { "pino-pretty": "./lib/empty.js", lokijs: "./lib/empty.js", encoding: "./lib/empty.js" },
+  },
+  // the same for a webpack build (next build --webpack)
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
