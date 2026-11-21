@@ -17,13 +17,26 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 export type StoaDay = { date: string; holders: number; burned: number; locked: number; curve: number };
 export type StoaHistory = { days: StoaDay[]; holders: number; transfers: number; updated: number };
 
+/** runs `fn` over `items` with at most `n` at a time, keeping the order */
+async function inTurns<T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (next < items.length) { const i = next++; out[i] = await fn(items[i]); }
+  }));
+  return out;
+}
+
 export async function readStoaHistory(): Promise<StoaHistory> {
   const net = ROBINHOOD;
-  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc ?? net.chain.rpcUrls.default.http[0]), { timeout: 20_000 }) });
-  const head = await c.getBlockNumber();
+  // logs from the public RPC (it answers wide ranges), blocks from the main RPC in batches: the public one answers
+  // 429 when a hundred block reads arrive at once
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.logsRpc ?? net.chain.rpcUrls.default.http[0]), { timeout: 20_000, retryCount: 4, retryDelay: 400 }) });
+  const rc = createPublicClient({ chain: net.chain, batch: { multicall: false }, transport: http(srv(net.chain.rpcUrls.default.http[0]), { timeout: 20_000, retryCount: 4, retryDelay: 400, batch: { batchSize: 50 } }) });
+  const head = await rc.getBlockNumber();
   const ranges: [bigint, bigint][] = [];
   for (let f = FIRST; f <= head; f += WINDOW) ranges.push([f, f + WINDOW - 1n > head ? head : f + WINDOW - 1n]);
-  const chunks = await Promise.all(ranges.map(([fromBlock, toBlock]) => c.getLogs({ address: CA, event: ev, fromBlock, toBlock })));
+  const chunks = await inTurns(ranges, 3, ([fromBlock, toBlock]) => c.getLogs({ address: CA, event: ev, fromBlock, toBlock }));
   const logs = chunks.flat().sort((a, b) => (a.blockNumber === b.blockNumber ? (a.logIndex ?? 0) - (b.logIndex ?? 0) : Number(a.blockNumber! - b.blockNumber!)));
 
   // block -> time, by sampling and interpolating
@@ -31,7 +44,7 @@ export async function readStoaHistory(): Promise<StoaHistory> {
   const samples: bigint[] = [];
   for (let b = FIRST; b < head; b += step) samples.push(b);
   samples.push(head);
-  const times = await Promise.all(samples.map((b) => c.getBlock({ blockNumber: b }).then((x) => Number(x.timestamp))));
+  const times = await inTurns(samples, 10, (b) => rc.getBlock({ blockNumber: b }).then((x) => Number(x.timestamp)));
   const timeOf = (b: bigint) => {
     let i = samples.findIndex((s) => s > b);
     if (i <= 0) i = i === 0 ? 1 : samples.length - 1;
