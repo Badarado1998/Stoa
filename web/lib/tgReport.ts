@@ -83,3 +83,39 @@ export async function weeklyText(): Promise<string> {
   if (w.length) parts.push(`🔦 Spotlight winners: ${w.map((x) => tgSym(x.symbol ?? x.token.slice(0, 8))).join(", ")}. Their voters can claim ETH on stoadex.com/spotlight`);
   return parts.join("\n");
 }
+
+const left = (iso: string) => {
+  const s = Math.max(0, Math.floor((Date.parse(iso) - Date.now()) / 1000));
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+};
+const utcShort = (iso: string) => { const d = new Date(iso); return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${d.getUTCDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()]} ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} UTC`; };
+const mStoa = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(2).replace(/\.?0+$/, "")}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : `${Math.round(v)}`);
+
+/** /spotlight: the race this week, read from SpotlightMarket, with a Vote button for the leading tokens */
+export async function spotlightText(): Promise<{ text: string; buttons: { text: string; url: string }[][] }> {
+  const s = await readSpotlight().catch(() => null);
+  const main = [{ text: "Lock and vote ↗", url: "https://stoadex.com/spotlight#race" }];
+  if (!s) return { text: "Spotlight did not answer right now. Try again in a minute, or open stoadex.com/spotlight.", buttons: [main] };
+  const lines = [`🔦 <b>Stoa Spotlight · week ${s.week}</b>`];
+  if (s.paused) lines.push("⏸ Paused: no new bids, locks or votes. Claims and refunds still work.");
+  if (s.phase === "before_week_1" && s.opensAt) lines.push(`Opens <b>${utcShort(s.opensAt)}</b> (in ${left(s.opensAt)}). Lock $STOA now so your votes are ready.`);
+  else if (s.phase === "bids_open") lines.push(`Bids close ${utcShort(s.bidsCloseAt)} (in ${left(s.bidsCloseAt)}) · votes close ${utcShort(s.votesCloseAt)}`);
+  else lines.push(`Bids are final · votes close <b>${utcShort(s.votesCloseAt)}</b> (in ${left(s.votesCloseAt)})`);
+  lines.push(`${mStoa(s.stoaLocked)} $STOA locked · each winner needs ${mStoa(s.rules.quorumStoa)} votes`);
+  const live = s.candidates.filter((c) => !c.canceled);
+  const winning = new Set(live.filter((c) => c.reachesQuorum).slice(0, s.rules.slots).map((c) => c.token));
+  if (live.length) {
+    lines.push("");
+    live.slice(0, 8).forEach((c, i) => {
+      const sym = tgSym(c.symbol ?? `${c.token.slice(0, 6)}…`);
+      const st = winning.has(c.token) ? "✅ winning now" : c.reachesQuorum ? "outbid" : `needs ${mStoa(s.rules.quorumStoa - c.votesStoa)} more votes`;
+      lines.push(`${i + 1}. <b>${sym}</b> · ${c.bidEth.toLocaleString("en-US", { maximumFractionDigits: 4 })} ETH · ${mStoa(c.votesStoa)} votes · ${st}`);
+    });
+    if (live.length > 8) lines.push(`…and ${live.length - 8} more`);
+  } else if (s.phase !== "before_week_1") lines.push("\nNo bids yet this week. Projects bid on stoadex.com/spotlight/projects.");
+  if (s.lastWeekWinners.length) lines.push(`\nLast week: ${s.lastWeekWinners.map((w) => tgSym(w.symbol ?? w.token.slice(0, 8))).join(", ")}. Their voters can claim ETH.`);
+  lines.push(`\n${s.rules.toVotersPct}% of a winning bid goes to its voters, in ETH. Sponsored slots, not reviewed by Stoa. Nothing is promised; not financial advice.`);
+  const votes = live.slice(0, 3).map((c) => ({ text: `Vote ${(c.symbol ?? c.token.slice(0, 6)).slice(0, 12)} ↗`, url: `https://stoadex.com/spotlight/vote/${c.token.toLowerCase()}` }));
+  return { text: lines.join("\n"), buttons: votes.length ? [main, votes] : [main] };
+}

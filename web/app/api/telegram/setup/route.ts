@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     { command: "gaps", description: "Stock tokens vs Robinhood's price" },
     { command: "pnl", description: "PnL of a wallet's swaps through Stoa: /pnl 0x…" },
     { command: "watchlist", description: "Your watchlist: /watchlist add NVDA STOA" },
+    { command: "spotlight", description: "This week's Spotlight race, with Vote buttons" },
     { command: "top", description: "Points leaderboard" },
     { command: "alert", description: "Price alert: /alert NVDA below 120 (private chat)" },
     { command: "alerts", description: "Your price alerts" },

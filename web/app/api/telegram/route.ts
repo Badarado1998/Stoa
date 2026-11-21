@@ -2,7 +2,7 @@ import { after } from "next/server";
 import { getAddress, isAddress, type Address } from "viem";
 import { runAgent } from "@/lib/aiAgent";
 import { countToday } from "@/lib/aiCredits";
-import { gapsText, pnlText, priceText } from "@/lib/tgReport";
+import { gapsText, pnlText, priceText, spotlightText } from "@/lib/tgReport";
 import { addAlert, alertText, listAlerts, removeAlert, topText } from "@/lib/tgAlerts";
 import { change, cleanList, priced } from "@/lib/aiWatchlist";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
@@ -35,6 +35,7 @@ In a group: /ask your question, mention me, or reply to me.
 
 Quick data, free and unlimited:
 /price STOA · /gaps · /pnl 0xWallet · /top
+/spotlight · this week's Spotlight race, with Vote buttons
 /watchlist add NVDA STOA · /watchlist
 /alert NVDA below 120 · /alerts · /unalert (private chat)
 /app · open Stoa right here in Telegram
@@ -160,7 +161,7 @@ async function handle(m: TgMsg) {
     return;
   }
   // quick commands and alerts read RPCs and DexScreener: a generous daily limit per person stops floods
-  if (name && ["watchlist", "wl", "price", "gaps", "pnl", "top", "alert", "alerts", "unalert", "watch", "app"].includes(name) && (await countToday(`tgq:${m.sender_chat?.id ?? m.from?.id ?? m.chat.id}`)) > 100) {
+  if (name && ["watchlist", "wl", "price", "gaps", "pnl", "top", "spotlight", "alert", "alerts", "unalert", "watch", "app"].includes(name) && (await countToday(`tgq:${m.sender_chat?.id ?? m.from?.id ?? m.chat.id}`)) > 100) {
     await tgSend(m.chat.id, "That's a lot of requests today. More after 00:00 UTC.", m.message_id); return;
   }
   if (name === "price" || name === "gaps" || name === "pnl") {
@@ -197,6 +198,12 @@ async function handle(m: TgMsg) {
     await tgSend(m.chat.id, rows.length
       ? `👀 <b>Your watchlist</b>\n${rows.map((r) => `${tgSym(r.symbol)} ${usd(r.usd)}${r.ch24 != null ? ` · ${r.ch24 >= 0 ? "+" : ""}${r.ch24.toFixed(1)}%` : ""}`).join("\n")}${unknown.length ? `\n\nNot found: ${tgHtml(unknown.join(", "))}` : ""}`
       : "Your watchlist is empty. Add tokens: /watchlist add NVDA STOA", m.message_id);
+    return;
+  }
+  if (name === "spotlight") {
+    void tg("sendChatAction", { chat_id: m.chat.id, action: "typing" });
+    const r = await spotlightText();
+    await tgSend(m.chat.id, r.text, m.message_id, r.buttons);
     return;
   }
   if (name === "top") { await tgSend(m.chat.id, await topText(), m.message_id, { text: "Open Points ↗", url: "https://stoadex.com/points" }); return; }
