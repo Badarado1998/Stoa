@@ -47,7 +47,7 @@ export default function WidgetBuilder({ picks }: { picks: Pick[] }) {
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {picks.map((p) => <button key={p.address} type="button" className="chip" onClick={() => setToken(p.address)} style={{ cursor: "pointer" }}>{p.symbol}</button>)}
           </div>
-          <span className="note" style={{ margin: 0 }}>Works for tokens Stoa lists or routes: $STOA, listed tokens, Robinhood Stock Tokens and Pons launches with a route.</span>
+          <span className="note" style={{ margin: 0 }}>Works for tokens Stoa lists or routes: $STOA, listed tokens, Robinhood Stock Tokens, Pons launches with a route, and any other Robinhood Chain token Stoa routes that passes the safety check (a test buy and sell-back with no hidden tax).</span>
         </div>
         {seg("Visitors pay with (they can switch)", pay, setPay, ["ETH", "USDG"])}
         {seg("Look", theme, setTheme, ["light", "dark"])}

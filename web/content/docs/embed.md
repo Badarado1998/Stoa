@@ -14,7 +14,7 @@ Make yours on [stoadex.com/build/widget](https://stoadex.com/build/widget): pick
 
 | Parameter | Value |
 | --- | --- |
-| Token address | $STOA, a token listed under [Tokens](https://stoadex.com/tokens), a Robinhood Stock Token Stoa routes, or a Pons launch Stoa routes |
+| Token address | $STOA, a token listed under [Tokens](https://stoadex.com/tokens), a Robinhood Stock Token Stoa routes, a Pons launch Stoa routes, or any other Robinhood Chain token Stoa routes that passes the [safety check](https://stoadex.com/check) (a test buy and sell-back with no hidden tax). The check is repeated every 10 minutes; a token that stops passing loses its widget |
 | `pay` | `ETH` or `USDG`: what the widget starts with. Visitors can switch |
 | `amount` | Optional. The amount it starts with, such as `0.01` |
 | `theme` | Optional. `dark` for a dark widget; light by default |

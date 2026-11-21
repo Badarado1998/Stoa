@@ -7,12 +7,13 @@ import { findListed } from "./tokenInfo";
 import { readLaunch } from "./ponsLaunch";
 import { stockTokens, shortName } from "./stocks";
 import { srv } from "./serverRpc";
+import { readSafety } from "./safety";
 
 /** tokens whose embed cards Stoa has switched off: they show a plain notice instead of a price or a button. Lowercase. */
 export const EMBED_OFF = new Set(["0xcaeed5281bd1eeb26d5f8bd550bf5c3727ba6514"]); // $NOUNY, integration ended 18 Nov 2026
 
 export type WidgetToken = { address: Address | "native"; symbol: string; name: string; decimals: number; logo: string | null };
-export type WidgetBuy = WidgetToken & { address: Address; kind: "listed" | "stock" | "launch" };
+export type WidgetBuy = WidgetToken & { address: Address; kind: "listed" | "stock" | "launch" | "routed" };
 
 const lc = (a: string) => a.toLowerCase();
 
@@ -31,8 +32,10 @@ async function decimalsOf(net: Net, token: Address): Promise<number> {
   return Number(await c.readContract({ address: token, abi: erc20Abi, functionName: "decimals" }));
 }
 
-/** the tokens the swap widget may sell: a token listed on Stoa (or $STOA), a Robinhood Stock Token Stoa routes, or a
- *  Pons launch Stoa routes. Anything else gets no widget, so the card is never a stamp on a token nobody can trade here. */
+/** the tokens the swap widget may sell: a token listed on Stoa (or $STOA), a Robinhood Stock Token Stoa routes, a Pons
+ *  launch Stoa routes, or (Robinhood Chain) any other token Stoa's router routes whose safety check passes: a simulated
+ *  buy and sell-back that works with no hidden tax. Anything else gets no widget, so the card is never a stamp on a
+ *  token nobody can trade here, or one that cannot be sold. */
 async function resolve(chain: string, token: string): Promise<WidgetBuy | null> {
   const net = netByKey(chain);
   if (!net || !isAddress(token, { strict: false }) || EMBED_OFF.has(lc(token))) return null;
@@ -50,9 +53,20 @@ async function resolve(chain: string, token: string): Promise<WidgetBuy | null> 
     return { address: getAddress(s.address), symbol: s.symbol, name: shortName(s.name), decimals, logo: s.logo, kind: "stock" };
   }
   const l = await readLaunch(getAddress(token)).catch(() => null);
-  if (!l || !l.routable) return null;
-  const decimals = await decimalsOf(net, getAddress(token)).catch(() => 18);
-  return { address: getAddress(token), symbol: l.symbol, name: `${l.name} · Pons launch`, decimals, logo: l.logo, kind: "launch" };
+  if (l) {
+    if (!l.routable) return null;
+    const decimals = await decimalsOf(net, getAddress(token)).catch(() => 18);
+    return { address: getAddress(token), symbol: l.symbol, name: `${l.name} · Pons launch`, decimals, logo: l.logo, kind: "launch" };
+  }
+  // any other token: the safety check buys and sells it back through Stoa's router, so "ok" means it routes both ways
+  const safe = await readSafety(net, getAddress(token)).catch(() => null);
+  if (!safe || safe.verdict !== "ok" || !safe.test?.buyOk || !safe.test.sellOk) return null;
+  const c = createPublicClient({ chain: net.chain, transport: http(srv(net.chain.rpcUrls.default.http[0]), { timeout: 10_000 }) });
+  const [name, decimals] = await Promise.all([
+    c.readContract({ address: getAddress(token), abi: erc20Abi, functionName: "name" }).catch(() => safe.symbol),
+    decimalsOf(net, getAddress(token)).catch(() => 18),
+  ]);
+  return { address: getAddress(token), symbol: safe.symbol, name: String(name).replace(/[<>]/g, "").slice(0, 40), decimals, logo: null, kind: "routed" };
 }
 
 /** cached ten minutes per token: the list and the routes change slowly, and the widget re-quotes live anyway */

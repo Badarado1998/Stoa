@@ -16,7 +16,7 @@ type P = { params: Promise<{ chain: string; token: string }>; searchParams: Prom
 function Off({ dark }: { dark: boolean }) {
   return (
     <div className={`embed${dark ? " em-dark" : ""}`}>
-      <div className="em-q">This swap widget is not available for this token.<small>The widget works for tokens Stoa lists or routes. Check any token on stoadex.com/check.</small></div>
+      <div className="em-q">This swap widget is not available for this token.<small>The widget works for tokens Stoa lists or routes and that pass the safety check. Check any token on stoadex.com/check.</small></div>
       <div className="em-foot"><a href={SITE} target="_blank" rel="noopener noreferrer">Powered by <b>STOA</b></a><span>not financial advice</span></div>
     </div>
   );

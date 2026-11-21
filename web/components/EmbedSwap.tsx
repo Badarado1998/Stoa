@@ -87,7 +87,7 @@ export default function EmbedSwap({ chain, chainName, buy, pays, payIndex, amoun
       <a className="em-buy" href={link} target="_blank" rel="noopener noreferrer">Swap on Stoa ↗</a>
       <div className="em-foot">
         <a href={site} target="_blank" rel="noopener noreferrer">Powered by <b>STOA</b></a>
-        <span>{buy.kind === "launch" ? "Unverified launch · " : ""}2 bps fee · not financial advice</span>
+        <span>{buy.kind === "launch" ? "Unverified launch · " : buy.kind === "routed" ? "Unverified token · " : ""}2 bps fee · not financial advice</span>
       </div>
     </div>
   );
