@@ -68,7 +68,8 @@ async function answer(m: TgMsg, q: string, botId: number) {
   let text = "", err = "";
   const cards: string[] = [];
   const extra = `You are answering in Telegram${m.chat.type === "private" ? " (a private chat)" : ` (the group ${String(m.chat.title ?? "").replace(/[^\w .-]/g, "").slice(0, 40)})`}. Reply in plain text, under 700 characters. You only read here: for a swap, a limit order or a payment, send them to https://stoadex.com/ai where their own wallet signs. Do not end with a NEXT line.`
-    + (project ? `\n\n${await projectContext(project)}` : "");
+    + (project ? `\n\n${await projectContext(project)}` : "")
+    + "\n\nIn Telegram, do not paste links: a button under your reply opens Stoa.";
   await runAgent({
     history, wallet: null, extra, allow: (n) => PROJECT_TOOLS.has(n), maxTokens: 600,
     emit: (e) => {
@@ -79,7 +80,8 @@ async function answer(m: TgMsg, q: string, botId: number) {
   });
   const body = text.split(/\n?\s*NEXT:/i)[0].trim();
   const out = [...cards, body ? tgHtml(body) : err ? tgHtml(err) : "I could not answer that. Try asking another way."].join("\n\n");
-  await tgSend(chat, `${out}\n\n<i>Not financial advice · ${u.left} left today</i>`, m.message_id);
+  const button = project ? { text: "Buy on Stoa ↗", url: `https://stoadex.com/trade?chain=robinhood&buy=${project}` } : { text: "Open Stoa AI ↗", url: "https://stoadex.com/ai" };
+  await tgSend(chat, `${out.replace(/https?:\/\/\S+/g, (x) => (x.length > 40 ? "stoadex.com" : x))}\n\n<i>Not financial advice · ${u.left} left today</i>`, m.message_id, button);
 }
 
 async function handle(m: TgMsg) {
