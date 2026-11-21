@@ -21,6 +21,7 @@ export async function GET(req: Request) {
     { command: "watchlist", description: "Your watchlist: /watchlist add NVDA STOA" },
     { command: "spotlight", description: "This week's Spotlight race, with Vote buttons" },
     { command: "top", description: "Points leaderboard" },
+    { command: "antispam", description: "Admins: remove scam messages here (on/off)" },
     { command: "alert", description: "Price alert: /alert NVDA below 120 (private chat)" },
     { command: "alerts", description: "Your price alerts" },
     { command: "app", description: "Open Stoa inside Telegram" },

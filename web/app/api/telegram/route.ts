@@ -3,6 +3,7 @@ import { getAddress, isAddress, type Address } from "viem";
 import { runAgent } from "@/lib/aiAgent";
 import { countToday } from "@/lib/aiCredits";
 import { gapsText, pnlText, priceText, spotlightText } from "@/lib/tgReport";
+import { spamWhy } from "@/lib/tgSpam";
 import { addAlert, alertText, listAlerts, removeAlert, topText } from "@/lib/tgAlerts";
 import { change, cleanList, priced } from "@/lib/aiWatchlist";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
@@ -18,7 +19,7 @@ import { tg, tgHtml, tgSym, tgMe, tgOn, tgSecret, tgSend } from "@/lib/telegram"
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-type TgMsg = { message_id: number; text?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; new_chat_members?: { id: number }[]; reply_to_message?: { text?: string; from?: { id: number } } };
+type TgMsg = { message_id: number; text?: string; caption?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; new_chat_members?: { id: number; is_bot?: boolean }[]; reply_to_message?: { text?: string; from?: { id: number } } };
 
 const HELP = `<b>Stoa AI</b> · early beta on Robinhood Chain
 
@@ -32,6 +33,7 @@ In a group: /ask your question, mention me, or reply to me.
 /unwatch · stop the alerts
 /settoken 0xToken · group admins: make me this project's assistant
 /report on · group admins: a market report here at 01:00 and 13:00 UTC
+/antispam on · group admins: remove scam messages (make me an admin)
 
 Quick data, free and unlimited:
 /price STOA · /gaps · /pnl 0xWallet · /top
@@ -114,16 +116,35 @@ async function answer(m: TgMsg, q: string, botId: number) {
   await tgSend(chat, `${out.replace(/https?:\/\/\S+/g, (x) => (x.length > 40 ? "stoadex.com" : x))}\n\n<i>Not financial advice · ${u.left} left today</i>`, m.message_id, button);
 }
 
+/** /antispam: remove a scam-looking message from a member and say why, at most one note per 10 minutes. true when removed. */
+async function spamCheck(m: TgMsg, text: string): Promise<boolean> {
+  if (!kvOn || !m.from) return false;
+  if (!(await kv<number>("EXISTS", `tg:spam:${m.chat.id}`))) return false;
+  const isNew = !!(await kv<number>("EXISTS", `tg:new:${m.chat.id}:${m.from.id}`));
+  const why = spamWhy(text, isNew);
+  if (!why) return false;
+  const st = await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from.id });
+  if (!st || ["creator", "administrator"].includes(st.status)) return false;
+  const gone = await tg("deleteMessage", { chat_id: m.chat.id, message_id: m.message_id });
+  if (!gone) return false;
+  if ((await kv("SET", `tg:spamnote:${m.chat.id}`, 1, "NX", "EX", 600)) === "OK")
+    await tgSend(m.chat.id, `🛡 Removed a message that looked like a scam (${why}).\n\nAdmins never DM first and never ask for a seed phrase, a private key or a wallet "sync". If someone DMs you with "proof" or a link, don't click it.`);
+  return true;
+}
+
 async function handle(m: TgMsg) {
   // added to a group: say what it does and what an admin can set up
   if (m.new_chat_members?.length) {
+    // remember who joined in the last 24 hours: with /antispam on, their links are removed
+    if (kvOn && m.chat.type !== "private") for (const u of m.new_chat_members) if (!u.is_bot) await kv("SET", `tg:new:${m.chat.id}:${u.id}`, 1, "EX", 86400);
     const me = await tgMe();
-    if (me && m.new_chat_members.some((u) => u.id === me.id)) await tgSend(m.chat.id, `👋 Hi, I'm <b>Stoa AI</b> (early beta). Ask me about any Robinhood Chain token with /ask, by mentioning me, or by replying to me.\n\n<b>Admins:</b>\n/settoken 0xYourToken · make me this project's assistant\n/report on · a market report here at 01:00 and 13:00 UTC, with Spotlight reminders\n\nI only read: I never ask for keys and never move funds. Not financial advice.`);
+    if (me && m.new_chat_members.some((u) => u.id === me.id)) await tgSend(m.chat.id, `👋 Hi, I'm <b>Stoa AI</b> (early beta). Ask me about any Robinhood Chain token with /ask, by mentioning me, or by replying to me.\n\n<b>Admins:</b>\n/settoken 0xYourToken · make me this project's assistant\n/report on · a market report here at 01:00 and 13:00 UTC, with Spotlight reminders\n/antispam on · remove scam messages (needs me as an admin)\n\nI only read: I never ask for keys and never move funds. Not financial advice.`);
     return;
   }
   const text = (m.text ?? "").trim();
   // an admin posting "anonymously" (as the group) arrives from Telegram's GroupAnonymousBot with sender_chat = the group
   const anonAdmin = m.sender_chat?.id === m.chat.id;
+  if (m.chat.type !== "private" && !anonAdmin && !m.from?.is_bot && (text || m.caption) && await spamCheck(m, text || (m.caption ?? "").trim())) return;
   if (!text || m.is_automatic_forward || (m.from?.is_bot && !anonAdmin)) return;
   const me = await tgMe();
   if (!me) return;
@@ -204,6 +225,18 @@ async function handle(m: TgMsg) {
     void tg("sendChatAction", { chat_id: m.chat.id, action: "typing" });
     const r = await spotlightText();
     await tgSend(m.chat.id, r.text, m.message_id, r.buttons);
+    return;
+  }
+  if (name === "antispam") {
+    if (priv) { await tgSend(m.chat.id, "Add me to your group as an admin with \"Delete messages\", then send /antispam on there."); return; }
+    const st = anonAdmin ? { status: "administrator" } : await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });
+    if (!st || !["creator", "administrator"].includes(st.status)) { await tgSend(m.chat.id, "Only group admins can do that.", m.message_id); return; }
+    if (!kvOn) { await tgSend(m.chat.id, "Anti-spam is not switched on yet.", m.message_id); return; }
+    if (/^off$/i.test(arg)) { await kv("DEL", `tg:spam:${m.chat.id}`); await tgSend(m.chat.id, "Anti-spam is off here."); return; }
+    await kv("SET", `tg:spam:${m.chat.id}`, 1);
+    const mine = await tg<{ status: string; can_delete_messages?: boolean }>("getChatMember", { chat_id: m.chat.id, user_id: me.id });
+    const can = mine?.status === "administrator" && mine.can_delete_messages;
+    await tgSend(m.chat.id, `🛡 Anti-spam is on. I remove messages from members (never admins) that ask for a seed phrase or a wallet "sync", ask people to DM, spell words with gaps to dodge filters ("s c a m"), or post a link within 24 hours of joining.${can ? "" : "\n\n⚠️ Make me an admin with \"Delete messages\" so I can remove them."} /antispam off to stop.`);
     return;
   }
   if (name === "top") { await tgSend(m.chat.id, await topText(), m.message_id, { text: "Open Points ↗", url: "https://stoadex.com/points" }); return; }
