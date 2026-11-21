@@ -90,6 +90,7 @@ export default async function VotePage({ params }: P) {
           <a className="cta" href={`https://x.com/intent/post?text=${encodeURIComponent(share)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">Share on X</a>
           <a className="ghost" href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(share)}`} target="_blank" rel="noopener noreferrer">Share on Telegram</a>
           <CopyButton text={url} label="Copy link" />
+          <a className="ghost" href={`/api/spotlight/card/${v.token.toLowerCase()}`} download>Download the card</a>
         </div>
         <p className="note" style={{ marginBottom: 0 }}>Slots are sponsored and not reviewed by Stoa. Payouts depend only on what projects bid; nothing is promised, and this is not financial advice.</p>
       </div>

@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BaseError, erc20Abi, formatUnits, isAddress, parseAbiItem, parseEther, parseUnits, zeroAddress, type Address, type Hash } from "viem";
@@ -598,6 +598,23 @@ function Claims({ e }: { e: number }) {
   );
 }
 
+/** shown to a project right after its bid: its vote page, ready-made posts and the card to download */
+function ShareKit({ token }: { token: string; symbol?: string }) {
+  const url = `https://stoadex.com/spotlight/vote/${token}`;
+  const post = `We're in Stoa Spotlight this week. Lock $STOA and vote for us: if we win, 90% of our ETH bid goes to the holders who voted for us. ${url}`;
+  return (
+    <div className="ok" style={{ marginTop: 14 }}>
+      <b>Your bid is in.</b> Now rally votes: a token needs 1M $STOA of votes to win.
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+        <Link className="cta" href={`/spotlight/vote/${token}`}>Your vote page</Link>
+        <a className="ghost" href={`https://x.com/intent/post?text=${encodeURIComponent(post)}`} target="_blank" rel="noopener noreferrer">Post on X</a>
+        <a className="ghost" href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.replace(` ${url}`, ""))}`} target="_blank" rel="noopener noreferrer">Share on Telegram</a>
+        <a className="ghost" href={`/api/spotlight/card/${token}`} download>Download the card</a>
+      </div>
+    </div>
+  );
+}
+
 function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { race: number; phase: string; entryFee?: bigint; minBid?: bigint; maxBid?: bigint; cur?: SpotEpoch; onDone: () => void }) {
   const pub = usePublicClient({ chainId: net.chain.id });
   const { address, isConnected } = useAccount();
@@ -605,6 +622,9 @@ function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { 
   const { writeContractAsync } = useChainWrite();
   const [token, setToken] = useState("");
   const [amt, setAmt] = useState("");
+  // after a bid goes through: the token's share kit, so the team can rally votes right away
+  const [justBid, setJustBid] = useState<string | null>(null);
+  const bidding = useRef<string | null>(null);
   const refunds = useQuery({
     queryKey: ["spot-refunds", address, race],
     enabled: !!pub && !!address,
@@ -618,7 +638,7 @@ function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { 
       return pairs.map(([x, t], i) => ({ epoch: Number(x), token: t, amount: amts[i] as bigint })).filter((r) => r.amount > 0n);
     },
   });
-  const { busy, send, note } = useSend(() => { void refunds.refetch(); onDone(); });
+  const { busy, send, note } = useSend(() => { void refunds.refetch(); onDone(); if (bidding.current) setJustBid(bidding.current); bidding.current = null; });
   const valid = isAddress(token);
   const isNew = valid && !cur?.candidates.some((c) => c.token.toLowerCase() === token.toLowerCase());
   const isStoa = valid && token.toLowerCase() === STOA.toLowerCase();
@@ -652,9 +672,10 @@ function ProjectPanel({ race, phase, entryFee, minBid, maxBid, cur, onDone }: { 
           {tooBig && <p className="err" style={{ marginTop: 8 }}>That passes this week&apos;s cap of {eth(maxBid, 2)} ETH for one token.</p>}
           <button className="cta" type="button" style={{ marginTop: 12 }}
             disabled={!!busy || closed || !valid || isStoa || !value || tooSmall || tooBig}
-            onClick={() => send("Bid", () => writeContractAsync({ address: SPOT!, abi: spotlightAbi, functionName: "bid", args: [token as Address], value: value! + fee, chainId: net.chain.id }))}>
+            onClick={() => { bidding.current = token.toLowerCase(); setJustBid(null); void send("Bid", () => writeContractAsync({ address: SPOT!, abi: spotlightAbi, functionName: "bid", args: [token as Address], value: value! + fee, chainId: net.chain.id })); }}>
             {busy === "Bid" ? "Bidding…" : value ? `Bid ${eth(value, 4)} ETH${fee > 0n ? ` + ${eth(fee, 4)} ETH entry fee` : ""}` : "Bid"}
           </button>
+          {justBid && <ShareKit token={justBid} />}
           {(refunds.data?.length ?? 0) > 0 && (
             <>
               <div className="lbl" style={{ marginTop: 18 }}>YOUR REFUNDS</div>
