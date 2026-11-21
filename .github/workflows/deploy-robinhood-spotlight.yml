@@ -34,10 +34,10 @@ jobs:
       # remapping forge passes to solc, and forge adds one for each nested submodule it finds (OpenZeppelin's own
       # erc4626-tests, halmos-cheatcodes, ds-test). So check out the top-level submodules only, as the address was
       # computed with, and pin Foundry to that version too.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           submodules: true
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           version: v1.5.1
 

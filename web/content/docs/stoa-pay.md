@@ -9,7 +9,7 @@ Open [stoadex.com/pay](https://stoadex.com/pay).
 1. Enter the wallet that should receive the payment (connect your wallet to fill it in), the amount in USDG (up to 10,000) and, if you like, a short note such as "Logo design".
 2. Pick what you receive: USDG, or a Robinhood stock token such as NVDA. With a stock token you get what the amount buys of it when they pay, at least 99.5% of that; you carry the stock's price from then on. Stock Tokens are issued by Robinhood and not offered in every country.
 3. Copy the link, share it, or show the QR code.
-4. Open the link any time: it says **Paid** once the payment lands, with a link to the receipt.
+4. Open the link any time: it says **Paid** once the full amount has arrived (USDG: at least the amount asked; a stock token: at least 97% of what that many USDG bought just before the payment), shows what arrived, and links to the receipt.
 
 Nothing is stored. The link itself is the request: it carries your address, the amount, the payout token, the note, a random request id and the block it was made at. Every payment Stoa builds for it ends with that id, which is how the link knows it has been paid. Anyone with the link can pay you; it never lets anyone take funds from you.
 
@@ -24,17 +24,17 @@ Open the link and check the address with the person who sent it. Stoa does not k
 
 **From another chain**
 
-For USDG payouts, pick Base, Arbitrum, Optimism or Ethereum and pay with ETH there. Relay delivers the USDG on Robinhood Chain, usually in under a minute. Before your wallet opens, Stoa checks Relay's order: it must pay exactly the requester at least the amount asked, in USDG, on Robinhood Chain, refund only you, make no other calls and carry no hidden fee. Paying from another chain is limited to 500 USDG per payment for now.
+For USDG payouts, pick Base, Arbitrum, Optimism or Ethereum and pay with ETH there. Relay delivers the USDG on Robinhood Chain, usually in under a minute. Before your wallet opens, Stoa checks Relay's order: it must pay exactly the requester at least the amount asked, in USDG, on Robinhood Chain, refund only you, make no other calls and carry no hidden fee. Paying from another chain is limited to 500 USDG per payment for now. Relay is asked for the amount plus a few micro-USDG (under 0.01 USDG) that are unique to the request, so one delivery can only ever mark one link as paid.
 
 Payments on-chain cannot be reversed.
 
 ## Receipts
 
-After paying on Robinhood Chain you get a receipt page (stoadex.com/pay/receipt?tx=…): who paid whom, how much of what, what it was paid with, when, and the request id. It is read from the chain each time, not from Stoa's records, so anyone with the link can check it.
+After paying on Robinhood Chain you get a receipt page (stoadex.com/pay/receipt?tx=…): who paid whom, how much of what, what it was paid with, when, and the request id. It is read from the chain each time, not from Stoa's records, so anyone with the link can check it. Only payouts in USDG or a Robinhood stock token get a receipt, and it shows the token's address: check it, since anyone can name a token "USDG".
 
 ## For apps and AI agents
 
-Stoa's [MCP server](mcp.md) has three tools for this: `create_payment_link`, `pay_payment_link` (an unsigned transaction for the payer's wallet) and `payment_status`. An agent can ask to be paid, pay a link and confirm it was paid, without Stoa holding anything.
+Stoa's [MCP server](mcp.md) has three tools for this: `create_payment_link`, `pay_payment_link` (an unsigned transaction for the payer's wallet) and `payment_status`. An agent can ask to be paid, pay a link and confirm it was paid, without Stoa holding anything. `payment_status` returns `value`, what actually arrived.
 
 
 

@@ -2,13 +2,15 @@ import { kv, kvOn } from "@/lib/kv";
 import { tgOn, tgSend } from "@/lib/telegram";
 import { reportText, weeklyText } from "@/lib/tgReport";
 import { topText } from "@/lib/tgAlerts";
+import { cronAllowed, cronRefused } from "@/lib/cronAuth";
 
 // GET /api/cron/tgreport (Vercel cron, 01:00 and 13:00 UTC): the market report to every group that turned it on with
 // /report on. A lock in storage makes extra calls do nothing, so it needs no secret.
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!cronAllowed(req)) return cronRefused();
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
   // only at the report hours, once each: a call at any other time sends nothing
   const h = new Date().getUTCHours();

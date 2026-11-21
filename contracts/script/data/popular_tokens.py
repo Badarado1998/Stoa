@@ -19,6 +19,7 @@ Run from this folder: python3 -I popular_tokens.py   (DRY=1: print, write nothin
 import io
 import json
 import os
+import re
 import sys
 import time
 import urllib.request
@@ -130,7 +131,8 @@ def main():
     for vol, a, m in rows:
         if a not in old and len(out) + sum(1 for _, b, _ in rows if b in old and b not in {t["address"] for t in out}) >= MAX:
             continue  # room is kept for every listed token still to come
-        sym = (old.get(a, {}).get("symbol") or m["symbol"] or "").strip()
+        # anyone picks a token's symbol, and it is shown across stoadex.com: keep it short and plain (as lib/safety.ts does)
+        sym = re.sub(r"[^\w.$-]", "", (old.get(a, {}).get("symbol") or m["symbol"] or "").strip())[:16]
         if not sym or sym.lower() in seen:
             continue
         if a not in old and sym.upper() in stock_syms and a not in stocks:

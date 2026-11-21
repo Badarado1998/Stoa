@@ -1,3 +1,4 @@
+import { limited } from "@/lib/api";
 import { getAddress, isAddress, isHex } from "viem";
 import { newNonce, openSession } from "@/lib/aiCredits";
 
@@ -7,6 +8,8 @@ import { newNonce, openSession } from "@/lib/aiCredits";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  const slow = limited(req);
+  if (slow) return slow;
   const w = new URL(req.url).searchParams.get("wallet") ?? "";
   if (!isAddress(w, { strict: false })) return Response.json({ error: "bad request" }, { status: 400 });
   const n = await newNonce(getAddress(w));
@@ -14,6 +17,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const slow = limited(req);
+  if (slow) return slow;
   const b = (await req.json().catch(() => null)) as { wallet?: string; nonce?: string; signature?: string } | null;
   if (!b?.wallet || !isAddress(b.wallet, { strict: false }) || typeof b.nonce !== "string" || !b.signature || !isHex(b.signature)) return Response.json({ error: "bad request" }, { status: 400 });
   const session = await openSession(getAddress(b.wallet), b.nonce, b.signature);

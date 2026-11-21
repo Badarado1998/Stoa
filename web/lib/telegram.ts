@@ -16,6 +16,10 @@ export async function tg<T = unknown>(method: string, body: Record<string, unkno
 }
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** a token symbol in a Stoa message: kept to [\w.$-] and 16 characters, with its dots made into look-alike dots so
+ *  Telegram never turns a symbol such as "stoa-airdrop.xyz" into a link inside an official message */
+export const tgSym = (s: string) => esc(String(s ?? "").replace(/[^\w.$-]/g, "").slice(0, 16).replace(/\./g, "\u2024")) || "token";
+
 /** the assistant's **bold** as Telegram HTML; everything else escaped */
 export const tgHtml = (s: string) => esc(s.replace(/^#{1,6}\s+/gm, "")).split("**").map((p, i) => (i % 2 ? `<b>${p}</b>` : p)).join("");
 

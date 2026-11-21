@@ -362,9 +362,14 @@ function SpotCard({ d }: { d: SpotData }) {
 }
 
 function LinkCard({ url, title }: { url: string; title: string }) {
+  const { address } = useAccount();
+  // say whom the link pays, and warn when it is not this wallet
+  const to = (() => { try { return new URL(url).searchParams.get("to"); } catch { return null; } })();
+  const mine = !!to && !!address && lc(to) === lc(address);
   return (
     <div className="box" style={{ marginTop: 8 }}>
       <div className="lbl">{title}</div>
+      {to && title.startsWith("PAYMENT LINK") && <div style={{ fontSize: 13.5, margin: "6px 0", color: mine ? "#15803d" : "#c2412d", fontWeight: 600 }}>Pays to {to.slice(0, 6)}…{to.slice(-4)}{mine ? " (your wallet)" : ": NOT your connected wallet. Check before sharing."}</div>}
       <div className="mono" style={{ wordBreak: "break-all", fontSize: 13, margin: "6px 0 8px" }}>{url}</div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><CopyButton text={url} label="Copy link" /><a className="ghost btn" href={url} target="_blank" rel="noopener noreferrer">Open</a></div>
     </div>

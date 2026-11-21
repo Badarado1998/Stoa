@@ -55,6 +55,8 @@ export async function prepareSpotlight(a: Record<string, unknown>, wallet: Addre
     if (others + amt > active) return { error: `Only ${n(active)} $STOA is locked and ${n(others)} already votes for other candidates.` };
     set.set(t, amt);
     const list = [...set].filter(([, v]) => v > 0n);
+    // the contract takes at most 10 candidates per wallet a week (MAX_VOTES_PER_HOLDER): say so instead of a failing card
+    if (list.length > 10) return { error: "A wallet can vote for at most 10 candidates a week. Move votes away from one first." };
     return {
       summary: { action: "vote", week: ep + 1, token: t, amount: n(amt), votes: list.map(([k, v]) => ({ token: k, amount: n(v) })), locked: n(active), votesCloseAt: new Date((SPOT_START + (ep + 1) * WEEK) * 1000).toISOString() },
       call: { spotlight: S, action: "vote", tokens: list.map(([k]) => k), amounts: list.map(([, v]) => v.toString()) },

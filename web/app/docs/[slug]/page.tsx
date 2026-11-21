@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { docPage, docsIndex, flatDocs } from "@/lib/docs";
 import DocsNav from "@/components/DocsNav";
 import { SITE } from "@/lib/chain";
+import { ldJson } from "@/lib/ldJson";
 
 const plain = (h: string) =>
   h.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
@@ -56,13 +57,13 @@ export default async function DocPageView({ params }: { params: Promise<{ slug: 
     <section className="page docs-page">
       <div className="dl">
         <DocsNav index={docsIndex()} current={slug} title={d.title} corpus={corpus} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson({
           "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
             { "@type": "ListItem", position: 1, name: "Docs", item: `${SITE}/docs/introduction` },
             { "@type": "ListItem", position: 2, name: d.title, item: `${SITE}/docs/${slug}` },
           ],
         }) }} />
-        {slug === "faq" && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd(d.html)) }} />}
+        {slug === "faq" && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(faqLd(d.html)) }} />}
         <article className="dmain">
           <div className="crumb">{d.group}</div>
           <h1>{d.title}</h1>

@@ -21,8 +21,10 @@ jobs:
       FALLBACK: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4"
       SIGNERS: "0x5A63C75B38e7ee42220Cc3A57702E06D1D8903c9,0x056896d7d62fB4faE30f53d76CB55264f4c5c500,0xDF129a523aEb072a2CEcbA50170eAb2fcB183C4c"
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
+        with:
+          version: v1.5.1
       - name: Deploy the Safe
         run: |
           set -euo pipefail

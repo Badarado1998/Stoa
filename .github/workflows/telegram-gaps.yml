@@ -30,7 +30,7 @@ jobs:
       - name: Skip without the token
         if: env.HAS_TOKEN != 'true'
         run: echo "TELEGRAM_BOT_TOKEN is not set; nothing posted."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         if: env.HAS_TOKEN == 'true'
         with:
           sparse-checkout: data/alerts

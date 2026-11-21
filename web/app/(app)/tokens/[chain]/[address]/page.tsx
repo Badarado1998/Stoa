@@ -14,6 +14,7 @@ import CmcPanel from "@/components/CmcPanel";
 import { findListed, isStoa, listedTokens, priceFmt, readToken, usdFmt } from "@/lib/tokenInfo";
 import { weekPrices } from "@/lib/priceHistory";
 import PriceChart from "@/components/PriceChart";
+import { ldJson } from "@/lib/ldJson";
 
 // /tokens/<chain>/<address>: one listed token, its market and Stoa's best route for it right now.
 // Rendered on first visit, then kept a minute.
@@ -137,7 +138,7 @@ export default async function TokenPage({ params }: P) {
   return (
     <section className="page">
       <RefKeeper />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(faqLd) }} />
       <PageHead compact eyebrow={`TOKEN · ${net.name.toUpperCase()}`} title={`Buy ${sym} on Stoa`}>
         Stoa compares every venue it routes on {net.name} on every swap and fills where you get the most, for a 2 bps fee.
       </PageHead>

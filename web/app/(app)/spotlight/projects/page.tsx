@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHead } from "@/components/ui";
 import SpotlightBanner from "@/components/SpotlightBanner";
+import { ldJson } from "@/lib/ldJson";
 
 const description = "Bid ETH for one of three sponsored slots on Stoa for a week: the top of Trade's token list on Robinhood Chain, Launches and Tokens. Lose, and your bid comes back in full.";
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ const FAQ: [string, string][] = [
 export default function SpotlightProjects() {
   return (
     <section className="page">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson({
         "@context": "https://schema.org", "@type": "FAQPage",
         mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
       }) }} />

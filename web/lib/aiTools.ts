@@ -38,7 +38,8 @@ export async function resolveToken(q: string): Promise<Tok | null> {
       c.readContract({ address: a, abi: erc20Abi, functionName: "symbol" }).catch(() => null),
       c.readContract({ address: a, abi: erc20Abi, functionName: "decimals" }).catch(() => null),
     ]);
-    return decimals === null ? null : { address: a, symbol: symbol ?? "token", decimals };
+    // anyone picks a token's symbol: keep it short and plain before the model or a page sees it (as lib/safety.ts does)
+    return decimals === null ? null : { address: a, symbol: String(symbol ?? "token").replace(/[^\w.$-]/g, "").slice(0, 12) || "token", decimals };
   }
   const core = ROBINHOOD.tokens.find((t) => lc(t.symbol) === lc(s));
   if (core) return { address: core.address, symbol: core.symbol, decimals: core.decimals };
@@ -175,6 +176,12 @@ export async function runAiTool(name: string, a: Record<string, unknown>, wallet
   if (!FROM_MCP.includes(name)) return { error: `unknown tool ${name}` };
   const args = { ...a };
   if (name === "safety_check" || name === "stock_tokens" || name === "stock_gaps") args.chain = "robinhood";
+  // a link the assistant makes always pays the connected wallet: injected text or a slip of the model can never make
+  // it pay a stranger (a link for someone else is made by hand on /pay)
+  if (name === "create_payment_link") {
+    if (!wallet) return { error: "No wallet connected. A payment link pays the connected wallet: ask the user to connect one." };
+    args.to = wallet;
+  }
   if (name === "pay_payment_link") {
     if (!wallet) return { error: "No wallet connected. Ask the user to connect a wallet first." };
     args.payer = wallet;

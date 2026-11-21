@@ -298,7 +298,7 @@ export async function callTool(name: string, a: Record<string, unknown>) {
       if (name === "payment_status") {
         if (!r.id || !r.b) return text({ request: r, paid: null, note: "This link was made before payments could be matched to it; check the recipient's wallet instead." });
         const res = await payStatus(new Request(`https://stoadex.com/api/pay/status?${new URLSearchParams({ to: r.to, get: r.get ?? ROBINHOOD.stable, amount: raw, id: r.id, b: String(r.b) })}`));
-        return text({ request: r, ...(await res.json()) }, !res.ok);
+        return text({ request: r, ...(await res.json()), note: "paid counts only when enough arrived; value is what arrived, in the payout token's smallest units (USDG 6 decimals, stock tokens 18)" }, !res.ok);
       }
       const payer = str(a.payer) ?? "";
       if (!isAddress(payer)) return text("payer must be an address", true);

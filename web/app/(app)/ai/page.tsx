@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AiChat from "@/components/AiChat";
+import { ldJson } from "@/lib/ldJson";
 
 const description = "Stoa AI, an AI assistant for Robinhood Chain (early beta): ask in plain words to check a token, quote and prepare swaps, turn a strategy into a limit order, scan your wallet for rug signs and compare stock tokens with Robinhood. Also on Telegram. You sign everything in your own wallet.";
 export const metadata: Metadata = {
@@ -48,7 +49,7 @@ export default function AiPage() {
         {FAQ.map(([q, a]) => <details key={q} className="panel pad" style={{ marginBottom: 8 }}><summary style={{ fontWeight: 600, cursor: "pointer" }}>{q}</summary><p className="note" style={{ margin: "8px 0 0" }}>{a}</p></details>)}
         <p className="note">More in the docs: <Link href="/docs/ask-stoa">Stoa AI</Link> · <Link href="/docs/stoa-ai-for-projects">Stoa AI for projects</Link>.</p>
       </div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson({
         "@context": "https://schema.org", "@type": "FAQPage",
         mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
       }) }} />

@@ -25,6 +25,14 @@ export const tagIn = (input: string): string | null => {
   return m ? m[1].toLowerCase() : null;
 };
 
+/** the request's tag anywhere in a transaction's input: a smart wallet wraps the payment call, so the tag is not
+ *  always at the end */
+export const hasTag = (input: string, id: string): boolean => /^[0-9a-f]{16}$/.test(id) && input.toLowerCase().includes(`53504159${id}`);
+
+/** A payment from another chain carries no request id, so it is told apart by its amount: Relay is asked for the
+ *  amount plus a few micro-USDG taken from the id (at most 0.009972 USDG more), and only that exact delivery counts. */
+export const relayAmount = (amount: bigint, id: string): bigint => amount + BigInt(parseInt(id.slice(0, 4), 16) % 9973);
+
 /** Reads and checks a request from the link's query. Returns null when the link is not a valid request. */
 export function readRequest(q: { to?: string | null; amount?: string | null; note?: string | null; get?: string | null; id?: string | null; b?: string | null }): PayRequest | null {
   const to = q.to ?? "", amount = (q.amount ?? "").trim();

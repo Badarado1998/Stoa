@@ -5,7 +5,7 @@ import { marketOf } from "./rugScan";
 import { ROBINHOOD } from "./networks";
 import { NATIVE } from "./tokens";
 import { readPoints, readPreview, SEASON_START } from "./points";
-import { tgHtml } from "./telegram";
+import { tgSym } from "./telegram";
 
 /** The Telegram bot's price alerts (/alert, /alerts, /unalert) and the Points board (/top). Alerts live in Upstash:
  *  tg:alerts:<chat> is a hash of id -> alert, tg:alerters the chats that have any. Checked every 5 minutes by
@@ -15,7 +15,7 @@ const MAX = 10;
 const usd = (v: number) => `$${v >= 1 ? v.toLocaleString("en-US", { maximumFractionDigits: 2 }) : v.toPrecision(3)}`;
 const priceKey = (a: string) => (a === NATIVE ? ROBINHOOD.wrapped : a).toLowerCase();
 
-export const alertText = (a: Alert) => a.kind === "below" || a.kind === "above" ? `${tgHtml(a.symbol)} ${a.kind} ${usd(a.value)}` : `${tgHtml(a.symbol)} ${a.kind} ${a.value}% (from ${usd(a.base)})`;
+export const alertText = (a: Alert) => a.kind === "below" || a.kind === "above" ? `${tgSym(a.symbol)} ${a.kind} ${usd(a.value)}` : `${tgSym(a.symbol)} ${a.kind} ${a.value}% (from ${usd(a.base)})`;
 
 export async function addAlert(chat: number, arg: string): Promise<string> {
   const m = /^(\S+)\s+(below|under|<|above|over|>|up|down)\s+\$?([\d.]+)\s*(%?)$/i.exec(arg.trim());
@@ -26,15 +26,15 @@ export async function addAlert(chat: number, arg: string): Promise<string> {
   const kind: Alert["kind"] = w === "up" ? "up" : w === "down" ? "down" : /below|under|</.test(w) ? "below" : "above";
   if (!(v > 0) || (isPct && (kind === "below" || kind === "above"))) return "Use a price for below/above (/alert NVDA below 120) and a percent for up/down (/alert STOA up 20%).";
   const px = (await marketOf([priceKey(t.address)]).catch(() => ({})) as Awaited<ReturnType<typeof marketOf>>)[priceKey(t.address)]?.usd;
-  if (!px) return `No market price for ${tgHtml(t.symbol)} right now, so I can't watch it.`;
-  if (kind === "below" && px <= v) return `${tgHtml(t.symbol)} is already ${usd(px)}, below ${usd(v)}.`;
-  if (kind === "above" && px >= v) return `${tgHtml(t.symbol)} is already ${usd(px)}, above ${usd(v)}.`;
+  if (!px) return `No market price for ${tgSym(t.symbol)} right now, so I can't watch it.`;
+  if (kind === "below" && px <= v) return `${tgSym(t.symbol)} is already ${usd(px)}, below ${usd(v)}.`;
+  if (kind === "above" && px >= v) return `${tgSym(t.symbol)} is already ${usd(px)}, above ${usd(v)}.`;
   const have = (await kv<number>("HLEN", `tg:alerts:${chat}`)) ?? 0;
   if (have >= MAX) return `You have ${MAX} alerts, the most. Remove one with /unalert.`;
   const a: Alert = { id: Math.random().toString(36).slice(2, 7), token: t.address, symbol: t.symbol, kind, value: v, base: px, at: Math.floor(Date.now() / 1000) };
   await kv("HSET", `tg:alerts:${chat}`, a.id, JSON.stringify(a));
   await kv("SADD", "tg:alerters", chat);
-  return `🔔 Alert set: ${alertText(a)}. ${tgHtml(t.symbol)} is ${usd(px)} now. I check every 5 minutes and message you once.\n/alerts to see them, /unalert to remove.`;
+  return `🔔 Alert set: ${alertText(a)}. ${tgSym(t.symbol)} is ${usd(px)} now. I check every 5 minutes and message you once.\n/alerts to see them, /unalert to remove.`;
 }
 
 export async function listAlerts(chat: number): Promise<Alert[]> {
@@ -72,7 +72,7 @@ export async function fireAlerts(chats: string[]): Promise<{ chat: string; text:
       const yes = a.kind === "below" ? p <= a.value : a.kind === "above" ? p >= a.value : a.kind === "up" ? ch >= a.value : ch <= -a.value;
       if (!yes) continue;
       await kv("HDEL", `tg:alerts:${c}`, a.id);
-      hit.push(`• <b>${tgHtml(a.symbol)}</b> is ${usd(p)} (${ch >= 0 ? "+" : ""}${ch.toFixed(1)}% since you set it): ${alertText(a)}`);
+      hit.push(`• <b>${tgSym(a.symbol)}</b> is ${usd(p)} (${ch >= 0 ? "+" : ""}${ch.toFixed(1)}% since you set it): ${alertText(a)}`);
     }
     if (hit.length) out.push({ chat: c, text: `🔔 <b>Price alert</b>\n${hit.join("\n")}\n\nNot financial advice.` });
   }

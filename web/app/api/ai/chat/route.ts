@@ -3,6 +3,8 @@ import { runAgent, type AiEvent } from "@/lib/aiAgent";
 import { FREE_PER_DAY, sessionFor, takeMessage } from "@/lib/aiCredits";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
 import { cleanList } from "@/lib/aiWatchlist";
+import { limited } from "@/lib/api";
+import { visitorOf } from "@/lib/visitor";
 
 // POST /api/ai/chat {messages: [{role: "user"|"assistant", content}], wallet?, project?}: Stoa's assistant on OpenRouter
 // (lib/aiAgent.ts), streamed back as newline-delimited JSON:
@@ -16,6 +18,8 @@ export const maxDuration = 60;
 
 
 export async function POST(req: Request) {
+  const slow = limited(req);
+  if (slow) return slow;
   if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: "The assistant is not switched on yet." }, { status: 503 });
   const b = (await req.json().catch(() => null)) as { messages?: { role?: string; content?: string }[]; wallet?: string; project?: string; session?: string; watchlist?: unknown } | null;
   const history = (b?.messages ?? []).filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-12)
@@ -24,13 +28,13 @@ export async function POST(req: Request) {
   const project: Address | null = b?.project && isAddress(b.project, { strict: false }) ? getAddress(b.project) : null;
   const wallet: Address | null = !project && b?.wallet && isAddress(b.wallet, { strict: false }) ? getAddress(b.wallet) : null;
 
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "local";
+  const ip = visitorOf(req);
   // free messages per visitor, then the connected wallet's credits (lib/aiCredits.ts)
   const payer = await sessionFor(b?.session, wallet);
   const q = await takeMessage(ip, wallet, payer);
   if (!q.ok) return q.why === "user"
     ? Response.json({ error: `That's today's ${FREE_PER_DAY} free messages. Get more with credits, or come back after 00:00 UTC.`, left: 0, credits: q.credits, buy: !project, needSession: !!q.credits && !payer }, { status: 429 })
-    : Response.json({ error: "The assistant is very busy today. Try again later." }, { status: 503 });
+    : Response.json({ error: "Today's free messages for everyone are used up. They come back at 00:00 UTC; messages paid with credits still work." }, { status: 503 });
   const left = q.left, credits = q.credits;
   const extra = project ? await projectContext(project) : undefined;
 

@@ -4,6 +4,7 @@ import SiteAnalytics from "@/components/SiteAnalytics";
 import { SITE } from "@/lib/chain";
 import { Inter, JetBrains_Mono, Marcellus } from "next/font/google";
 import "./globals.css";
+import { ldJson } from "@/lib/ldJson";
 
 // self-hosted at build time (no request to Google, nothing render-blocking); globals.css reads the variables
 const serif = Marcellus({ subsets: ["latin"], weight: "400", display: "swap", variable: "--font-serif" });
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {/* opened as a Telegram Mini App: tell Telegram the page is ready and use the full height */}
         <script dangerouslySetInnerHTML={{ __html: "try{var p=window.TelegramWebviewProxy;if(p){p.postEvent('web_app_ready','{}');p.postEvent('web_app_expand','{}')}}catch(e){}" }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LD) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(LD) }} />
         <Providers>{children}</Providers>
         <SiteAnalytics />
       </body>

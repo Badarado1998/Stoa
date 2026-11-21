@@ -1,7 +1,8 @@
 import { kv, kvOn } from "@/lib/kv";
-import { tgHtml, tgOn, tgSend } from "@/lib/telegram";
+import { tgSym, tgOn, tgSend } from "@/lib/telegram";
 import { readSpotlight } from "@/lib/spotlightServer";
 import { BID_WINDOW, SPOT_START, WEEK, epochAt, epochStart } from "@/lib/spotlight";
+import { cronAllowed, cronRefused } from "@/lib/cronAuth";
 
 // GET /api/cron/spotlightnudge (Vercel cron, hourly): tells the groups that turned on /report about Spotlight's
 // moments: 12 hours before week 1, when a week opens, 3 hours before bids close, 6 hours before votes close. Each
@@ -12,7 +13,8 @@ export const maxDuration = 60;
 const H = 3600;
 const when = (t: number) => `${new Date(t * 1000).toUTCString().slice(0, 22)} UTC`;
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!cronAllowed(req)) return cronRefused();
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
   if ((await kv("SET", "tg:spotnudge:lock", 1, "NX", "EX", 600)) !== "OK") return Response.json({ ok: true, skipped: "ran recently" });
   const now = Math.floor(Date.now() / 1000), ep = epochAt(now);
@@ -22,7 +24,7 @@ export async function GET() {
   } else {
     const start = epochStart(ep), s = await readSpotlight().catch(() => null);
     const live = (s?.candidates ?? []).filter((c) => !c.canceled);
-    const list = live.slice(0, 5).map((c) => `• ${tgHtml(c.symbol ?? c.token.slice(0, 8))} · ${c.bidEth.toLocaleString("en-US", { maximumFractionDigits: 3 })} ETH bid`).join("\n");
+    const list = live.slice(0, 5).map((c) => `• ${tgSym(c.symbol ?? c.token.slice(0, 8))} · ${c.bidEth.toLocaleString("en-US", { maximumFractionDigits: 3 })} ETH bid`).join("\n");
     if (now - start < 2 * H) { key = `open:${ep}`; text = `🔦 <b>Spotlight week ${ep + 1} is open</b>\n\nProjects bid ETH for 3 slots until ${when(start + BID_WINDOW)}; $STOA holders vote until ${when(start + WEEK)}. Voters of the winners share their ETH.${list ? `\n\n${list}` : ""}`; }
     else if (start + BID_WINDOW - now > 0 && start + BID_WINDOW - now <= 3 * H) { key = `bids:${ep}`; text = `⏳ <b>Spotlight bids close in about 3 hours</b> (${when(start + BID_WINDOW)}).${list ? `\n\n${list}` : ""}\n\nVoting stays open until ${when(start + WEEK)}.`; }
     else if (start + WEEK - now > 0 && start + WEEK - now <= 6 * H) { key = `votes:${ep}`; text = `⏳ <b>Spotlight votes close in about 6 hours</b> (${when(start + WEEK)}).${list ? `\n\n${list}` : ""}\n\nSet your votes: ask me "Who can I vote for this week?"`; }

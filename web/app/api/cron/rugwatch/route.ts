@@ -1,7 +1,8 @@
 import { getAddress, isAddress } from "viem";
 import { kv, kvOn } from "@/lib/kv";
 import { rugScan } from "@/lib/rugScan";
-import { tgHtml, tgOn, tgSend } from "@/lib/telegram";
+import { tgSym, tgHtml, tgOn, tgSend } from "@/lib/telegram";
+import { cronAllowed, cronRefused } from "@/lib/cronAuth";
 
 // GET /api/cron/rugwatch (Vercel cron, every 10 minutes): rug scans every wallet watched with the Telegram bot's /watch
 // and messages its owner about each new sign (one alert per token and sign a day). A lock in storage makes extra calls
@@ -9,7 +10,8 @@ import { tgHtml, tgOn, tgSend } from "@/lib/telegram";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!cronAllowed(req)) return cronRefused();
   if (!tgOn || !kvOn) return Response.json({ ok: false, why: "not switched on" });
   if ((await kv("SET", "tg:rugwatch:lock", Date.now(), "NX", "EX", 480)) !== "OK") return Response.json({ ok: true, skipped: "ran recently" });
   // start where the last run stopped, so every wallet gets its turn when they do not all fit in one run
@@ -28,7 +30,7 @@ export async function GET() {
       const fresh: string[] = [];
       for (const t of s.tokens) for (const f of t.flags) {
         if (f.level !== "high" && f.code !== "creator") continue;
-        if ((await kv("SET", `tg:seen:${chat}:${t.address}:${f.code}`, 1, "NX", "EX", 86_400)) === "OK") fresh.push(`• <b>${tgHtml(t.symbol)}</b>: ${tgHtml(f.text)}`);
+        if ((await kv("SET", `tg:seen:${chat}:${t.address}:${f.code}`, 1, "NX", "EX", 86_400)) === "OK") fresh.push(`• <b>${tgSym(t.symbol)}</b>: ${tgHtml(f.text)}`);
       }
       if (fresh.length) { await tgSend(chat, `🚨 <b>Rug alert</b> for <code>${w.slice(0, 6)}…${w.slice(-4)}</code>\n\n${fresh.join("\n")}\n\nA signal, not certainty. Check it on stoadex.com/ai. /unwatch to stop.`); sent++; }
     }));

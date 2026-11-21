@@ -24,8 +24,10 @@ jobs:
       ELYSIUM_RPC_URL: ${{ secrets.ELYSIUM_RPC_URL || 'https://rpc.elysium.kinetiq.xyz' }}
       FULL_LOG: /tmp/v4-pairs-full.txt # seed-v4.sh lists every pool it kept out of a full pair here
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
+        with:
+          version: v1.5.1
       - name: Which V4 adapters are deployed
         # once UniswapV4AdapterV3 is deployed, the rankings also take pools on the three Fables hooks it allows (V2
         # refuses them at no gas cost)

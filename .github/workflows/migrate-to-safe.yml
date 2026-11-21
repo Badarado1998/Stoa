@@ -19,8 +19,10 @@ jobs:
       DEP_PK: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
       MULTISEND: "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
+        with:
+          version: v1.5.1
       - name: Transfer and accept
         run: |
           set -euo pipefail

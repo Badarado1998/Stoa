@@ -8,7 +8,7 @@ import { change, cleanList, priced } from "@/lib/aiWatchlist";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
 import { kv, kvOn } from "@/lib/kv";
 import { rugScan, type RugToken } from "@/lib/rugScan";
-import { tg, tgHtml, tgMe, tgOn, tgSecret, tgSend } from "@/lib/telegram";
+import { tg, tgHtml, tgSym, tgMe, tgOn, tgSecret, tgSend } from "@/lib/telegram";
 
 // POST /api/telegram: the Stoa AI bot. Telegram calls it with every message the bot sees (webhook set by
 // /api/telegram/setup, with a secret derived from the bot token). In a private chat it answers everything; in a group it
@@ -64,14 +64,14 @@ function cardText(kind: string, data: unknown): string | null {
   if (kind === "safety") {
     const t = d.test as { buyTaxPct: number | null; sellTaxPct: number | null; sellOk: boolean } | null;
     const pc = (v: unknown) => (typeof v === "number" ? `${v.toFixed(1)}%` : "—");
-    return `🛡 <b>${tgHtml(String(d.symbol ?? "Token"))}</b> · safety: <b>${tgHtml(String(d.verdict))}</b>\nTax ${pc(t?.buyTaxPct)} / ${pc(t?.sellTaxPct)} · sells ${t ? (t.sellOk ? "ok" : "FAIL") : "—"} · creator ${pc(d.creatorPct)}`;
+    return `🛡 <b>${tgSym(String(d.symbol ?? "Token"))}</b> · safety: <b>${tgHtml(String(d.verdict))}</b>\nTax ${pc(t?.buyTaxPct)} / ${pc(t?.sellTaxPct)} · sells ${t ? (t.sellOk ? "ok" : "FAIL") : "—"} · creator ${pc(d.creatorPct)}`;
   }
   if (kind === "quote") {
     const s = d as { sell: { amount: string; symbol: string }; buy: { about: string; atLeast: string; symbol: string }; route: string };
-    return s.sell ? `💱 ${tgHtml(s.sell.amount)} ${tgHtml(s.sell.symbol)} → about <b>${tgHtml(s.buy.about)} ${tgHtml(s.buy.symbol)}</b> (at least ${tgHtml(s.buy.atLeast)}) · ${tgHtml(s.route)}` : null;
+    return s.sell ? `💱 ${tgHtml(s.sell.amount)} ${tgSym(s.sell.symbol)} → about <b>${tgHtml(s.buy.about)} ${tgSym(s.buy.symbol)}</b> (at least ${tgHtml(s.buy.atLeast)}) · ${tgHtml(s.route)}` : null;
   }
   if (kind === "gaps" && Array.isArray(data)) {
-    return "📈 On-chain vs Robinhood\n" + (data as { symbol: string; gapPct: number }[]).slice(0, 5).map((r) => `${tgHtml(r.symbol)} ${r.gapPct >= 0 ? "+" : ""}${r.gapPct.toFixed(2)}%`).join("\n");
+    return "📈 On-chain vs Robinhood\n" + (data as { symbol: string; gapPct: number }[]).slice(0, 5).map((r) => `${tgSym(r.symbol)} ${r.gapPct >= 0 ? "+" : ""}${r.gapPct.toFixed(2)}%`).join("\n");
   }
   return null;
 }
@@ -79,14 +79,14 @@ function cardText(kind: string, data: unknown): string | null {
 const rugText = (toks: RugToken[], onlyFlagged = false) => {
   const bad = toks.filter((t) => t.flags.length);
   if (!bad.length) return onlyFlagged ? "" : `✅ No rug signs in ${toks.length} token${toks.length === 1 ? "" : "s"} right now.`;
-  return bad.map((t) => `${t.flags.some((f) => f.level === "high") ? "🚨" : "⚠️"} <b>${tgHtml(t.symbol)}</b>\n${t.flags.map((f) => `• ${tgHtml(f.text)}`).join("\n")}`).join("\n\n");
+  return bad.map((t) => `${t.flags.some((f) => f.level === "high") ? "🚨" : "⚠️"} <b>${tgSym(t.symbol)}</b>\n${t.flags.map((f) => `• ${tgHtml(f.text)}`).join("\n")}`).join("\n\n");
 };
 
 async function answer(m: TgMsg, q: string, botId: number) {
   const chat = m.chat.id, uid = m.sender_chat?.id ?? m.from?.id ?? chat;
   const n = await countToday(`tg:${uid}`);
   if (n > 10) { await tgSend(chat, "That's your 10 questions for today. More after 00:00 UTC, or on stoadex.com/ai.", m.message_id); return; }
-  if ((await countToday(`tgchat:${chat}`)) > 150 || (await countToday("all")) > Number(process.env.AI_DAILY_CAP || 3000)) { await tgSend(chat, "I'm very busy today. Try again later, or ask on stoadex.com/ai.", m.message_id); return; }
+  if ((await countToday(`tgchat:${chat}`)) > 150 || (await countToday("tgall")) > Number(process.env.TG_DAILY_CAP || 1500)) { await tgSend(chat, "I'm very busy today. Try again later, or ask on stoadex.com/ai.", m.message_id); return; }
   const u = { left: 10 - n };
   void tg("sendChatAction", { chat_id: chat, action: "typing" });
   const proj = m.chat.type !== "private" ? await kv<string>("GET", `tg:proj:${chat}`) : null;
@@ -195,7 +195,7 @@ async function handle(m: TgMsg) {
     const rows = await priced(list);
     const usd = (v: number | null) => (v == null ? "—" : `$${v >= 1 ? v.toLocaleString("en-US", { maximumFractionDigits: 2 }) : v.toPrecision(3)}`);
     await tgSend(m.chat.id, rows.length
-      ? `👀 <b>Your watchlist</b>\n${rows.map((r) => `${tgHtml(r.symbol)} ${usd(r.usd)}${r.ch24 != null ? ` · ${r.ch24 >= 0 ? "+" : ""}${r.ch24.toFixed(1)}%` : ""}`).join("\n")}${unknown.length ? `\n\nNot found: ${tgHtml(unknown.join(", "))}` : ""}`
+      ? `👀 <b>Your watchlist</b>\n${rows.map((r) => `${tgSym(r.symbol)} ${usd(r.usd)}${r.ch24 != null ? ` · ${r.ch24 >= 0 ? "+" : ""}${r.ch24.toFixed(1)}%` : ""}`).join("\n")}${unknown.length ? `\n\nNot found: ${tgHtml(unknown.join(", "))}` : ""}`
       : "Your watchlist is empty. Add tokens: /watchlist add NVDA STOA", m.message_id);
     return;
   }

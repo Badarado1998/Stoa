@@ -2,11 +2,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount, useBalance, usePublicClient, useReadContract, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, decodeFunctionData, erc20Abi as viemErc20, isAddress, parseUnits, type Address, type Hash, type Hex } from "viem";
+import { BaseError, decodeFunctionData, erc20Abi as viemErc20, formatUnits, isAddress, parseUnits, type Address, type Hash, type Hex } from "viem";
 import { erc20Abi, routerAbi } from "@/lib/abi";
 import { ROBINHOOD } from "@/lib/networks";
 import { NATIVE, type Token } from "@/lib/tokens";
-import { NOTE_MAX, PAY_MAX_USDG, newId, readRequest, requestUrl, tagIn, type PayRequest } from "@/lib/pay";
+import { NOTE_MAX, PAY_MAX_USDG, newId, readRequest, relayAmount, requestUrl, tagIn, type PayRequest } from "@/lib/pay";
 import { fmt } from "@/lib/swap";
 import { SOURCES } from "@/lib/bridge";
 import { PAY_CROSS_MAX_USDG, PAY_SOURCES, checkPayCross, type PayCrossQuote } from "@/lib/payAnychain";
@@ -39,7 +39,7 @@ type Quote = {
   payment: { amount: string; to: Address; get: Address; minOut: string };
 };
 type Phase = { k: "idle" } | { k: "busy"; text: string } | { k: "done"; tx: Hash } | { k: "failed"; text: string };
-type Status = { paid: boolean; via?: "stoa" | "relay"; tx?: Hash; at?: number | null };
+type Status = { paid: boolean; via?: "stoa" | "relay"; tx?: Hash; at?: number | null; value?: string };
 
 function explain(e: unknown): string {
   if (e instanceof BaseError) {
@@ -189,7 +189,8 @@ function PaidCard({ req, st }: { req: PayRequest; st: Status }) {
   return (
     <div className="panel pad" style={{ maxWidth: 560 }}>
       <div className="lbl" style={{ color: "#15803d" }}>✓ PAID</div>
-      <p style={{ fontSize: 22, margin: "8px 0" }}>{req.get ? `${req.amount} USDG worth of ${symbolOf(req.get)}` : `${req.amount} USDG`} to {short(req.to)}{req.note ? ` for "${req.note}"` : ""}{st.at ? `, ${new Date(st.at * 1000).toUTCString().replace("GMT", "UTC")}` : ""}.</p>
+      {/* what actually arrived, read from the chain: never the amount written in the link */}
+      <p style={{ fontSize: 22, margin: "8px 0" }}>{st.value ? `${Number(formatUnits(BigInt(st.value), req.get ? 18 : 6)).toLocaleString("en-US", { maximumFractionDigits: req.get ? 6 : 2 })} ${req.get ? symbolOf(req.get) : "USDG"} received by` : "Paid to"} {short(req.to)}{req.note ? ` for "${req.note}"` : ""}{st.at ? `, ${new Date(st.at * 1000).toUTCString().replace("GMT", "UTC")}` : ""}.</p>
       {st.tx && (st.via === "stoa"
         ? <a href={`/pay/receipt?tx=${st.tx}`}>See the receipt</a>
         : <a href={`${EXPLORER}/tx/${st.tx}`} target="_blank" rel="noopener noreferrer">Delivered by Relay: see it on Robinhood Chain ↗</a>)}
@@ -353,7 +354,8 @@ function PayCross({ req, chainId }: { req: PayRequest; chainId: number }) {
   const { switchChainAsync } = useSwitchChain();
   const { sendTransactionAsync } = useSendTransaction();
   const srcInfo = SOURCES.find((x) => x.chain.id === chainId)!;
-  const raw = parseUnits(req.amount, 6);
+  // the amount plus this request's few micro-USDG, so the link can tell its own delivery from any other (lib/pay.ts)
+  const raw = req.id ? relayAmount(parseUnits(req.amount, 6), req.id) : parseUnits(req.amount, 6);
   const over = Number(req.amount) > PAY_CROSS_MAX_USDG;
   const bal = useBalance({ address, chainId, query: { enabled: !!address } });
   const [quote, setQuote] = useState<(PayCrossQuote & { at: number }) | null>(null);

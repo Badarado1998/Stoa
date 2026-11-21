@@ -1,10 +1,12 @@
 import { tg, tgMe, tgOn, tgSecret } from "@/lib/telegram";
+import { cronAllowed, cronRefused } from "@/lib/cronAuth";
 
 // GET /api/telegram/setup: points the bot's webhook at https://stoadex.com/api/telegram (with the secret derived from
 // its token) and sets its command menu. Safe to call any number of times by anyone: it always sets the same values.
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!cronAllowed(req)) return cronRefused();
   if (!tgOn) return Response.json({ ok: false, error: "TELEGRAM_BOT_TOKEN is not set in Vercel yet." }, { status: 503 });
   const hook = await tg("setWebhook", { url: "https://stoadex.com/api/telegram", secret_token: tgSecret(), allowed_updates: ["message"], drop_pending_updates: false, max_connections: 20 });
   const cmds = await tg("setMyCommands", { commands: [
