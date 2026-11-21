@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
-import { BaseError, decodeFunctionData, zeroAddress, type Address, type Hash, type Hex } from "viem";
+import { BaseError, decodeFunctionData, erc20Abi as erc20Full, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import { erc20Abi, routerAbi } from "@/lib/abi";
 import { ROBINHOOD } from "@/lib/networks";
 import { NATIVE } from "@/lib/tokens";
@@ -180,6 +180,74 @@ function LimitCard({ d }: { d: LimitData }) {
   );
 }
 
+const BURN = "0x000000000000000000000000000000000000dEaD";
+const STOA_T = "0x13E6993417616De724F2b337D65063f229e96718";
+type PayOpt = { asset: "USDG" | "ETH" | "STOA"; token: Address; to: Address; amount: string; display: string; burned: boolean };
+
+/** more messages: a pack paid from the connected wallet, checked on-chain by /api/ai/credits */
+function BuyCredits({ onDone }: { onDone: (credits: number) => void }) {
+  const { address, isConnected, chainId } = useAccount();
+  const { open } = useWalletModal();
+  const { switchChainAsync } = useSwitchChain();
+  const { sendTransactionAsync } = useSendTransaction();
+  const { writeContractAsync } = useWriteContract();
+  const pub = usePublicClient({ chainId: RH });
+  const [info, setInfo] = useState<{ on: boolean; pack?: { messages: number; usd: number }; options?: PayOpt[] } | null>(null);
+  const [st, setSt] = useState<{ k: "idle" | "busy" | "done" | "failed"; text?: string }>({ k: "idle" });
+  useEffect(() => { fetch(`/api/ai/credits${address ? `?wallet=${address}` : ""}`).then((r) => r.json()).then(setInfo).catch(() => setInfo({ on: false })); }, [address]);
+  if (!info) return null;
+  if (!info.on) return null;
+
+  /** the payment must go where Stoa says: USDG and ETH to Stoa's Safe, $STOA to the burn address */
+  const valid = (o: PayOpt) =>
+    (o.asset === "USDG" && lc(o.token) === lc(ROBINHOOD.stable) && lc(o.to) === lc(ROBINHOOD.contracts.safe ?? "")) ||
+    (o.asset === "ETH" && o.token === NATIVE && lc(o.to) === lc(ROBINHOOD.contracts.safe ?? "")) ||
+    (o.asset === "STOA" && lc(o.token) === lc(STOA_T) && lc(o.to) === lc(BURN));
+
+  async function pay(o: PayOpt) {
+    if (!address) return open();
+    if (!valid(o)) { setSt({ k: "failed", text: "This payment address is not Stoa's." }); return; }
+    try {
+      if (chainId !== RH) { setSt({ k: "busy", text: "Switch to Robinhood Chain…" }); await switchChainAsync({ chainId: RH }); }
+      setSt({ k: "busy", text: `Confirm ${o.display} in your wallet…` });
+      const tx = o.asset === "ETH"
+        ? await sendTransactionAsync({ chainId: RH, to: o.to, value: BigInt(o.amount) })
+        : await writeContractAsync({ address: o.token, abi: erc20Full, functionName: "transfer", args: [o.to, BigInt(o.amount)], chainId: RH });
+      setSt({ k: "busy", text: "Waiting for Robinhood Chain…" });
+      await pub!.waitForTransactionReceipt({ hash: tx });
+      for (let i = 0; i < 4; i++) {
+        const r = await fetch("/api/ai/credits", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: address, tx }) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok) { setSt({ k: "done", text: `Added ${j.credited} messages. You have ${j.credits}.` }); onDone(j.credits); return; }
+        if (!/does not show/.test(j.error ?? "")) { setSt({ k: "failed", text: j.error ?? "Could not add the credits." }); return; }
+        await new Promise((res) => setTimeout(res, 3000));
+      }
+      setSt({ k: "failed", text: "Paid, but not counted yet. Ask again in a minute: it is counted once Robinhood Chain shows it." });
+    } catch (e) { setSt({ k: "failed", text: explain(e) }); }
+  }
+
+  return (
+    <div className="box" style={{ marginTop: 8 }}>
+      <div className="lbl">MORE MESSAGES</div>
+      <div style={{ margin: "6px 0" }}><b>{info.pack?.messages} messages</b> for ${info.pack?.usd}, paid from your wallet on Robinhood Chain. Credits never expire.</div>
+      {st.k === "done" ? <div className="ok">{st.text}</div> : !isConnected ? (
+        <button type="button" className="pri" style={{ width: "100%" }} onClick={() => open()}>Connect wallet</button>
+      ) : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {(info.options ?? []).map((o) => (
+            <button key={o.asset} type="button" className={o.asset === "STOA" ? "pri" : "ghost"} disabled={st.k === "busy"} onClick={() => void pay(o)} style={{ width: "100%" }}>
+              Pay {o.display}{o.burned ? " · burned 🔥" : ""}
+            </button>
+          ))}
+        </div>
+      )}
+      {st.k === "busy" && <div className="note" style={{ marginTop: 6 }}>{st.text}</div>}
+      {st.k === "failed" && <div className="notice" style={{ marginTop: 8 }}>{st.text}</div>}
+      <div className="note" style={{ marginTop: 6 }}>USDG and ETH go to Stoa&apos;s Safe. $STOA is sent to the burn address and gone for good.</div>
+    </div>
+  );
+}
+
 function LinkCard({ url, title }: { url: string; title: string }) {
   return (
     <div className="box" style={{ marginTop: 8 }}>
@@ -202,7 +270,7 @@ function ActionView({ a }: { a: Action }) {
 }
 
 type Card = { kind: string; data: Record<string, unknown> | unknown[] };
-type AMsg = { role: "assistant"; content: string; cards: Card[]; actions: Action[]; status?: string; suggest?: string[]; streaming?: boolean; error?: string };
+type AMsg = { role: "assistant"; content: string; cards: Card[]; actions: Action[]; status?: string; suggest?: string[]; streaming?: boolean; error?: string; buy?: boolean };
 type UMsg = { role: "user"; content: string };
 type ChatMsg = AMsg | UMsg;
 type Brief = {
@@ -361,13 +429,13 @@ export const Dots = () => (
   </span>
 );
 
-export type ChatEv = { t: string; d?: string; kind?: string; data?: unknown; tool?: string; items?: string[]; left?: number };
+export type ChatEv = { t: string; d?: string; kind?: string; data?: unknown; tool?: string; items?: string[]; left?: number; credits?: number | null; buy?: boolean };
 /** POST /api/ai/chat and hand each streamed event to `on`; a refused request arrives as one error event */
 export async function streamChat(body: object, on: (ev: ChatEv) => void) {
   const r = await fetch("/api/ai/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok || !r.body) {
     const j = await r.json().catch(() => ({}));
-    on({ t: "error", d: j.error ?? "The assistant could not answer right now.", left: j.left });
+    on({ t: "error", d: j.error ?? "The assistant could not answer right now.", left: j.left, credits: j.credits, buy: j.buy });
     return;
   }
   const reader = r.body.getReader(), dec = new TextDecoder();
@@ -392,6 +460,7 @@ export default function AiChat() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [left, setLeft] = useState<number | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
   const [brief, setBrief] = useState<Brief | null>(null);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { try { const v = sessionStorage.getItem(STORE); if (v) setMsgs((JSON.parse(v) as ChatMsg[]).map((m) => (m.role === "assistant" ? { ...m, streaming: false, status: undefined } : m))); } catch { /* blocked */ } }, []);
@@ -419,8 +488,9 @@ export default function AiChat() {
         else if (ev.t === "card") patch((m) => ({ ...m, cards: [...m.cards, { kind: ev.kind!, data: ev.data as Card["data"] }] }));
         else if (ev.t === "action") patch((m) => ({ ...m, actions: [...m.actions, { tool: ev.tool!, data: ev.data as Record<string, unknown> }] }));
         else if (ev.t === "suggest") patch((m) => ({ ...m, suggest: ev.items }));
-        else if (ev.t === "error") { patch((m) => ({ ...m, error: ev.d })); if (typeof ev.left === "number") setLeft(ev.left); }
+        else if (ev.t === "error") { patch((m) => ({ ...m, error: ev.d, buy: !!ev.buy })); if (typeof ev.left === "number") setLeft(ev.left); }
         else if (ev.t === "done" && typeof ev.left === "number") setLeft(ev.left);
+        if ((ev.t === "done" || ev.t === "error") && typeof ev.credits === "number") setCredits(ev.credits);
       });
     } catch { patch((m) => ({ ...m, error: "The assistant could not answer right now." })); }
     finally { patch((m) => ({ ...m, streaming: false, status: undefined })); setBusy(false); }
@@ -468,6 +538,7 @@ export default function AiChat() {
               )}
               {m.actions.map((a, k) => <ActionView key={k} a={a} />)}
               {m.error && <div className="notice" style={{ marginTop: 8 }}>{m.error}</div>}
+              {m.buy && <BuyCredits onDone={(c) => setCredits(c)} />}
               {i === last && !busy && m.suggest && m.suggest.length > 0 && (
                 <div className="sugg">{m.suggest.map((q) => <button key={q} type="button" onClick={() => void send(q)}>{q}</button>)}</div>
               )}
@@ -486,7 +557,7 @@ export default function AiChat() {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11.5, color: "var(--muted)", marginTop: 6, padding: "0 6px", flexWrap: "wrap" }}>
           <span>Not financial advice · you sign every swap</span>
-          <span>{left !== null ? `${left} free left today` : ""}{msgs.length > 0 && !busy && <> · <button type="button" onClick={() => setMsgs([])} style={{ all: "unset", cursor: "pointer", color: "var(--accent)" }}>New chat</button></>}</span>
+          <span>{left !== null ? `${left} free left today` : ""}{credits ? ` · ${credits} credits` : ""}{msgs.length > 0 && !busy && <> · <button type="button" onClick={() => setMsgs([])} style={{ all: "unset", cursor: "pointer", color: "var(--accent)" }}>New chat</button></>}</span>
         </div>
       </form>
     </div>

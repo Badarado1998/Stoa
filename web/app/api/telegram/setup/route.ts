@@ -13,7 +13,11 @@ export async function GET() {
     { command: "quote", description: "Quote a swap: /quote 0.01 ETH to USDG" },
     { command: "watch", description: "Rug alerts for your wallet (private chat)" },
     { command: "unwatch", description: "Stop rug alerts" },
+    { command: "price", description: "Price, 1h and 24h change: /price STOA" },
+    { command: "gaps", description: "Stock tokens vs Robinhood's price" },
+    { command: "pnl", description: "PnL of a wallet's swaps through Stoa: /pnl 0x…" },
     { command: "settoken", description: "Admins: make me this project's assistant" },
+    { command: "report", description: "Admins: market report here twice a day (/report on)" },
     { command: "help", description: "What I can do" },
   ] });
   await tg("setMyName", { name: "Stoa AI" });

@@ -20,6 +20,8 @@ To get alerts, message the Stoa AI Telegram bot privately: `/watch 0xYourWallet`
 
 The Stoa AI bot answers in private chats, and in groups when you use `/ask`, mention it, or reply to it. It reads only: for a swap, a limit order or a payment it sends you to stoadex.com/ai, where your own wallet signs. Projects can make it their own assistant: see [Stoa AI for projects](stoa-ai-for-projects.md).
 
+Quick data, free and unlimited: `/price STOA`, `/gaps` (stock tokens against Robinhood's price), `/pnl 0xWallet` (swaps through Stoa). A group admin can send `/report on` for a short market report in the group at 01:00 and 13:00 UTC.
+
 ## What it will not do
 
 - Sign, send or hold anything. Every swap is built for your connected wallet and checked again in your browser before your wallet opens: it must go through Stoa's router and pay the wallet that signs.
@@ -28,6 +30,6 @@ The Stoa AI bot answers in private chats, and in groups when you use `/ask`, men
 
 Before preparing a buy of a token other than ETH, WETH, USDG or a Robinhood stock token, it runs the safety check, and it warns you plainly when the verdict is "danger".
 
-## Limits
+## Limits and credits
 
-10 free messages a day (on the site, and separately in Telegram). The assistant runs on a third-party AI model through OpenRouter; what you type is sent there to get an answer, with your connected address but nothing else. It can be wrong: check the card before you sign.
+10 free messages a day on the site, and 10 a day in Telegram. When they run out, buy more from your connected wallet on Robinhood Chain: a pack of 50 messages costs 1 USDG, or the same value in ETH or $STOA. USDG and ETH go to Stoa's Safe; **$STOA is sent to the burn address**, so paying in $STOA takes it out of supply for good. Credits belong to your wallet and never expire. The payment is checked on-chain and counted once. The assistant runs on a third-party AI model through OpenRouter; what you type is sent there to get an answer, with your connected address but nothing else. It can be wrong: check the card before you sign.

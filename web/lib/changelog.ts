@@ -12,6 +12,18 @@ export type Change = {
 
 export const CHANGES: Change[] = [
   {
+    id: "stoa-ai-credits",
+    date: "2026-11-21",
+    title: "Stoa AI credits, and a market report in Telegram",
+    tag: "Robinhood Chain",
+    items: [
+      "Out of free messages? Get 50 more for 1 USDG, or the same value in ETH or $STOA. $STOA paid for credits is burned.",
+      "The Telegram bot has quick commands: /price, /gaps and /pnl, free and unlimited.",
+      "Group admins can turn on a market report twice a day with /report on.",
+    ],
+    link: { href: "/docs/ask-stoa", label: "Stoa AI" },
+  },
+  {
     id: "stoa-ai-strategies",
     date: "2026-11-21",
     title: "Stoa AI: strategies you type, rug scan, Telegram and a widget for projects",

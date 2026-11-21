@@ -1,6 +1,8 @@
 import { after } from "next/server";
 import { getAddress, isAddress, type Address } from "viem";
-import { runAgent, quota } from "@/lib/aiAgent";
+import { runAgent } from "@/lib/aiAgent";
+import { countToday } from "@/lib/aiCredits";
+import { gapsText, pnlText, priceText } from "@/lib/tgReport";
 import { projectContext, PROJECT_TOOLS } from "@/lib/aiProject";
 import { kv, kvOn } from "@/lib/kv";
 import { rugScan, type RugToken } from "@/lib/rugScan";
@@ -15,7 +17,6 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 type TgMsg = { message_id: number; text?: string; chat: { id: number; type: string; title?: string }; from?: { id: number; is_bot?: boolean; first_name?: string }; sender_chat?: { id: number }; is_automatic_forward?: boolean; reply_to_message?: { text?: string; from?: { id: number } } };
-const perUser = quota(10, 100_000), perChat = quota(150, 100_000), all = quota(1_000_000, Number(process.env.AI_DAILY_CAP || 3000));
 
 const HELP = `<b>Stoa AI</b> · early beta on Robinhood Chain
 
@@ -28,6 +29,10 @@ In a group: /ask your question, mention me, or reply to me.
 /watch 0xYourWallet · rug alerts for your tokens (private chat)
 /unwatch · stop the alerts
 /settoken 0xToken · group admins: make me this project's assistant
+/report on · group admins: a market report here at 01:00 and 13:00 UTC
+
+Quick data, free and unlimited:
+/price STOA · /gaps · /pnl 0xWallet
 
 I only read: to trade, use stoadex.com/ai where your own wallet signs. Not financial advice. 10 questions a day each.`;
 
@@ -56,9 +61,10 @@ const rugText = (toks: RugToken[], onlyFlagged = false) => {
 
 async function answer(m: TgMsg, q: string, botId: number) {
   const chat = m.chat.id, uid = m.sender_chat?.id ?? m.from?.id ?? chat;
-  const u = perUser(String(uid));
-  if (!u.ok) { await tgSend(chat, "That's your 10 questions for today. More after 00:00 UTC, or ask on stoadex.com/ai.", m.message_id); return; }
-  if (!perChat(String(chat)).ok || !all("all").ok) { await tgSend(chat, "I'm very busy today. Try again later, or ask on stoadex.com/ai.", m.message_id); return; }
+  const n = await countToday(`tg:${uid}`);
+  if (n > 10) { await tgSend(chat, "That's your 10 questions for today. More after 00:00 UTC, or on stoadex.com/ai.", m.message_id); return; }
+  if ((await countToday(`tgchat:${chat}`)) > 150 || (await countToday("all")) > Number(process.env.AI_DAILY_CAP || 3000)) { await tgSend(chat, "I'm very busy today. Try again later, or ask on stoadex.com/ai.", m.message_id); return; }
+  const u = { left: 10 - n };
   void tg("sendChatAction", { chat_id: chat, action: "typing" });
   const proj = m.chat.type !== "private" ? await kv<string>("GET", `tg:proj:${chat}`) : null;
   const project: Address | null = proj && isAddress(proj, { strict: false }) ? getAddress(proj) : null;
@@ -121,6 +127,24 @@ async function handle(m: TgMsg) {
     const t = getAddress(arg);
     await kv("SET", `tg:proj:${m.chat.id}`, t);
     await tgSend(m.chat.id, `Done. In this group, "the token" now means <code>${t}</code>. Ask me anything about it: /ask is it safe? I answer from on-chain data only, never about the team's plans.`);
+    return;
+  }
+  if (name === "price" || name === "gaps" || name === "pnl") {
+    void tg("sendChatAction", { chat_id: m.chat.id, action: "typing" });
+    let a = arg;
+    if (name === "price" && !a && !priv) a = (await kv<string>("GET", `tg:proj:${m.chat.id}`)) ?? "";
+    const out = name === "gaps" ? await gapsText() : name === "price" ? await priceText(a) : await pnlText(a);
+    await tgSend(m.chat.id, out, m.message_id, { text: "Open Stoa ↗", url: name === "pnl" && isAddress(a, { strict: false }) ? `https://stoadex.com/pnl/robinhood/${getAddress(a)}` : name === "gaps" ? "https://stoadex.com/stocks" : "https://stoadex.com/ai" });
+    return;
+  }
+  if (name === "report") {
+    if (priv) { await tgSend(m.chat.id, "Add me to a group, then an admin sends /report on there."); return; }
+    const st = anonAdmin ? { status: "administrator" } : await tg<{ status: string }>("getChatMember", { chat_id: m.chat.id, user_id: m.from?.id });
+    if (!st || !["creator", "administrator"].includes(st.status)) { await tgSend(m.chat.id, "Only group admins can do that.", m.message_id); return; }
+    if (!kvOn) { await tgSend(m.chat.id, "Reports are not switched on yet.", m.message_id); return; }
+    if (/^off$/i.test(arg)) { await kv("SREM", "tg:report", m.chat.id); await tgSend(m.chat.id, "Market reports stopped here."); return; }
+    await kv("SADD", "tg:report", m.chat.id);
+    await tgSend(m.chat.id, "Done: a short market report here at 01:00 and 13:00 UTC (stock gaps, new Pons launches, $STOA). /report off to stop.");
     return;
   }
   let q: string | null = null;
